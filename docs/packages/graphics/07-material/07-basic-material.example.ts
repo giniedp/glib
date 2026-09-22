@@ -51,7 +51,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     sampleCount: 4,
   })
   const rtDetph = device.createDepthTarget({
-    format: 'DEPTH24_PLUS_STENCIL8',
+    format: 'depth24plus',
     width: device.output.width,
     height: device.output.height,
     sampleCount: 4,

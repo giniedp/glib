@@ -31,7 +31,7 @@ export class TerrainTileRenderer {
     this.encoder = new BC3Encoder(this.device, options)
 
     this.stagingMap1 = this.device.createTexture({
-      format: 'RGBA8_UNORM',
+      format: 'rgba8unorm',
       width: width,
       height: height,
       usage: TextureUsage.TextureBinding | TextureUsage.RenderTarget,
@@ -39,7 +39,7 @@ export class TerrainTileRenderer {
       mipLevelCount: 1,
     })
     this.stagingMap2 = this.device.createTexture({
-      format: 'RGBA8_UNORM',
+      format: 'rgba8unorm',
       width: width,
       height: height,
       usage: TextureUsage.TextureBinding | TextureUsage.RenderTarget,
@@ -47,7 +47,7 @@ export class TerrainTileRenderer {
       mipLevelCount: 1,
     })
     this.stagingMap3 = this.device.createTexture({
-      format: 'RGBA8_UNORM',
+      format: 'rgba8unorm',
       width: width,
       height: height,
       usage: TextureUsage.TextureBinding | TextureUsage.RenderTarget,

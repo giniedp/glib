@@ -117,11 +117,11 @@ export class GeometryBeamSimpleMaterial extends materialSchemaClass(SCHEMA) {
       this.device[Noise3DKey] ||
       this.device.createTexture({
         name: 'noise3D',
-        type: 'Texture3D',
+        type: '3d',
         width: 16,
         height: 16,
         depth: 16,
-        format: 'RGBA8_UNORM',
+        format: 'rgba8unorm',
       })
     this.DiffuseColor = Vec4.create(1, 1, 1, 1)
     this.SamplerLinear = SamplerState.LinearWrap

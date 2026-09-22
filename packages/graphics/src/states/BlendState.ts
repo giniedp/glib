@@ -25,104 +25,104 @@ export class BlendState implements BlendStateOptions {
   /**
    * Blending disabled. Source fully overwrites destination.
    * @example
-   *  colorBlendFunction: 'Add',
-   *  alphaBlendFunction: 'Add',
+   *  colorBlendFunction: 'add',
+   *  alphaBlendFunction: 'add',
    *
-   *  colorSrcBlend: 'One',
-   *  alphaSrcBlend: 'One',
+   *  colorSrcBlend: 'one',
+   *  alphaSrcBlend: 'one',
    *
-   *  colorDstBlend: 'Zero',
-   *  alphaDstBlend: 'Zero',
+   *  colorDstBlend: 'zero',
+   *  alphaDstBlend: 'zero',
    */
   public static readonly Disabled = BlendState.cached({
     enable: false,
 
-    colorBlendFunction: 'Add',
-    alphaBlendFunction: 'Add',
+    colorBlendFunction: 'add',
+    alphaBlendFunction: 'add',
 
-    colorSrcBlend: 'One',
-    alphaSrcBlend: 'One',
+    colorSrcBlend: 'one',
+    alphaSrcBlend: 'one',
 
-    colorDstBlend: 'Zero',
-    alphaDstBlend: 'Zero',
+    colorDstBlend: 'zero',
+    alphaDstBlend: 'zero',
   })
 
   /**
    * Opaque rendering with blending enabled.
    * Functionally identical to Disabled, but keeps the blend stage active.
    * @example
-   *  colorBlendFunction: 'Add',
-   *  alphaBlendFunction: 'Add',
+   *  colorBlendFunction: 'add',
+   *  alphaBlendFunction: 'add',
    *
-   *  colorSrcBlend: 'One',
-   *  alphaSrcBlend: 'One',
+   *  colorSrcBlend: 'one',
+   *  alphaSrcBlend: 'one',
    *
-   *  colorDstBlend: 'Zero',
-   *  alphaDstBlend: 'Zero',
+   *  colorDstBlend: 'zero',
+   *  alphaDstBlend: 'zero',
    */
   public static readonly Opaque = BlendState.cached({
     enable: true,
 
-    colorBlendFunction: 'Add',
-    alphaBlendFunction: 'Add',
+    colorBlendFunction: 'add',
+    alphaBlendFunction: 'add',
 
-    colorSrcBlend: 'One',
-    alphaSrcBlend: 'One',
+    colorSrcBlend: 'one',
+    alphaSrcBlend: 'one',
 
-    colorDstBlend: 'Zero',
-    alphaDstBlend: 'Zero',
+    colorDstBlend: 'zero',
+    alphaDstBlend: 'zero',
   })
 
   /**
    * Standard alpha compositing for straight (non-premultiplied) alpha inputs.
    * Shader outputs RGB independent of alpha.
    * @example
-   *  colorBlendFunction: 'Add',
-   *  alphaBlendFunction: 'Add',
+   *  colorBlendFunction: 'add',
+   *  alphaBlendFunction: 'add',
    *
-   *  colorSrcBlend: 'SrcAlpha',
-   *  alphaSrcBlend: 'SrcAlpha',
+   *  colorSrcBlend: 'src-alpha',
+   *  alphaSrcBlend: 'src-alpha',
    *
-   *  colorDstBlend: 'OneMinusSrcAlpha',
-   *  alphaDstBlend: 'OneMinusSrcAlpha',
+   *  colorDstBlend: 'one-minus-src-alpha',
+   *  alphaDstBlend: 'one-minus-src-alpha',
    */
   public static readonly Alpha = BlendState.cached({
     enable: true,
 
-    colorBlendFunction: 'Add',
-    alphaBlendFunction: 'Add',
+    colorBlendFunction: 'add',
+    alphaBlendFunction: 'add',
 
-    colorSrcBlend: 'SrcAlpha',
-    alphaSrcBlend: 'SrcAlpha',
+    colorSrcBlend: 'src-alpha',
+    alphaSrcBlend: 'src-alpha',
 
-    colorDstBlend: 'OneMinusSrcAlpha',
-    alphaDstBlend: 'OneMinusSrcAlpha',
+    colorDstBlend: 'one-minus-src-alpha',
+    alphaDstBlend: 'one-minus-src-alpha',
   })
 
   /**
    * Standard alpha compositing for premultiplied alpha inputs.
    * Expects RGB pre-multiplied by A (RGB = color * alpha).
    * @example
-   *  colorBlendFunction: 'Add',
-   *  alphaBlendFunction: 'Add',
+   *  colorBlendFunction: 'add',
+   *  alphaBlendFunction: 'add',
    *
-   *  colorSrcBlend: 'One',
-   *  alphaSrcBlend: 'One',
+   *  colorSrcBlend: 'one',
+   *  alphaSrcBlend: 'one',
    *
-   *  colorDstBlend: 'OneMinusSrcAlpha',
-   *  alphaDstBlend: 'OneMinusSrcAlpha',
+   *  colorDstBlend: 'one-minus-src-alpha',
+   *  alphaDstBlend: 'one-minus-src-alpha',
    */
   public static readonly AlphaPremultiplied = BlendState.cached({
     enable: true,
 
-    colorBlendFunction: 'Add',
-    alphaBlendFunction: 'Add',
+    colorBlendFunction: 'add',
+    alphaBlendFunction: 'add',
 
-    colorSrcBlend: 'One',
-    alphaSrcBlend: 'One',
+    colorSrcBlend: 'one',
+    alphaSrcBlend: 'one',
 
-    colorDstBlend: 'OneMinusSrcAlpha',
-    alphaDstBlend: 'OneMinusSrcAlpha',
+    colorDstBlend: 'one-minus-src-alpha',
+    alphaDstBlend: 'one-minus-src-alpha',
   })
 
   /**
@@ -130,76 +130,76 @@ export class BlendState implements BlendStateOptions {
    * Source color is added directly to the destination without alpha modulation.
    * Alpha channel is accumulated additively.
    * @example
-   *  colorBlendFunction: 'Add',
-   *  alphaBlendFunction: 'Add',
+   *  colorBlendFunction: 'add',
+   *  alphaBlendFunction: 'add',
    *
-   *  colorSrcBlend: 'One',
-   *  alphaSrcBlend: 'One',
+   *  colorSrcBlend: 'one',
+   *  alphaSrcBlend: 'one',
    *
-   *  colorDstBlend: 'One',
-   *  alphaDstBlend: 'One',
+   *  colorDstBlend: 'one',
+   *  alphaDstBlend: 'one',
    */
   public static readonly AdditivePure = BlendState.cached({
     enable: true,
 
-    colorBlendFunction: 'Add',
-    alphaBlendFunction: 'Add',
+    colorBlendFunction: 'add',
+    alphaBlendFunction: 'add',
 
-    colorSrcBlend: 'One',
-    alphaSrcBlend: 'One',
-    colorDstBlend: 'One',
-    alphaDstBlend: 'One',
+    colorSrcBlend: 'one',
+    alphaSrcBlend: 'one',
+    colorDstBlend: 'one',
+    alphaDstBlend: 'one',
   })
 
   /**
    * Additive blending with alpha modulation.
    * Contribution is scaled by source alpha (common for particles, glow).
    * @example
-   * colorBlendFunction: 'Add',
-   * alphaBlendFunction: 'Add',
+   * colorBlendFunction: 'add',
+   * alphaBlendFunction: 'add',
    *
-   * colorSrcBlend: 'SrcAlpha',
-   * alphaSrcBlend: 'SrcAlpha',
+   * colorSrcBlend: 'src-alpha',
+   * alphaSrcBlend: 'src-alpha',
    *
-   * colorDstBlend: 'One',
-   * alphaDstBlend: 'One',
+   * colorDstBlend: 'one',
+   * alphaDstBlend: 'one',
    */
   public static readonly Additive = BlendState.cached({
     enable: true,
 
-    colorBlendFunction: 'Add',
-    alphaBlendFunction: 'Add',
+    colorBlendFunction: 'add',
+    alphaBlendFunction: 'add',
 
-    colorSrcBlend: 'SrcAlpha',
-    alphaSrcBlend: 'SrcAlpha',
-    colorDstBlend: 'One',
-    alphaDstBlend: 'One',
+    colorSrcBlend: 'src-alpha',
+    alphaSrcBlend: 'src-alpha',
+    colorDstBlend: 'one',
+    alphaDstBlend: 'one',
   })
 
   /**
    * Additive blending with separate alpha accumulation.
    * Color is alpha-weighted, alpha accumulates independently.
    * @example
-   * colorBlendFunction: 'Add',
-   * alphaBlendFunction: 'Add',
+   * colorBlendFunction: 'add',
+   * alphaBlendFunction: 'add',
    *
-   * colorSrcBlend: 'SrcAlpha',
-   * alphaSrcBlend: 'One',
+   * colorSrcBlend: 'src-alpha',
+   * alphaSrcBlend: 'one',
    *
-   * colorDstBlend: 'One',
-   * alphaDstBlend: 'One',
+   * colorDstBlend: 'one',
+   * alphaDstBlend: 'one',
    */
   public static readonly AdditiveAlpha = BlendState.cached({
     enable: true,
 
-    colorBlendFunction: 'Add',
-    alphaBlendFunction: 'Add',
+    colorBlendFunction: 'add',
+    alphaBlendFunction: 'add',
 
-    colorSrcBlend: 'SrcAlpha',
-    alphaSrcBlend: 'One',
+    colorSrcBlend: 'src-alpha',
+    alphaSrcBlend: 'one',
 
-    colorDstBlend: 'One',
-    alphaDstBlend: 'One',
+    colorDstBlend: 'one',
+    alphaDstBlend: 'one',
   })
 
   /**
@@ -207,77 +207,77 @@ export class BlendState implements BlendStateOptions {
    * Removes light/energy from the destination (stylized effects, darkening).
    * @example
    * colorBlendFunction: 'ReverseSubtract',
-   * alphaBlendFunction: 'Add',
+   * alphaBlendFunction: 'add',
    *
-   * colorSrcBlend: 'SrcAlpha',
-   * alphaSrcBlend: 'One',
+   * colorSrcBlend: 'src-alpha',
+   * alphaSrcBlend: 'one',
    *
-   * colorDstBlend: 'One',
-   * alphaDstBlend: 'One',
+   * colorDstBlend: 'one',
+   * alphaDstBlend: 'one',
    */
   public static readonly Subtractive = BlendState.cached({
     enable: true,
 
-    colorBlendFunction: 'ReverseSubtract',
-    alphaBlendFunction: 'Add',
+    colorBlendFunction: 'reverse-subtract',
+    alphaBlendFunction: 'add',
 
-    colorSrcBlend: 'SrcAlpha',
-    alphaSrcBlend: 'One',
+    colorSrcBlend: 'src-alpha',
+    alphaSrcBlend: 'one',
 
-    colorDstBlend: 'One',
-    alphaDstBlend: 'One',
+    colorDstBlend: 'one',
+    alphaDstBlend: 'one',
   })
 
   /**
    * Multiplicative blending.
    * Multiplies destination by source color (lightmaps, shadows, decals).
    * @example
-   * colorBlendFunction: 'Add',
-   * alphaBlendFunction: 'Add',
+   * colorBlendFunction: 'add',
+   * alphaBlendFunction: 'add',
    *
    * colorSrcBlend: 'DstColor',
-   * alphaSrcBlend: 'Zero',
+   * alphaSrcBlend: 'zero',
    *
-   * colorDstBlend: 'Zero',
-   * alphaDstBlend: 'One',
+   * colorDstBlend: 'zero',
+   * alphaDstBlend: 'one',
    */
   public static readonly Multiply = BlendState.cached({
     enable: true,
 
-    colorBlendFunction: 'Add',
-    alphaBlendFunction: 'Add',
+    colorBlendFunction: 'add',
+    alphaBlendFunction: 'add',
 
-    colorSrcBlend: 'DstColor',
-    alphaSrcBlend: 'Zero',
+    colorSrcBlend: 'dst',
+    alphaSrcBlend: 'zero',
 
-    colorDstBlend: 'Zero',
-    alphaDstBlend: 'One',
+    colorDstBlend: 'zero',
+    alphaDstBlend: 'one',
   })
 
   /**
    * Inverse multiplicative blending.
    * Lightens the image by multiplying inverse colors (similar to "screen").
    * @example
-   * colorBlendFunction: 'Add',
-   * alphaBlendFunction: 'Add',
+   * colorBlendFunction: 'add',
+   * alphaBlendFunction: 'add',
    *
    * colorSrcBlend: 'OneMinusDstColor',
-   * alphaSrcBlend: 'One',
+   * alphaSrcBlend: 'one',
    *
-   * colorDstBlend: 'One',
-   * alphaDstBlend: 'One',
+   * colorDstBlend: 'one',
+   * alphaDstBlend: 'one',
    */
   public static readonly MultiplyInverse = BlendState.cached({
     enable: true,
 
-    colorBlendFunction: 'Add',
-    alphaBlendFunction: 'Add',
+    colorBlendFunction: 'add',
+    alphaBlendFunction: 'add',
 
-    colorSrcBlend: 'OneMinusDstColor',
-    alphaSrcBlend: 'One',
+    colorSrcBlend: 'one-minus-dst',
+    alphaSrcBlend: 'one',
 
-    colorDstBlend: 'One',
-    alphaDstBlend: 'One',
+    colorDstBlend: 'one',
+    alphaDstBlend: 'one',
   })
 
   /**
@@ -347,13 +347,13 @@ function createOptions(options: Partial<BlendStateOptions>): BlendStateOptions {
   return {
     enable: options.enable ?? false,
 
-    colorBlendFunction: options.colorBlendFunction ?? 'Add',
-    alphaBlendFunction: options.alphaBlendFunction ?? 'Add',
+    colorBlendFunction: options.colorBlendFunction ?? 'add',
+    alphaBlendFunction: options.alphaBlendFunction ?? 'add',
 
-    colorSrcBlend: options.colorSrcBlend ?? 'One',
-    alphaSrcBlend: options.alphaSrcBlend ?? 'One',
-    colorDstBlend: options.colorDstBlend ?? 'Zero',
-    alphaDstBlend: options.alphaDstBlend ?? 'Zero',
+    colorSrcBlend: options.colorSrcBlend ?? 'one',
+    alphaSrcBlend: options.alphaSrcBlend ?? 'one',
+    colorDstBlend: options.colorDstBlend ?? 'zero',
+    alphaDstBlend: options.alphaDstBlend ?? 'zero',
   }
 }
 

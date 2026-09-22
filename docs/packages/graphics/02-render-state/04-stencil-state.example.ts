@@ -9,14 +9,14 @@ const WRITE_MASK = StencilState.get({
   enable: true,
   readMask: 0xff,
   writeMask: 0xff,
-  frontFunction: 'Always',
-  frontFail: 'Keep',
-  frontDepthFail: 'Keep',
-  frontDepthPass: 'Replace',
-  backFunction: 'Always',
-  backFail: 'Keep',
-  backDepthFail: 'Keep',
-  backDepthPass: 'Replace',
+  frontFunction: 'always',
+  frontFail: 'keep',
+  frontDepthFail: 'keep',
+  frontDepthPass: 'replace',
+  backFunction: 'always',
+  backFail: 'keep',
+  backDepthFail: 'keep',
+  backDepthPass: 'replace',
 })
 
 // Only lets a pixel through where the stencil buffer already holds the
@@ -25,14 +25,14 @@ const TEST_MASK = StencilState.get({
   enable: true,
   readMask: 0xff,
   writeMask: 0x00,
-  frontFunction: 'Equal',
-  frontFail: 'Keep',
-  frontDepthFail: 'Keep',
-  frontDepthPass: 'Keep',
-  backFunction: 'Equal',
-  backFail: 'Keep',
-  backDepthFail: 'Keep',
-  backDepthPass: 'Keep',
+  frontFunction: 'equal',
+  frontFail: 'keep',
+  frontDepthFail: 'keep',
+  frontDepthPass: 'keep',
+  backFunction: 'equal',
+  backFail: 'keep',
+  backDepthFail: 'keep',
+  backDepthPass: 'keep',
 })
 
 export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
@@ -90,7 +90,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   const depthTarget: Texture = device.createDepthTarget({
     width: device.output.width,
     height: device.output.height,
-    format: 'DEPTH24_PLUS_STENCIL8',
+    format: 'depth24plus',
     sampleCount: 4,
   })
   const renderTarget: Texture = device.createRenderTarget({

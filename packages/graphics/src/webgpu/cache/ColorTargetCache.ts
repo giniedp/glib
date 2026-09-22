@@ -1,4 +1,3 @@
-import { blendFunctionToWebGPU, blendToWebGPU } from '../../enums'
 import type { BlendState } from '../../states'
 import { structureCache } from './StructureCache'
 
@@ -18,7 +17,7 @@ export function colorTargetCache() {
     },
     create: (params: ColorTargetParams) => {
       return {
-        format: params.format, // surfaceFormatToWebGPU(params.format),
+        format: params.format,
         writeMask: params.writeMask,
         blend: getBlendState(params.blendState),
       }
@@ -29,14 +28,14 @@ export function colorTargetCache() {
 function getBlendState(state: BlendState): GPUBlendState {
   return {
     color: {
-      srcFactor: blendToWebGPU(state.colorSrcBlend),
-      dstFactor: blendToWebGPU(state.colorDstBlend),
-      operation: blendFunctionToWebGPU(state.colorBlendFunction),
+      srcFactor: state.colorSrcBlend,
+      dstFactor: state.colorDstBlend,
+      operation: state.colorBlendFunction,
     },
     alpha: {
-      srcFactor: blendToWebGPU(state.alphaSrcBlend),
-      dstFactor: blendToWebGPU(state.alphaDstBlend),
-      operation: blendFunctionToWebGPU(state.alphaBlendFunction),
+      srcFactor: state.alphaSrcBlend,
+      dstFactor: state.alphaDstBlend,
+      operation: state.alphaBlendFunction,
     },
   }
 }

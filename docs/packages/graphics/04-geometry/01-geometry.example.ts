@@ -5,7 +5,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   const device: Device = await createDevice({ canvas, platform, autosize: true }).ready
 
   const geometry = new Geometry(device, {
-    primitiveType: 'TriangleList',
+    primitiveType: 'triangle-list',
     vertexBuffer: [
       {
         layout: {

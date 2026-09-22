@@ -70,7 +70,7 @@ export interface BuildGeometryOptions {
   vertexDefaults?: Partial<Record<VertexSemantic, number[]>>
 
   /**
-   * Primitive topology.  Defaults to `'TriangleList'`.
+   * Primitive topology.  Defaults to `'triangle-list'`.
    */
   primitiveType?: PrimitiveType
 }
@@ -406,7 +406,7 @@ export class GeometryBuilder {
     this.upgradeIndexBufferIfNeeded()
 
     const baseName = options.name ?? 'geometry'
-    const primitiveType = options.primitiveType ?? 'TriangleList'
+    const primitiveType = options.primitiveType ?? 'triangle-list'
 
     const indexBuffer = this.idxBuffer
     indexBuffer.name = `${baseName}_index`

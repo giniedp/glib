@@ -23,11 +23,11 @@ export default async (canvas: HTMLCanvasElement, _: any, platform: PlatformId) =
     },
   })
 
-  // A cube texture stores 6 images, one per face. `type: 'TextureCube'`
+  // A cube texture stores 6 images, one per face. `type: 'cube'`
   // tells `createTexture` to expect exactly that: an array of 6 sources,
   // in the fixed order +X, -X, +Y, -Y, +Z, -Z.
   const texture = device.createTexture({
-    type: 'TextureCube',
+    type: 'cube',
     source: [
       '/textures/cubemaps/dust_right.jpg', // +X right
       '/textures/cubemaps/dust_left.jpg', // -X left
@@ -43,7 +43,7 @@ export default async (canvas: HTMLCanvasElement, _: any, platform: PlatformId) =
   const depthTarget = device.createDepthTarget({
     width: device.output.width,
     height: device.output.height,
-    format: 'DEPTH24_PLUS',
+    format: 'depth24plus',
     sampleCount: 4,
   })
   const renderTarget = device.createRenderTarget({

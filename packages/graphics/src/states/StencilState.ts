@@ -100,16 +100,16 @@ export class StencilState implements StencilStateOptions {
     writeMask: 0xffffffff,
 
     // front face stencil
-    frontFunction: 'Always',
-    frontFail: 'Keep',
-    frontDepthFail: 'Keep',
-    frontDepthPass: 'Keep',
+    frontFunction: 'always',
+    frontFail: 'keep',
+    frontDepthFail: 'keep',
+    frontDepthPass: 'keep',
 
     // back face stencil
-    backFunction: 'Always',
-    backFail: 'Keep',
-    backDepthFail: 'Keep',
-    backDepthPass: 'Keep',
+    backFunction: 'always',
+    backFail: 'keep',
+    backDepthFail: 'keep',
+    backDepthPass: 'keep',
   })
 }
 
@@ -119,15 +119,15 @@ function createOptions(options?: Partial<StencilStateOptions>): StencilStateOpti
     readMask: options?.readMask ?? 0xffffffff,
     writeMask: options?.writeMask ?? 0xffffffff,
 
-    frontFunction: options?.frontFunction ?? 'Always',
-    frontFail: options?.frontFail ?? 'Keep',
-    frontDepthFail: options?.frontDepthFail ?? 'Keep',
-    frontDepthPass: options?.frontDepthPass ?? 'Keep',
+    frontFunction: options?.frontFunction ?? 'always',
+    frontFail: options?.frontFail ?? 'keep',
+    frontDepthFail: options?.frontDepthFail ?? 'keep',
+    frontDepthPass: options?.frontDepthPass ?? 'keep',
 
-    backFunction: options?.backFunction ?? 'Always',
-    backFail: options?.backFail ?? 'Keep',
-    backDepthFail: options?.backDepthFail ?? 'Keep',
-    backDepthPass: options?.backDepthPass ?? 'Keep',
+    backFunction: options?.backFunction ?? 'always',
+    backFail: options?.backFail ?? 'keep',
+    backDepthFail: options?.backDepthFail ?? 'keep',
+    backDepthPass: options?.backDepthPass ?? 'keep',
   }
 }
 

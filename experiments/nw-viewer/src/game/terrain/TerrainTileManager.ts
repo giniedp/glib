@@ -37,7 +37,7 @@ export class TerrainTileManager {
       capacity: 512,
       width: MATERIAL_TEXTURE_SIZE,
       height: MATERIAL_TEXTURE_SIZE,
-      formats: ['BC3_RGBA_UNORM', 'BC3_RGBA_UNORM'],
+      formats: ['bc3-rgba-unorm', 'bc3-rgba-unorm'],
       labels: ['TileMat1', 'TileMat2'],
       generateMipmap: false,
       mipLevelCount: 1,

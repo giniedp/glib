@@ -107,11 +107,11 @@ export class WebglShaderModule extends ShaderModule implements WebglResource<Web
     this.name = options.name || `WebglProgram`
     this.textureUnitBase = Math.max(0, options.textureUnitBase ?? this.textureUnitBase)
     this.vertexShader = new WebglShader(this.device, {
-      type: 'VertexShader',
+      type: 'vertex',
       source: options.vertex,
     })
     this.fragmentShader = new WebglShader(this.device, {
-      type: 'FragmentShader',
+      type: 'fragment',
       source: options.fragment,
     })
     this.program = new WebglProgram(this)

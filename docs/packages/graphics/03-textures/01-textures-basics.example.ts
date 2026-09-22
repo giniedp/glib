@@ -33,7 +33,7 @@ export default async (canvas: HTMLCanvasElement, _: any, platform: PlatformId) =
     width: 128,
     height: 128,
     // explicit surface format e.g. for SRGB use case
-    format: 'RGBA8_UNORM',
+    format: 'rgba8unorm',
     // explicit texture source instance
     source: createImageBitmapTextureSource('/textures/prototype/proto_red.png', {
       colorSpaceConversion: 'default',

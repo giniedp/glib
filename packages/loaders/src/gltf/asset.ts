@@ -82,8 +82,8 @@ export class GltfAssetContainer implements AssetContainer {
       minFilter: minFilterFromWebGL(sampler?.minFilter),
       mipFilter: mipFilterFromWebGL(sampler?.minFilter),
       magFilter: magFilterFromWebGL(sampler?.magFilter),
-      wrapU: textureWrapModeFromWebGL(sampler?.wrapS) ?? 'Repeat',
-      wrapV: textureWrapModeFromWebGL(sampler?.wrapT) ?? 'Repeat',
+      wrapU: textureWrapModeFromWebGL(sampler?.wrapS) ?? 'repeat',
+      wrapV: textureWrapModeFromWebGL(sampler?.wrapT) ?? 'repeat',
     })
   }
 

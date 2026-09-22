@@ -223,7 +223,7 @@ export class ParticleChannel {
     pass.setProgram(program)
     pass.setRenderBlend(0, this.settings.blendState)
     pass.setVertexBuffer(this.vertexBuffer)
-    pass.setPrimitiveType('TriangleStrip')
+    pass.setPrimitiveType('triangle-strip')
 
     if (this.device.isWebGL2) {
       // webGL does not support instance offset

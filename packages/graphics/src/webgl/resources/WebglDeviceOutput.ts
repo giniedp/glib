@@ -11,7 +11,7 @@ export class WebglDeviceOutput extends DeviceOutput {
     return this.device.context.canvas.height
   }
   public get format(): SurfaceFormat {
-    return 'RGBA8_UNORM'
+    return 'rgba8unorm'
   }
 
   public constructor(device: WebglDevice) {

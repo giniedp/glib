@@ -509,7 +509,7 @@ export class WebglRenderEncoder extends RenderEncoder {
     this.setDepthState(DepthState.Disabled)
     this.setDepthBiasState(DepthBiasState.Default)
     this.setStencilState(StencilState.Default)
-    this.setPrimitiveType('TriangleList')
+    this.setPrimitiveType('triangle-list')
 
     this.setClearDepth(DepthState.DefaultClear)
     this.setClearStencil(StencilState.DefaultClear)

@@ -6,7 +6,7 @@ describe('Pixelate', () => {
   describe('WebGPU', () => {
     runContract(() => {
       return new WebGpuDevice({
-        surfaceFormat: 'RGBA8_UNORM',
+        surfaceFormat: 'rgba8unorm',
       })
     })
   })

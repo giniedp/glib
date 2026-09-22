@@ -37,7 +37,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
 
   const pass = device.renderPass
   const msaaColor = device.createRenderTarget({ sampleCount: 4 })
-  const msaaDepth = device.createDepthTarget({ sampleCount: 4, format: 'DEPTH24_PLUS_STENCIL8' })
+  const msaaDepth = device.createDepthTarget({ sampleCount: 4, format: 'depth24plus-stencil8' })
   const color = device.createRenderTarget({ usage: TextureUsage.TextureBinding })
   const spriteBatch = new SpriteBatch(device)
 

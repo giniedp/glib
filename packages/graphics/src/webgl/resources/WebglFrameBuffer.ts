@@ -191,14 +191,14 @@ export class WebglFrameBuffer implements WebglResource<WebGLFramebuffer> {
     if (this.depthTarget) {
       const depthFormat = this.depthTarget.format
       switch (depthFormat) {
-        case 'DEPTH16_UNORM':
-        case 'DEPTH24_PLUS':
+        case 'depth16unorm':
+        case 'depth24plus':
           gl.clearBufferfv(gl.DEPTH, 0, this.clearDepth)
           break
-        case 'STENCIL8':
+        case 'stencil8':
           gl.clearBufferiv(gl.STENCIL, 0, this.clearStencil)
           break
-        case 'DEPTH24_PLUS_STENCIL8':
+        case 'depth24plus-stencil8':
           gl.clearBufferfi(gl.DEPTH_STENCIL, 0, this.clearDepth[0], this.clearStencil[0])
           break
       }
@@ -247,7 +247,7 @@ export class WebglFrameBuffer implements WebglResource<WebGLFramebuffer> {
     }
 
     switch (attachment.texture.type) {
-      case 'TextureCube': {
+      case 'cube': {
         const target = gl.TEXTURE_CUBE_MAP_POSITIVE_X + attachment.arrayLayer
         gl.framebufferTexture2D(
           gl.FRAMEBUFFER,
@@ -258,8 +258,8 @@ export class WebglFrameBuffer implements WebglResource<WebGLFramebuffer> {
         )
         break
       }
-      case 'Texture2DArray':
-      case 'Texture3D': {
+      case '2d-array':
+      case '3d': {
         gl.framebufferTextureLayer(
           gl.FRAMEBUFFER,
           attachmentPoint,
@@ -269,7 +269,7 @@ export class WebglFrameBuffer implements WebglResource<WebGLFramebuffer> {
         )
         break
       }
-      case 'Texture2D':
+      case '2d':
       default: {
         gl.framebufferTexture2D(
           gl.FRAMEBUFFER,
@@ -306,17 +306,17 @@ export class WebglFrameBuffer implements WebglResource<WebGLFramebuffer> {
     }
 
     switch (texture.type) {
-      case 'TextureCube': {
+      case 'cube': {
         const target = gl.TEXTURE_CUBE_MAP_POSITIVE_X + arrayLayer
         gl.framebufferTexture2D(gl.FRAMEBUFFER, attachmentPoint, target, texture.glHandle, mipLevel)
         break
       }
-      case 'Texture3D':
-      case 'Texture2DArray': {
+      case '3d':
+      case '2d-array': {
         gl.framebufferTextureLayer(gl.FRAMEBUFFER, attachmentPoint, texture.glHandle, mipLevel, arrayLayer)
         break
       }
-      case 'Texture2D': {
+      case '2d': {
         gl.framebufferTexture2D(gl.FRAMEBUFFER, attachmentPoint, gl.TEXTURE_2D, texture.glHandle, mipLevel)
         break
       }
@@ -348,14 +348,14 @@ type Mutable<T> = {
 
 function getDepthAttachmentPoint(gl: WebGL2RenderingContext, surface: SurfaceFormat) {
   switch (surface) {
-    case 'DEPTH16_UNORM':
-    case 'DEPTH24_PLUS':
-    case 'DEPTH32_FLOAT':
+    case 'depth16unorm':
+    case 'depth24plus':
+    case 'depth32float':
       return gl.DEPTH_ATTACHMENT
-    case 'DEPTH24_PLUS_STENCIL8':
-    case 'DEPTH32_FLOAT_STENCIL8':
+    case 'depth24plus-stencil8':
+    case 'depth32float-stencil8':
       return gl.DEPTH_STENCIL_ATTACHMENT
-    case 'STENCIL8':
+    case 'stencil8':
       return gl.STENCIL_ATTACHMENT
     default:
       return gl.DEPTH_ATTACHMENT

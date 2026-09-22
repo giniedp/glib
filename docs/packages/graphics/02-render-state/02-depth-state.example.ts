@@ -56,7 +56,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   const depthTarget: Texture = device.createDepthTarget({
     width: device.output.width,
     height: device.output.height,
-    format: 'DEPTH24_PLUS',
+    format: 'depth24plus',
     sampleCount: 4,
   })
   const renderTarget: Texture = device.createRenderTarget({

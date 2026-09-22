@@ -11,7 +11,7 @@ describe('RenderEncoder', () => {
   describe('WebGPU', () => {
     runContract(() => {
       return new WebGpuDevice({
-        surfaceFormat: 'RGBA8_UNORM',
+        surfaceFormat: 'rgba8unorm',
       })
     })
   })
@@ -152,7 +152,7 @@ export function runContract(createDevice: () => Device) {
     })
 
     it('clears render targets', async () => {
-      const rt1 = device.createRenderTarget({ width: 4, height: 4, format: 'RGBA8_UNORM', name: 'rt1' })
+      const rt1 = device.createRenderTarget({ width: 4, height: 4, format: 'rgba8unorm', name: 'rt1' })
 
       pass.setRenderTarget(0, rt1)
       pass.setClearColor(0, Color.Red)
@@ -169,8 +169,8 @@ export function runContract(createDevice: () => Device) {
     })
 
     it('clears multiple render targets', async () => {
-      const rt1 = device.createRenderTarget({ width: 4, height: 4, format: 'RGBA8_UNORM', name: 'rt1' })
-      const rt2 = device.createRenderTarget({ width: 4, height: 4, format: 'RGBA8_UNORM', name: 'rt2' })
+      const rt1 = device.createRenderTarget({ width: 4, height: 4, format: 'rgba8unorm', name: 'rt1' })
+      const rt2 = device.createRenderTarget({ width: 4, height: 4, format: 'rgba8unorm', name: 'rt2' })
 
       // clear backbuffer
       pass.setClearColor(0, Color.White)
@@ -205,7 +205,7 @@ export function runContract(createDevice: () => Device) {
       device.output.resize(4, 4)
       const rt1 = device.createRenderTarget({
         name: 'rt1',
-        format: 'RGBA8_UNORM',
+        format: 'rgba8unorm',
         width: 4,
         height: 4,
         sampleCount: 4, // webgpu requires sampleCount > 1 for resolve to work
@@ -259,8 +259,8 @@ export function runContract(createDevice: () => Device) {
     })
 
     it('resolves a render target to another', async () => {
-      const rt1 = device.createRenderTarget({ width: 4, height: 4, format: 'RGBA8_UNORM', name: 'rt1', sampleCount: 4 })
-      const rt2 = device.createRenderTarget({ width: 4, height: 4, format: 'RGBA8_UNORM', name: 'rt2' })
+      const rt1 = device.createRenderTarget({ width: 4, height: 4, format: 'rgba8unorm', name: 'rt1', sampleCount: 4 })
+      const rt2 = device.createRenderTarget({ width: 4, height: 4, format: 'rgba8unorm', name: 'rt2' })
 
       pass.setRenderTarget(0, rt1, 0, 0, null)
       pass.setClearColor(0, Color.Red)
@@ -283,7 +283,7 @@ export function runContract(createDevice: () => Device) {
       const msaaRT = device.createRenderTarget({
         width: 4,
         height: 4,
-        format: 'RGBA8_UNORM',
+        format: 'rgba8unorm',
         name: 'msaa',
         sampleCount: 4,
       })
@@ -302,8 +302,8 @@ export function runContract(createDevice: () => Device) {
 
   it('handles depth state change', async () => {
     device.output.resize(4, 4)
-    const rt1 = device.createRenderTarget({ width: 4, height: 4, format: 'RGBA8_UNORM', name: 'rt1' })
-    const depth = device.createDepthTarget({ width: 4, height: 4, format: 'DEPTH24_PLUS_STENCIL8', name: 'depth' })
+    const rt1 = device.createRenderTarget({ width: 4, height: 4, format: 'rgba8unorm', name: 'rt1' })
+    const depth = device.createDepthTarget({ width: 4, height: 4, format: 'depth24plus', name: 'depth' })
 
     pass.setRenderTarget(0, rt1)
     pass.setDepthTarget(depth)
@@ -358,13 +358,13 @@ export function runContract(createDevice: () => Device) {
       rt = device.createRenderTarget({
         width: 4,
         height: 4,
-        format: 'RGBA8_UNORM',
+        format: 'rgba8unorm',
         name: 'rt',
       })
       const depth = device.createDepthTarget({
         width: 4,
         height: 4,
-        format: 'DEPTH24_PLUS_STENCIL8',
+        format: 'depth24plus',
         name: 'depth',
       })
 
@@ -448,13 +448,13 @@ export function runContract(createDevice: () => Device) {
       rt = device.createRenderTarget({
         width: 4,
         height: 4,
-        format: 'RGBA8_UNORM',
+        format: 'rgba8unorm',
         name: 'rt',
       })
       const depth = device.createDepthTarget({
         width: 4,
         height: 4,
-        format: 'DEPTH24_PLUS_STENCIL8',
+        format: 'depth24plus',
         name: 'depth',
       })
 

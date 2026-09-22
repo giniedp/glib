@@ -35,112 +35,112 @@ export class SamplerState implements SamplerStateOptions {
    * The default sampler state which is essentially the same as {@link SamplerState.PointClamp}
    */
   public static Default = SamplerState.cached({
-    minFilter: 'Linear',
-    magFilter: 'Linear',
-    mipFilter: 'Linear',
-    wrapU: 'Clamp',
-    wrapV: 'Clamp',
-    wrapW: 'Clamp',
+    minFilter: 'linear',
+    magFilter: 'linear',
+    mipFilter: 'linear',
+    wrapU: 'clamp-to-edge',
+    wrapV: 'clamp-to-edge',
+    wrapW: 'clamp-to-edge',
     minLod: MIN_LOD,
     maxLod: MAX_LOD,
     compare: false,
-    compareFunc: 'LessEqual',
+    compareFunc: 'less-equal',
   })
 
   /**
    * A sampler state with linear filtering but clamp mode
    */
   public static LinearClamp = SamplerState.cached({
-    minFilter: 'Linear',
-    magFilter: 'Linear',
-    mipFilter: 'Linear',
-    wrapU: 'Clamp',
-    wrapV: 'Clamp',
-    wrapW: 'Clamp',
+    minFilter: 'linear',
+    magFilter: 'linear',
+    mipFilter: 'linear',
+    wrapU: 'clamp-to-edge',
+    wrapV: 'clamp-to-edge',
+    wrapW: 'clamp-to-edge',
     minLod: MIN_LOD,
     maxLod: MAX_LOD,
     compare: false,
-    compareFunc: 'LessEqual',
+    compareFunc: 'less-equal',
   })
 
   /**
    * A sampler state with linear filtering and wrap mode
    */
   public static LinearWrap = SamplerState.cached({
-    minFilter: 'Linear',
-    magFilter: 'Linear',
-    mipFilter: 'Linear',
-    wrapU: 'Repeat',
-    wrapV: 'Repeat',
-    wrapW: 'Repeat',
+    minFilter: 'linear',
+    magFilter: 'linear',
+    mipFilter: 'linear',
+    wrapU: 'repeat',
+    wrapV: 'repeat',
+    wrapW: 'repeat',
     minLod: MIN_LOD,
     maxLod: MAX_LOD,
     compare: false,
-    compareFunc: 'LessEqual',
+    compareFunc: 'less-equal',
   })
 
   /**
    * A sampler state with point filtering and clamp mode
    */
   public static PointClamp = SamplerState.cached({
-    minFilter: 'Nearest',
-    magFilter: 'Nearest',
-    mipFilter: 'Nearest',
-    wrapU: 'Clamp',
-    wrapV: 'Clamp',
-    wrapW: 'Clamp',
+    minFilter: 'nearest',
+    magFilter: 'nearest',
+    mipFilter: 'nearest',
+    wrapU: 'clamp-to-edge',
+    wrapV: 'clamp-to-edge',
+    wrapW: 'clamp-to-edge',
     minLod: MIN_LOD,
     maxLod: MAX_LOD,
     compare: false,
-    compareFunc: 'LessEqual',
+    compareFunc: 'less-equal',
   })
 
   /**
    * A sampler state with point filtering and wrap mode
    */
   public static PointWrap = SamplerState.cached({
-    minFilter: 'Nearest',
-    magFilter: 'Nearest',
-    mipFilter: 'Nearest',
-    wrapU: 'Repeat',
-    wrapV: 'Repeat',
-    wrapW: 'Repeat',
+    minFilter: 'nearest',
+    magFilter: 'nearest',
+    mipFilter: 'nearest',
+    wrapU: 'repeat',
+    wrapV: 'repeat',
+    wrapW: 'repeat',
     minLod: MIN_LOD,
     maxLod: MAX_LOD,
     compare: false,
-    compareFunc: 'LessEqual',
+    compareFunc: 'less-equal',
   })
 
   /**
    *
    */
   public static LinearClampNoMipMap = SamplerState.cached({
-    minFilter: 'Linear',
-    magFilter: 'Linear',
-    mipFilter: 'None',
-    wrapU: 'Clamp',
-    wrapV: 'Clamp',
-    wrapW: 'Clamp',
+    minFilter: 'linear',
+    magFilter: 'linear',
+    mipFilter: null,
+    wrapU: 'clamp-to-edge',
+    wrapV: 'clamp-to-edge',
+    wrapW: 'clamp-to-edge',
     minLod: MIN_LOD,
     maxLod: MAX_LOD,
     compare: false,
-    compareFunc: 'LessEqual',
+    compareFunc: 'less-equal',
   })
 
   /**
    *
    */
   public static LinearWrapNoMipMap = SamplerState.cached({
-    minFilter: 'Linear',
-    magFilter: 'Linear',
-    mipFilter: 'None',
-    wrapU: 'Repeat',
-    wrapV: 'Repeat',
-    wrapW: 'Repeat',
+    minFilter: 'linear',
+    magFilter: 'linear',
+    mipFilter: null,
+    wrapU: 'repeat',
+    wrapV: 'repeat',
+    wrapW: 'repeat',
     minLod: MIN_LOD,
     maxLod: MAX_LOD,
     compare: false,
-    compareFunc: 'LessEqual',
+    compareFunc: 'less-equal',
   })
 
   public static get(state: SamplerStateName | Partial<SamplerStateOptions>): SamplerState {
@@ -206,16 +206,16 @@ export class SamplerState implements SamplerStateOptions {
 
 function createOptions(options: Partial<SamplerStateOptions>): SamplerStateOptions {
   return {
-    minFilter: options?.minFilter ?? 'Linear',
-    magFilter: options?.magFilter ?? 'Linear',
-    mipFilter: options?.mipFilter ?? 'Linear',
-    wrapU: options?.wrapU ?? 'Clamp',
-    wrapV: options?.wrapV ?? 'Clamp',
-    wrapW: options?.wrapW ?? 'Clamp',
+    minFilter: options?.minFilter ?? 'linear',
+    magFilter: options?.magFilter ?? 'linear',
+    mipFilter: options?.mipFilter ?? 'linear',
+    wrapU: options?.wrapU ?? 'clamp-to-edge',
+    wrapV: options?.wrapV ?? 'clamp-to-edge',
+    wrapW: options?.wrapW ?? 'clamp-to-edge',
     minLod: options?.minLod ?? MIN_LOD,
     maxLod: options?.maxLod ?? MAX_LOD,
     compare: !!options?.compare,
-    compareFunc: options?.compare ? (options?.compareFunc ?? 'LessEqual') : 'Always',
+    compareFunc: options?.compare ? (options?.compareFunc ?? 'less-equal') : 'always',
   }
 }
 

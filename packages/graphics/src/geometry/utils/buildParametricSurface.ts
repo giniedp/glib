@@ -7,14 +7,14 @@ export function resolveLines(options?: { lines?: boolean; primitiveType?: Primit
   const lines = !!options?.lines
   if (options && !options.primitiveType) {
     options = { ...options }
-    options.primitiveType = lines ? 'LineList' : 'TriangleList'
+    options.primitiveType = lines ? 'line-list' : 'triangle-list'
   }
 
-  if (lines && options?.primitiveType !== 'LineList') {
+  if (lines && options?.primitiveType !== 'line-list') {
     console.warn(`'lines' option is true but primitiveType is '${options?.primitiveType}'`)
   }
 
-  if (!lines && options?.primitiveType === 'LineList') {
+  if (!lines && options?.primitiveType === 'line-list') {
     console.warn(`primitiveType is 'LineList' but 'lines' option is false`)
   }
 

@@ -95,7 +95,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
       return
     }
 
-    pass.setPrimitiveType('PointList')
+    pass.setPrimitiveType('point-list')
     pass.setVertexBuffer(verticesOut)
     pass.setProgram(shader.program)
     pass.draw(numBodies)

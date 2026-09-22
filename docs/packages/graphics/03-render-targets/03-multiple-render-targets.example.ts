@@ -5,9 +5,9 @@ import {
   CullState,
   DepthState,
   Device,
+  FrameContext,
   PlatformId,
   SpriteBatch,
-  FrameContext,
   Texture,
   TextureUsage,
 } from '@gglib/graphics'
@@ -29,19 +29,19 @@ export default async (canvas: HTMLCanvasElement, _: any, platform: PlatformId) =
   const colorTarget: Texture = device.createRenderTarget({
     width: device.output.width,
     height: device.output.height,
-    format: 'RGBA8_UNORM',
+    format: 'rgba8unorm',
     usage: TextureUsage.TextureBinding,
   })
   const normalTarget: Texture = device.createRenderTarget({
     width: device.output.width,
     height: device.output.height,
-    format: 'RGBA8_UNORM',
+    format: 'rgba8unorm',
     usage: TextureUsage.TextureBinding,
   })
   const depthTarget: Texture = device.createDepthTarget({
     width: device.output.width,
     height: device.output.height,
-    format: 'DEPTH24_PLUS',
+    format: 'depth24plus',
   })
 
   const world = Mat4.createIdentity()

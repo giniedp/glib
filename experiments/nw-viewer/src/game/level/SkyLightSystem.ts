@@ -39,7 +39,7 @@ export class SkyLightSystem extends GameSystem {
     this.fxSky = new NishitaSkyEffect(this.device, {})
     this.fxIbl = new IblSampler(this.device, {})
     this.skyDomeTexture = this.device.createRenderTarget({
-      type: 'Texture2D',
+      type: '2d',
       width: 2048,
       height: 1024,
       mipLevelCount: getMipmapCount(2048, 1024, 1),

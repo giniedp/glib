@@ -140,21 +140,21 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   const sceneTarget = device.createRenderTarget({
     width: device.output.width,
     height: device.output.height,
-    format: 'RGBA16_FLOAT',
+    format: 'rgba16float',
     usage: TextureUsage.TextureBinding,
   })
 
   const extractTarget = device.createRenderTarget({
     width: device.output.width,
     height: device.output.height,
-    format: 'RGBA16_FLOAT',
+    format: 'rgba16float',
     usage: TextureUsage.TextureBinding,
   })
 
   const blurTarget = device.createRenderTarget({
     width: device.output.width,
     height: device.output.height,
-    format: 'RGBA16_FLOAT',
+    format: 'rgba16float',
     usage: TextureUsage.TextureBinding,
   })
 
@@ -163,7 +163,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     downsampleTargets[i] = device.createRenderTarget({
       width: Math.ceil(device.output.width / Math.pow(2, i + 1)),
       height: Math.ceil(device.output.height / Math.pow(2, i + 1)),
-      format: 'RGBA16_FLOAT',
+      format: 'rgba16float',
       usage: TextureUsage.TextureBinding,
     })
   }
@@ -171,7 +171,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   const combineTarget = device.createRenderTarget({
     width: device.output.width,
     height: device.output.height,
-    format: 'RGBA16_FLOAT',
+    format: 'rgba16float',
     usage: TextureUsage.TextureBinding,
   })
 

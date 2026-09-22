@@ -18,8 +18,8 @@ export class Loader implements AssetLoader {
     const options: AcquireTextureOptions = {
       key: url,
       name: url,
-      type: 'Texture2D',
-      format: 'RGBA32_FLOAT',
+      type: '2d',
+      format: 'rgba32float',
       generateMipmap: true,
       width: hdr.width,
       height: hdr.height,

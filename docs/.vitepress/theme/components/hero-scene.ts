@@ -34,19 +34,19 @@ export default async (canvas: HTMLCanvasElement) => {
   }).ready
 
   const msaaScene = device.createRenderTarget({
-    format: 'RGBA16_FLOAT',
+    format: 'rgba16float',
     sampleCount: 4,
   })
   const msaaDepth = device.createDepthTarget({
-    format: 'DEPTH24_PLUS',
+    format: 'depth24plus',
     sampleCount: 4,
   })
   const sceneTarget = device.createRenderTarget({
-    format: 'RGBA16_FLOAT',
+    format: 'rgba16float',
     usage: TextureUsage.TextureBinding,
   })
   const extractTarget = device.createRenderTarget({
-    format: 'RGBA16_FLOAT',
+    format: 'rgba16float',
     usage: TextureUsage.TextureBinding,
   })
   const downsampleTargets: Texture[] = []
@@ -54,7 +54,7 @@ export default async (canvas: HTMLCanvasElement) => {
     downsampleTargets[i] = device.createRenderTarget({
       width: Math.ceil(device.output.width / Math.pow(2, i + 1)),
       height: Math.ceil(device.output.height / Math.pow(2, i + 1)),
-      format: 'RGBA16_FLOAT',
+      format: 'rgba16float',
       usage: TextureUsage.TextureBinding,
     })
   }

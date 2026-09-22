@@ -14,8 +14,8 @@ export abstract class DeviceOutput {
   /**
    * The surface format of the output.
    *
-   * @webgpu this is usually 'BGRA8_UNORM' but may also be 'RGBA8_UNORM'
-   * @webgl2 this is always 'RGBA8_UNORM'
+   * @webgpu this is usually 'bgra8unorm' but may also be 'rgba8unorm'
+   * @webgl2 this is always 'rgba8unorm'
    */
   abstract readonly format: SurfaceFormat
   abstract resize(width: number, height: number): void

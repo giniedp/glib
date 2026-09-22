@@ -128,8 +128,8 @@ function createMeshPart(doc: Document, part: MeshPrimitive, bva: Record<string, 
 
   const iBufferOptions = createIndexBuffer(bva['indices'])
   const vBufferOptions = createVertexBuffer(part, doc, bva)
-  const primitiveType = primitiveTypeFromWebGL(part.mode) || 'TriangleList'
-  const isTriangleList = primitiveType === 'TriangleList'
+  const primitiveType = primitiveTypeFromWebGL(part.mode) || 'triangle-list'
+  const isTriangleList = primitiveType === 'triangle-list'
   let hasNormals = false
   let hasTangents = false
   let hasBitangents = false

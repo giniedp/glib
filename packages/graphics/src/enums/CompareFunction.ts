@@ -1,37 +1,23 @@
 import { GLConst as gl } from './GLConst'
 
-export type CompareFunction =
-  | 'Never'
-  | 'Less'
-  | 'Equal'
-  | 'LessEqual'
-  | 'Greater'
-  | 'NotEqual'
-  | 'GreaterEqual'
-  | 'Always'
+export type CompareFunction = Extract<
+  GPUCompareFunction,
+  'always' | 'equal' | 'greater' | 'greater-equal' | 'less' | 'less-equal' | 'never' | 'not-equal'
+>
 
 const mapToWebGL: Record<CompareFunction, number> = {
-  Never: gl.NEVER,
-  Less: gl.LESS,
-  Equal: gl.EQUAL,
-  LessEqual: gl.LEQUAL,
-  Greater: gl.GREATER,
-  NotEqual: gl.NOTEQUAL,
-  GreaterEqual: gl.GEQUAL,
-  Always: gl.ALWAYS,
+  never: gl.NEVER,
+  less: gl.LESS,
+  equal: gl.EQUAL,
+  'less-equal': gl.LEQUAL,
+  greater: gl.GREATER,
+  'not-equal': gl.NOTEQUAL,
+  'greater-equal': gl.GEQUAL,
+  always: gl.ALWAYS,
 }
-const mapFromWebGL = Object.fromEntries(Object.entries(mapToWebGL).map(([key, value]) => [value, key] as [number, CompareFunction]))
-
-const mapToWebGPU: Record<CompareFunction, GPUCompareFunction> = {
-  Never: 'never',
-  Less: 'less',
-  Equal: 'equal',
-  LessEqual: 'less-equal',
-  Greater: 'greater',
-  NotEqual: 'not-equal',
-  GreaterEqual: 'greater-equal',
-  Always: 'always',
-}
+const mapFromWebGL = Object.fromEntries(
+  Object.entries(mapToWebGL).map(([key, value]) => [value, key] as [number, CompareFunction]),
+)
 
 export function compareFunctionToWebGL(func: CompareFunction): number {
   return mapToWebGL[func]
@@ -39,8 +25,4 @@ export function compareFunctionToWebGL(func: CompareFunction): number {
 
 export function compareFunctionFromWebGL(func: number): CompareFunction {
   return mapFromWebGL[func]
-}
-
-export function compareFunctionToWebGPU(func: CompareFunction): GPUCompareFunction {
-  return mapToWebGPU[func]
 }

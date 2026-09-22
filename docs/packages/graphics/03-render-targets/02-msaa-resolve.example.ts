@@ -39,13 +39,13 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   const msaaDepth: Texture = device.createDepthTarget({
     width: device.output.width,
     height: device.output.height,
-    format: 'DEPTH24_PLUS',
+    format: 'depth24plus',
     sampleCount: 4,
   })
   const plainDepth: Texture = device.createDepthTarget({
     width: device.output.width,
     height: device.output.height,
-    format: 'DEPTH24_PLUS',
+    format: 'depth24plus',
   })
 
   const world = Mat4.createIdentity()

@@ -38,7 +38,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   // Finish the geometry
   const geometry = builder.buildGeometry(device, {
     name: 'cube',
-    primitiveType: 'TriangleList',
+    primitiveType: 'triangle-list',
   })
 
   const shader = device.createShaderModule({

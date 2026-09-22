@@ -1,23 +1,17 @@
 import { GLConst as gl } from './GLConst'
 
-export type CullMode = 'Front' | 'Back' | 'None'
+export type CullMode = Extract<GPUCullMode, 'back' | 'front' | 'none'>
 
 const mapToWebGL: Record<CullMode, number> = {
-  Front: gl.FRONT,
-  Back: gl.BACK,
-  None: gl.NONE,
+  front: gl.FRONT,
+  back: gl.BACK,
+  none: gl.NONE,
 }
 
 const mapFromWebGL = {
-  [gl.FRONT]: 'Front' as CullMode,
-  [gl.BACK]: 'Back' as CullMode,
-  [gl.NONE]: 'None' as CullMode,
-}
-
-const mapToWebGPU: Record<CullMode, GPUCullMode> = {
-  Front: 'front',
-  Back: 'back',
-  None: 'none',
+  [gl.FRONT]: 'front' satisfies CullMode,
+  [gl.BACK]: 'back' satisfies CullMode,
+  [gl.NONE]: 'none' satisfies CullMode,
 }
 
 export function cullModeToWebGL(mode: CullMode): number {
@@ -26,8 +20,4 @@ export function cullModeToWebGL(mode: CullMode): number {
 
 export function cullModeFromWebGL(mode: number): CullMode {
   return mapFromWebGL[mode]
-}
-
-export function cullModeToWebGPU(mode: CullMode): GPUCullMode {
-  return mapToWebGPU[mode]
 }

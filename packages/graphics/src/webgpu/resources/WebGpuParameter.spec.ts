@@ -23,7 +23,7 @@ async function renderPixel(
   const target = device.createRenderTarget({
     width,
     height,
-    format: 'RGBA32_FLOAT',
+    format: 'rgba32float',
   })
   const pass = device.renderPass
   pass.setRenderTarget(0, target)

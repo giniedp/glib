@@ -9,7 +9,6 @@ import {
 } from '../../enums'
 import {
   createTextureSource,
-  DynamicTextureSource,
   isCompressedFaceData,
   RefCounterKey,
   type ReferenceCounter,
@@ -184,16 +183,16 @@ export class WebglTexture extends Texture implements WebglResource<WebGLTexture 
       // } else {
       // }
       const mipmapCount = this.mipLevelCount
-      if (this.type === 'Texture2D') {
+      if (this.type === '2d') {
         gl.texStorage2D(this.glType, mipmapCount, this.glInternalFormat, this.width, this.height)
-        if (this.format === 'DEPTH32_FLOAT' || this.format === 'DEPTH32_FLOAT_STENCIL8') {
+        if (this.format === 'depth32float' || this.format === 'depth32float-stencil8') {
           gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_COMPARE_MODE, gl.NONE)
         }
-      } else if (this.type === 'TextureCube') {
+      } else if (this.type === 'cube') {
         gl.texStorage2D(this.glType, mipmapCount, this.glInternalFormat, this.width, this.height)
-      } else if (this.type === 'Texture2DArray') {
+      } else if (this.type === '2d-array') {
         gl.texStorage3D(this.glType, mipmapCount, this.glInternalFormat, this.width, this.height, this.depth)
-      } else if (this.type === 'Texture3D') {
+      } else if (this.type === '3d') {
         gl.texStorage3D(this.glType, mipmapCount, this.glInternalFormat, this.width, this.height, this.depth)
       }
     }
@@ -203,28 +202,28 @@ export class WebglTexture extends Texture implements WebglResource<WebGLTexture 
     const mutable = this as Mutable<this>
     let needsResize = false
     switch (this.type) {
-      case 'TextureCube': {
+      case 'cube': {
         needsResize = this.width !== width || this.height !== height
         mutable.width = width
         mutable.height = height
         mutable.depth = 6
         break
       }
-      case 'Texture2D': {
+      case '2d': {
         needsResize = this.width !== width || this.height !== height
         mutable.width = width
         mutable.height = height
         mutable.depth = 1
         break
       }
-      case 'Texture2DArray': {
+      case '2d-array': {
         needsResize = this.width !== width || this.height !== height || this.depth !== depth
         mutable.width = width
         mutable.height = height
         mutable.depth = depth
         break
       }
-      case 'Texture3D': {
+      case '3d': {
         needsResize = this.width !== width || this.height !== height || this.depth !== depth
         mutable.width = width
         mutable.height = height
@@ -246,22 +245,22 @@ export class WebglTexture extends Texture implements WebglResource<WebGLTexture 
       console.warn('WebglTexture: setData is not supported for renderbuffers', new Error().stack)
       return
     }
-    this.resize(source.width, source.height, this.type === 'TextureCube' ? 6 : source.levels[0].length)
+    this.resize(source.width, source.height, this.type === 'cube' ? 6 : source.levels[0].length)
 
     switch (this.type) {
-      case 'TextureCube': {
+      case 'cube': {
         setDataCubemap(this.device.textureUnits[0], source, this)
         break
       }
-      case 'Texture2D': {
+      case '2d': {
         setData2D(this.device.textureUnits[0], source, this)
         break
       }
-      case 'Texture2DArray': {
+      case '2d-array': {
         setData2DArray(this.device.textureUnits[0], source, this)
         break
       }
-      case 'Texture3D': {
+      case '3d': {
         setData3D(this.device.textureUnits[0], source, this)
         break
       }

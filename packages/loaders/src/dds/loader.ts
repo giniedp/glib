@@ -33,7 +33,7 @@ export class Loader implements AssetLoader {
     const options: AcquireTextureOptions = {
       key: url,
       name: url,
-      type: dds.isCubemap ? 'TextureCube' : dds.isVolume ? 'Texture3D' : 'Texture2D',
+      type: dds.isCubemap ? 'cube' : dds.isVolume ? '3d' : '2d',
       width: dds.width,
       height: dds.height,
       depth: dds.isCubemap ? 6 : dds.depth,

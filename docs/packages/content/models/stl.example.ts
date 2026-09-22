@@ -108,7 +108,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   const dt = device.createDepthTarget({
     width: device.output.width,
     height: device.output.height,
-    format: 'DEPTH24_PLUS',
+    format: 'depth24plus',
     sampleCount: 4,
   })
   function frame() {

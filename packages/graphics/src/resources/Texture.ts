@@ -183,12 +183,12 @@ export abstract class Texture implements ReferenceCounted {
   /**
    * Indicates the used pixel format.
    */
-  public readonly format: SurfaceFormat = 'RGBA8_UNORM'
+  public readonly format: SurfaceFormat = 'rgba8unorm'
 
   /**
    * Indicates the texture type
    */
-  public readonly type: TextureType = 'Texture2D'
+  public readonly type: TextureType = '2d'
 
   /**
    * The data source for this texture

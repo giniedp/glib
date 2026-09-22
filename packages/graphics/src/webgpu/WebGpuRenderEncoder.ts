@@ -60,7 +60,7 @@ export class WebGpuRenderEncoder extends RenderEncoder {
     shader: null,
     fragmentConstants: null,
     vertexConstants: null,
-    primitiveType: 'TriangleList',
+    primitiveType: 'triangle-list',
     vertexLayout: [],
     targets: [],
     multisampleCount: null,
@@ -772,7 +772,7 @@ export class WebGpuRenderEncoder extends RenderEncoder {
     this.pipelineParams.shader = null
     this.pipelineParams.vertexConstants = null
     this.pipelineParams.fragmentConstants = null
-    this.pipelineParams.primitiveType = 'TriangleList'
+    this.pipelineParams.primitiveType = 'triangle-list'
     this.pipelineParams.vertexLayout = null
     this.pipelineParams.targets = null
     this.pipelineParams.multisampleCount = null

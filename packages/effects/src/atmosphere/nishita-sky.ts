@@ -302,8 +302,8 @@ export class NishitaSkyEffect {
     this.opticalLUT = device.createRenderTarget({
       width: lutWidth,
       height: lutHeight,
-      format: 'RGBA16_FLOAT',
-      type: 'Texture2D',
+      format: 'rgba16float',
+      type: '2d',
       usage: TextureUsage.TextureBinding | TextureUsage.RenderTarget,
       mipLevelCount: 1,
     })
@@ -312,8 +312,8 @@ export class NishitaSkyEffect {
     this.mieScatteringMap = device.createRenderTarget({
       width: scatteringWidth,
       height: scatteringHeight,
-      format: 'RGBA16_FLOAT',
-      type: 'Texture2D',
+      format: 'rgba16float',
+      type: '2d',
       usage: TextureUsage.TextureBinding | TextureUsage.RenderTarget,
       mipLevelCount: 1,
     })
@@ -321,8 +321,8 @@ export class NishitaSkyEffect {
     this.rayleighScatteringMap = device.createRenderTarget({
       width: scatteringWidth,
       height: scatteringHeight,
-      format: 'RGBA16_FLOAT',
-      type: 'Texture2D',
+      format: 'rgba16float',
+      type: '2d',
       usage: TextureUsage.TextureBinding | TextureUsage.RenderTarget,
       mipLevelCount: 1,
     })

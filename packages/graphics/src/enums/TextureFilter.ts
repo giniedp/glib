@@ -1,19 +1,19 @@
-export type TextureFilter = 'Nearest' | 'Linear'
-export type MipmapFilter = 'None' | 'Nearest' | 'Linear'
+export type TextureFilter = Extract<GPUFilterMode, 'linear' | 'nearest'>
+export type MipmapFilter = null | Extract<GPUMipmapFilterMode, 'linear' | 'nearest'>
 import { GLConst as gl } from './GLConst'
 
 const minMipFromWebgl: Record<number, { minFilter: TextureFilter; mipFilter: MipmapFilter }> = {
-  [gl.NEAREST]: { minFilter: 'Nearest', mipFilter: 'None' },
-  [gl.LINEAR]: { minFilter: 'Linear', mipFilter: 'None' },
-  [gl.NEAREST_MIPMAP_NEAREST]: { minFilter: 'Nearest', mipFilter: 'Nearest' },
-  [gl.LINEAR_MIPMAP_NEAREST]: { minFilter: 'Linear', mipFilter: 'Nearest' },
-  [gl.NEAREST_MIPMAP_LINEAR]: { minFilter: 'Nearest', mipFilter: 'Linear' },
-  [gl.LINEAR_MIPMAP_LINEAR]: { minFilter: 'Linear', mipFilter: 'Linear' },
+  [gl.NEAREST]: { minFilter: 'nearest', mipFilter: null },
+  [gl.LINEAR]: { minFilter: 'linear', mipFilter: null },
+  [gl.NEAREST_MIPMAP_NEAREST]: { minFilter: 'nearest', mipFilter: 'nearest' },
+  [gl.LINEAR_MIPMAP_NEAREST]: { minFilter: 'linear', mipFilter: 'nearest' },
+  [gl.NEAREST_MIPMAP_LINEAR]: { minFilter: 'nearest', mipFilter: 'linear' },
+  [gl.LINEAR_MIPMAP_LINEAR]: { minFilter: 'linear', mipFilter: 'linear' },
 }
 
 const filterFromWebgl: Record<number, TextureFilter> = {
-  [gl.NEAREST]: 'Nearest',
-  [gl.LINEAR]: 'Linear',
+  [gl.NEAREST]: 'nearest',
+  [gl.LINEAR]: 'linear',
 }
 
 export function magFilterFromWebGL(filter: number): TextureFilter {

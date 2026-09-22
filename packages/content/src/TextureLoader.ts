@@ -35,12 +35,12 @@ export class TextureLoader implements AssetLoader {
 
     const texture: AcquireTextureOptions = {
       key: url,
-      type: 'Texture2D',
+      type: '2d',
       source: createTextureSource(bitmap),
       width: bitmap.width,
       height: bitmap.height,
       generateMipmap: true,
-      format: context.color === 'srgb' ? 'RGBA8_UNORM_SRGB' : 'RGBA8_UNORM',
+      format: context.color === 'srgb' ? 'rgba8unorm-srgb' : 'rgba8unorm',
     }
 
     return new TextureAssetContainer([texture])
@@ -55,12 +55,12 @@ export class TextureLoader implements AssetLoader {
 
     const texture: AcquireTextureOptions = {
       key: url,
-      type: 'Texture2D',
+      type: '2d',
       source: createTextureSource(image),
       width: image.naturalWidth,
       height: image.naturalHeight,
       generateMipmap: true,
-      format: context.color === 'srgb' ? 'RGBA8_UNORM_SRGB' : 'RGBA8_UNORM',
+      format: context.color === 'srgb' ? 'rgba8unorm-srgb' : 'rgba8unorm',
     }
 
     return new TextureAssetContainer([texture])

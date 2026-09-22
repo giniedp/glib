@@ -2,7 +2,7 @@ import { BoundedAsyncExecutor, ContentLoader } from '@gglib/content'
 import { GameEntity, GameSystem, GameWorld } from '@gglib/ecs'
 import { Color, Device, Material, Texture } from '@gglib/graphics'
 import { Model } from '@gglib/model'
-import { addItemIfAbsent, append, type Type } from '@gglib/utils'
+import { addItemIfAbsent, type Type } from '@gglib/utils'
 import { fetchTypedRequest, type TypedRequest, type ViewerSlice } from '../api'
 
 export const Noise3DKey = Symbol('noise3d')
@@ -45,14 +45,14 @@ export class ContentService extends GameSystem {
       name: 'whitePixel',
       width: 1,
       height: 1,
-      format: 'RGBA8_UNORM',
+      format: 'rgba8unorm',
       source: Color.toByteArray(Color.White),
     })
     this.blackPixel = device.createTexture({
       name: 'blackPixel',
       width: 1,
       height: 1,
-      format: 'RGBA8_UNORM',
+      format: 'rgba8unorm',
       source: Color.toByteArray(Color.TransparentBlack),
     })
 
@@ -60,14 +60,14 @@ export class ContentService extends GameSystem {
       name: 'nullBaseMap',
       width: 1,
       height: 1,
-      format: 'RGBA8_UNORM',
+      format: 'rgba8unorm',
       source: Color.toByteArray(Color.Black),
     })
     this.nullNormalMap = device.createTexture({
       name: 'nullNormalMap',
       width: 1,
       height: 1,
-      format: 'RGBA8_UNORM',
+      format: 'rgba8unorm',
       source: Color.toByteArray(Color.LimeGreen),
     })
     this.nullSpecularMap = this.whitePixel
@@ -77,29 +77,29 @@ export class ContentService extends GameSystem {
       name: 'nullPathMap1',
       width: 1,
       height: 1,
-      format: 'RGBA8_UNORM',
+      format: 'rgba8unorm',
       source: Color.toByteArray(Color.fromBytes(255, 255, 255, 0)),
     })
     this.nullPathMap2 = device.createTexture({
       name: 'nullPathMap2',
       width: 1,
       height: 1,
-      format: 'RGBA8_UNORM',
+      format: 'rgba8unorm',
       source: Color.toByteArray(Color.fromBytes(0, 0, 0, 0)),
     })
     this.nullHeightmap = device.createTexture({
       name: 'nullHeightmap',
       width: 1,
       height: 1,
-      format: 'R16_FLOAT',
+      format: 'r16float',
     })
     this.nullHeightmapArray = device.createTexture({
       name: 'nullHeightmap',
       width: 1,
       height: 1,
       depth: 4,
-      type: 'Texture2DArray',
-      format: 'R16_FLOAT',
+      type: '2d-array',
+      format: 'r16float',
       mipLevelCount: 1,
     })
 
@@ -108,7 +108,7 @@ export class ContentService extends GameSystem {
       width: 4,
       height: 4,
       depth: 4,
-      format: 'RGBA8_UNORM',
+      format: 'rgba8unorm',
     })
     this.device[Noise3DKey] = this.noise3d
     this.loadTexture(`engineassets/textures/noise3d.dds`).then((texture) => {
@@ -122,7 +122,7 @@ export class ContentService extends GameSystem {
       width: 4,
       height: 4,
       depth: 1,
-      format: 'RGBA8_UNORM',
+      format: 'rgba8unorm',
     })
     this.device[Noise2DKey] = this.noise2d
     this.loadTexture(`engineassets/textures/perlinnoise2d.dds`).then((texture) => {

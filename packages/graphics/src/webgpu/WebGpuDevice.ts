@@ -192,16 +192,16 @@ export class WebGpuDevice extends Device<GPUCanvasContext> {
       ),
       width: 2,
       height: 2,
-      format: 'RGBA8_UNORM',
+      format: 'rgba8unorm',
       generateMipmap: false,
     })
     self.defaultTextureCube ||= this.createTexture({
-      type: 'TextureCube',
+      type: 'cube',
       name: 'GGLib Default Texture Cube',
       width: 2,
       height: 2,
       depth: 6,
-      format: 'RGBA8_UNORM',
+      format: 'rgba8unorm',
       generateMipmap: false,
       mipLevelCount: 1,
     })
@@ -304,7 +304,7 @@ export class WebGpuDevice extends Device<GPUCanvasContext> {
   public createDepthTarget(options: DepthBufferOptions): WebGpuTexture {
     options.width ??= this.output.width
     options.height ??= this.output.height
-    options.format ??= 'DEPTH24_PLUS_STENCIL8'
+    options.format ??= 'depth24plus-stencil8'
     options.generateMipmap ??= false
     options.mipLevelCount ??= 1
     options.sampleCount ??= 1

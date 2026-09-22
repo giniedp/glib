@@ -52,7 +52,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   const msaaDepth = device.createDepthTarget({
     width: device.output.width,
     height: device.output.height,
-    format: 'DEPTH24_PLUS_STENCIL8',
+    format: 'depth24plus-stencil8',
     sampleCount: 4,
   })
   const msaaColor = device.createRenderTarget({

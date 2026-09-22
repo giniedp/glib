@@ -82,7 +82,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   const msaaDepth = device.createDepthTarget({
     width: device.output.width,
     height: device.output.height,
-    format: 'DEPTH24_PLUS',
+    format: 'depth24plus',
     sampleCount: 4,
   })
   const color = device.createRenderTarget({

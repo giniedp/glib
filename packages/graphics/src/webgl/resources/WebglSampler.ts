@@ -51,15 +51,15 @@ export class WebglSampler implements WebglResource<WebGLSampler> {
 }
 
 function getMinFilter(gl: WebGL2RenderingContext, minFilter: TextureFilter, mipFilter: MipmapFilter): number {
-  if (mipFilter === 'None') {
-    return minFilter === 'Nearest' ? gl.NEAREST : gl.LINEAR
+  if (!mipFilter) {
+    return minFilter === 'nearest' ? gl.NEAREST : gl.LINEAR
   }
-  if (mipFilter === 'Nearest') {
-    return minFilter === 'Nearest' ? gl.NEAREST_MIPMAP_NEAREST : gl.LINEAR_MIPMAP_NEAREST
+  if (mipFilter === 'nearest') {
+    return minFilter === 'nearest' ? gl.NEAREST_MIPMAP_NEAREST : gl.LINEAR_MIPMAP_NEAREST
   }
-  return minFilter === 'Nearest' ? gl.NEAREST_MIPMAP_LINEAR : gl.LINEAR_MIPMAP_LINEAR
+  return minFilter === 'nearest' ? gl.NEAREST_MIPMAP_LINEAR : gl.LINEAR_MIPMAP_LINEAR
 }
 
 function getMagFilter(gl: WebGL2RenderingContext, magFilter: TextureFilter): number {
-  return magFilter === 'Nearest' ? gl.NEAREST : gl.LINEAR
+  return magFilter === 'nearest' ? gl.NEAREST : gl.LINEAR
 }

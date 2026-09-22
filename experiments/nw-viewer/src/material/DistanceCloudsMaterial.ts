@@ -102,10 +102,10 @@ export class DistanceCloudsMaterial extends materialSchemaClass(Schema) {
       this.device[Noise2DKey] ||
       this.device.createTexture({
         name: 'noise2D',
-        type: 'Texture2D',
+        type: '2d',
         width: 16,
         height: 16,
-        format: 'RGBA8_UNORM',
+        format: 'rgba8unorm',
       })
 
     this.SamplerLinear = SamplerState.LinearWrap

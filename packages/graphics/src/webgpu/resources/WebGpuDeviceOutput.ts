@@ -1,11 +1,4 @@
-import {
-  dataTypeToArrayType,
-  surfaceFormatFromWebGPU,
-  surfaceFormatInfo,
-  surfaceFormatToWebGPU,
-  type SurfaceFormat,
-  type TypedArray,
-} from '../../enums'
+import { dataTypeToArrayType, surfaceFormatInfo, type SurfaceFormat, type TypedArray } from '../../enums'
 import { DeviceOutput } from '../../resources'
 import type { WebGpuDevice } from '../WebGpuDevice'
 
@@ -72,7 +65,7 @@ export class WebGpuDeviceOutput extends DeviceOutput {
   public constructor(device: WebGpuDevice, options?: { surfaceFormat: SurfaceFormat }) {
     super()
     this.device = device
-    this.surfaceFormat = options?.surfaceFormat ?? surfaceFormatFromWebGPU(navigator.gpu.getPreferredCanvasFormat())
+    this.surfaceFormat = options?.surfaceFormat ?? navigator.gpu.getPreferredCanvasFormat()
   }
 
   private unsetTexture = () => {
@@ -103,7 +96,7 @@ export class WebGpuDeviceOutput extends DeviceOutput {
     this.currentTexture = null
     this.device.context.configure({
       device: this.device.gpu,
-      format: surfaceFormatToWebGPU(this.surfaceFormat),
+      format: this.surfaceFormat,
       alphaMode: 'premultiplied',
       usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC,
     })
@@ -117,7 +110,7 @@ export class WebGpuDeviceOutput extends DeviceOutput {
   ): Promise<TypedArray> {
     const gpuObject = this.gpuObject
     const gpuFormat = gpuObject.format
-    const format = surfaceFormatFromWebGPU(gpuFormat)
+    const format = gpuFormat
     const info = surfaceFormatInfo(format)
     if (!info || info.compression || !info.type) {
       throw new Error(`Unsupported texture format for reading: ${format}`)

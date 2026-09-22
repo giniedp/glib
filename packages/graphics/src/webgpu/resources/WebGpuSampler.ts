@@ -1,4 +1,3 @@
-import { compareFunctionToWebGPU, textureWrapModeToWebGPU } from '../../enums'
 import type { SamplerState } from '../../states'
 import type { WebGpuDevice } from '../WebGpuDevice'
 
@@ -14,23 +13,23 @@ export class WebGpuSampler {
 
 function getDescriptor(state: SamplerState): GPUSamplerDescriptor {
   const descriptor: GPUSamplerDescriptor = {
-    addressModeU: textureWrapModeToWebGPU(state.wrapU),
-    addressModeV: textureWrapModeToWebGPU(state.wrapV),
-    addressModeW: textureWrapModeToWebGPU(state.wrapW),
-    magFilter: state.magFilter === 'Nearest' ? 'nearest' : 'linear',
-    minFilter: state.minFilter === 'Nearest' ? 'nearest' : 'linear',
+    addressModeU: state.wrapU,
+    addressModeV: state.wrapV,
+    addressModeW: state.wrapW,
+    magFilter: state.magFilter,
+    minFilter: state.minFilter,
     lodMinClamp: state.minLod,
     lodMaxClamp: state.maxLod,
-    compare: state.compare ? compareFunctionToWebGPU(state.compareFunc) : undefined,
+    compare: state.compare ? state.compareFunc : undefined,
   }
   switch (state.mipFilter) {
-    case 'Linear':
+    case 'linear':
       descriptor.mipmapFilter = 'linear'
       if (descriptor.magFilter === 'linear' && descriptor.minFilter === 'linear') {
         descriptor.maxAnisotropy = 8 // TODO: make it configurable
       }
       break
-    case 'Nearest':
+    case 'nearest':
       descriptor.mipmapFilter = 'nearest'
       break
   }

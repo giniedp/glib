@@ -227,7 +227,7 @@ export class SpriteBatch implements Renderable {
       pass.setProgram(this.shader.program)
       pass.setIndexBuffer(this.indexBuffer)
       pass.setVertexBuffer(this.vertexBuffer)
-      pass.setPrimitiveType('TriangleStrip')
+      pass.setPrimitiveType('triangle-strip')
       pass.draw(4, instanceCount, 0, 0)
       pass.submit()
     }

@@ -12,8 +12,8 @@ export class TerrainHeightmapArray {
     this.device = device
     this.texture = device.createTexture({
       name: 'terrain-heightmap-array',
-      type: 'Texture2DArray',
-      format: 'R16_FLOAT',
+      type: '2d-array',
+      format: 'r16float',
       width: regionSize,
       height: regionSize,
       depth: 4,
@@ -22,8 +22,8 @@ export class TerrainHeightmapArray {
     })
     this.texture2 = device.createTexture({
       name: 'terrain-heightmap-array',
-      type: 'Texture2DArray',
-      format: 'R16_FLOAT',
+      type: '2d-array',
+      format: 'r16float',
       width: regionSize,
       height: regionSize,
       depth: 4,

@@ -106,13 +106,13 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
 
   const cubemap = device.createRenderTarget({
     name: 'Cybemap Render Target',
-    type: 'TextureCube',
+    type: 'cube',
     mipLevelCount: 5,
     depth: 6,
     width: 512,
     height: 512,
     usage: TextureUsage.TextureBinding,
-    format: 'RGBA16_FLOAT',
+    format: 'rgba16float',
   })
 
   const rtScene = device.createRenderTarget({
@@ -124,40 +124,40 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   const lutGGX = device.createRenderTarget({
     width: 512,
     height: 512,
-    format: 'RGBA16_FLOAT',
+    format: 'rgba16float',
     usage: TextureUsage.TextureBinding,
   })
   const lutSheen = device.createRenderTarget({
     width: 512,
     height: 512,
-    format: 'RGBA16_FLOAT',
+    format: 'rgba16float',
     usage: TextureUsage.TextureBinding,
   })
 
   const envLambert = device.createRenderTarget({
-    type: 'TextureCube',
+    type: 'cube',
     width: 256,
     height: 256,
     depth: 6,
-    format: 'RGBA16_FLOAT',
+    format: 'rgba16float',
     mipLevelCount: 5,
     usage: TextureUsage.TextureBinding,
   })
   const envGGX = device.createRenderTarget({
-    type: 'TextureCube',
+    type: 'cube',
     width: 256,
     height: 256,
     depth: 6,
-    format: 'RGBA16_FLOAT',
+    format: 'rgba16float',
     mipLevelCount: 5,
     usage: TextureUsage.TextureBinding,
   })
   const envCharlie = device.createRenderTarget({
-    type: 'TextureCube',
+    type: 'cube',
     width: 256,
     height: 256,
     depth: 6,
-    format: 'RGBA16_FLOAT',
+    format: 'rgba16float',
     mipLevelCount: 5,
     usage: TextureUsage.TextureBinding,
   })

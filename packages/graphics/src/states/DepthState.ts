@@ -29,103 +29,103 @@ export class DepthState implements DepthStateOptions {
 
   public static Disabled = new DepthState({
     enabled: false,
-    depthFunction: 'LessEqual',
+    depthFunction: 'less-equal',
     depthWriteEnabled: false,
   })
 
   public static Less = new DepthState({
     enabled: true,
-    depthFunction: 'Less',
+    depthFunction: 'less',
     depthWriteEnabled: true,
   })
 
   public static LessNoWrite = new DepthState({
     enabled: true,
-    depthFunction: 'Less',
+    depthFunction: 'less',
     depthWriteEnabled: false,
   })
 
   public static LessEqual = new DepthState({
     enabled: true,
-    depthFunction: 'LessEqual',
+    depthFunction: 'less-equal',
     depthWriteEnabled: true,
   })
 
   public static LessEqualNoWrite = new DepthState({
     enabled: true,
-    depthFunction: 'LessEqual',
+    depthFunction: 'less-equal',
     depthWriteEnabled: false,
   })
 
   public static Greater = new DepthState({
     enabled: true,
-    depthFunction: 'Greater',
+    depthFunction: 'greater',
     depthWriteEnabled: true,
   })
 
   public static GreaterNoWrite = new DepthState({
     enabled: true,
-    depthFunction: 'Greater',
+    depthFunction: 'greater',
     depthWriteEnabled: false,
   })
 
   public static GreaterEqual = new DepthState({
     enabled: true,
-    depthFunction: 'GreaterEqual',
+    depthFunction: 'greater-equal',
     depthWriteEnabled: true,
   })
 
   public static GreaterEqualNoWrite = new DepthState({
     enabled: true,
-    depthFunction: 'GreaterEqual',
+    depthFunction: 'greater-equal',
     depthWriteEnabled: false,
   })
 
   public static Equal = new DepthState({
     enabled: true,
-    depthFunction: 'Equal',
+    depthFunction: 'equal',
     depthWriteEnabled: true,
   })
 
   public static EqualNoWrite = new DepthState({
     enabled: true,
-    depthFunction: 'Equal',
+    depthFunction: 'equal',
     depthWriteEnabled: false,
   })
 
   public static NotEqual = new DepthState({
     enabled: true,
-    depthFunction: 'NotEqual',
+    depthFunction: 'not-equal',
     depthWriteEnabled: true,
   })
 
   public static NotEqualNoWrite = new DepthState({
     enabled: true,
-    depthFunction: 'NotEqual',
+    depthFunction: 'not-equal',
     depthWriteEnabled: false,
   })
 
   public static Never = new DepthState({
     enabled: true,
-    depthFunction: 'Never',
+    depthFunction: 'never',
     depthWriteEnabled: true,
   })
 
   public static NeverNoWrite = new DepthState({
     enabled: true,
-    depthFunction: 'Never',
+    depthFunction: 'never',
     depthWriteEnabled: false,
   })
 
   public static Always = new DepthState({
     enabled: true,
-    depthFunction: 'Always',
+    depthFunction: 'always',
     depthWriteEnabled: true,
   })
 
   public static AlwaysNoWrite = new DepthState({
     enabled: true,
-    depthFunction: 'Always',
+    depthFunction: 'always',
     depthWriteEnabled: false,
   })
 
@@ -171,7 +171,7 @@ export class DepthState implements DepthStateOptions {
 function createOptions(options: Partial<DepthStateOptions>): DepthStateOptions {
   return {
     enabled: options?.enabled ?? true,
-    depthFunction: options?.depthFunction ?? 'LessEqual',
+    depthFunction: options?.depthFunction ?? 'less-equal',
     depthWriteEnabled: options?.depthWriteEnabled ?? true,
   }
 }

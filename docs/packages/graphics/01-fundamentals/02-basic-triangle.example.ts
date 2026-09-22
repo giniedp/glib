@@ -55,7 +55,7 @@ export default async (canvas: HTMLCanvasElement, _: any, platform: PlatformId) =
     }
 
     // Assign the buffer and program to the pass, then issue the draw call.
-    // `draw(3)` submits 3 vertices, interpreted as a `TriangleList`
+    // `draw(3)` submits 3 vertices, interpreted as a `triangle-list`
     // (one triangle per 3 vertices) by default.
     pass.setVertexBuffer(vertices)
     pass.setProgram(shader.program)

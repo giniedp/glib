@@ -28,10 +28,10 @@ export function iblBrdfLutShaderOptions(): ShaderModuleOptions {
 export function createGGXLutTexture(device: Device, options?: TextureOptions) {
   const texture = device.createRenderTarget({
     name: 'BRDF GGX LUT',
-    type: 'Texture2D',
+    type: '2d',
     width: 512,
     height: 512,
-    format: 'RG16_FLOAT',
+    format: 'rg16float',
     mipLevelCount: 1,
     ...options,
   })

@@ -5,7 +5,7 @@ async function getThumbnail(device: Device, texture: Texture, size = 128): Promi
     width: size,
     height: size,
     depth: 1,
-    format: 'RGBA8_UNORM',
+    format: 'rgba8unorm',
   })
 
   const spriteBatch = new SpriteBatch(device, {})

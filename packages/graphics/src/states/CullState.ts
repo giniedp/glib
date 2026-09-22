@@ -22,8 +22,8 @@ export class CullState implements CullStateOptions {
    */
   public static Disabled = CullState.cached({
     enable: false,
-    cullMode: 'Back',
-    frontFace: 'CCW',
+    cullMode: 'back',
+    frontFace: 'ccw',
   })
 
   /**
@@ -31,8 +31,8 @@ export class CullState implements CullStateOptions {
    */
   public static None = CullState.cached({
     enable: false,
-    cullMode: 'Back',
-    frontFace: 'CCW',
+    cullMode: 'back',
+    frontFace: 'ccw',
   })
 
   /**
@@ -41,8 +41,8 @@ export class CullState implements CullStateOptions {
    */
   public static CullBack = CullState.cached({
     enable: true,
-    cullMode: 'Back',
-    frontFace: 'CCW',
+    cullMode: 'back',
+    frontFace: 'ccw',
   })
 
   /**
@@ -51,8 +51,8 @@ export class CullState implements CullStateOptions {
    */
   public static CullFront = CullState.cached({
     enable: true,
-    cullMode: 'Front',
-    frontFace: 'CCW',
+    cullMode: 'front',
+    frontFace: 'ccw',
   })
 
   /**
@@ -60,8 +60,8 @@ export class CullState implements CullStateOptions {
    */
   public static readonly CullBackCW = CullState.cached({
     enable: true,
-    cullMode: 'Back',
-    frontFace: 'CW',
+    cullMode: 'back',
+    frontFace: 'cw',
   })
 
   /**
@@ -69,8 +69,8 @@ export class CullState implements CullStateOptions {
    */
   public static readonly CullFrontCW = CullState.cached({
     enable: true,
-    cullMode: 'Front',
-    frontFace: 'CW',
+    cullMode: 'front',
+    frontFace: 'cw',
   })
 
   private [STATE]: CullStateOptions
@@ -115,8 +115,8 @@ export class CullState implements CullStateOptions {
 function createOptions(options: Partial<CullStateOptions>): CullStateOptions {
   return {
     enable: options?.enable ?? false,
-    cullMode: options?.cullMode ?? 'Back',
-    frontFace: options?.frontFace ?? 'CCW',
+    cullMode: options?.cullMode ?? 'back',
+    frontFace: options?.frontFace ?? 'ccw',
   }
 }
 

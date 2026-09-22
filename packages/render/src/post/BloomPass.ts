@@ -128,8 +128,8 @@ export class BloomPass implements RenderPass {
     this.target = frame.write(RenderChannel.Color)
 
     this.texExtractDesc ||= {
-      type: 'Texture2D',
-      format: 'RGBA16_FLOAT',
+      type: '2d',
+      format: 'rgba16float',
       width: ctx.viewWidth,
       height: ctx.viewHeight,
       depth: 1,

@@ -299,7 +299,7 @@ export class FrameGraph<T = RenderPass> {
       producer: null,
       desc: {
         format: null,
-        type: 'Texture2D',
+        type: '2d',
         width: 1,
         height: 1,
         depth: 1,

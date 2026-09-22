@@ -68,7 +68,7 @@ export class TileTexturManager {
         this.device.createTexture({
           name: options.labels?.[i] || `TileTexture${i}`,
           format: formats[i],
-          type: 'Texture2DArray',
+          type: '2d-array',
           width: this.width,
           height: this.height,
           depth: this.capacity,

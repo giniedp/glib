@@ -35,7 +35,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     sampleCount: 4,
   })
   const msaaDepth = device.createDepthTarget({
-    format: 'DEPTH24_PLUS',
+    format: 'depth24plus',
     sampleCount: 4,
   })
 

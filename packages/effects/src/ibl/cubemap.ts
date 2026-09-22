@@ -45,7 +45,7 @@ export class PanoramaToCubemapEffect {
   public render(pass: RenderEncoder) {
     console.assert(!!this.textureIn, 'input texture must be set')
     console.assert(!!this.textureOut, 'output texture must be set')
-    console.assert(this.textureOut.type === 'TextureCube', 'output texture must be a cubemap')
+    console.assert(this.textureOut.type === 'cube', 'output texture must be a cubemap')
 
     const isWebGPU = pass.device.isWebGPU
     const params = this.params

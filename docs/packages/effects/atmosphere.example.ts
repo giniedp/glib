@@ -44,12 +44,12 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
 
   const panorama = device.createRenderTarget({
     name: 'Panorama Render Target',
-    type: 'Texture2D',
+    type: '2d',
     mipLevelCount: 5,
     width: 2048,
     height: 1024,
     usage: TextureUsage.TextureBinding,
-    format: 'RGBA16_FLOAT',
+    format: 'rgba16float',
   })
 
   function frame(ctx: FrameContext) {

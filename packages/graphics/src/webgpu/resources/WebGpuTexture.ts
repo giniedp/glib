@@ -1,18 +1,14 @@
 import type { Device } from '../../Device'
 import {
   dataTypeToArrayType,
-  surfaceFormatFromWebGPU,
   surfaceFormatInfo,
   surfaceFormatIsCompressed,
-  surfaceFormatToWebGPU,
-  textureTypeToWebGPU,
   textureTypeToWebGPUDimension,
   type TypedArray,
 } from '../../enums'
 import {
   CompressedFaceData,
   createTextureSource,
-  DynamicTextureSource,
   isCompressedFaceData,
   RefCounterKey,
   Texture,
@@ -101,8 +97,8 @@ export class WebGpuTexture extends Texture implements GpuResource<GPUTexture>, R
     self.sampleCount = options.sampleCount ?? 1
 
     self.gpuDimension = textureTypeToWebGPUDimension(this.type)
-    self.gpuViewDimension = textureTypeToWebGPU(this.type)
-    self.gpuFormat = surfaceFormatToWebGPU(this.format)
+    self.gpuViewDimension = this.type
+    self.gpuFormat = this.format
 
     if (this.isCompressed && this.generateMipmap) {
       console.warn('WebGpuTexture: generateMipmap is not supported for compressed textures and will be ignored')
@@ -182,28 +178,28 @@ export class WebGpuTexture extends Texture implements GpuResource<GPUTexture>, R
     let needsResize = false
     const self = this as Mutable<this>
     switch (this.type) {
-      case 'TextureCube': {
+      case 'cube': {
         needsResize = this.width !== width || this.height !== height
         self.width = width
         self.height = height
         self.depth = 6
         break
       }
-      case 'Texture2D': {
+      case '2d': {
         needsResize = this.width !== width || this.height !== height
         self.width = width
         self.height = height
         self.depth = 1
         break
       }
-      case 'Texture2DArray': {
+      case '2d-array': {
         needsResize = this.width !== width || this.height !== height || this.depth !== depth
         self.width = width
         self.height = height
         self.depth = depth
         break
       }
-      case 'Texture3D': {
+      case '3d': {
         needsResize = this.width !== width || this.height !== height || this.depth !== depth
         self.width = width
         self.height = height
@@ -224,21 +220,21 @@ export class WebGpuTexture extends Texture implements GpuResource<GPUTexture>, R
     if (!source.levels.length) {
       throw new Error('Texture source has no data levels to upload')
     }
-    this.resize(source.width, source.height, this.type === 'TextureCube' ? 6 : source.levels[0].length)
+    this.resize(source.width, source.height, this.type === 'cube' ? 6 : source.levels[0].length)
     switch (this.type) {
-      case 'TextureCube': {
+      case 'cube': {
         setData(source, this, 6)
         break
       }
-      case 'Texture2D': {
+      case '2d': {
         setData(source, this, 1)
         break
       }
-      case 'Texture2DArray': {
+      case '2d-array': {
         setData(source, this, null)
         break
       }
-      case 'Texture3D': {
+      case '3d': {
         setData(source, this, null)
         break
       }
@@ -267,7 +263,7 @@ export class WebGpuTexture extends Texture implements GpuResource<GPUTexture>, R
   ): Promise<TypedArray> {
     const gpuObject = this.gpuObject
     const gpuFormat = gpuObject.format
-    const format = surfaceFormatFromWebGPU(gpuFormat)
+    const format = gpuFormat
     const info = surfaceFormatInfo(format)
 
     return this.readPixelData(x, y, width, height).then((data) => {
@@ -284,7 +280,7 @@ export class WebGpuTexture extends Texture implements GpuResource<GPUTexture>, R
   ): Promise<Uint8ClampedArray<ArrayBuffer>> {
     const gpuObject = this.gpuObject
     const gpuFormat = gpuObject.format
-    const format = surfaceFormatFromWebGPU(gpuFormat)
+    const format = gpuFormat
     const info = surfaceFormatInfo(format)
     if (!info || info.compression || !info.type) {
       throw new Error(`Unsupported texture format for reading: ${format}`)

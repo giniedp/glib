@@ -1,11 +1,11 @@
 import { GLConst as gl } from './GLConst'
 
-export type ShaderType = 'VertexShader' | 'FragmentShader' | 'ComputeShader'
+export type ShaderType = 'vertex' | 'fragment' | 'compute'
 
 const mapToWebGL: Record<ShaderType, number> = {
-  VertexShader: gl.VERTEX_SHADER,
-  FragmentShader: gl.FRAGMENT_SHADER,
-  ComputeShader: null,
+  vertex: gl.VERTEX_SHADER,
+  fragment: gl.FRAGMENT_SHADER,
+  compute: null,
 }
 
 export function shaderTypeToWebGL(type: ShaderType): number {

@@ -1,13 +1,4 @@
-import {
-  compareFunctionToWebGPU,
-  cullModeToWebGPU,
-  frontFaceToWebGPU,
-  primitiveTypeToWebGPU,
-  stencilOperationToWebGPU,
-  surfaceFormatToWebGPU,
-  type PrimitiveType,
-  type SurfaceFormat,
-} from '../../enums'
+import { type PrimitiveType, type SurfaceFormat } from '../../enums'
 import type { CullState, DepthBiasState, DepthState, StencilState } from '../../states'
 import { ShaderConstants } from '../../states'
 import { WebGpuShaderModule } from '../resources'
@@ -111,14 +102,14 @@ export function renderPipelineCache(device: WebGpuDevice): RenderPipelineCache {
 
 function getPrimitiveState(type: PrimitiveType, state: CullState): GPUPrimitiveState {
   const result: GPUPrimitiveState = {
-    topology: primitiveTypeToWebGPU(type),
+    topology: type,
   }
   if (state.enable) {
-    result.cullMode = cullModeToWebGPU(state.cullMode)
-    result.frontFace = frontFaceToWebGPU(state.frontFace)
+    result.cullMode = state.cullMode
+    result.frontFace = state.frontFace
   } else {
     result.cullMode = 'none'
-    result.frontFace = frontFaceToWebGPU(state.frontFace)
+    result.frontFace = state.frontFace
   }
   // TODO:
   // stripIndexFormat:
@@ -133,24 +124,24 @@ function getDepthStencilState(
   bias: DepthBiasState,
 ): GPUDepthStencilState {
   const result: GPUDepthStencilState = {
-    format: surfaceFormatToWebGPU(format),
+    format: format,
   }
   if (state.enabled) {
     result.depthWriteEnabled = !!state.depthWriteEnabled
-    result.depthCompare = compareFunctionToWebGPU(state.depthFunction)
+    result.depthCompare = state.depthFunction
   }
   if (stencil.enable) {
     result.stencilFront = {
-      compare: compareFunctionToWebGPU(stencil.frontFunction),
-      depthFailOp: stencilOperationToWebGPU(stencil.frontDepthFail),
-      passOp: stencilOperationToWebGPU(stencil.frontDepthPass),
-      failOp: stencilOperationToWebGPU(stencil.frontFail),
+      compare: stencil.frontFunction,
+      depthFailOp: stencil.frontDepthFail,
+      passOp: stencil.frontDepthPass,
+      failOp: stencil.frontFail,
     }
     result.stencilBack = {
-      compare: compareFunctionToWebGPU(stencil.backFunction),
-      depthFailOp: stencilOperationToWebGPU(stencil.backDepthFail),
-      passOp: stencilOperationToWebGPU(stencil.backDepthPass),
-      failOp: stencilOperationToWebGPU(stencil.backFail),
+      compare: stencil.backFunction,
+      depthFailOp: stencil.backDepthFail,
+      passOp: stencil.backDepthPass,
+      failOp: stencil.backFail,
     }
     result.stencilReadMask = stencil.readMask
     result.stencilWriteMask = stencil.writeMask

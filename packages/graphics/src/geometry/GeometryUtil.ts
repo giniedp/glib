@@ -211,7 +211,7 @@ export class GeometryUtil {
   public calculateNormals(options?: { create?: boolean; update?: boolean; frontFace?: FrontFace }): this {
     const create = options?.create ?? false
     let update = options?.update ?? false
-    const frontFace = options?.frontFace ?? 'CCW'
+    const frontFace = options?.frontFace ?? 'ccw'
 
     const normal = 'normal'
     if (!this.hasChannel(normal) && create) {
@@ -236,7 +236,7 @@ export class GeometryUtil {
   public calculateTangents(options?: { create?: boolean; update?: boolean; frontFace?: FrontFace }): this {
     const create = options?.create ?? false
     let update = options?.update ?? false
-    const frontFace = options?.frontFace ?? 'CCW'
+    const frontFace = options?.frontFace ?? 'ccw'
 
     const tangent = 'tangent'
     const bitangent = 'bitangent'

@@ -199,7 +199,7 @@ export class Geometry implements Renderable, Disposable {
       throw new Error(`'vertexBuffer' option is missing`)
     }
 
-    this.primitiveType = options.primitiveType || 'TriangleList'
+    this.primitiveType = options.primitiveType || 'triangle-list'
 
     this.vertexCount = options.vertexCount ?? this.vertexBuffer.getMaxVertexCount()
     this.instanceCount = options.instanceCount ?? 1

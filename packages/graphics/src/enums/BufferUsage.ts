@@ -1,9 +1,27 @@
 import { GLConst as gl } from './GLConst'
 
-export type BufferUsageHint = 'Static' | 'Dynamic' | 'Stream'
+export const BufferUsage = {
+  MAP_READ: 1,
+  MAP_WRITE: 2,
+  COPY_SRC: 4,
+  COPY_DST: 8,
+  INDEX: 16,
+  VERTEX: 32,
+  UNIFORM: 64,
+  STORAGE: 128,
+  INDIRECT: 256,
+  QUERY_RESOLVE: 512,
+} satisfies GPUBufferUsage
 
-const mapToWebGL: Record<BufferUsageHint, number> = {
-  Static: gl.STATIC_DRAW,
-  Dynamic: gl.DYNAMIC_DRAW,
-  Stream: gl.STREAM_DRAW,
+export function bufferUsageToWebGL(usage: number): number {
+  if (usage & BufferUsage.VERTEX) {
+    return gl.ARRAY_BUFFER
+  }
+  if (usage & BufferUsage.INDEX) {
+    return gl.ELEMENT_ARRAY_BUFFER
+  }
+  if (usage & BufferUsage.UNIFORM) {
+    return gl.UNIFORM_BUFFER
+  }
+  throw new Error(`Buffer usage not supported: ${usage}`)
 }

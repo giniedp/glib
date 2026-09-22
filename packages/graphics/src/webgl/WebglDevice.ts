@@ -138,14 +138,14 @@ export class WebglDevice extends Device<WebGL2RenderingContext> {
       source: Color.toByteArray(Color.Black, Color.DimGray, Color.DimGray, Color.Black),
       width: 2,
       height: 2,
-      format: 'RGBA8_UNORM',
+      format: 'rgba8unorm',
     })
     this.defaultTextureCube = this.createTexture({
-      type: 'TextureCube',
+      type: 'cube',
       width: 2,
       height: 2,
       // depth: 6,
-      format: 'RGBA8_UNORM',
+      format: 'rgba8unorm',
     })
     this.renderPass = new WebglRenderEncoder(this)
 
@@ -249,7 +249,7 @@ export class WebglDevice extends Device<WebGL2RenderingContext> {
   public createDepthTarget(options: DepthBufferOptions): WebglTexture {
     options.width ??= this.output.width
     options.height ??= this.output.height
-    options.format ??= 'DEPTH24_PLUS_STENCIL8'
+    options.format ??= 'depth24plus-stencil8'
     options.generateMipmap ??= false
     options.mipLevelCount ??= 1
     options.sampleCount ??= 1

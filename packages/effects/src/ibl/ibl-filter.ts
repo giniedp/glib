@@ -72,9 +72,9 @@ export class IblFilterEffect {
     const input = this.cubemapIn
     const output = this.cubemapOut
     console.assert(!!input, 'cubemapIn must be set')
-    console.assert(input.type === 'TextureCube', 'cubemapIn must be a cubemap')
+    console.assert(input.type === 'cube', 'cubemapIn must be a cubemap')
     console.assert(!!output, 'cubemapOut must be set')
-    console.assert(output.type === 'TextureCube', 'cubemapOut must be a cubemap')
+    console.assert(output.type === 'cube', 'cubemapOut must be a cubemap')
     console.assert(this.isValid && this.isCompiled, 'must be compiled and valid')
 
     const device = pass.device

@@ -51,11 +51,11 @@ export class IblSampler {
     this.intensity = options.intensity ?? this.intensity
 
     const lutOptions: TextureOptions = {
-      type: 'Texture2D',
+      type: '2d',
       width: options?.lutSize ?? 1024,
       height: options?.lutSize ?? 1024,
       usage: TextureUsage.TextureBinding,
-      format: 'RG16_FLOAT',
+      format: 'rg16float',
     }
 
     this.lutMapGGX = device.createRenderTarget({
@@ -70,13 +70,13 @@ export class IblSampler {
 
     const envSize = options?.envSize ?? 256
     const envOptions: TextureOptions = {
-      type: 'TextureCube',
+      type: 'cube',
       width: envSize,
       height: envSize,
       depth: 6,
       mipLevelCount: Math.min(5, getMipmapCount(envSize, envSize, envSize)),
       usage: TextureUsage.TextureBinding,
-      format: 'RGBA16_FLOAT',
+      format: 'rgba16float',
     }
 
     this.envMapLambert = device.createRenderTarget({
@@ -124,15 +124,15 @@ export class IblSampler {
 
     const pass = this.device.renderPass
     let cubemap = this.cubemap
-    if (input.type === 'Texture2D') {
+    if (input.type === '2d') {
       this.fxCube.textureIn = input
       this.fxCube.textureOut = cubemap
       this.fxCube.render(pass)
       cubemap.updateMipmaps()
-    } else if (input.type === 'TextureCube') {
+    } else if (input.type === 'cube') {
       cubemap = input
     } else {
-      throw new Error(`input texture type must be either Texture2D (panorama) or TextureCube but was '${input.type}'`)
+      throw new Error(`input texture type must be either 2d (panorama) or cube but was '${input.type}'`)
     }
 
     this.fxFilter.cubemapIn = cubemap

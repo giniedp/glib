@@ -193,7 +193,7 @@ export class File {
       if (pixelDepth === 8) {
         return {
           source: this.decode_gray8('ui8'),
-          format: 'R8_UNORM',
+          format: 'r8unorm',
           width: this.width,
           height: this.height,
         }
@@ -201,7 +201,7 @@ export class File {
       if (pixelDepth === 16) {
         return {
           source: this.decode_gray16('f32'),
-          format: 'R32_FLOAT',
+          format: 'r32float',
           width: this.width,
           height: this.height,
         }
@@ -214,7 +214,7 @@ export class File {
           return {
             //source: this.decode_cm8('i5551'), // not supported by webgpu
             source: this.decode_cm8('ui8888'),
-            format: 'RGBA8_UNORM',
+            format: 'rgba8unorm',
             generateMipmap: true,
             width: this.width,
             height: this.height,
@@ -223,7 +223,7 @@ export class File {
           return {
             // source: this.decode_cm8('ui888'), // not supported by webgpu
             source: this.decode_cm8('ui8888'),
-            format: 'RGBA8_UNORM',
+            format: 'rgba8unorm',
             generateMipmap: true,
             width: this.width,
             height: this.height,
@@ -231,7 +231,7 @@ export class File {
         case 4:
           return {
             source: this.decode_cm8('ui8888'),
-            format: 'RGBA8_UNORM',
+            format: 'rgba8unorm',
             generateMipmap: true,
             width: this.width,
             height: this.height,
@@ -242,7 +242,7 @@ export class File {
       return {
         // source: this.decode_rgba16('i5551'), // not supported by webgpu
         source: this.decode_rgba16('ui8888'),
-        format: 'RGBA8_UNORM',
+        format: 'rgba8unorm',
         generateMipmap: true,
         width: this.width,
         height: this.height,
@@ -253,7 +253,7 @@ export class File {
         // source: this.decode_rgb24('ui888'), // not supported by webgpu
         source: this.decode_rgb24('ui8888'),
         generateMipmap: true,
-        format: 'RGBA8_UNORM',
+        format: 'rgba8unorm',
         width: this.width,
         height: this.height,
       }
@@ -262,7 +262,7 @@ export class File {
       return {
         source: this.decode_rgba32('ui8888'),
         generateMipmap: true,
-        format: 'RGBA8_UNORM',
+        format: 'rgba8unorm',
         width: this.width,
         height: this.height,
       }

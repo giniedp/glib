@@ -1,20 +1,15 @@
 import { GLConst as gl } from './GLConst'
 
-export type FrontFace = 'CW' | 'CCW'
+export type FrontFace = Extract<GPUFrontFace, 'cw' | 'ccw'>
 
 const mapToWebGL: Record<FrontFace, number> = {
-  CW: gl.CW,
-  CCW: gl.CCW,
+  cw: gl.CW,
+  ccw: gl.CCW,
 }
 
 const mapFromWebGL: Record<number, FrontFace> = {
-  [gl.CW]: 'CW',
-  [gl.CCW]: 'CCW',
-}
-
-const mapToWebGPU: Record<FrontFace, GPUFrontFace> = {
-  CW: 'cw',
-  CCW: 'ccw',
+  [gl.CW]: 'cw',
+  [gl.CCW]: 'ccw',
 }
 
 export function frontFaceToWebGL(face: FrontFace): number {
@@ -23,8 +18,4 @@ export function frontFaceToWebGL(face: FrontFace): number {
 
 export function frontFaceFromWebGL(face: number): FrontFace {
   return mapFromWebGL[face]
-}
-
-export function frontFaceToWebGPU(face: FrontFace): GPUFrontFace {
-  return mapToWebGPU[face]
 }
