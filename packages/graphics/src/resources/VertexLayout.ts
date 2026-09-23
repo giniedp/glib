@@ -1,4 +1,4 @@
-import { dataElementSize, DataElementFormat, dataTypeToSize } from '../enums'
+import { DataElementFormat, dataElementSize, dataTypeToSize } from '../enums'
 
 export type VertexSemantic =
   | 'position'
@@ -190,49 +190,3 @@ export function countLayoutBytes(layout: Record<string, DataElementFormat>): num
   }
   return count
 }
-
-// export interface FieldDescriptor<T extends GpuType = GpuType> {
-//   name: string
-//   type: T
-// }
-
-// export interface BufferField<T extends GpuType = GpuType> {
-//   byteOffset: number
-//   name: string
-//   type: T
-// }
-
-// export type BufferFields<T extends FieldDescriptor = any> = {
-//   [K in T['name']]: {
-//     name: K
-//     type: Extract<T, { name: K }>['type']
-//     byteOffset: number
-//   }
-// }
-
-// export type BufferLayout<T extends Record<string, BufferField> = {}> = {
-//   stride: number
-//   fields: T
-// }
-
-// export function bufferLayout<const T extends FieldDescriptor[]>(fields: T) {
-//   const result = {
-//     recordByteSize: 0,
-//     fields: {} as BufferFields<T[number]>,
-//   }
-
-//   let offset = 0
-//   for (const field of fields) {
-//     result.fields[field.name] = {
-//       name: field.name,
-//       type: field.type,
-//       byteOffset: offset,
-//     }
-//     const t = GpuTypes[field.type]
-//     offset += t.elementCount * dataTypeToSize(t.elementType)
-//   }
-
-//   result.recordByteSize = offset
-
-//   return result
-// }

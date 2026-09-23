@@ -2,12 +2,13 @@ import { Mat4, type IRect } from '@gglib/math'
 import { PooledList } from '@gglib/utils'
 import { Device } from './Device'
 import type { RenderEncoder } from './RenderEncoder'
-import { RingBuffer, ShaderModule } from './resources'
+import { bufferField, bufferLayout, bufferRecorder, BufferRecorder, ShaderModule } from './resources'
 import { Buffer } from './resources/Buffer'
 import { Texture } from './resources/Texture'
 import { VertexBuffer } from './resources/VertexBuffer'
 import { SpriteBuilder } from './Sprite'
 import { spriteBatchShader } from './SpriteBatch.shader'
+import { CullState } from './states'
 import { Renderable } from './types'
 
 export enum SpriteMode {
@@ -56,15 +57,25 @@ export class SpriteBatch implements Renderable {
   private device: Device
   private mode: SpriteMode
 
-  private vertexBuffer: VertexBuffer
-  private indexBuffer: Buffer
   public readonly shader: ShaderModule
   private matrix: Mat4
 
   private pool = new PooledList<SpriteBuilder>(() => new SpriteBuilder())
   private sprites: SpriteBuilder[] = []
 
-  private batch: SpriteBuffer
+  private vertexBuffer: VertexBuffer
+  private indexBuffer: Buffer
+  private writer: BufferRecorder
+  private layout = bufferLayout([
+    bufferField('aTransform0', 'vec4f'),
+    bufferField('aTransform1', 'vec4f'),
+    bufferField('aTransform2', 'vec4f'),
+    bufferField('aTransform3', 'vec4f'),
+    bufferField('aTexcoord', 'vec4f'),
+    bufferField('aColor', 'vec4f'),
+  ])
+
+  // private batch: SpriteBuffer
 
   public get isReady() {
     return this.shader.isCompiled
@@ -80,14 +91,40 @@ export class SpriteBatch implements Renderable {
 
   public constructor(device: Device, options: SpriteBatchOptions = {}) {
     this.device = device
-    this.batch = new SpriteBuffer({
-      capacity: options.batchSize || 512,
-    })
 
-    this.vertexBuffer = this.batch.createVertexBuffer(device)
+    const capacity = options.batchSize || 512
+    this.writer = bufferRecorder({
+      capacity,
+      recordByteSize: this.layout.byteSize,
+    })
     this.indexBuffer = device.createIndexBuffer({
       data: new Uint16Array([0, 1, 2, 3]),
     })
+    this.vertexBuffer = this.device.createVertexBuffer([
+      {
+        name: 'SpriteBatch Positions',
+        layout: {
+          position: {
+            elementType: 'float32',
+            elementCount: 3,
+            byteOffset: 0,
+          },
+        },
+        // prettier-ignore
+        data: new Float32Array([
+          -0.5, -0.5, 0,
+           0.5, -0.5, 0,
+          -0.5,  0.5, 0,
+           0.5,  0.5, 0
+        ]),
+      },
+      {
+        layout: this.layout.fields,
+        instanced: true,
+        stride: this.layout.byteSize,
+        size: this.layout.byteSize * capacity,
+      },
+    ])
 
     this.matrix = Mat4.createIdentity()
     this.shader = options.program || device.createShaderModule(spriteBatchShader())
@@ -209,26 +246,41 @@ export class SpriteBatch implements Renderable {
     this.shader.program.commit()
 
     const spriteEnd = spriteOffset + spriteCount
-    const batch = this.batch
+    const batch = this.writer
     while (spriteOffset < spriteEnd) {
-      if (batch.instanceOffset >= batch.capacity) {
-        batch.reset()
-      }
-
-      const instanceCount = batch.remainingContiguous(spriteEnd - spriteOffset)
-      const byteOffset = batch.byteOffset
-      const byteSize = instanceCount * batch.strideInBytes
+      const instanceOffset = batch.recordIndex
+      const instanceCount = Math.min(batch.remainingRecordCount, spriteEnd - spriteOffset)
+      const target = this.vertexBuffer.buffers[1]
 
       for (let i = 0; i < instanceCount; i++) {
-        batch.push(sprites[spriteOffset++])
+        const sprite = sprites[spriteOffset++]
+        batch.writeMat4(sprite.transform)
+        batch.writeVec4f(sprite.uv)
+        batch.writeVec4f(sprite.color)
+        if (batch.recordIndex < batch.capacity - 1) {
+          batch.next()
+        } else {
+          batch.seek(0)
+        }
       }
 
-      this.vertexBuffer.buffers[1].setSubData(0, batch.data.buffer, byteOffset, byteSize)
+      if (this.device.isWebGL2) {
+        target.setSubData(0, batch.buffer, instanceOffset * batch.strideInBytes, instanceCount * batch.strideInBytes)
+      } else {
+        batch.upload(target)
+      }
+
+      pass.setCullState(CullState.None)
       pass.setProgram(this.shader.program)
       pass.setIndexBuffer(this.indexBuffer)
       pass.setVertexBuffer(this.vertexBuffer)
       pass.setPrimitiveType('triangle-strip')
-      pass.draw(4, instanceCount, 0, 0)
+
+      if (this.device.isWebGL2) {
+        pass.draw(4, instanceCount, 0, 0)
+      } else {
+        pass.draw(4, instanceCount, 0, instanceOffset)
+      }
       pass.submit()
     }
   }
@@ -236,99 +288,5 @@ export class SpriteBatch implements Renderable {
   public dispose() {
     this.shader.dispose()
     this.sprites.length = 0
-  }
-}
-
-export class SpriteBuffer extends RingBuffer<SpriteBuilder, Float32Array<ArrayBuffer>> {
-  public readonly data: Float32Array<ArrayBuffer>
-  public readonly capacity: number
-  public readonly strideInBytes: number = 96
-  public readonly strideElements: number = this.strideInBytes / Float32Array.BYTES_PER_ELEMENT
-
-  public constructor({ capacity }: { capacity: number }) {
-    super()
-    if (capacity <= 0) {
-      throw new Error('capacity must be greater than 0')
-    }
-
-    this.capacity = capacity
-    this.data = new Float32Array(this.capacity * this.strideElements)
-  }
-
-  protected write(value: SpriteBuilder): void {
-    let offset = this.instanceOffset * this.strideElements
-
-    value.transform.toArray(this.data, offset)
-    offset += 16
-
-    this.data[offset++] = value.uv.x
-    this.data[offset++] = value.uv.y
-    this.data[offset++] = value.uv.z
-    this.data[offset++] = value.uv.w
-
-    this.data[offset++] = value.color.x
-    this.data[offset++] = value.color.y
-    this.data[offset++] = value.color.z
-    this.data[offset++] = value.color.w
-  }
-
-  public createVertexBuffer(device: Device): VertexBuffer {
-    return device.createVertexBuffer([
-      {
-        name: 'SpriteBatch Positions',
-        layout: {
-          position: {
-            elementType: 'float32',
-            elementCount: 3,
-            byteOffset: 0,
-          },
-        },
-        // prettier-ignore
-        data: new Float32Array([
-          -0.5, -0.5, 0,
-           0.5, -0.5, 0,
-          -0.5,  0.5, 0,
-           0.5,  0.5, 0
-        ]),
-      },
-      {
-        name: 'SpriteBatch Data',
-        layout: {
-          aTransform0: {
-            elementType: 'float32',
-            elementCount: 4,
-            byteOffset: 0,
-          },
-          aTransform1: {
-            elementType: 'float32',
-            elementCount: 4,
-            byteOffset: 16,
-          },
-          aTransform2: {
-            elementType: 'float32',
-            elementCount: 4,
-            byteOffset: 32,
-          },
-          aTransform3: {
-            elementType: 'float32',
-            elementCount: 4,
-            byteOffset: 48,
-          },
-          aTexcoord: {
-            elementType: 'float32',
-            elementCount: 4,
-            byteOffset: 64,
-          },
-          aColor: {
-            elementType: 'float32',
-            elementCount: 4,
-            byteOffset: 80,
-          },
-        },
-        instanced: true,
-        stride: this.strideInBytes,
-        size: this.sizeInBytes,
-      },
-    ])
   }
 }

@@ -1,5 +1,5 @@
 import { GpuDataType, gpuTypeFormat, gpuTypeSize } from '../enums'
-import { VertexLayout } from './VertexLayout'
+import { VertexAttribute } from './VertexLayout'
 
 export interface BufferFieldDescriptor<T extends GpuDataType = GpuDataType> {
   name: string
@@ -14,33 +14,30 @@ export interface BufferField<T extends GpuDataType = GpuDataType> {
 export type BufferSchema<T extends BufferFieldDescriptor = any> = {
   [K in T['name']]: {
     type: Extract<T, { name: K }>['type']
-    byteOffset: number
-  }
+  } & VertexAttribute
 }
 
 export function bufferField<N extends string, T extends GpuDataType>(name: N, type: T) {
-  return { name, type } //satisfies BufferFieldDescriptor<T>
+  return { name, type }
 }
 
 export function bufferLayout<const T extends BufferFieldDescriptor[]>(fields: T) {
   const result = {
     byteSize: 0,
-    schema: {} as BufferSchema<T[number]>,
-    attributes: {} as VertexLayout,
+    fields: {} as BufferSchema<T[number]>,
   }
 
   let offset = 0
   for (const field of fields) {
-    result.schema[field.name] = {
-      type: field.type,
-      byteOffset: offset,
-    }
     const format = gpuTypeFormat(field.type)
-    result.attributes[field.name] = {
+
+    result.fields[field.name] = {
+      type: field.type,
       byteOffset: offset,
       elementType: format.elementType,
       elementCount: format.elementCount,
     }
+
     offset += gpuTypeSize(field.type)
   }
 
@@ -48,12 +45,3 @@ export function bufferLayout<const T extends BufferFieldDescriptor[]>(fields: T)
 
   return result
 }
-
-export type TransformBufferLayout = typeof TransformBufferLayout
-export const TransformBufferLayout = bufferLayout([bufferField('transform', 'mat4x4f')])
-
-export type TransformColorBufferLayout = typeof TransformColorBufferLayout
-export const TransformColorBufferLayout = bufferLayout([
-  bufferField('transform', 'mat4x4f'),
-  bufferField('color', 'vec4f'),
-])

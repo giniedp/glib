@@ -1,4 +1,13 @@
-import { bufferField, bufferLayout, Buffer, BufferRecorder, Device, Mesh, patchGeometry } from '@gglib/graphics'
+import {
+  bufferField,
+  bufferLayout,
+  Buffer,
+  BufferRecorder,
+  Device,
+  Mesh,
+  patchGeometry,
+  BufferUsage,
+} from '@gglib/graphics'
 import { DEGREE_TO_RAD, Mat4, Vec3, type IVec4 } from '@gglib/math'
 import { TerrainPatchMaterial, WaterPatchMaterial } from '../../material'
 
@@ -32,7 +41,10 @@ export class TerrainMesh extends Mesh {
   public constructor(device: Device, options: TerrainMeshOptions) {
     super(device, {
       geometries: [createQuadGeometry(device, { size: options.size })],
-      materials: [new TerrainPatchMaterial(device), new WaterPatchMaterial(device)],
+      materials: [
+        new TerrainPatchMaterial(device, { properties: {} }),
+        new WaterPatchMaterial(device, { properties: {} }),
+      ],
       parts: [
         { geometryIndex: 0, materialIndex: 0 },
         { geometryIndex: 0, materialIndex: 1 },
@@ -44,7 +56,7 @@ export class TerrainMesh extends Mesh {
       recordByteSize: instanceLayout.byteSize,
     })
     this.buffer = device.createBuffer({
-      type: 'StorageBuffer',
+      usage: BufferUsage.STORAGE,
       size: this.writer.capacity * instanceLayout.byteSize,
       readWrite: true,
     })
@@ -59,35 +71,35 @@ export class TerrainMesh extends Mesh {
   }
 
   public writeTransform(value: Mat4) {
-    this.writer.writeField(instanceLayout.schema.transform, value)
+    this.writer.writeField(instanceLayout.fields.transform, value)
   }
 
   public writeParams1(value: IVec4) {
-    this.writer.writeField(instanceLayout.schema.params1, value)
+    this.writer.writeField(instanceLayout.fields.params1, value)
   }
 
   public writeParams2(value: IVec4) {
-    this.writer.writeField(instanceLayout.schema.params2, value)
+    this.writer.writeField(instanceLayout.fields.params2, value)
   }
 
   public writeParams3(value: IVec4) {
-    this.writer.writeField(instanceLayout.schema.params3, value)
+    this.writer.writeField(instanceLayout.fields.params3, value)
   }
 
   public writeColorUvTransform(value: IVec4) {
-    this.writer.writeField(instanceLayout.schema.colorUvTransform, value)
+    this.writer.writeField(instanceLayout.fields.colorUvTransform, value)
   }
 
   public writeColorUvTransformCoarse(value: IVec4) {
-    this.writer.writeField(instanceLayout.schema.colorUvTransformCoarse, value)
+    this.writer.writeField(instanceLayout.fields.colorUvTransformCoarse, value)
   }
 
   public writeHeightUvTransform(value: IVec4) {
-    this.writer.writeField(instanceLayout.schema.heightUvTransform, value)
+    this.writer.writeField(instanceLayout.fields.heightUvTransform, value)
   }
 
   public writeHeightUvTransformCoarse(value: IVec4) {
-    this.writer.writeField(instanceLayout.schema.heightUvTransformCoarse, value)
+    this.writer.writeField(instanceLayout.fields.heightUvTransformCoarse, value)
   }
 
   public commitInstanceData() {

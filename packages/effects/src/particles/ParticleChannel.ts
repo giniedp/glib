@@ -166,7 +166,7 @@ export class ParticleChannel {
 
     this.vertexBuffer = this.device.createVertexBuffer([
       {
-        layout: this.layout.attributes,
+        layout: this.layout.fields,
         instanced: true,
         stride: this.layout.byteSize,
         size: this.layout.byteSize * this.capacity,
@@ -284,10 +284,10 @@ export class ParticleChannel {
     velocity.y += lerp(this.settings.minVerticalVelocity, this.settings.maxVerticalVelocity, Math.random())
 
     this.writer.seek(this.startFree)
-    this.writer.writeField(this.layout.schema.position, position)
-    this.writer.writeField(this.layout.schema.velocity, velocity)
-    this.writer.writeField(this.layout.schema.random, Vec4.$0.initRandom())
-    this.writer.writeField(this.layout.schema.time, this.time)
+    this.writer.writeField(this.layout.fields.position, position)
+    this.writer.writeField(this.layout.fields.velocity, velocity)
+    this.writer.writeField(this.layout.fields.random, Vec4.$0.initRandom())
+    this.writer.writeField(this.layout.fields.time, this.time)
     this.times[this.startFree] = this.time
     this.frames[this.startFree] = this.frame
     this.startFree = nextParticle

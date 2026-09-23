@@ -3,6 +3,7 @@ import {
   Buffer,
   bufferLayout,
   BufferRecorder,
+  BufferUsage,
   cylinderGeometry,
   Device,
   discGeometry,
@@ -30,7 +31,7 @@ export class DebugMesh extends Mesh {
   public constructor(device: Device, type: DebugShapeType, solid: boolean) {
     super(device, {
       geometries: [createShapeGeometry(device, type, solid)],
-      materials: [new ShapeMaterial(device)],
+      materials: [new ShapeMaterial(device, { properties: {} })],
       parts: [{ geometryIndex: 0, materialIndex: 0 }],
     })
     this.writer = new BufferRecorder({
@@ -39,7 +40,7 @@ export class DebugMesh extends Mesh {
       recordByteSize: instanceLayout.byteSize,
     })
     this.buffer = device.createBuffer({
-      type: 'StorageBuffer',
+      usage: BufferUsage.STORAGE,
       size: this.writer.capacity * this.writer.strideInBytes,
       readWrite: true,
     })
@@ -58,11 +59,11 @@ export class DebugMesh extends Mesh {
   }
 
   public writeTransform(value: Mat4) {
-    this.writer.writeField(instanceLayout.schema.transform, value)
+    this.writer.writeField(instanceLayout.fields.transform, value)
   }
 
   public writeColor(value: IVec4 | IVec3) {
-    this.writer.writeField(instanceLayout.schema.color, value)
+    this.writer.writeField(instanceLayout.fields.color, value)
   }
 
   public commitInstanceData() {

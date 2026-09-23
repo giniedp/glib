@@ -49,19 +49,19 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   writer.reset()
   for (let i = 0; i < 1000; i++) {
     writer.seek(i)
-    writer.writeField(layout.schema.position, {
+    writer.writeField(layout.fields.position, {
       x: (Math.random() * 2 - 1) * 0.75,
       y: (Math.random() * 2 - 1) * 0.75,
       z: (Math.random() * 2 - 1) * 0.75,
       w: 0,
     })
-    writer.writeField(layout.schema.color, {
+    writer.writeField(layout.fields.color, {
       x: Math.random(),
       y: Math.random(),
       z: Math.random(),
       w: 1,
     })
-    writer.writeField(layout.schema.params, {
+    writer.writeField(layout.fields.params, {
       x: Math.random() * 0.5 + 0.1, // scale
       y: Math.random() * 0 + 0.1, // radius
       z: Math.random() * 2 * Math.PI, // offset
