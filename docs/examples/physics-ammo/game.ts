@@ -23,7 +23,7 @@ import { PhysicsWorld } from './physics-world'
 
 export default (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
   let game: Game
-  Ammo.bind(Ammo)(Ammo).then(() => {
+  Ammo.call({}, Ammo).then(() => {
     game = new Game({ canvas, platform, autosize: true })
     game.run()
 
