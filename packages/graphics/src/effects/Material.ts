@@ -123,20 +123,26 @@ export class Material {
   protected effects: Record<RenderVariant, Effect> = Object.create(null)
 
   protected options: MaterialOptions
+
   public constructor(device: Device, options: MaterialOptions) {
     this.device = device
+    options ||= { properties: {} }
+    options.name ||= ''
+    options.meta ||= {}
+    options.properties ||= {}
+
     this.options = options
-    this.name = options?.name
-    this.meta = options?.meta || {}
+    this.name = options.name
+    this.meta = options.meta
     this.configure(options)
   }
 
   protected configure(options: Partial<MaterialOptions>) {
-    this.name = options?.name ?? this.name
-    this.meta = options?.meta ?? this.meta
-    if (options?.effect) {
+    this.name = options.name ?? this.name
+    this.meta = options.meta ?? this.meta
+    if (options.effect) {
       this.effects[RenderVariant.Forward] = new Effect(this.device, options.effect)
-    } else if (options?.effect === null) {
+    } else if (options.effect === null) {
       // no effect specified, this is a valid case, no error
       // creation of the effect is deferred to the subclass
     } else {
@@ -145,6 +151,9 @@ export class Material {
     }
   }
 
+  /**
+   * Creates a new instance of this material with same constructor options.
+   */
   public instantiate(): Material {
     return new (this.constructor as any)(this.device, this.options)
   }
