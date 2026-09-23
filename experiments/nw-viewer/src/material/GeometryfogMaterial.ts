@@ -3,8 +3,7 @@ import {
   CommonBlocks,
   CullState,
   DepthState,
-  Device,
-  materialSchemaClass,
+  MaterialWithSchema,
   SamplerState,
   TRUE,
   type EffectOptions,
@@ -18,7 +17,7 @@ import WGSL from './GeometryfogMaterial.wgsl'
 import type { NwMaterialProps } from './GltfExtension'
 import { TextureModifier } from './TexMod'
 import { getShaderConstants, MaterialLayerMasks, type FeatureFlag } from './common'
-import { MtlUtil, paramVec4, paramValue } from './utils'
+import { MtlUtil, paramValue, paramVec4 } from './utils'
 
 export function geometryfogShaderOptions(): ShaderModuleOptions {
   return {
@@ -73,11 +72,11 @@ const util = new MtlUtil('GeometryFog', {
   knownFlags: ['NOISE', 'USE_AS_BEAMPROC'],
 })
 
-export class GeometryFogMaterial extends materialSchemaClass(SCHEMA) {
+export class GeometryFogMaterial extends MaterialWithSchema(SCHEMA) {
   private mod1: TextureModifier | null = null
 
-  public constructor(device: Device, options?: MaterialOptions) {
-    super(device, {
+  protected override configure(options: Partial<MaterialOptions>): void {
+    super.configure({
       name: 'Geometryfog Material',
       effect: geometryfogEffectOptions(),
       meta: options,

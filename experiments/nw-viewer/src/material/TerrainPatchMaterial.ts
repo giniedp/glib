@@ -1,12 +1,11 @@
 import {
   CommonInputs,
   CullState,
-  Device,
   inputSlotSampler,
   inputSlotScalar,
   inputSlotTexture,
   inputSlotVec4,
-  materialSchemaClass,
+  MaterialWithSchema,
   SamplerState,
   type EffectOptions,
   type ShaderModuleOptions,
@@ -63,9 +62,9 @@ export const TerrainPatchMaterialSchema = {
   ColorMapSampler: inputSlotSampler('material', 'colorMapSampler'),
 }
 
-export class TerrainPatchMaterial extends materialSchemaClass(TerrainPatchMaterialSchema) {
-  public constructor(device: Device) {
-    super(device, {
+export class TerrainPatchMaterial extends MaterialWithSchema(TerrainPatchMaterialSchema) {
+  protected override configure(): void {
+    super.configure({
       name: 'Terrain Patch Material',
       effect: terrainPatchEffectOptions(),
       meta: {},

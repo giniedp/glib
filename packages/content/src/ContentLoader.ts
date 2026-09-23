@@ -3,7 +3,6 @@ import {
   Device,
   isAquirableTextureOptions,
   Material,
-  MaterialEffectOptions,
   MaterialOptions,
   Texture,
   TextureOptions,
@@ -270,7 +269,7 @@ export class ContentLoader {
   /**
    * Shorthand for `create(AssetType.Material, options)`
    */
-  public createMaterial = (options: Material | MaterialEffectOptions | MaterialOptions): Material => {
+  public createMaterial = (options: Material | MaterialOptions): Material => {
     return this.create(AssetType.Material, options)
   }
 
@@ -357,7 +356,7 @@ export const createModel: AssetCreator<ModelOptions, Model> = (content: ContentL
 
 export const createMaterial: AssetCreator<MaterialOptions, Material> = (
   content: ContentLoader,
-  options: Material | MaterialEffectOptions | MaterialOptions,
+  options: Material | MaterialOptions,
 ): Material => {
   if (!options) {
     throw new Error('Material options are required')
@@ -365,7 +364,7 @@ export const createMaterial: AssetCreator<MaterialOptions, Material> = (
   if (options instanceof Material) {
     return options
   }
-  if ('effect' in options) {
+  if (options.effect) {
     return new Material(null as any, options)
   }
   if (options.factory) {

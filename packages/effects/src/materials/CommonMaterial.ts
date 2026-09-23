@@ -1,4 +1,4 @@
-import type { Device, EffectOptions } from '@gglib/graphics'
+import type { EffectOptions } from '@gglib/graphics'
 import {
   CommonBlocks,
   CommonInputs,
@@ -7,7 +7,7 @@ import {
   FALSE,
   inputSlot,
   MaterialOptions,
-  materialSchemaClass,
+  MaterialWithSchema,
   SamplerState,
   TRUE,
   uvInfoToMat4,
@@ -112,9 +112,9 @@ export const CommonMaterialSchema = {
   IblLambertianMap: inputSlot('ibl', 'irradianceMap', 'texture'),
 } as const
 
-export class CommonMaterial extends materialSchemaClass(CommonMaterialSchema) {
-  public constructor(device: Device, options?: Partial<MaterialOptions>) {
-    super(device, {
+export class CommonMaterial extends MaterialWithSchema(CommonMaterialSchema) {
+  protected override configure(options: Partial<MaterialOptions>): void {
+    super.configure({
       name: options?.name ?? 'Common Material',
       effect: commonEffectOptions(),
       meta: options?.meta ?? {},
@@ -123,7 +123,6 @@ export class CommonMaterial extends materialSchemaClass(CommonMaterialSchema) {
     if (options?.properties) {
       this.setProperties(options?.properties)
     }
-    this.instantiate = () => new CommonMaterial(device, options)
   }
 
   public setDefaults() {

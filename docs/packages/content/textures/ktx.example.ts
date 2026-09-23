@@ -1,5 +1,12 @@
 import { AssetType, ContentLoader } from '@gglib/content'
-import { CommonMaterial, IblSampler, SkyboxMaterial, TonemapEffect, TonemapOperator } from '@gglib/effects'
+import {
+  CommonMaterial,
+  IblSampler,
+  skyboxMaterial,
+  SkyboxMaterial,
+  TonemapEffect,
+  TonemapOperator,
+} from '@gglib/effects'
 import { MouseInput } from '@gglib/game'
 import {
   BlendState,
@@ -89,7 +96,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   const skybox = new Mesh(device, {
     geometries: [boxGeometry(device, { invert: true })],
     materials: [
-      new SkyboxMaterial(device, {
+      skyboxMaterial(device, {
         blur: 1,
         cubemap: iblSampler.envMapGGX,
         intensity: 1,

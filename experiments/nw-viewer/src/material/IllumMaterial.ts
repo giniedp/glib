@@ -7,7 +7,7 @@ import {
   Effect,
   type EffectOptions,
   type MaterialOptions,
-  materialSchemaClass,
+  MaterialWithSchema,
   RenderVariant,
   SamplerState,
   ShaderConstants,
@@ -171,15 +171,15 @@ const illum = new MtlUtil('Illum', {
   ],
 })
 
-export class IllumMaterial extends materialSchemaClass(SCHEMA) {
+export class IllumMaterial extends MaterialWithSchema(SCHEMA) {
   private modDiffuse: TextureModifier | null = null
   private modCustom: TextureModifier | null = null
   private modDetail: TextureModifier | null = null
   private modEmittance: TextureModifier | null = null
   private modDecalEmissive: TextureModifier | null = null
 
-  public constructor(device: Device, options?: MaterialOptions) {
-    super(device, {
+  protected override configure(options: Partial<MaterialOptions>): void {
+    super.configure({
       name: 'Illum Material',
       effect: null,
       meta: options,
@@ -244,7 +244,7 @@ export class IllumMaterial extends materialSchemaClass(SCHEMA) {
 
     const shaderConst = getShaderConstants(shaderFlags)
 
-    this.effects[RenderVariant.Forward] = new Effect(device, illumEffectOptions(shaderConst))
+    this.effects[RenderVariant.Forward] = new Effect(this.device, illumEffectOptions(shaderConst))
     this.effect.cullState = CullState.CullBack
     this.effect.blendState = BlendState.Opaque
     if (attrs.MtlFlags & MtlFlag.MTL_FLAG_2SIDED) {

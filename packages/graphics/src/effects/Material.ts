@@ -37,31 +37,14 @@ export interface MaterialOptions {
   properties: MaterialProperties
 
   /**
+   * The effect to be used
+   */
+  effect?: EffectOptions
+
+  /**
    * A factory function to instantiate the material, usually provided by the content pipeline
    */
   factory?: (device: Device, asset: MaterialOptions) => Material
-}
-
-/**
- * Constructor options for {@link Material}
- *
- * @public
- */
-export interface MaterialEffectOptions {
-  /**
-   * The descriptive name of this effect
-   */
-  name?: string
-
-  /**
-   * User defined meta data and annotations
-   */
-  meta?: Record<string, any>
-
-  /**
-   * The effect to be used
-   */
-  effect: EffectOptions
 }
 
 /**
@@ -139,25 +122,31 @@ export class Material {
 
   protected effects: Record<RenderVariant, Effect> = Object.create(null)
 
-  public constructor(device: Device, options: MaterialEffectOptions) {
+  protected options: MaterialOptions
+  public constructor(device: Device, options: MaterialOptions) {
     this.device = device
-    this.name = options.name
-    this.meta = options.meta || {}
-    if (options.effect) {
+    this.options = options
+    this.name = options?.name
+    this.meta = options?.meta || {}
+    this.configure(options)
+  }
+
+  protected configure(options: Partial<MaterialOptions>) {
+    this.name = options?.name ?? this.name
+    this.meta = options?.meta ?? this.meta
+    if (options?.effect) {
       this.effects[RenderVariant.Forward] = new Effect(this.device, options.effect)
-    } else if (options.effect === null) {
+    } else if (options?.effect === null) {
       // no effect specified, this is a valid case, no error
       // creation of the effect is deferred to the subclass
     } else {
       // option is missing, this is a programming error
       console.warn('No effect specified for material', this)
     }
-
-    this.instantiate = () => new Material(device, options)
   }
 
   public instantiate(): Material {
-    return this
+    return new (this.constructor as any)(this.device, this.options)
   }
 
   public getInput<T extends InputTypeName>(input: InputSlot<T>): InputTypeMap[T] | null {

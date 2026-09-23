@@ -5,7 +5,7 @@ import {
   DepthState,
   Device,
   Effect,
-  materialSchemaClass,
+  MaterialWithSchema,
   RenderVariant,
   SamplerState,
   ShaderConstants,
@@ -62,11 +62,11 @@ const util = new MtlUtil('ParticleImposter', {
   knownMods: ['Diffuse'],
   knownFlags: ['NORMAL_MAP', 'SOFT_PARTICLE'],
 })
-export class ParticleImposterMaterial extends materialSchemaClass(SCHEMA) {
+export class ParticleImposterMaterial extends MaterialWithSchema(SCHEMA) {
   private modDiffuse: TextureModifier | null = null
 
-  public constructor(device: Device, options?: MaterialOptions) {
-    super(device, {
+  protected override configure(options: Partial<MaterialOptions>): void {
+    super.configure({
       name: 'Particle Imposter Material',
       effect: null,
       meta: options,
@@ -76,7 +76,7 @@ export class ParticleImposterMaterial extends materialSchemaClass(SCHEMA) {
     this.name = `${attrs.Shader} (${attrs.Name})`
     const shaderConst = getShaderConstants(shaderFlags)
 
-    this.effects[RenderVariant.Forward] = new Effect(device, particleImposterEffectOptions(shaderConst))
+    this.effects[RenderVariant.Forward] = new Effect(this.device, particleImposterEffectOptions(shaderConst))
     this.effect.depthState = DepthState.GreaterEqualNoWrite
     this.effect.cullState = CullState.None
     this.effect.blendState = BlendState.Alpha

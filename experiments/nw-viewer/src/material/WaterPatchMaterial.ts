@@ -2,8 +2,7 @@ import {
   BlendState,
   CommonBlocks,
   CullState,
-  Device,
-  materialSchemaClass,
+  MaterialWithSchema,
   SamplerState,
   type EffectOptions,
   type ShaderModuleOptions,
@@ -33,9 +32,9 @@ export function waterPatchEffectOptions(): EffectOptions {
   }
 }
 
-export class WaterPatchMaterial extends materialSchemaClass(SCHEMA) {
-  public constructor(device: Device) {
-    super(device, {
+export class WaterPatchMaterial extends MaterialWithSchema(SCHEMA) {
+  protected override configure(): void {
+    super.configure({
       name: 'Water Patch Material',
       effect: waterPatchEffectOptions(),
       meta: {},

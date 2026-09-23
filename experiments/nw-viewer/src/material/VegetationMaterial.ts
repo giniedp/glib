@@ -2,11 +2,10 @@ import {
   BlendState,
   CommonBlocks,
   CullState,
-  Device,
   Effect,
   type EffectOptions,
   type MaterialOptions,
-  materialSchemaClass,
+  MaterialWithSchema,
   RenderVariant,
   SamplerState,
   ShaderConstants,
@@ -20,7 +19,7 @@ import SCHEMA from './VegetationMaterial.meta'
 import WGSL from './VegetationMaterial.wgsl'
 import { type FeatureFlag, getShaderConstants, MaterialLayerMasks } from './common'
 import { MtlFlag } from './types'
-import { MtlUtil, paramVec4, paramValue } from './utils'
+import { MtlUtil, paramValue, paramVec4 } from './utils'
 
 export function vegetationShaderOptions(constants: Record<string, number>): ShaderModuleOptions {
   return {
@@ -73,15 +72,15 @@ const util = new MtlUtil('Vegetation', {
   knownFlags: ['LEAVES', 'VERTCOLORS', 'GRASS', 'EMITTANCE_MAP', 'SPECULAR_MAP', 'NORMAL_MAP'],
 })
 
-export class VegetationMaterial extends materialSchemaClass(SCHEMA) {
+export class VegetationMaterial extends MaterialWithSchema(SCHEMA) {
   private modDiffuse: TextureModifier | null = null
   private modCustom: TextureModifier | null = null
   private modDetail: TextureModifier | null = null
   private modEmittance: TextureModifier | null = null
   private modDecalEmissive: TextureModifier | null = null
 
-  public constructor(device: Device, options?: MaterialOptions) {
-    super(device, {
+  protected override configure(options: Partial<MaterialOptions>): void {
+    super.configure({
       name: 'Vegetation Material',
       effect: null,
       meta: options,
@@ -93,7 +92,7 @@ export class VegetationMaterial extends materialSchemaClass(SCHEMA) {
     this.name = `${attrs.Shader} (${attrs.Name})`
     const shaderConst = getShaderConstants(shaderFlags)
 
-    this.effects[RenderVariant.Forward] = new Effect(device, vegetationEffectOptions(shaderConst))
+    this.effects[RenderVariant.Forward] = new Effect(this.device, vegetationEffectOptions(shaderConst))
     this.effect.cullState = CullState.CullBack
     this.effect.blendState = BlendState.Opaque
     if (attrs.MtlFlags & MtlFlag.MTL_FLAG_2SIDED) {

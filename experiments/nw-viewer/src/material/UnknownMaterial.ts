@@ -1,11 +1,4 @@
-import {
-  Color,
-  CommonBlocks,
-  Device,
-  materialSchemaClass,
-  type EffectOptions,
-  type ShaderModuleOptions,
-} from '@gglib/graphics'
+import { Color, CommonBlocks, MaterialWithSchema, type EffectOptions, type ShaderModuleOptions } from '@gglib/graphics'
 import Schema from './UnknownMaterial.meta'
 import WGSL from './UnknownMaterial.wgsl'
 
@@ -31,9 +24,9 @@ export function unknownEffectOptions(): EffectOptions {
   }
 }
 
-export class UnknownMaterial extends materialSchemaClass(Schema) {
-  public constructor(device: Device) {
-    super(device, {
+export class UnknownMaterial extends MaterialWithSchema(Schema) {
+  protected override configure(): void {
+    super.configure({
       name: 'Shape Material',
       effect: unknownEffectOptions(),
       meta: {},

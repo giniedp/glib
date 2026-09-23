@@ -1,11 +1,8 @@
 import type { Device } from '../Device'
 import { BasicMaterial } from './BasicMaterial'
-import { Material, MaterialEffectOptions, MaterialOptions } from './Material'
+import { Material, MaterialOptions } from './Material'
 
-export function createMaterials(
-  device: Device,
-  materials: Array<Material | MaterialEffectOptions | MaterialOptions>,
-): Material[] {
+export function createMaterials(device: Device, materials: Array<Material | MaterialOptions>): Material[] {
   const result: Material[] = []
   if (!materials || !materials.length) {
     return result
@@ -16,17 +13,14 @@ export function createMaterials(
   return result
 }
 
-export function createMaterialInstance(
-  device: Device,
-  options: Material | MaterialEffectOptions | MaterialOptions,
-): Material {
+export function createMaterialInstance(device: Device, options: Material | MaterialOptions): Material {
   if (!options) {
     throw new Error('Material options are required')
   }
   if (options instanceof Material) {
     return options
   }
-  if ('effect' in options) {
+  if (options.effect) {
     return new Material(null as any, options)
   }
   if (options.factory) {

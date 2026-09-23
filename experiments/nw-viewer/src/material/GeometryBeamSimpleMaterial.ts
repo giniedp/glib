@@ -3,9 +3,8 @@ import {
   CommonBlocks,
   CullState,
   DepthState,
-  Device,
   Effect,
-  materialSchemaClass,
+  MaterialWithSchema,
   RenderVariant,
   SamplerState,
   ShaderConstants,
@@ -21,7 +20,7 @@ import WGSL from './GeometryBeamSimpleMaterial.wgsl'
 import type { NwMaterialProps } from './GltfExtension'
 import { TextureModifier } from './TexMod'
 import { getShaderConstants, MaterialLayerMasks, type FeatureFlag } from './common'
-import { MtlUtil, paramVec4, paramValue } from './utils'
+import { MtlUtil, paramValue, paramVec4 } from './utils'
 
 export function geometryBeamSimpleShaderOptions(constants: Record<string, number>): ShaderModuleOptions {
   return {
@@ -84,21 +83,18 @@ const util = new MtlUtil('GeometryBeamSimple', {
   ],
 })
 
-export class GeometryBeamSimpleMaterial extends materialSchemaClass(SCHEMA) {
+export class GeometryBeamSimpleMaterial extends MaterialWithSchema(SCHEMA) {
   private modDiffuse: TextureModifier | null = null
 
-  public constructor(device: Device, options?: MaterialOptions) {
-    super(device, {
-      name: 'Geometry Beam Simple Material',
-      effect: null,
-      meta: {},
-    })
+  protected override configure(options: Partial<MaterialOptions>): void {
+    this.name = 'Geometry Beam Simple Material'
+    this.meta = options
 
     const { attrs, params, texMaps, texMods, shaderFlags } = util.resolve<PublicParams>(options?.properties)
     this.name = `${attrs.Shader} (${attrs.Name})`
     const shaderConst = getShaderConstants(shaderFlags)
 
-    this.effects[RenderVariant.Forward] = new Effect(device, geometryBeamSimpleEffectOptions(shaderConst))
+    this.effects[RenderVariant.Forward] = new Effect(this.device, geometryBeamSimpleEffectOptions(shaderConst))
     this.effect.depthState = DepthState.GreaterEqualNoWrite
     this.effect.cullState = CullState.None
     this.effect.blendState = BlendState.AdditiveAlpha

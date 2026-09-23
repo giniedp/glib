@@ -3,10 +3,8 @@ import {
   CommonBlocks,
   CullState,
   DepthState,
-  Device,
   Effect,
-  FALSE,
-  materialSchemaClass,
+  MaterialWithSchema,
   RenderVariant,
   SamplerState,
   ShaderConstants,
@@ -127,15 +125,12 @@ const util = new MtlUtil('FxMeshAdvancedTransp', {
     'ENABLE_FADEOUT',
   ],
 })
-export class FxMeshAdvancedTranspMaterial extends materialSchemaClass(SCHEMA) {
+export class FxMeshAdvancedTranspMaterial extends MaterialWithSchema(SCHEMA) {
   private modDiffuse: TextureModifier | null = null
 
-  public constructor(device: Device, options?: MaterialOptions) {
-    super(device, {
-      name: 'FX Mesh Advanced Transparent Material',
-      effect: null,
-      meta: options,
-    })
+  protected override configure(options: Partial<MaterialOptions>): void {
+    this.name = 'FX Mesh Advanced Transparent Material'
+    this.meta = options
 
     const { attrs, params, texMaps, texMods, shaderFlags, deformWave0, deformWave1 } = util.resolve<PublicParams>(
       options?.properties,
@@ -143,7 +138,7 @@ export class FxMeshAdvancedTranspMaterial extends materialSchemaClass(SCHEMA) {
     this.name = `${attrs.Shader} (${attrs.Name})`
     const shaderConst = getShaderConstants(shaderFlags)
 
-    this.effects[RenderVariant.Forward] = new Effect(device, fxMeshAdvancedTranspEffectOptions(shaderConst))
+    this.effects[RenderVariant.Forward] = new Effect(this.device, fxMeshAdvancedTranspEffectOptions(shaderConst))
     this.effect.depthState = DepthState.GreaterEqualNoWrite
     this.effect.cullState = CullState.CullBack
     this.effect.blendState = BlendState.Additive

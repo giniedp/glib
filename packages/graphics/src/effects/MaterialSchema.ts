@@ -7,20 +7,23 @@ export type MaterialSchemaType<S extends Record<Key, InputSlot>> = {
   -readonly [K in keyof S]: S[K] extends InputSlot<infer T> ? InputTypeMap[T] : never
 }
 
-export function materialSchemaClass<S extends Record<Key, InputSlot>>(schema: S) {
-  return class extends Material {
-    public readonly schema: S = schema
-    constructor(...args: ConstructorParameters<typeof Material>) {
-      super(...args)
+export function MaterialWithSchema<S extends Record<Key, InputSlot>>(schema: S) {
+  const SchemaClass = class extends Material {}
 
-      for (const key in schema) {
-        const slot = schema[key]
+  for (const key in schema) {
+    const slot = schema[key]
 
-        Object.defineProperty(this, key, {
-          get: () => this.getInput(slot),
-          set: (v) => this.setInput(slot, v),
-        })
-      }
-    }
-  } as new (...args: ConstructorParameters<typeof Material>) => Material & MaterialSchemaType<S> & { schema: S }
+    Object.defineProperty(SchemaClass.prototype, key, {
+      get() {
+        return (this as Material).getInput(slot)
+      },
+      set(v) {
+        return (this as Material).setInput(slot, v)
+      },
+    })
+  }
+
+  return SchemaClass as new (
+    ...args: ConstructorParameters<typeof Material>
+  ) => Material & MaterialSchemaType<S> & { schema: S }
 }

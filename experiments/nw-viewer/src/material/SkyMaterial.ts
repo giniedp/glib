@@ -1,8 +1,7 @@
 import {
   CullState,
   DepthState,
-  Device,
-  materialSchemaClass,
+  MaterialWithSchema,
   SamplerState,
   type EffectOptions,
   type ShaderModuleOptions,
@@ -32,9 +31,9 @@ export function skyEffectOptions(): EffectOptions {
   }
 }
 
-export class SkyMaterial extends materialSchemaClass(SkyMaterialSchema) {
-  public constructor(device: Device) {
-    super(device, {
+export class SkyMaterial extends MaterialWithSchema(SkyMaterialSchema) {
+  protected override configure(): void {
+    super.configure({
       name: 'Sky Material',
       effect: skyEffectOptions(),
       meta: {},

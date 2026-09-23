@@ -1,6 +1,5 @@
 import {
-  Device,
-  materialSchemaClass,
+  MaterialWithSchema,
   SamplerState,
   type EffectOptions,
   type MaterialOptions,
@@ -13,7 +12,7 @@ import { smoothnessToRoughness } from './common.wgsl'
 import type { NwMaterialProps } from './GltfExtension'
 import Schema from './TerrainCompositeMaterial.meta'
 import WGSL from './TerrainCompositeMaterial.wgsl'
-import { MtlUtil, paramVec4, paramValue } from './utils'
+import { MtlUtil, paramValue, paramVec4 } from './utils'
 
 export function splatComposeShaderOptions(): ShaderModuleOptions {
   return {
@@ -51,9 +50,9 @@ const util = new MtlUtil('TerrainComposite', {
   knownMods: [],
   knownFlags: [],
 })
-export class TerrainCompositeMaterial extends materialSchemaClass(Schema) {
-  public constructor(device: Device, options?: MaterialOptions) {
-    super(device, {
+export class TerrainCompositeMaterial extends MaterialWithSchema(Schema) {
+  protected override configure(options: Partial<MaterialOptions>): void {
+    super.configure({
       name: 'Terrain Composite Material',
       effect: splatComposeEffectOptions(),
       meta: options,

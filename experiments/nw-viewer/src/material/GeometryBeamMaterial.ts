@@ -3,9 +3,8 @@ import {
   CommonBlocks,
   CullState,
   DepthState,
-  Device,
   Effect,
-  materialSchemaClass,
+  MaterialWithSchema,
   RenderVariant,
   SamplerState,
   ShaderConstants,
@@ -14,14 +13,14 @@ import {
   type MaterialOptions,
   type ShaderModuleOptions,
 } from '@gglib/graphics'
-import { Mat4, vec4, Vec4 } from '@gglib/math'
+import { Mat4, Vec4 } from '@gglib/math'
 import { Noise3DKey } from '../content'
 import SCHEMA from './GeometryBeamMaterial.meta'
 import WGSL from './GeometryBeamMaterial.wgsl'
 import type { NwMaterialProps } from './GltfExtension'
 import { TextureModifier } from './TexMod'
 import { getShaderConstants, MaterialLayerMasks, type FeatureFlag } from './common'
-import { MtlUtil, paramVec4, paramValue } from './utils'
+import { MtlUtil, paramValue, paramVec4 } from './utils'
 
 export function geometryBeamShaderOptions(constants: Record<string, number>): ShaderModuleOptions {
   return {
@@ -85,15 +84,12 @@ const util = new MtlUtil('Geometrybeam', {
     'VERTICAL_GRADIENT',
   ],
 })
-export class GeometryBeamMaterial extends materialSchemaClass(SCHEMA) {
+export class GeometryBeamMaterial extends MaterialWithSchema(SCHEMA) {
   private modDiffuse: TextureModifier | null = null
 
-  public constructor(device: Device, options?: MaterialOptions) {
-    super(device, {
-      name: 'Geometry Beam Material',
-      effect: null,
-      meta: options,
-    })
+  protected override configure(options: Partial<MaterialOptions>): void {
+    this.name = 'Geometry Beam Material'
+    this.meta = options
 
     const { attrs, params, texMaps, texMods, shaderFlags, deformWave0, deformWave1 } = util.resolve<PublicParams>(
       options?.properties,
@@ -101,7 +97,7 @@ export class GeometryBeamMaterial extends materialSchemaClass(SCHEMA) {
     this.name = `${attrs.Shader} (${attrs.Name})`
     const shaderConst = getShaderConstants(shaderFlags)
 
-    this.effects[RenderVariant.Forward] = new Effect(device, geometryBeamEffectOptions(shaderConst))
+    this.effects[RenderVariant.Forward] = new Effect(this.device, geometryBeamEffectOptions(shaderConst))
     this.effect.depthState = DepthState.GreaterEqualNoWrite
     this.effect.cullState = CullState.None
     this.effect.blendState = BlendState.AdditiveAlpha

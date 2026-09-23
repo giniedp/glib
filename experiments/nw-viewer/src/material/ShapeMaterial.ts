@@ -3,8 +3,7 @@ import {
   CommonBlocks,
   CullState,
   DepthState,
-  Device,
-  materialSchemaClass,
+  MaterialWithSchema,
   type EffectOptions,
   type ShaderModuleOptions,
 } from '@gglib/graphics'
@@ -33,9 +32,9 @@ export function shapeEffectOptions(): EffectOptions {
   }
 }
 
-export class ShapeMaterial extends materialSchemaClass(Schema) {
-  public constructor(device: Device) {
-    super(device, {
+export class ShapeMaterial extends MaterialWithSchema(Schema) {
+  protected override configure(): void {
+    super.configure({
       name: 'Shape Material',
       effect: shapeEffectOptions(),
       meta: {},

@@ -1,4 +1,12 @@
-import { CommonInputs, Device, inputSlotScalar, inputSlotTexture, materialSchemaClass, Texture } from '@gglib/graphics'
+import {
+  CommonInputs,
+  Device,
+  inputSlotScalar,
+  inputSlotTexture,
+  MaterialOptions,
+  MaterialWithSchema,
+  Texture,
+} from '@gglib/graphics'
 import { Mat4 } from '@gglib/math'
 import { SKYBOX_GLSL_FS, SKYBOX_GLSL_VS } from './SkyboxMaterial.glsl'
 import { SKYBOX_WGSL } from './SkyboxMaterial.wgsl'
@@ -12,15 +20,21 @@ export const SkyboxMaterialSchema = {
   EnvironmentMap: inputSlotTexture('material', 'environmentMap'),
 }
 
-export interface SkyboxMaterialParams {
+export type SkyboxMaterialParams = {
   cubemap: Texture
   intensity?: number
   blur?: number
 }
 
-export class SkyboxMaterial extends materialSchemaClass(SkyboxMaterialSchema) {
-  public constructor(device: Device, options?: SkyboxMaterialParams) {
-    super(device, {
+export function skyboxMaterial(device: Device, params?: SkyboxMaterialParams) {
+  return new SkyboxMaterial(device, {
+    properties: params,
+  })
+}
+
+export class SkyboxMaterial extends MaterialWithSchema(SkyboxMaterialSchema) {
+  protected override configure(options: Partial<MaterialOptions>): void {
+    super.configure({
       name: 'Skybox Material',
       effect: {
         name: 'Skybox Effect',
@@ -35,13 +49,14 @@ export class SkyboxMaterial extends materialSchemaClass(SkyboxMaterialSchema) {
       },
     })
 
+    const params = options?.properties as SkyboxMaterialParams
     this.ViewProjection = Mat4.createIdentity()
     this.ObjectModel = Mat4.createIdentity()
-    this.Intensity = options?.intensity ?? 1
-    this.Blur = options?.blur ?? 0
-    this.MipCount = options?.cubemap?.mipLevelCount ?? 4
-    if (options?.cubemap) {
-      this.EnvironmentMap = options.cubemap
+    this.Intensity = params.intensity ?? 1
+    this.Blur = params.blur ?? 0
+    this.MipCount = params.cubemap?.mipLevelCount ?? 4
+    if (params.cubemap) {
+      this.EnvironmentMap = params.cubemap
     }
   }
 }

@@ -173,7 +173,7 @@ export class ParticleChannel {
       },
     ])
 
-    this.material = new ParticleMaterial(this.device)
+    this.material = new ParticleMaterial(this.device, { properties: {} })
   }
 
   private updateParameters() {

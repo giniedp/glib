@@ -3,9 +3,8 @@ import {
   CommonBlocks,
   CullState,
   DepthState,
-  Device,
   Effect,
-  materialSchemaClass,
+  MaterialWithSchema,
   RenderVariant,
   SamplerState,
   ShaderConstants,
@@ -71,19 +70,16 @@ const util = new MtlUtil('DistanceClouds', {
   knownFlags: [],
 })
 
-export class DistanceCloudsMaterial extends materialSchemaClass(Schema) {
-  public constructor(device: Device, options?: MaterialOptions) {
-    super(device, {
-      name: 'Distance Clouds Material',
-      effect: null,
-      meta: options,
-    })
+export class DistanceCloudsMaterial extends MaterialWithSchema(Schema) {
+  protected override configure(options: Partial<MaterialOptions>): void {
+    this.name = 'Distance Clouds Material'
+    this.meta = options
 
     const { attrs, params, texMaps, texMods, shaderFlags } = util.resolve<PublicParams>(options?.properties)
     this.name = `${attrs.Shader} (${attrs.Name})`
     const shaderConst = getShaderConstants(shaderFlags)
 
-    this.effects[RenderVariant.Forward] = new Effect(device, distanceCloudsEffectOptions(shaderConst))
+    this.effects[RenderVariant.Forward] = new Effect(this.device, distanceCloudsEffectOptions(shaderConst))
     this.effect.depthState = DepthState.GreaterEqualNoWrite
     this.effect.cullState = CullState.None
     this.effect.blendState = BlendState.AdditiveAlpha

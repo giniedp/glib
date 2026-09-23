@@ -1,12 +1,11 @@
 import { Mat4, vec3 } from '@gglib/math'
-import type { Device } from '../Device'
 
 import { inputSlot, type ShaderModuleOptions } from '../resources'
 import { CullState, SamplerState } from '../states'
 import { BASIC_EFFECT_GLSL_FS, BASIC_EFFECT_GLSL_VS } from './BasicMaterial.glsl'
 import { BASIC_EFFECT_WGSL } from './BasicMaterial.wgsl'
 import { MaterialOptions } from './Material'
-import { materialSchemaClass } from './MaterialSchema'
+import { MaterialWithSchema } from './MaterialSchema'
 import { CommonMaterialProps, FALSE, TRUE, uvInfoToMat4 } from './types'
 
 import type { EffectOptions } from './Effect'
@@ -69,18 +68,13 @@ export const BasicMaterialSchema = {
   BaseMapSampler: inputSlot('texture', 'baseMapSampler', 'sampler'),
 } as const
 
-export class BasicMaterial extends materialSchemaClass(BasicMaterialSchema) {
-  public constructor(device: Device, options?: Partial<MaterialOptions>) {
-    super(device, {
-      name: options?.name ?? 'Basic Material',
-      effect: basicEffectOptions(),
-      meta: options?.meta ?? {},
-    })
+export class BasicMaterial extends MaterialWithSchema(BasicMaterialSchema) {
+  protected override configure(options: MaterialOptions): void {
+    super.configure({ effect: basicEffectOptions() })
     this.setDefaults()
     if (options?.properties) {
       this.setProperties(options?.properties)
     }
-    this.instantiate = () => new BasicMaterial(device, options)
   }
 
   public setDefaults() {

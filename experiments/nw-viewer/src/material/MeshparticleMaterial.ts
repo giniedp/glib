@@ -4,7 +4,7 @@ import {
   CullState,
   DepthState,
   Device,
-  materialSchemaClass,
+  MaterialWithSchema,
   SamplerState,
   TRUE,
   type EffectOptions,
@@ -79,15 +79,15 @@ const util = new MtlUtil('Meshparticle', {
   ],
 })
 
-export class MeshparticleMaterial extends materialSchemaClass(SCHEMA) {
+export class MeshparticleMaterial extends MaterialWithSchema(SCHEMA) {
   private modDiffuse: TextureModifier | null = null
   private modCustom: TextureModifier | null = null
   private modDetail: TextureModifier | null = null
   private modEmittance: TextureModifier | null = null
   private modDecalEmissive: TextureModifier | null = null
 
-  public constructor(device: Device, options?: MaterialOptions) {
-    super(device, {
+  protected override configure(options: Partial<MaterialOptions>): void {
+    super.configure({
       name: 'Meshparticle Material',
       effect: meshparticleEffectOptions(),
       meta: options,

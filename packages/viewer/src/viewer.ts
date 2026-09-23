@@ -9,7 +9,7 @@ import {
 } from '@gglib/components'
 import { AssetType } from '@gglib/content'
 import { GameEntity } from '@gglib/ecs'
-import { CommonMaterial, IblSampler, SkyboxMaterial, TonemapOperator } from '@gglib/effects'
+import { CommonMaterial, IblSampler, skyboxMaterial, SkyboxMaterial, TonemapOperator } from '@gglib/effects'
 import { MouseListener } from '@gglib/game'
 import { boxGeometry, FALSE, Texture, TRUE } from '@gglib/graphics'
 import { DDS, GLTF, HDR, KTX } from '@gglib/loaders'
@@ -132,7 +132,7 @@ export class ModelViewer extends EcsGame {
     await this.iblSampler.compiled
 
     const skybox = boxGeometry(this.device, { name: 'Skybox', invert: true })
-    const skymat = new SkyboxMaterial(this.device, {
+    const skymat = skyboxMaterial(this.device, {
       cubemap: this.iblSampler.envMapGGX,
       blur: 0.5,
       intensity: 1,

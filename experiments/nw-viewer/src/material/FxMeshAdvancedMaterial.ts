@@ -3,9 +3,8 @@ import {
   CommonBlocks,
   CullState,
   DepthState,
-  Device,
   Effect,
-  materialSchemaClass,
+  MaterialWithSchema,
   RenderVariant,
   SamplerState,
   ShaderConstants,
@@ -20,7 +19,7 @@ import WGSL from './FxMeshAdvancedMaterial.wgsl'
 import type { NwMaterialProps } from './GltfExtension'
 import { TextureModifier } from './TexMod'
 import { getShaderConstants, MaterialLayerMasks, type FeatureFlag } from './common'
-import { MtlUtil, paramVec4, paramValue } from './utils'
+import { MtlUtil, paramValue, paramVec4 } from './utils'
 
 export function fxMeshAdvancedShaderOptions(constants: Record<string, number>): ShaderModuleOptions {
   return {
@@ -114,25 +113,22 @@ const util = new MtlUtil('FxMeshAdvanced', {
   ],
 })
 
-export class FxMeshAdvancedMaterial extends materialSchemaClass(SCHEMA) {
+export class FxMeshAdvancedMaterial extends MaterialWithSchema(SCHEMA) {
   private modDiffuse: TextureModifier | null = null
   private modCustom: TextureModifier | null = null
   private modDetail: TextureModifier | null = null
   private modEmittance: TextureModifier | null = null
   private modDecalEmissive: TextureModifier | null = null
 
-  public constructor(device: Device, options?: MaterialOptions) {
-    super(device, {
-      name: 'FX Mesh Advanced Material',
-      effect: null,
-      meta: options,
-    })
+  protected override configure(options: Partial<MaterialOptions>): void {
+    this.name = 'FX Mesh Advanced Material'
+    this.meta = options
 
     const { attrs, params, texMaps, texMods, shaderFlags } = util.resolve<PublicParams>(options?.properties)
     this.name = `${attrs.Shader} (${attrs.Name})`
     const shaderConst = getShaderConstants(shaderFlags)
 
-    this.effects[RenderVariant.Forward] = new Effect(device, fxMeshAdvancedEffectOptions(shaderConst))
+    this.effects[RenderVariant.Forward] = new Effect(this.device, fxMeshAdvancedEffectOptions(shaderConst))
     this.effect.depthState = DepthState.GreaterEqual
     this.effect.cullState = CullState.CullBack
     this.effect.blendState = BlendState.Opaque

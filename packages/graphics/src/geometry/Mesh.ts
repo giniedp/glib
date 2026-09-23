@@ -1,7 +1,7 @@
 import { BoundingBox, BoundingSphere } from '@gglib/math'
 import { uuid } from '@gglib/utils'
 import { Device } from '../Device'
-import { createMaterials, Material, MaterialEffectOptions, MaterialOptions } from '../effects'
+import { createMaterials, Material, MaterialOptions } from '../effects'
 import { RenderEncoder } from '../RenderEncoder'
 import { Geometry, GeometryOptions } from './Geometry'
 
@@ -37,7 +37,7 @@ export interface MeshOptions {
    * The materials available to this mesh, referenced by index from each {@link MeshPart}.
    * Accepts already constructed {@link Material} instances or material option objects.
    */
-  materials?: Array<Material | MaterialEffectOptions | MaterialOptions>
+  materials?: Array<Material | MaterialOptions>
 
   /**
    * The geometries available to this mesh, referenced by index from each {@link MeshPart}.

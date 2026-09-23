@@ -1,4 +1,4 @@
-import { Device, materialSchemaClass, type EffectOptions, type ShaderModuleOptions } from '@gglib/graphics'
+import { MaterialWithSchema, type EffectOptions, type ShaderModuleOptions } from '@gglib/graphics'
 import SCHEMA from './TerrainPackMaterial.meta'
 import WGSL from './TerrainPackMaterial.wgsl'
 
@@ -23,9 +23,9 @@ export function terrainPackEffectOptions(): EffectOptions {
   }
 }
 
-export class SplatPackMaterial extends materialSchemaClass(SCHEMA) {
-  public constructor(device: Device) {
-    super(device, {
+export class SplatPackMaterial extends MaterialWithSchema(SCHEMA) {
+  protected override configure(): void {
+    super.configure({
       name: 'Terrain Pack Material',
       effect: terrainPackEffectOptions(),
       meta: {},

@@ -1,10 +1,10 @@
-import type { Device, EffectOptions } from '@gglib/graphics'
+import type { EffectOptions } from '@gglib/graphics'
 import {
   CommonBlocks,
   CommonInputs,
   inputSlot,
   MaterialOptions,
-  materialSchemaClass,
+  MaterialWithSchema,
   SamplerState,
   type ShaderModuleOptions,
 } from '@gglib/graphics'
@@ -61,9 +61,9 @@ export const ParticleMaterialSchema = {
   ColorMapSampler: inputSlot('', 'colorMapSampler', 'sampler'),
 } as const
 
-export class ParticleMaterial extends materialSchemaClass(ParticleMaterialSchema) {
-  public constructor(device: Device, options?: Partial<MaterialOptions>) {
-    super(device, {
+export class ParticleMaterial extends MaterialWithSchema(ParticleMaterialSchema) {
+  protected override configure(options: Partial<MaterialOptions>): void {
+    super.configure({
       name: options?.name ?? 'Particle Material',
       effect: particleEffectOptions(),
       meta: options?.meta ?? {},

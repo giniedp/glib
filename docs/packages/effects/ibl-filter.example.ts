@@ -4,15 +4,15 @@ import {
   IblDistributionFunction,
   IblFilterEffect,
   PanoramaToCubemapEffect,
-  SkyboxMaterial,
+  skyboxMaterial,
 } from '@gglib/effects'
 import {
   boxGeometry,
   Color,
   createDevice,
+  FrameContext,
   PlatformId,
   SpriteBatch,
-  FrameContext,
   Texture,
   TextureUsage,
 } from '@gglib/graphics'
@@ -100,7 +100,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   const fxIblFilter = new IblFilterEffect(device)
 
   const geometry = boxGeometry(device)
-  const material = new SkyboxMaterial(device)
+  const material = skyboxMaterial(device)
 
   const pass = device.renderPass
 
