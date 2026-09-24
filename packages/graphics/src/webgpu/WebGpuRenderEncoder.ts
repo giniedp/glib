@@ -556,7 +556,61 @@ export class WebGpuRenderEncoder extends RenderEncoder {
     baseVertex?: number,
     instanceOffset?: number,
   ) {
+    if (!this.indexBuffer) {
+      throw new Error('indexBuffer not set but required for drawIndexed')
+    }
     this.getPass()?.drawIndexed(indexCount, instanceCount ?? 1, indexOffset ?? 0, baseVertex ?? 0, instanceOffset ?? 0)
+  }
+
+  public multiDraw(
+    vertexCounts: Int32Array,
+    instanceCounts?: Int32Array,
+    vertexOffsets?: Int32Array,
+    instanceOffsets?: Int32Array,
+    drawCount: number = vertexCounts.length,
+  ): void {
+    const pass = this.getPass()
+    for (let i = 0; i < drawCount; i++) {
+      const vertexOffset = vertexOffsets ? vertexOffsets[i] : 0
+      const instanceCount = instanceCounts ? instanceCounts[i] : 1
+      const instanceOffset = instanceOffsets ? instanceOffsets[i] : 0
+      // prettier-ignore
+      pass.draw(
+        vertexCounts[i],
+        instanceCount,
+        vertexOffset,
+        instanceOffset
+      )
+    }
+  }
+
+  public multiDrawIndexed(
+    indexCounts: Int32Array,
+    instanceCounts?: Int32Array,
+    indexOffsets?: Int32Array,
+    baseVertices?: Int32Array,
+    instanceOffsets?: Int32Array,
+    drawCount: number = indexCounts.length,
+  ): void {
+    if (!this.indexBuffer) {
+      throw new Error('indexBuffer not set but required for multiDrawIndexed')
+    }
+
+    const pass = this.getPass()
+    for (let i = 0; i < drawCount; i++) {
+      const indexOffset = (indexOffsets ? indexOffsets[i] : 0) + this.indexBufferOffset
+      const instanceCount = instanceCounts ? instanceCounts[i] : 1
+      const baseVertex = baseVertices ? baseVertices[i] : 0
+      const instanceOffset = instanceOffsets ? instanceOffsets[i] : 0
+      // prettier-ignore
+      pass.drawIndexed(
+        indexCounts[i],
+        instanceCount,
+        indexOffset,
+        baseVertex,
+        instanceOffset,
+      )
+    }
   }
 
   public drawIndirect(buffer: Buffer, offset: number) {
@@ -564,7 +618,46 @@ export class WebGpuRenderEncoder extends RenderEncoder {
   }
 
   public drawIndexedIndirect(buffer: Buffer, offset: number) {
+    if (!this.indexBuffer) {
+      throw new Error('indexBuffer not set but required for drawIndexedIndirect')
+    }
     this.getPass()?.drawIndexedIndirect((buffer as WebGpuBuffer).resource, offset)
+  }
+
+  public multiDrawIndirect(
+    buffer: Buffer,
+    offset: number,
+    maxDrawCount: number,
+    drawCountBuffer?: Buffer,
+    drawCountOffset?: number,
+  ) {
+    const pass = this.getPass()
+    if (!pass) {
+      return
+    }
+    if ('multiDrawIndirect' in pass) {
+      ;(pass as any).multiDrawIndirect(buffer, offset, maxDrawCount, drawCountBuffer, drawCountOffset)
+    } else {
+      throw new Error(`multiDrawIndirect not supported`)
+    }
+  }
+
+  public multiDrawIndexedIndirect(
+    buffer: Buffer,
+    offset: number,
+    maxDrawCount: number,
+    drawCountBuffer?: Buffer,
+    drawCountOffset?: number,
+  ) {
+    const pass = this.getPass()
+    if (!pass) {
+      return
+    }
+    if ('multiDrawIndexedIndirect' in pass) {
+      ;(pass as any).multiDrawIndexedIndirect(buffer, offset, maxDrawCount, drawCountBuffer, drawCountOffset)
+    } else {
+      throw new Error(`multiDrawIndexedIndirect not supported`)
+    }
   }
 
   private getClearPassDescriptor(): GPURenderPassDescriptor {

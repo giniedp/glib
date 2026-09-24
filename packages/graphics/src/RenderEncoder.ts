@@ -74,11 +74,21 @@ export abstract class RenderEncoder {
   public abstract setScissorState(state: ScissorState | null): void
 
   /**
-   * WebGPU only. Allows the pipeline to be created asynchronously.
-   * Skips draw commands if configured pipeline is not created.
+   * Allows the pipeline to be created asynchronously.
+   * Draw commands are silently skipped while pipeline is not created
+   *
+   * @version WebGPU only
    */
   public abstract setAsync(value: boolean): void
 
+  /**
+   * Issues a draw command
+   *
+   * @param vertexCount Number of vertices to draw
+   * @param instanceCount Number of instances to draw. Defaults to 1.
+   * @param vertexOffset The first vertex to where drawing starts. Defaults to 0.
+   * @param instanceOffset WebGPU only. The first instance to where drawing starts. Defaults to 0.
+   */
   public abstract draw(
     vertexCount: number,
     instanceCount?: number,
@@ -86,12 +96,97 @@ export abstract class RenderEncoder {
     instanceOffset?: number,
   ): void
 
+  /**
+   * Issues an indexed draw command
+   *
+   * @param indexCount Number of indices todraw
+   * @param instanceCount Number of instances to draw. Defaults to 1.
+   * @param indexOffset The first index to where drawing starts. Defaults to 0.
+   * @param vertexOffset WebGPU only. The first vertex to where drawing starts. Defaults to 0.
+   * @param instanceOffset WebGPU only. The first instance to where drawing starts. Defaults to 0.
+   */
   public abstract drawIndexed(
     indexCount: number,
     instanceCount?: number,
     indexOffset?: number,
-    baseVertex?: number,
+    vertexOffset?: number,
     instanceOffset?: number,
+  ): void
+
+  public abstract multiDraw(
+    vertexCounts: Int32Array,
+    instanceCounts?: Int32Array,
+    vertexOffsets?: Int32Array,
+    instanceOffsets?: Int32Array,
+    drawCount?: number,
+  ): void
+
+  public abstract multiDrawIndexed(
+    indexCounts: Int32Array,
+    instanceCounts?: Int32Array,
+    indexOffsets?: Int32Array,
+    baseVertices?: Int32Array,
+    instanceOffsets?: Int32Array,
+    drawCount?: number,
+  ): void
+
+  /**
+   * Issues an indirect draw command, that takes parameters from a GPU buffer
+   *
+   * @version WebGPU only
+   * @param buffer
+   * @param offset
+   */
+  public abstract drawIndirect(buffer: Buffer, offset: number): void
+
+  /**
+   * Issues an indirect indexed draw command, that takes parameters from a GPU buffer
+   *
+   * @version WebGPU only
+   * @param buffer
+   * @param offset
+   */
+  public abstract drawIndexedIndirect(buffer: Buffer, offset: number): void
+
+  /**
+   * @see https://developer.chrome.com/blog/new-in-webgpu-131#experimental_support_for_multi-draw_indirect
+   * - chrome://flags/#enable-unsafe-webgpu
+   * - chromium-experimental-multi-draw-indirect
+   *
+   * @version WebGPU only
+   * @param buffer
+   * @param offset
+   * @param maxDrawCount
+   * @param drawCountBuffer
+   * @param drawCountOffset
+   */
+  public abstract multiDrawIndirect(
+    buffer: Buffer,
+    offset: number,
+    maxDrawCount: number,
+    drawCountBuffer?: Buffer,
+    drawCountOffset?: number,
+  ): void
+
+  /**
+   * @see https://developer.chrome.com/blog/new-in-webgpu-131#experimental_support_for_multi-draw_indirect
+   *
+   * - chrome://flags/#enable-unsafe-webgpu
+   * - chromium-experimental-multi-draw-indirect
+   *
+   * @version WebGPU only
+   * @param buffer
+   * @param offset
+   * @param maxDrawCount
+   * @param drawCountBuffer
+   * @param drawCountOffset
+   */
+  public abstract multiDrawIndexedIndirect(
+    buffer: Buffer,
+    offset: number,
+    maxDrawCount: number,
+    drawCountBuffer?: Buffer,
+    drawCountOffset?: number,
   ): void
 
   /**

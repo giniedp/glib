@@ -397,11 +397,12 @@ export class WebglRenderEncoder extends RenderEncoder {
     }
 
     const gl = this.gl
+    const indexType = this.indexBuffer.indexType === 'uint16' ? gl.UNSIGNED_SHORT : gl.UNSIGNED_INT
     if (instanceCount > 1) {
       gl.drawElementsInstanced(
         primitiveTypeToWebGL(this.primitiveType),
         indexCount,
-        this.indexBuffer.indexType === 'uint16' ? gl.UNSIGNED_SHORT : gl.UNSIGNED_INT,
+        indexType,
         (indexOffset ?? 0) + this.indexBufferOffset,
         instanceCount,
       )
@@ -409,10 +410,100 @@ export class WebglRenderEncoder extends RenderEncoder {
       gl.drawElements(
         primitiveTypeToWebGL(this.primitiveType),
         indexCount,
-        this.indexBuffer.indexType === 'uint16' ? gl.UNSIGNED_SHORT : gl.UNSIGNED_INT,
+        indexType,
         (indexOffset ?? 0) + this.indexBufferOffset,
       )
     }
+  }
+
+  public multiDraw(
+    vertexCounts: Int32Array,
+    instanceCounts?: Int32Array,
+    vertexOffsets?: Int32Array,
+    instanceOffsets?: Int32Array,
+    drawCount: number = vertexCounts.length,
+  ): void {
+    this.commitChanges()
+
+    if (instanceOffsets) {
+      throw new Error('instanceOffset is not supported in WebGL')
+    }
+
+    const gl = this.gl
+    const mode = primitiveTypeToWebGL(this.primitiveType)
+
+    for (let i = 0; i < drawCount; i++) {
+      const first = vertexOffsets ? vertexOffsets[i] : 0
+      const instances = instanceCounts ? instanceCounts[i] : 1
+      if (instances > 1) {
+        gl.drawArraysInstanced(mode, first, vertexCounts[i], instances)
+      } else if (instances === 1) {
+        gl.drawArrays(mode, first, vertexCounts[i])
+      }
+    }
+  }
+
+  public multiDrawIndexed(
+    indexCounts: Int32Array,
+    instanceCounts?: Int32Array,
+    indexOffsets?: Int32Array,
+    baseVertices?: Int32Array,
+    instanceOffsets?: Int32Array,
+    drawCount: number = indexCounts.length,
+  ): void {
+    this.commitChanges()
+
+    if (!this.indexBuffer) {
+      throw new Error('No index buffer set for indexed draw call')
+    }
+    if (baseVertices) {
+      throw new Error('baseVertex is not supported in WebGL')
+    }
+    if (instanceOffsets) {
+      throw new Error('instanceOffset is not supported in WebGL')
+    }
+
+    const gl = this.gl
+    const mode = primitiveTypeToWebGL(this.primitiveType)
+    const indexType = this.indexBuffer.indexType === 'uint16' ? gl.UNSIGNED_SHORT : gl.UNSIGNED_INT
+
+    for (let i = 0; i < drawCount; i++) {
+      const indexOffset = (indexOffsets ? indexOffsets[i] : 0) + this.indexBufferOffset
+      const instanceCount = instanceCounts ? instanceCounts[i] : 1
+      if (instanceCount > 1) {
+        gl.drawElementsInstanced(mode, indexCounts[i], indexType, indexOffset, instanceCount)
+      } else if (instanceCount === 1) {
+        gl.drawElements(mode, indexCounts[i], indexType, indexOffset)
+      }
+    }
+  }
+
+  public drawIndirect(buffer: Buffer, offset: number) {
+    throw new Error(`drawIndirect is not supported in webgl`)
+  }
+
+  public drawIndexedIndirect(buffer: Buffer, offset: number) {
+    throw new Error(`drawIndirect is not supported in webgl`)
+  }
+
+  public multiDrawIndirect(
+    buffer: Buffer,
+    offset: number,
+    maxDrawCount: number,
+    drawCountBuffer?: Buffer,
+    drawCountOffset?: number,
+  ) {
+    throw new Error(`multiDrawIndirect is not supported in webgl`)
+  }
+
+  public multiDrawIndexedIndirect(
+    buffer: Buffer,
+    offset: number,
+    maxDrawCount: number,
+    drawCountBuffer?: Buffer,
+    drawCountOffset?: number,
+  ) {
+    throw new Error(`multiDrawIndexedIndirect is not supported in webgl`)
   }
 
   public clear(enableScissor?: boolean): void {
