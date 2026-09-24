@@ -104,6 +104,10 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   }
 
   function frame(ctx: FrameContext) {
+    if (!compute.isValid) {
+      return
+    }
+
     computeFrame(ctx)
     renderFrame(ctx)
     ;[verticesIn, verticesOut] = [verticesOut, verticesIn]
