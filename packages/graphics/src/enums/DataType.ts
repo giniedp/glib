@@ -11,7 +11,7 @@ const dataTypeViewWriterMap: Record<DataType, DataTypeViewWriter> = {
   int16: (view, bo, v) => view.setInt16(bo, v, true),
   uint16: (view, bo, v) => view.setUint16(bo, v, true),
   int32: (view, bo, v) => view.setInt32(bo, v, true),
-  uint32: (view, bo, v) => view.setUint16(bo, v, true),
+  uint32: (view, bo, v) => view.setUint32(bo, v, true),
   float32: (view, bo, v) => view.setFloat32(bo, v, true),
   float16: (view, bo, v) => view.setFloat16(bo, v, true),
 }
