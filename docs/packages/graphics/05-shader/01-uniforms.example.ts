@@ -1,4 +1,4 @@
-import { Color, createDevice, Device, PlatformId, FrameContext } from '@gglib/graphics'
+import { Color, createDevice, Device, FrameContext, PlatformId, vertexLayout } from '@gglib/graphics'
 
 export default async (canvas: HTMLCanvasElement, _: any, platform: PlatformId) => {
   const device: Device = await createDevice({ canvas, platform, autosize: true }).ready
@@ -16,13 +16,9 @@ export default async (canvas: HTMLCanvasElement, _: any, platform: PlatformId) =
   // The same static triangle as before - its vertex buffer never changes.
   const vertices = device.createVertexBuffer([
     {
-      layout: {
-        vPosition: {
-          byteOffset: 0,
-          elementCount: 3,
-          elementType: 'float32',
-        },
-      },
+      layout: vertexLayout({
+        vPosition: 'float32x3',
+      }),
       // prettier-ignore
       data: new Float32Array([
         -0.2, -0.2, 0.0,

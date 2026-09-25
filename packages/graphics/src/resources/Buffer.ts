@@ -6,13 +6,14 @@ import {
   dataTypeToSize,
   dataTypeViewWriter,
   type TypedArray,
+  vertexTypeFormat,
 } from '../enums'
 import {
   countElements,
   countElementsBefore,
-  countLayoutBytes,
   elementCpuFormat,
   type VertexLayout,
+  vertexLayoutSize,
 } from './VertexLayout'
 
 /**
@@ -186,7 +187,7 @@ export abstract class Buffer {
     if (opts.stride != null) {
       self.stride = opts.stride
     } else if (self.isVertexBuffer) {
-      self.stride = countLayoutBytes(self.vertexLayout)
+      self.stride = vertexLayoutSize(self.vertexLayout)
     } else if (self.isIndexBuffer) {
       self.stride = dataTypeToSize(self.indexType)
     } else {
@@ -261,18 +262,20 @@ export function isPlainBufferData(data: any): data is PlainBufferData {
 }
 
 export function materializePlainBuffer(src: PlainBufferData, layout?: VertexLayout) {
-  let matchesType = true
+  let elementTypesMatch = true
 
   if (layout) {
     for (const key in layout) {
-      if (src.type !== layout[key].elementType) {
-        matchesType = false
+      const type = layout[key].cpu || layout[key].type
+      const vertex = vertexTypeFormat(type)
+      if (src.type !== vertex.elementType) {
+        elementTypesMatch = false
         break
       }
     }
   }
 
-  if (matchesType) {
+  if (elementTypesMatch) {
     const ArrayType = dataTypeToArrayType(src.type)
     return new ArrayType(src.elements)
   }
@@ -283,7 +286,7 @@ export function materializePlainBuffer(src: PlainBufferData, layout?: VertexLayo
   }
 
   const vertexCount = src.elements.length / elementStride
-  const byteStride = countLayoutBytes(layout)
+  const byteStride = vertexLayoutSize(layout)
   const data = new Uint8Array(vertexCount * byteStride)
   const view = new DataView(data.buffer)
   const elementOffsets: Record<string, number> = {}

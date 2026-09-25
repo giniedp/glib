@@ -1,4 +1,6 @@
 import { Color, createDevice, Device, PlatformId } from '@gglib/graphics'
+import { glslFS, glslVS } from './shader.glsl'
+import { wgslShader } from './shader.wgsl'
 
 export default async (canvas: HTMLCanvasElement, _: any, platform: PlatformId) => {
   const device: Device = await createDevice({ canvas, platform, autosize: true }).ready
@@ -23,13 +25,11 @@ export default async (canvas: HTMLCanvasElement, _: any, platform: PlatformId) =
   const vertices = device.createVertexBuffer([
     {
       layout: {
-        // The shader below declares a single attribute called `vPosition`,
-        // a `vec3`. The name here must match the attribute name used in the
-        // shader (`location(0)` in WGSL, `vPosition` in GLSL).
+        // The shader declares one single attribute called `vPosition`.
+        // The name here must match the attribute name used in the shader.
         vPosition: {
           byteOffset: 0,
-          elementCount: 3,
-          elementType: 'float32',
+          type: 'float32x3',
         },
       },
       // Three vertices, three floats (x, y, z) each, forming a triangle in
@@ -69,40 +69,3 @@ export default async (canvas: HTMLCanvasElement, _: any, platform: PlatformId) =
     device.dispose()
   }
 }
-
-const glslVS = /*glsl*/ `
-  #version 300 es
-  in vec3 vPosition;
-  void main(void) {
-    gl_Position = vec4(vPosition, 1.0);
-  }
-`
-
-const glslFS = /*glsl*/ `
-  #version 300 es
-  precision mediump float;
-  out vec4 fragColor;
-  void main(void) {
-    fragColor = vec4(1.0, 1.0, 1.0, 1.0);
-  }
-`
-
-const wgslShader = /*wgsl*/ `
-  struct VertexOutput {
-    @builtin(position) Position : vec4<f32>,
-  };
-
-  @vertex
-  fn vs(
-    @location(0) vPosition : vec3<f32>
-  ) -> VertexOutput {
-    var output : VertexOutput;
-    output.Position = vec4<f32>(vPosition, 1.0);
-    return output;
-  }
-
-  @fragment
-  fn fs() -> @location(0) vec4<f32> {
-    return vec4<f32>(1.0, 1.0, 1.0, 1.0);
-  }
-`

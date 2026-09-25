@@ -99,11 +99,13 @@ function getExample(): Example {
   }
 
   const paths: string[] = []
-  if (!props.name) {
+  if (!props.src) {
     paths.push(pathname + 'example.ts')
     paths.push(pathname + '.example.ts')
+    paths.push(mergeUri('', 'example.ts', pathname))
   } else {
-    paths.push(mergeUri(pathname, props.name))
+    paths.push(mergeUri(pathname, props.src))
+    paths.push(mergeUri('', props.src, pathname))
   }
   for (const path of paths) {
     if (!files[path]) {
@@ -123,7 +125,7 @@ const canvas = ref<HTMLCanvasElement | null>(null)
 const fsTools = ref<HTMLElement | null>(null)
 const tools = ref<HTMLElement | null>(null)
 const props = defineProps({
-  name: String,
+  src: String,
   platform: String,
 })
 let toDispose: RunDisposeFn | null = null

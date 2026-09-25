@@ -1,5 +1,5 @@
 import { eventSource } from '@gglib/utils'
-import { dataTypeToWebGL } from '../../enums'
+import { dataTypeToWebGL, vertexTypeFormat } from '../../enums'
 import type { VertexAttribute } from '../../resources'
 import type { WebglResource } from '../types'
 import type { WebglDevice } from '../WebglDevice'
@@ -105,12 +105,14 @@ function createVao(
   const vao = gl.createVertexArray()
   gl.bindVertexArray(vao)
   for (const { buffer, layout, location } of toBind) {
+    const { elementCount, elementType, normalized } = vertexTypeFormat(layout.type)
+
     gl.bindBuffer(buffer.glType, buffer.glHandle)
     gl.vertexAttribPointer(
       location,
-      layout.elementCount,
-      dataTypeToWebGL(layout.elementType),
-      layout.normalized,
+      elementCount,
+      dataTypeToWebGL(elementType),
+      !!normalized,
       buffer.stride,
       layout.byteOffset,
     )

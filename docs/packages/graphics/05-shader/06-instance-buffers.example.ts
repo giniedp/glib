@@ -2,12 +2,13 @@ import {
   bufferField,
   bufferLayout,
   BufferRecorder,
+  BufferUsage,
   Color,
   createDevice,
   Device,
-  PlatformId,
   FrameContext,
-  BufferUsage,
+  PlatformId,
+  vertexLayout,
 } from '@gglib/graphics'
 
 export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
@@ -20,9 +21,9 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
 
   const vertices = device.createVertexBuffer([
     {
-      layout: {
-        position: { byteOffset: 0, elementCount: 3, elementType: 'float32' },
-      },
+      layout: vertexLayout({
+        position: 'float32x3',
+      }),
       // prettier-ignore
       data: new Float32Array([
         -0.2, -0.2, 0.0,

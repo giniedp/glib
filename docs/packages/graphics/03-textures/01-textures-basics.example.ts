@@ -6,6 +6,7 @@ import {
   createVideoTextureSource,
   Device,
   PlatformId,
+  vertexLayout,
 } from '@gglib/graphics'
 
 export default async (canvas: HTMLCanvasElement, _: any, platform: PlatformId) => {
@@ -59,10 +60,10 @@ export default async (canvas: HTMLCanvasElement, _: any, platform: PlatformId) =
   // image's top-left corner, (1, 1) is its bottom-right corner.
   const vertices = device.createVertexBuffer([
     {
-      layout: {
-        vPosition: { byteOffset: 0, elementCount: 3, elementType: 'float32' },
-        vTexture: { byteOffset: 12, elementCount: 2, elementType: 'float32' },
-      },
+      layout: vertexLayout({
+        vPosition: 'float32x3',
+        vTexture: 'float32x2',
+      }),
       // prettier-ignore
       data: new Float32Array([
         -0.5, -0.5, 0.0,  0, 1,

@@ -1,4 +1,4 @@
-import { Color, createDevice, Device, PlatformId, StencilState, Texture } from '@gglib/graphics'
+import { Color, createDevice, Device, PlatformId, StencilState, Texture, vertexLayout } from '@gglib/graphics'
 import { DEGREE_TO_RAD, Mat4, vec3 } from '@gglib/math'
 import { mountUi } from 'tweak-ui'
 
@@ -50,10 +50,10 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
 
   const vertices = device.createVertexBuffer([
     {
-      layout: {
-        vPosition: { byteOffset: 0, elementCount: 3, elementType: 'float32' },
-        vTexture: { byteOffset: 12, elementCount: 2, elementType: 'float32' },
-      },
+      layout: vertexLayout({
+        vPosition: 'float32x3',
+        vTexture: 'float32x2',
+      }),
       // prettier-ignore
       data: new Float32Array([
         -0.5, -0.5, 0.0,  0, 1,
@@ -90,7 +90,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   const depthTarget: Texture = device.createDepthTarget({
     width: device.output.width,
     height: device.output.height,
-    format: 'depth24plus',
+    format: 'depth24plus-stencil8',
     sampleCount: 4,
   })
   const renderTarget: Texture = device.createRenderTarget({

@@ -14,6 +14,7 @@ import {
   primitiveTypeFromWebGL,
   TypedArray,
   VertexBufferOptions,
+  vertexTypeFromDataFormat,
 } from '@gglib/graphics'
 import { BoundingBox, BoundingSphere } from '@gglib/math'
 import type { GltfAssetContainer } from './asset'
@@ -244,9 +245,11 @@ function createVertexBuffer(
         const { accessor } = bva[attr]
         const semantic = getAttributeSemantic(attr)
         options.layout[semantic] = {
-          elementType: dataTypeFromWebGL(accessor.componentType),
-          elementCount: accessorComponentCount(accessor.type),
-          normalized: accessor.normalized || false,
+          type: vertexTypeFromDataFormat({
+            elementType: dataTypeFromWebGL(accessor.componentType),
+            elementCount: accessorComponentCount(accessor.type),
+            normalized: accessor.normalized || false,
+          }),
           byteOffset: accessor.byteOffset ?? 0,
         }
       }
@@ -260,9 +263,11 @@ function createVertexBuffer(
         data: readAccessorStream(bva[attr]),
         layout: {
           [semantic]: {
-            elementType: dataTypeFromWebGL(accessor.componentType),
-            elementCount: accessorComponentCount(accessor.type),
-            normalized: accessor.normalized || false,
+            type: vertexTypeFromDataFormat({
+              elementType: dataTypeFromWebGL(accessor.componentType),
+              elementCount: accessorComponentCount(accessor.type),
+              normalized: accessor.normalized || false,
+            }),
             byteOffset: 0,
           },
         },

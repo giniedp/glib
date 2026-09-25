@@ -6,10 +6,10 @@ aside: false
 # Basics
 
 :::tabs variant:code
-== WebGL
-<Example platform="webgl2" />
 == WebGPU
 <Example platform="webgpu" />
+== WebGL
+<Example platform="webgl2" />
 :::
 
 ## Source
@@ -18,5 +18,5 @@ aside: false
 == example.ts
 <ExampleCode />
 == basic-scene.ts
-<ExampleCode name="./basics-scene.ts" />
+<ExampleCode src="./basics-scene.ts" />
 :::

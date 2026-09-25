@@ -1,4 +1,13 @@
-import { Color, createDevice, CullState, Device, Geometry, PlatformId, FrameContext } from '@gglib/graphics'
+import {
+  Color,
+  createDevice,
+  CullState,
+  Device,
+  FrameContext,
+  Geometry,
+  PlatformId,
+  vertexLayout,
+} from '@gglib/graphics'
 import { DEGREE_TO_RAD, Mat4, Vec3 } from '@gglib/math'
 
 export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
@@ -8,9 +17,9 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     primitiveType: 'triangle-list',
     vertexBuffer: [
       {
-        layout: {
-          position: { byteOffset: 0, elementType: 'float32', elementCount: 3 },
-        },
+        layout: vertexLayout({
+          position: 'float32x3',
+        }),
         // prettier-ignore
         data: new Float32Array([
         -0.5, -0.5, -0.5,

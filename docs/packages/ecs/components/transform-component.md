@@ -4,10 +4,10 @@ aside: false
 ---
 
 :::tabs variant:code
-== WebGL
-<Example platform="webgl2" />
 == WebGPU
 <Example platform="webgpu" />
+== WebGL
+<Example platform="webgl2" />
 :::
 
 :::tabs variant:code

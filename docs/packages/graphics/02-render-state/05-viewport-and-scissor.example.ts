@@ -1,4 +1,4 @@
-import { Color, createDevice, Device, PlatformId, FrameContext } from '@gglib/graphics'
+import { Color, createDevice, Device, FrameContext, PlatformId, vertexLayout } from '@gglib/graphics'
 import { Mat4 } from '@gglib/math'
 import { mountUi } from 'tweak-ui'
 
@@ -17,10 +17,10 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
 
   const vertices = device.createVertexBuffer([
     {
-      layout: {
-        vPosition: { byteOffset: 0, elementCount: 3, elementType: 'float32' },
-        vColor: { byteOffset: 12, elementCount: 3, elementType: 'float32' },
-      },
+      layout: vertexLayout({
+        vPosition: 'float32x3',
+        vColor: 'float32x3',
+      }),
       // prettier-ignore
       data: new Float32Array([
         -0.7, -0.7, 0.0, 1, 0, 0,

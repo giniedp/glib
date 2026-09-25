@@ -11,10 +11,10 @@ renders each pixel at 4 sub-sample positions and averages them, softening
 the jagged "staircase" look of a single-sampled render.
 
 :::tabs variant:code
-== WebGL
-<Example platform="webgl2" />
 == WebGPU
 <Example platform="webgpu" />
+== WebGL
+<Example platform="webgl2" />
 :::
 
 :::tabs variant:code

@@ -2,7 +2,7 @@ import { Mat4, type IRect } from '@gglib/math'
 import { PooledList } from '@gglib/utils'
 import { Device } from './Device'
 import type { RenderEncoder } from './RenderEncoder'
-import { bufferField, bufferLayout, bufferRecorder, BufferRecorder, ShaderModule } from './resources'
+import { bufferField, bufferLayout, bufferRecorder, BufferRecorder, ShaderModule, vertexLayout } from './resources'
 import { Buffer } from './resources/Buffer'
 import { Texture } from './resources/Texture'
 import { VertexBuffer } from './resources/VertexBuffer'
@@ -103,13 +103,9 @@ export class SpriteBatch implements Renderable {
     this.vertexBuffer = this.device.createVertexBuffer([
       {
         name: 'SpriteBatch Positions',
-        layout: {
-          position: {
-            elementType: 'float32',
-            elementCount: 3,
-            byteOffset: 0,
-          },
-        },
+        layout: vertexLayout({
+          position: 'float32x3',
+        }),
         // prettier-ignore
         data: new Float32Array([
           -0.5, -0.5, 0,
@@ -119,7 +115,7 @@ export class SpriteBatch implements Renderable {
         ]),
       },
       {
-        layout: this.layout.fields,
+        layout: this.layout.vertex,
         instanced: true,
         stride: this.layout.byteSize,
         size: this.layout.byteSize * capacity,

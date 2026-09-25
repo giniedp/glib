@@ -1,6 +1,6 @@
 import { BoundingBox, BoundingSphere } from '@gglib/math'
 
-import { arrayTypeToDataType, BufferUsage, DataType, FrontFace } from '../enums'
+import { arrayTypeToDataType, BufferUsage, DataType, FrontFace, vertexTypeFormat } from '../enums'
 import { BufferOptions, isPlainBufferData, PlainBufferData, vertexAttribute, VertexAttribute } from '../resources'
 import { calculateNormals } from './utils/calculateNormals'
 import { calculateTangents } from './utils/calculateTangents'
@@ -63,16 +63,17 @@ export class GeometryUtil {
       throw new Error(`attribute parameter is missing`)
     }
 
+    const { elementCount, elementType } = vertexTypeFormat(attribute.cpu || attribute.type)
     const data: PlainBufferData = {
-      type: attribute.elementType,
+      type: elementType,
       elements: [],
     }
     const vCount = this.getVertexCount()
     for (let i = 0; i < vCount; i++) {
-      if (defaults?.length === attribute.elementCount) {
+      if (defaults?.length === elementCount) {
         data.elements.push(...defaults)
       } else {
-        for (let j = 0; j < attribute.elementCount; j++) {
+        for (let j = 0; j < elementCount; j++) {
           data.elements.push(0)
         }
       }

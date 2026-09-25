@@ -40,14 +40,14 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     {
       size: numBodies * layout.byteSize,
       usage: BufferUsage.STORAGE | BufferUsage.VERTEX,
-      layout: layout.fields,
+      layout: layout.vertex,
     },
   ])
   let verticesOut = device.createVertexBuffer([
     {
       size: numBodies * layout.byteSize,
       usage: BufferUsage.STORAGE | BufferUsage.VERTEX,
-      layout: layout.fields,
+      layout: layout.vertex,
     },
   ])
   const writer = bufferRecorder({

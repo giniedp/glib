@@ -11,10 +11,10 @@ The same texture, tiled 3x3 across a quad. Switch between filtering
 changes the result without touching the texture itself.
 
 :::tabs variant:code
-== WebGL
-<Example platform="webgl2" />
 == WebGPU
 <Example platform="webgpu" />
+== WebGL
+<Example platform="webgl2" />
 :::
 
 :::tabs variant:code

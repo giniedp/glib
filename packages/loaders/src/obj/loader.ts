@@ -213,10 +213,8 @@ function buildGeometries(
       // so we can later split by material
       {
         material: {
-          elementCount: 1, // - we dont care about this
+          type: 'float32', // - we dont care about this
           byteOffset: 0, // - and this
-          normalized: false, // - and this
-          elementType: 'float32', // - and this since we dont operate on this buffer
         },
       },
     ],

@@ -3,6 +3,7 @@ import { GLConst as gl } from './GLConst'
 export type DataType = 'int8' | 'uint8' | 'int16' | 'uint16' | 'int32' | 'uint32' | 'float32' | 'float16'
 export type DataTypeViewWriter = (view: DataView, byteOffset: number, value: number) => void
 export type DataTypeViewReader = (view: DataView, byteOffset: number) => number
+export type VertexType = Exclude<GPUVertexFormat, 'unorm10-10-10-2' | 'unorm8x4-bgra'>
 
 const dataTypeViewWriterMap: Record<DataType, DataTypeViewWriter> = {
   int8: (view, bo, v) => view.setInt8(bo, v),
@@ -159,6 +160,7 @@ export function dataTypeArray(
 export interface DataElementFormat {
   elementType: DataType
   elementCount: number
+  normalized?: boolean
 }
 
 export function dataElementSize(type: DataElementFormat): number {
@@ -172,6 +174,14 @@ export function gpuTypeSize(gpu: GpuDataType): number {
 
 export function gpuTypeFormat(gpu: GpuDataType): Readonly<DataElementFormat> {
   return gpuDataFormats[gpu]
+}
+
+export function vertexTypeSize(vertex: VertexType): number {
+  return dataElementSize(vertexFormats[vertex])
+}
+
+export function vertexTypeFormat(vertex: VertexType): Readonly<DataElementFormat> {
+  return vertexFormats[vertex]
 }
 
 export type GpuDataType =
@@ -231,3 +241,84 @@ const gpuDataFormats: Record<GpuDataType, Readonly<DataElementFormat>> = {
   mat4x3h: Object.freeze({ elementType: 'float16', elementCount: 4 * 3 }),
   mat4x4h: Object.freeze({ elementType: 'float16', elementCount: 4 * 4 }),
 } satisfies Record<string, DataElementFormat>
+
+const vertexFormats: Record<VertexType, Readonly<DataElementFormat>> = {
+  float16: { elementType: 'float16', elementCount: 1 },
+  float16x2: { elementType: 'float16', elementCount: 2 },
+  float16x4: { elementType: 'float16', elementCount: 4 },
+  float32: { elementType: 'float32', elementCount: 1 },
+  float32x2: { elementType: 'float32', elementCount: 2 },
+  float32x3: { elementType: 'float32', elementCount: 3 },
+  float32x4: { elementType: 'float32', elementCount: 4 },
+  sint16: { elementType: 'int16', elementCount: 1 },
+  sint16x2: { elementType: 'int16', elementCount: 2 },
+  sint16x4: { elementType: 'int16', elementCount: 4 },
+  sint32: { elementType: 'int32', elementCount: 1 },
+  sint32x2: { elementType: 'int32', elementCount: 2 },
+  sint32x3: { elementType: 'int32', elementCount: 3 },
+  sint32x4: { elementType: 'int32', elementCount: 4 },
+  sint8: { elementType: 'int8', elementCount: 1 },
+  sint8x2: { elementType: 'int8', elementCount: 2 },
+  sint8x4: { elementType: 'int8', elementCount: 4 },
+  snorm16: { elementType: 'int16', elementCount: 1, normalized: true },
+  snorm16x2: { elementType: 'int16', elementCount: 2, normalized: true },
+  snorm16x4: { elementType: 'int16', elementCount: 4, normalized: true },
+  snorm8: { elementType: 'int8', elementCount: 1, normalized: true },
+  snorm8x2: { elementType: 'int8', elementCount: 2, normalized: true },
+  snorm8x4: { elementType: 'int8', elementCount: 4, normalized: true },
+  uint16: { elementType: 'uint16', elementCount: 1 },
+  uint16x2: { elementType: 'uint16', elementCount: 2 },
+  uint16x4: { elementType: 'uint16', elementCount: 4 },
+  uint32: { elementType: 'uint32', elementCount: 1 },
+  uint32x2: { elementType: 'uint32', elementCount: 2 },
+  uint32x3: { elementType: 'uint32', elementCount: 3 },
+  uint32x4: { elementType: 'uint32', elementCount: 4 },
+  uint8: { elementType: 'uint8', elementCount: 1 },
+  uint8x2: { elementType: 'uint8', elementCount: 2 },
+  uint8x4: { elementType: 'uint8', elementCount: 4 },
+  // "unorm10-10-10-2": {},
+  unorm16: { elementType: 'uint16', elementCount: 1, normalized: true },
+  unorm16x2: { elementType: 'uint16', elementCount: 2, normalized: true },
+  unorm16x4: { elementType: 'uint16', elementCount: 4, normalized: true },
+  unorm8: { elementType: 'uint8', elementCount: 1, normalized: true },
+  unorm8x2: { elementType: 'uint8', elementCount: 2, normalized: true },
+  unorm8x4: { elementType: 'uint8', elementCount: 4, normalized: true },
+  // 'unorm8x4-bgra': { elementType: 'uint8', elementCount: 4, normalized: true },
+} satisfies Record<string, DataElementFormat>
+
+export function vertexTypeFromDataFormat(format: DataElementFormat): VertexType {
+  const base = vertexBaseTypeFromDataFormat(format)
+  if (format.elementCount > 1) {
+    return `${base}x${format.elementCount as 2 | 4}`
+  }
+  return base
+}
+
+function vertexBaseTypeFromDataFormat(format: DataElementFormat) {
+  switch (format.elementType) {
+    case 'float32':
+    case 'float16':
+      if (format.normalized) {
+        throw new Error(`'normalize' is not supported for attribute type '${format.elementType}'`)
+      }
+      return format.elementType
+    case 'int8':
+      return format.normalized ? 'snorm8' : (`s${format.elementType}` as const)
+    case 'int16':
+      return format.normalized ? 'snorm16' : (`s${format.elementType}` as const)
+    case 'int32':
+      if (format.normalized) {
+        throw new Error(`'normalize' is not supported for attribute type '${format.elementType}'`)
+      }
+      return `s${format.elementType}` as const
+    case 'uint8':
+      return format.normalized ? 'unorm8' : format.elementType
+    case 'uint16':
+      return format.normalized ? 'unorm16' : format.elementType
+    case 'uint32':
+      if (format.normalized) {
+        throw new Error(`'normalize' is not supported for attribute type '${format.elementType}'`)
+      }
+      return format.elementType
+  }
+}

@@ -6,16 +6,16 @@ aside: false
 
 :::tabs variant:code
 == WebGL
-<Example platform="webgl2" name="physics-ammo/game.ts" />
+<Example platform="webgl2" src="game.ts" />
 == WebGPU
-<Example platform="webgpu" name="physics-ammo/game.ts" />
+<Example platform="webgpu" src="game.ts" />
 :::
 
 :::tabs variant:code
 == example.ts
-<ExampleCode name="physics-ammo/game.ts"/>
+<ExampleCode src="game.ts"/>
 == physics-proxy.ts
-<ExampleCode name="physics-ammo/physics-proxy.ts" />
+<ExampleCode src="physics-proxy.ts" />
 == physics-world.ts
-<ExampleCode name="physics-ammo/physics-world.ts" />
+<ExampleCode src="physics-world.ts" />
 :::

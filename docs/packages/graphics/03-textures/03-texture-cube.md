@@ -12,10 +12,10 @@ a skybox surrounding the camera, and once as a reflection on a tumbling
 cube in front of it - a single `mode` uniform switches between the two.
 
 :::tabs variant:code
-== WebGL
-<Example platform="webgl2" />
 == WebGPU
 <Example platform="webgpu" />
+== WebGL
+<Example platform="webgl2" />
 :::
 
 :::tabs variant:code

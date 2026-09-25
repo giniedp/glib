@@ -15,13 +15,13 @@ title: Custom Pipeline
 == example.ts
 <ExampleCode />
 == pixels-loader.ts
-<ExampleCode name="pixels-loader.ts" />
+<ExampleCode src="pixels-loader.ts" />
 == pixels-container.ts
-<ExampleCode name="pixels-container.ts" />
+<ExampleCode src="pixels-container.ts" />
 == mario.pixels.ts
-<ExampleCode name="mario.pixels.ts" />
+<ExampleCode src="mario.pixels.ts" />
 == megaman.pixels.ts
-<ExampleCode name="megaman.pixels.ts" />
+<ExampleCode src="megaman.pixels.ts" />
 == sonic.pixels.ts
-<ExampleCode name="sonic.pixels.ts" />
+<ExampleCode src="sonic.pixels.ts" />
 :::

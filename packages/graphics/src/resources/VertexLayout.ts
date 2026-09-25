@@ -1,4 +1,13 @@
-import { DataElementFormat, dataElementSize, dataTypeToSize } from '../enums'
+import {
+  DataElementFormat,
+  dataElementSize,
+  dataTypeToSize,
+  GpuDataType,
+  VertexType,
+  vertexTypeFormat,
+  vertexTypeSize,
+} from '../enums'
+import { bufferField, bufferLayout } from './BufferLayout'
 
 export type VertexSemantic =
   | 'position'
@@ -14,12 +23,15 @@ export interface VertexLayout {
   [key: string]: VertexAttribute
 }
 
-export interface VertexFormat extends DataElementFormat {
-  normalized?: boolean
+export interface VertexFormat {
   /**
-   * The format being used on the CPU side for the buffer
+   * The vertex type how it will be passed to GPU
    */
-  cpu?: DataElementFormat
+  type: VertexType
+  /**
+   * The type being used on the CPU side for writing the buffer
+   */
+  cpu?: VertexType
 }
 
 export interface VertexAttribute extends VertexFormat {
@@ -27,75 +39,80 @@ export interface VertexAttribute extends VertexFormat {
 }
 
 export function elementGpuFormat(f: VertexFormat): DataElementFormat {
-  return f // the format *is* the GPU description
+  return vertexTypeFormat(f.type)
 }
 
 export function elementCpuFormat(f: VertexFormat): DataElementFormat {
-  return f.cpu ?? f
-}
-
-export function packedVertexFormat(gpu: VertexFormat, cpu: DataElementFormat): VertexFormat {
-  if (dataElementSize(gpu) !== dataElementSize(cpu)) {
-    throw new Error(`cpu (${dataElementSize(cpu)}B) and gpu (${dataElementSize(gpu)}B) size mismatch`)
-  }
-  return { ...gpu, cpu }
+  return vertexTypeFormat(f.cpu || f.type)
 }
 
 export const VertexPreset = {
   /**
    * 3 x float32
    */
-  position: { elementType: 'float32', elementCount: 3 },
+  position: { type: 'float32x3' },
   /**
    * 4 x uint8, normalized and packed
    */
-  color: packedVertexFormat(
-    {
-      elementType: 'uint8',
-      elementCount: 4,
-      normalized: true,
-    },
-    {
-      elementType: 'uint32',
-      elementCount: 1,
-    },
-  ),
+  color: { type: 'unorm8x4', cpu: 'uint32' },
   /**
    * 3 x float32
    */
-  normal: { elementType: 'float32', elementCount: 3 },
+  normal: { type: 'float32x3' },
   /**
    * 3 x float32
    */
-  tangent: { elementType: 'float32', elementCount: 3 },
+  tangent: { type: 'float32x3' },
   /**
    * 3 x float32
    */
-  bitangent: { elementType: 'float32', elementCount: 3 },
+  bitangent: { type: 'float32x3' },
   /**
    * 2 x float32
    */
-  texture: { elementType: 'float32', elementCount: 2 },
+  texture: { type: 'float32x2' },
   /**
    * 4 x uint8
    */
-  blendindices: { elementType: 'uint8', elementCount: 4 },
+  blendindices: { type: 'uint8x4' },
   /**
    * 4 x uint8, normalized
    */
-  blendweight: { elementType: 'uint8', elementCount: 4, normalized: true },
+  blendweight: { type: 'unorm8x4' },
 } satisfies Record<string, VertexFormat>
 
-export function vertexLayout(names: VertexSemantic[]): VertexLayout {
-  let result: VertexLayout = {}
+export function vertexLayout(attributes: Record<string, VertexType | VertexFormat>): VertexLayout
+export function vertexLayout(names: VertexSemantic[]): VertexLayout
+export function vertexLayout(spec: VertexSemantic[] | Record<string, VertexType | VertexFormat>): VertexLayout {
+  if (!Array.isArray(spec)) {
+    const result: VertexLayout = {}
+    let offset = 0
+    for (const [name, value] of Object.entries(spec)) {
+      result[name] = {
+        byteOffset: offset,
+        type: null,
+      }
+      if (typeof value === 'string') {
+        result[name].type = value
+        offset += vertexTypeSize(value)
+      } else {
+        result[name].type = value.type
+        result[name].cpu = value.cpu
+        offset += vertexTypeSize(value.type)
+      }
+    }
+    return result
+  }
+
+  const result: VertexLayout = {}
   let offset = 0
 
-  for (let name of names) {
+  for (let name of spec) {
     name = name.toLowerCase() as VertexSemantic
     const attribute = vertexAttribute(name, { byteOffset: offset })
     if (attribute) {
       result[name] = attribute
-      offset += dataTypeToSize(attribute.elementType) * attribute.elementCount
+      offset += vertexTypeSize(attribute.type)
     } else {
       throw new Error(`unknown vertex attribute semantic '${name}'`)
     }
@@ -163,30 +180,18 @@ export function countElementsBefore(layout: VertexLayout, semantic: string, side
 }
 
 /**
- * Counts the number of elements in a single vertex after the given attribute.
- */
-export function countElementsAfter(layout: VertexLayout, semantic: string): number {
-  let count = 0
-  const target = layout[semantic]
-  for (const key in layout) {
-    if (layout[key].byteOffset > target.byteOffset) {
-      count += layout[key].elementCount
-    }
-  }
-  return count
-}
-
-/**
  * Counts the number of bytes in a single vertex.
  *
  * @remarks
  * For example if a layout has a `position` and a `normal` defined
  * both with three elements and each element is a float, this will return 24.
  */
-export function countLayoutBytes(layout: Record<string, DataElementFormat>): number {
-  let count = 0
+export function vertexLayoutSize(layout: VertexLayout): number {
+  let size = 0
+
   for (const key in layout) {
-    count += dataTypeToSize(layout[key].elementType) * layout[key].elementCount
+    const attr = layout[key]
+    size = Math.max(size, attr.byteOffset + vertexTypeSize(attr.type))
   }
-  return count
+  return size
 }

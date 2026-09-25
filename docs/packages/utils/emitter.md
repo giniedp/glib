@@ -7,4 +7,4 @@ aside: false
 
 Basic event emitter implementation that is compatible with RxJs
 
-<ExampleCode name="./emitter.example.ts" />
+<ExampleCode src="./emitter.example.ts" />

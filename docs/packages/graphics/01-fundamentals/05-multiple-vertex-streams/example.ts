@@ -1,4 +1,4 @@
-import { Color, createDevice, Device, PlatformId } from '@gglib/graphics'
+import { Color, createDevice, Device, PlatformId, vertexLayout } from '@gglib/graphics'
 
 export default async (canvas: HTMLCanvasElement, _: any, platform: PlatformId) => {
   const device: Device = await createDevice({ canvas, platform, autosize: true }).ready
@@ -24,13 +24,9 @@ export default async (canvas: HTMLCanvasElement, _: any, platform: PlatformId) =
   const vertices = device.createVertexBuffer([
     {
       // Stream 0: positions only.
-      layout: {
-        vPosition: {
-          elementType: 'float32',
-          elementCount: 3,
-          byteOffset: 0,
-        },
-      },
+      layout: vertexLayout({
+        vPosition: 'float32x3',
+      }),
       // prettier-ignore
       data: new Float32Array([
         -1, -1, 0.0,
@@ -45,18 +41,9 @@ export default async (canvas: HTMLCanvasElement, _: any, platform: PlatformId) =
       // byte range to a 0.0-1.0 float range in the shader. The `cpu` option
       // lets us build the `data` array as `Uint32Array` (one packed 32bit
       // color per vertex) while the GPU still reads it as 4 separate bytes.
-      layout: {
-        vColor: {
-          elementType: 'uint8',
-          elementCount: 4,
-          byteOffset: 0,
-          normalized: true,
-          cpu: {
-            elementType: 'uint32',
-            elementCount: 1,
-          },
-        },
-      },
+      layout: vertexLayout({
+        vColor: { type: 'unorm8x4', cpu: 'uint32' },
+      }),
       // prettier-ignore
       data: new Uint32Array([
         Color.packToRGBA(Color.Red),

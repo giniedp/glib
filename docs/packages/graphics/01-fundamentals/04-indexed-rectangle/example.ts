@@ -1,4 +1,4 @@
-import { Color, createDevice, Device, PlatformId } from '@gglib/graphics'
+import { Color, createDevice, Device, PlatformId, vertexLayout } from '@gglib/graphics'
 
 export default async (canvas: HTMLCanvasElement, _: any, platform: PlatformId) => {
   const device: Device = await createDevice({ canvas, platform, autosize: true }).ready
@@ -18,18 +18,12 @@ export default async (canvas: HTMLCanvasElement, _: any, platform: PlatformId) =
   // buffer. An index buffer avoids that: vertices are listed once here...
   const vertices = device.createVertexBuffer([
     {
-      layout: {
-        vPosition: {
-          elementType: 'float32',
-          byteOffset: 0,
-          elementCount: 3,
-        },
-        vColor: {
-          byteOffset: 12,
-          elementCount: 3,
-          elementType: 'float32',
-        },
-      },
+      // Use the vertexLayout utility to calculate the byte offsets for us.
+      // The order must match the order in the shader
+      layout: vertexLayout({
+        vPosition: 'float32x3',
+        vColor: 'float32x3',
+      }),
       // prettier-ignore
       data: new Float32Array([
         /* 0: bottom left  */ -1, -1, 0.0, 1.0, 0.0, 0.0,

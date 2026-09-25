@@ -1,11 +1,10 @@
-import { BufferUsage } from '../../enums'
+import { BufferUsage, vertexTypeFromDataFormat } from '../../enums'
 import {
   getRefCounter,
   ShaderModule,
   VertexBuffer,
   type ReferenceCounted,
   type ReferenceCounter,
-  type VertexAttribute,
 } from '../../resources'
 import { ShaderConstants } from '../../states'
 import type { GpuResource, Mutable } from '../types'
@@ -182,8 +181,7 @@ export class WebGpuShaderModule extends ShaderModule implements GpuResource<GPUS
           layout: {
             [semantic]: {
               byteOffset: 0,
-              elementType: input.elementType,
-              elementCount: input.elementCount,
+              type: vertexTypeFromDataFormat(input),
             },
           },
           data: new Float32Array(data),
@@ -206,7 +204,7 @@ export class WebGpuShaderModule extends ShaderModule implements GpuResource<GPUS
         }
         const layout = buffer.vertexLayout[semantic]
         attributes.push({
-          format: getGPUVertexFormat(layout),
+          format: layout.type,
           offset: layout.byteOffset,
           shaderLocation: input.location,
         })
@@ -245,70 +243,6 @@ function getInputBySemanticOrName(entry: WgslEntryPointInfo, name: string) {
     }
   }
   return null
-}
-
-function getGPUVertexFormat(attribute: VertexAttribute): GPUVertexFormat {
-  const type = getGpuAttributeElementType(attribute)
-  const count = attribute.elementCount
-  switch (type) {
-    case 'float32':
-    case 'sint32':
-    case 'uint32': {
-      if (count === 1) {
-        return type
-      }
-      if (count <= 4) {
-        return `${type}x${count as 2 | 3 | 4}`
-      }
-      throw new Error(`expected element count to be in range [1-4] but was ${count}`)
-    }
-    case 'float16':
-    case 'uint16':
-    case 'sint16':
-    case 'unorm16':
-    case 'snorm16':
-    case 'uint8':
-    case 'sint8':
-    case 'unorm8':
-    case 'snorm8': {
-      if (count === 1) {
-        return type
-      }
-      if (count === 2 || count === 4) {
-        return `${type}x${count}`
-      }
-      throw new Error(`expected element count to be in range [1-4] but was ${count}`)
-    }
-  }
-}
-
-function getGpuAttributeElementType(attribute: VertexAttribute) {
-  switch (attribute.elementType) {
-    case 'float32':
-    case 'float16':
-      if (attribute.normalized) {
-        throw new Error(`'normalize' is not supported for attribute type '${attribute.elementType}'`)
-      }
-      return attribute.elementType
-    case 'int8':
-      return attribute.normalized ? 'snorm8' : (`s${attribute.elementType}` as const)
-    case 'int16':
-      return attribute.normalized ? 'snorm16' : (`s${attribute.elementType}` as const)
-    case 'int32':
-      if (attribute.normalized) {
-        throw new Error(`'normalize' is not supported for attribute type '${attribute.elementType}'`)
-      }
-      return `s${attribute.elementType}` as const
-    case 'uint8':
-      return attribute.normalized ? 'unorm8' : attribute.elementType
-    case 'uint16':
-      return attribute.normalized ? 'unorm16' : attribute.elementType
-    case 'uint32':
-      if (attribute.normalized) {
-        throw new Error(`'normalize' is not supported for attribute type '${attribute.elementType}'`)
-      }
-      return attribute.elementType
-  }
 }
 
 function logCompilationInfo(info: GPUCompilationInfo, source: string) {

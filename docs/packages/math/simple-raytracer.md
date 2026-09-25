@@ -14,9 +14,9 @@ References:
 
 :::tabs variant:code
 == example.ts
-<ExampleCode name="./simple-raytracer.example.ts" />
+<ExampleCode src="./simple-raytracer.example.ts" />
 == scene.ts
-<ExampleCode name="./scene.ts" />
+<ExampleCode src="./scene.ts" />
 == worker.ts
-<ExampleCode name="./worker.ts" />
+<ExampleCode src="./worker.ts" />
 :::

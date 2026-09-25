@@ -11,10 +11,10 @@ viewports. An optional scissor rect then clips each one further,
 independently of the viewport transform.
 
 :::tabs variant:code
-== WebGL
-<Example platform="webgl2" />
 == WebGPU
 <Example platform="webgpu" />
+== WebGL
+<Example platform="webgl2" />
 :::
 
 :::tabs variant:code

@@ -1,4 +1,4 @@
-import { Color, createDevice, Device, PlatformId, FrameContext } from '@gglib/graphics'
+import { Color, createDevice, Device, FrameContext, PlatformId, vertexLayout } from '@gglib/graphics'
 import { mountUi } from 'tweak-ui'
 
 const settings = {
@@ -22,15 +22,11 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   // The same old triangle
   const vertices = device.createVertexBuffer([
     {
-      layout: {
+      layout: vertexLayout({
         // but we use 'position' as attribute name in js world
         // and 'vPosition' in the shader world, see shader code at the bottom
-        position: {
-          byteOffset: 0,
-          elementCount: 3,
-          elementType: 'float32',
-        },
-      },
+        position: 'float32x3',
+      }),
       // prettier-ignore
       data: new Float32Array([
         -0.2, -0.2, 0.0,

@@ -17,5 +17,9 @@ A shader program and a vertex buffer with three positions.
 
 :::tabs variant:code
 == example.ts
-<ExampleCode />
+<ExampleCode src="example.ts" />
+== shader.glsl.ts
+<ExampleCode src="shader.glsl.ts" />
+== shader.wgsl.ts
+<ExampleCode src="shader.wgsl.ts" />
 :::

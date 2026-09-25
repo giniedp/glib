@@ -166,7 +166,7 @@ export class ParticleChannel {
 
     this.vertexBuffer = this.device.createVertexBuffer([
       {
-        layout: this.layout.fields,
+        layout: this.layout.vertex,
         instanced: true,
         stride: this.layout.byteSize,
         size: this.layout.byteSize * this.capacity,

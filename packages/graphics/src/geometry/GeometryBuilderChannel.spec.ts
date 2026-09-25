@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { dataTypeToSize } from '../enums'
-import { BufferOptions, PlainBufferData } from '../resources'
+import { BufferOptions, PlainBufferData, vertexLayout } from '../resources'
 import { GeometryBuilderChannel, GeometryBuilderChannelMap } from './GeometryBuilderChannel'
 
 describe('Graphics.GeometryBuilderChannel', () => {
@@ -14,31 +13,19 @@ describe('Graphics.GeometryBuilderChannel', () => {
           type: 'float32',
           elements: [11, 12, 13, 14, 15, 16, 21, 22, 23, 24, 25, 26, 31, 32, 33, 34, 35, 36],
         },
-        layout: {
-          position: {
-            byteOffset: 0,
-            elementType: 'float32',
-            elementCount: 3,
-          },
-          normal: {
-            byteOffset: 3 * dataTypeToSize('float32'),
-            elementType: 'float32',
-            elementCount: 3,
-          },
-        },
+        layout: vertexLayout({
+          position: 'float32x3',
+          normal: 'float32x3',
+        }),
       },
       {
         data: {
           type: 'float32',
           elements: [17, 18, 27, 28, 37, 38],
         },
-        layout: {
-          texture: {
-            byteOffset: 0,
-            elementType: 'float32',
-            elementCount: 2,
-          },
-        },
+        layout: vertexLayout({
+          texture: 'float32x2',
+        }),
       },
     ]
     channels = GeometryBuilderChannel.fromVertexBuffer(buffers)
