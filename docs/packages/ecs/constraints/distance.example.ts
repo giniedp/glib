@@ -157,7 +157,10 @@ class CubeLoader implements GameComponent, InitializableComponent {
     const renderable = this.entity.component(ModelComponent)
     const content = this.entity.service(ContentLoader)
     content.loadModel(`/models/gltf/blocks/decorative_block_${this.color}.gltf`).then((model) => {
-      renderable.model = model.instantiate()
+      renderable.model = model.instantiate({
+        meshes: true,
+        materials: true,
+      })
     })
   }
 }

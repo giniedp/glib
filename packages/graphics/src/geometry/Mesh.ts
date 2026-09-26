@@ -173,15 +173,27 @@ export class Mesh {
     }
   }
 
-  public instantiate() {
+  /**
+   * Creates a new instance of this mesh
+   *
+   * @remarks
+   * Copies the properties and returns a new Mesh instance.
+   *
+   * Geometry and Materials instances are kept and shared with the original mesh.
+   *
+   * To instantiate materials, pass `true` for `options.materials`.
+   */
+  public instantiate(options?: { materials: boolean }) {
     return new Mesh(this.device, {
       name: this.name,
       meta: { ...(this.meta || {}) },
       boundingBox: this.boundingBox?.copy(),
       boundingSphere: this.boundingSphere?.copy(),
-      materials: this.materials.map((it) => it.instantiate()),
+      materials: this.materials.map((material) => {
+        return options?.materials ? material.instantiate() : material
+      }),
       geometries: [...this.geometries],
-      parts: [...this.parts],
+      parts: this.parts.map((it) => ({ ...it })),
     })
   }
 

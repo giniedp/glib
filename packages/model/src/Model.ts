@@ -329,12 +329,22 @@ export class Model {
 
   /**
    * Creates a new instance of this model
+   *
+   * @remarks
+   * Copies the properties and returns a new Models instance.
+   *
+   * Mesh instances are kept and shared with the original mesh.
+   *
+   * To instantiate meshes, pass `true` for `options.meshes`
+   * To also instantiate materials for each mesh, pass `true` for `options.materials`
    */
-  public instantiate() {
+  public instantiate(options?: { meshes: boolean; materials: boolean }) {
     return new Model(this.device, {
       name: this.name || undefined,
       meta: { ...this.meta }, // flat list
-      meshes: this.meshes.map((it) => it.instantiate()),
+      meshes: this.meshes.map((mesh) => {
+        return options.meshes ? mesh.instantiate(options) : mesh
+      }),
       skins: this.skins ? JSON.parse(JSON.stringify(this.skins)) : undefined,
       nodes: this.nodes ? JSON.parse(JSON.stringify(this.nodes)) : undefined,
       animations: this.animations ? JSON.parse(JSON.stringify(this.animations)) : undefined,

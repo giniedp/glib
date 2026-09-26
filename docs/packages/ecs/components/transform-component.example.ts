@@ -117,7 +117,10 @@ class BodyComponent implements GameComponent, InitializableComponent, BehaviorCo
     const renderable = this.entity.component(ModelComponent)
     const content = this.entity.service(ContentLoader)
     content.loadModel(`/models/gltf/blocks/decorative_block_yellow.gltf`).then((model) => {
-      renderable.model = model.instantiate()
+      renderable.model = model.instantiate({
+        meshes: true,
+        materials: true,
+      })
     })
   }
 

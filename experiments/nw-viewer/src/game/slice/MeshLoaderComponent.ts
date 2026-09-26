@@ -56,7 +56,10 @@ export class MeshLoaderComponent implements GameComponent {
       work: (task) => {
         if (this.data.instances?.length > 0) {
           for (const inst of this.data.instances) {
-            const model = task.context.instantiate()
+            const model = task.context.instantiate({
+              meshes: false,
+              materials: false,
+            })
 
             this.entity.world.createEntity({
               parent: this.entity,
@@ -76,7 +79,10 @@ export class MeshLoaderComponent implements GameComponent {
             })
           }
         } else {
-          const model = task.context.instantiate()
+          const model = task.context.instantiate({
+            meshes: false,
+            materials: false,
+          })
           const color = { x: 0, y: 0, z: 1 }
           if (this.data.visibilityOccluder) {
             color.x = 1
