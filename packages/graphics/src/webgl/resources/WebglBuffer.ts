@@ -39,9 +39,9 @@ export class WebglBuffer extends Buffer implements WebglResource<WebGLBuffer> {
     mutable.glType = bufferUsageToWebGL(this.usage)
     mutable.glUsage = this.device.context.STATIC_DRAW // TODO:
     const gl = this.device.context
-    gl.bindBuffer(this.glType, this.glHandle)
+    const vao = this.bind()
     gl.bufferData(this.glType, this.size, this.glUsage)
-    gl.bindBuffer(this.glType, null)
+    this.unbind(vao)
   }
 
   /**
@@ -77,9 +77,9 @@ export class WebglBuffer extends Buffer implements WebglResource<WebGLBuffer> {
     }
 
     const gl = this.device.context
-    gl.bindBuffer(this.glType, this.glHandle)
+    const vao = this.bind()
     gl.bufferData(this.glType, src, this.glUsage, srcOffset, srcLength)
-    gl.bindBuffer(this.glType, null)
+    this.unbind(vao)
   }
 
   public setSubData(
@@ -103,17 +103,47 @@ export class WebglBuffer extends Buffer implements WebglResource<WebGLBuffer> {
     }
 
     const gl = this.device.context
-    gl.bindBuffer(this.glType, this.glHandle)
+    const vao = this.bind()
     gl.bufferSubData(this.glType, byteOffset, src, srcOffset, srcLength)
-    gl.bindBuffer(this.glType, null)
+    this.unbind(vao)
   }
 
   public getBufferSubData(srcByteOffset: number, dst: ArrayBufferView, dstOffset: number, dstLength: number): void {
     const gl = this.device.context
 
-    gl.bindBuffer(this.glType, this.glHandle)
+    const vao = this.bind()
     gl.getBufferSubData(this.glType, srcByteOffset, dst, dstOffset, dstLength)
+    this.unbind(vao)
+  }
+
+  /**
+   * Binds the buffer to its target.
+   *
+   * @remarks
+   * The element array buffer binding is part of the vertex array object state. Any bound
+   * vertex array object is unbound first, otherwise its index buffer binding would be replaced.
+   *
+   * @returns the previously bound vertex array object, to be restored with {@link unbind}
+   */
+  private bind(): WebGLVertexArrayObject | null {
+    const gl = this.device.context
+    let vao: WebGLVertexArrayObject | null = null
+    if (this.glType === gl.ELEMENT_ARRAY_BUFFER) {
+      vao = gl.getParameter(gl.VERTEX_ARRAY_BINDING)
+      if (vao) {
+        gl.bindVertexArray(null)
+      }
+    }
+    gl.bindBuffer(this.glType, this.glHandle)
+    return vao
+  }
+
+  private unbind(vao: WebGLVertexArrayObject | null) {
+    const gl = this.device.context
     gl.bindBuffer(this.glType, null)
+    if (vao) {
+      gl.bindVertexArray(vao)
+    }
   }
 
   /**
