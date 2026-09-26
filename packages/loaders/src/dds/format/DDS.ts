@@ -202,7 +202,7 @@ export function parse(buffer: ArrayBuffer) {
     header,
     width: header.Width,
     height: header.Height,
-    depth: header.Depth,
+    depth: Math.max(1, header.Depth),
     format,
     isVolume,
     isCubemap,
