@@ -111,7 +111,7 @@ export class WebglProgram extends Program {
   public dispose(): void {
     this.module.onCompiled.remove(this.createResources)
     for (const block of this.blocks) {
-      if (!this.sharedBlocks.includes(block.name)) {
+      if (!isSharedBlock(this.module, this.sharedBlocks, block.name)) {
         block.dispose()
       }
     }
@@ -149,7 +149,7 @@ export class WebglProgram extends Program {
 function createBlocks(module: WebglShaderModule, shared: ReadonlyArray<string>): WebglUniformBlock[] {
   const root = module.program
   return module.reflection.blocks.map((info) => {
-    const isShared = shared.includes((info.block || info.name).toLowerCase())
+    const isShared = isSharedBlock(module, shared, info.name)
     const instance = root?.blocks?.find((b) => b.name === info.name)
     if (instance && isShared) {
       return instance
@@ -159,6 +159,15 @@ function createBlocks(module: WebglShaderModule, shared: ReadonlyArray<string>):
     }
     return new WebglUniformBlock(module, info.name, info.index, info.size)
   })
+}
+
+/**
+ * Checks whether a uniform block is shared with the module's default program.
+ * Blocks are matched by their `@block` annotation (e.g. `global` for `GlobalBlock`) or by their name.
+ */
+function isSharedBlock(module: WebglShaderModule, shared: ReadonlyArray<string>, blockName: string): boolean {
+  const info = module.reflection?.blocks.find((it) => it.name === blockName)
+  return shared.includes((info?.block || blockName).toLowerCase())
 }
 
 function createLocations(module: WebglShaderModule): WebglUniformLocation[] {
