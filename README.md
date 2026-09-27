@@ -1,9 +1,7 @@
 ![Latest NPM release][version-shield]
 [![License][license-shield]][license-url]
-[![Build status][travis-shield]][travis-url]
-[![Coverage status][cover-shield]][cover-url]
 
-> This is a spare time project. Frequently changed. Occasionally maintained. Mainly to poke around with browser technologies.
+> This is a spare time project. Frequently changed. Occasionally maintained.
 
 # [G]glib
 
@@ -17,13 +15,12 @@ This project uses yarn workspaces and gulp tasks
 
 ```
   ├── assets              // Contains assets (textures, models, materials etc.) that are shared across all apps
-  ├── apps                // Contains workspaces for everything that is executable
-  │   ├── web             // Workspace for the gglib website
+  ├── docs                // Vitepress documentation and examples
+  ├── experiments         // Experimental projects using gglib
+  ├── packages            // Workspaces all gglib packages
   │   ├── ...             //
-  ├── packages            // Contains workspaces for all gglib packages
-  │   ├── ...             //
-  ├── tools               // Contains workspaces for build tools
-  │   ├── gglib           // build tasks for the gglib packages
+  ├── tools               // Build tools
+  │   ├── glib            // Tasks to compile and bundle gglib packages
   │   ├── ...             //
 ```
 
@@ -39,19 +36,21 @@ $ cd glib
 install dependencies
 
 ```sh
-$ yarn install
+$ pnpm install
 ```
 
 build the packages and the website
 
 ```sh
-$ yarn build
+$ pnpm build
 ```
 
-[travis-url]: https://travis-ci.org/giniedp/glib
-[travis-shield]: https://img.shields.io/travis/giniedp/glib.svg
-[cover-url]: https://coveralls.io/github/giniedp/glib?branch=master
-[cover-shield]: https://img.shields.io/coveralls/github/giniedp/glib.svg
+build and watch in dev mode with website preview running at http://localhost:5173/
+
+```sh
+$ pnpm dev
+```
+
 [license-url]: ./LICENSE
 [license-shield]: https://img.shields.io/npm/l/@gglib/gglib.svg
 [version-shield]: https://img.shields.io/npm/v/@gglib/gglib.svg

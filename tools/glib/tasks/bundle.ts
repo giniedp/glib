@@ -8,11 +8,9 @@ import visualizer from 'rollup-plugin-visualizer'
 import { GlibPackageContext, project } from '../context'
 import { BundleWatchOptions, rollupIgnoreWarnings, rollupOrWatch } from './plugins'
 
-export function bundle(options: { watch?: boolean } = {}) {
-  return Promise.all([
-    ...project.glibPackages.map(async (pkg) => rollupPackage(pkg, options)).flat(),
-    ...project.glibPackages.map(async (pkg) => bundleWorkerFiles(pkg, options).flat()),
-  ])
+export async function bundle(options: { watch?: boolean } = {}) {
+  await Promise.all(project.glibPackages.map(async (pkg) => rollupPackage(pkg, options)).flat())
+  await Promise.all(project.glibPackages.map(async (pkg) => bundleWorkerFiles(pkg, options).flat()))
 }
 
 function bundleWorkerFiles(pkg: GlibPackageContext, options: BundleWatchOptions = {}) {

@@ -13,7 +13,7 @@
     "nw-viewer:build": "pnpm nw-viewer build",
     "test": "pnpm vitest",
     "bench": "pnpm vitest bench",
-    "clean": "rimraf -g \"**/node_modules\" \"**/dist\" \"**/*.tsbuildinfo\"",
+    "clean": "rimraf -g \"**/node_modules\" \"**/dist\" || exit 0",
     "build": "pnpm glib build && pnpm docs:build",
     "deploy": "pnpm build && wrangler deploy docs/.vitepress/dist",
     "dev": "concurrently -n ⬢,⬢ -c red,green -p '{name}' -k 'pnpm:glib:dev' 'pnpm:docs:dev'",

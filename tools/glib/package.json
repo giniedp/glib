@@ -8,6 +8,7 @@
     "clean": "pnpm task clean",
     "update": "pnpm task update",
     "compile": "pnpm task compile",
+    "bundle": "pnpm task bundle",
     "build": "pnpm task build",
     "test": "pnpm task test",
     "dev": "pnpm task watch",
