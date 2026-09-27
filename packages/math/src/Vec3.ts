@@ -1,7 +1,5 @@
 import type { ArrayLike, IMat, IVec2, IVec3, IVec4 } from './Types'
-import { hermite } from './utils/hermite'
-import { clamp } from './utils/clamp'
-import { lerp } from './utils/lerp'
+import { clamp, hermite, lerp } from './utils/common'
 
 const keyLookup = {
   0: 'x',
