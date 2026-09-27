@@ -1,4 +1,4 @@
-import { BoundingBox, BoundingSphere, Mat4 } from '@gglib/math'
+import { BoundingBox, BoundingSphere, IVec2, IVec3, IVec4, Mat4 } from '@gglib/math'
 import { Color } from '../Color'
 import { Device } from '../Device'
 import { BufferUsage, FrontFace, PrimitiveType } from '../enums'
@@ -292,9 +292,7 @@ export class GeometryBuilder {
    * The given vertex should contain all attributes for current layout. If any attribute is missing
    * a default value will be used: see {@link defaults}
    */
-  public addVertex(
-    vertex: Record<string, ReadonlyArray<number> | number | { toArray: (buf: number[]) => void }>,
-  ): this {
+  public addVertex(vertex: Record<string, ReadonlyArray<number> | number | IVec2 | IVec3 | IVec4>): this {
     const transform = this.transformStack[this.transformStack.length - 1]
     const defaults = this.defaults
     const value = this.tmp
@@ -308,6 +306,24 @@ export class GeometryBuilder {
       } else if (typeof item === 'number') {
         value.length = 1
         value[0] = item
+        item = value
+      } else if ('w' in item) {
+        value.length = channel.elementCount
+        value[0] = item.x
+        value[1] = item.y
+        value[2] = item.z
+        value[3] = item.w
+        item = value
+      } else if ('z' in item) {
+        value.length = channel.elementCount
+        value[0] = item.x
+        value[1] = item.y
+        value[2] = item.z
+        item = value
+      } else if ('y' in item) {
+        value.length = channel.elementCount
+        value[0] = item.x
+        value[1] = item.y
         item = value
       } else if ('toArray' in item && typeof item.toArray === 'function') {
         value.length = channel.elementCount

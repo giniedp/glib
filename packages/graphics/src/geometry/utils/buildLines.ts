@@ -4,7 +4,7 @@ import { Buffer } from '../../resources/Buffer'
 import type { GeometryBuilder } from '../GeometryBuilder'
 import { GeometryBuilderChannel } from '../GeometryBuilderChannel'
 
-export type LinePoint = [number, number, number] | { toArray: (buf: number[]) => void }
+export type LinePoint = [number, number, number] | IVec3
 export type Line = [LinePoint, LinePoint]
 
 export interface BuildLinesOptions {

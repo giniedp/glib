@@ -1,9 +1,10 @@
-import { Vec3 } from './Vec3'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { Mat2 } from './Mat2'
-import { Vec2 } from './Vec2'
-import { Vec4 } from './Vec4'
 import { Quat } from './Quat'
-import { describe, it, expect, beforeEach } from 'vitest'
+import { IVec2 } from './Types'
+import { vec2, Vec2 } from './Vec2'
+import { Vec3 } from './Vec3'
+import { Vec4 } from './Vec4'
 
 describe('Mat2', () => {
   function expectComponents(v: Mat2, parts: number[], precision: number = 10) {
@@ -22,7 +23,7 @@ describe('Mat2', () => {
     expect(v1.y, 'y component').toBeCloseTo(v2.y, precision)
   }
 
-  function expectVec2Components(v: Vec2, parts: number[]) {
+  function expectVec2Components(v: IVec2, parts: number[]) {
     expect(v.x, 'x component').toBeCloseTo(parts[0], 10)
     expect(v.y, 'y component').toBeCloseTo(parts[1], 10)
   }
@@ -117,118 +118,118 @@ describe('Mat2', () => {
       it('creates rotation matrix', () => {
         const quat = Quat.createAxisAngle({ x: 0, y: 1, z: 0 }, Math.PI * 0.5)
         const mat = new Mat2().initFromQuat(quat)
-        const vec = Vec2.create(1, 1)
-        const vec2 = mat.transform(vec)
-        expectVec2Components(vec2, [0, 1])
+        const v = vec2(1, 1)
+        const v2 = mat.transform(v)
+        expectVec2Components(v2, [0, 1])
       })
     })
 
     describe('#initAxisAngle', () => {
       it('creates rotation matrix', () => {
         const mat = new Mat2().initAxisXYZAngle(0, 1, 0, Math.PI * 0.5)
-        const vec = Vec2.create(1, 1)
-        const vec2 = mat.transform(vec)
-        expectVec2Components(vec2, [0, 1])
+        const v = vec2(1, 1)
+        const v2 = mat.transform(v)
+        expectVec2Components(v2, [0, 1])
       })
     })
 
     describe('#initAxisAngleV', () => {
       it('creates rotation matrix', () => {
         const mat = new Mat2().initAxisAngle({ x: 0, y: 1, z: 0 }, Math.PI * 0.5)
-        const vec = Vec2.create(1, 1)
-        const vec2 = mat.transform(vec)
-        expectVec2Components(vec2, [0, 1])
+        const v = vec2(1, 1)
+        const v2 = mat.transform(v)
+        expectVec2Components(v2, [0, 1])
       })
     })
 
     describe('.createAxisAngle', () => {
       it('creates rotation matrix', () => {
         const mat = Mat2.createAxisXYZAngle(0, 1, 0, Math.PI * 0.5)
-        const vec = Vec2.create(1, 1)
-        const vec2 = mat.transform(vec)
-        expectVec2Components(vec2, [0, 1, -1])
+        const v = vec2(1, 1)
+        const v2 = mat.transform(v)
+        expectVec2Components(v2, [0, 1, -1])
       })
     })
 
     describe('.createAxisAngleV', () => {
       it('creates rotation matrix', () => {
         const mat = Mat2.createAxisAngle({ x: 0, y: 1, z: 0 }, Math.PI * 0.5)
-        const vec = Vec2.create(1, 1)
-        const vec2 = mat.transform(vec)
-        expectVec2Components(vec2, [0, 1, -1])
+        const v = vec2(1, 1)
+        const v2 = mat.transform(v)
+        expectVec2Components(v2, [0, 1, -1])
       })
     })
 
     describe('#initRotationX', () => {
       it('creates rotation matrix', () => {
         const mat = new Mat2().initRotationX(Math.PI * 0.5)
-        const vec = Vec2.create(0, 1)
-        const vec2 = mat.transform(vec)
-        expectVec2Components(vec2, [0, 0])
+        const v = vec2(0, 1)
+        const v2 = mat.transform(v)
+        expectVec2Components(v2, [0, 0])
       })
     })
 
     describe('.createRotationX', () => {
       it('creates rotation matrix', () => {
         const mat = Mat2.createRotationX(Math.PI * 0.5)
-        const vec = Vec2.create(0, 1)
-        const vec2 = mat.transform(vec)
-        expectVec2Components(vec2, [0, 0])
+        const v = vec2(0, 1)
+        const v2 = mat.transform(v)
+        expectVec2Components(v2, [0, 0])
       })
     })
 
     describe('#initRotationY', () => {
       it('creates rotation matrix', () => {
         const mat = new Mat2().initRotationY(Math.PI * 0.5)
-        const vec = Vec2.create(1, 0)
-        const vec2 = mat.transform(vec)
-        expect(vec2.x).toBeCloseTo(0)
-        expect(vec2.y).toBeCloseTo(0)
+        const v = vec2(1, 0)
+        const v2 = mat.transform(v)
+        expect(v2.x).toBeCloseTo(0)
+        expect(v2.y).toBeCloseTo(0)
       })
     })
 
     describe('.createRotationY', () => {
       it('creates rotation matrix', () => {
         const mat = Mat2.createRotationY(Math.PI * 0.5)
-        const vec = Vec2.create(1, 0)
-        const vec2 = mat.transform(vec)
-        expectVec2Components(vec2, [0, 0])
+        const v = vec2(1, 0)
+        const v2 = mat.transform(v)
+        expectVec2Components(v2, [0, 0])
       })
     })
 
     describe('#initRotationZ', () => {
       it('creates rotation matrix', () => {
         const mat = new Mat2().initRotationZ(Math.PI * 0.5)
-        const vec = Vec2.create(1, 0)
-        const vec2 = mat.transform(vec)
-        expectVec2Components(vec2, [0, 1])
+        const v = vec2(1, 0)
+        const v2 = mat.transform(v)
+        expectVec2Components(v2, [0, 1])
       })
     })
 
     describe('.createRotationZ', () => {
       it('creates rotation matrix', () => {
         const mat = Mat2.createRotationZ(Math.PI * 0.5)
-        const vec = Vec2.create(1, 0)
-        const vec2 = mat.transform(vec)
-        expectVec2Components(vec2, [0, 1])
+        const v = vec2(1, 0)
+        const v2 = mat.transform(v)
+        expectVec2Components(v2, [0, 1])
       })
     })
 
     describe('#initScale', () => {
       it('creates scale matrix', () => {
         const mat = new Mat2().initScaleXY(1, 2)
-        const vec = Vec2.create(1, 2)
-        const vec2 = mat.transform(vec)
-        expectVec2Components(vec2, [1, 4])
+        const v = vec2(1, 2)
+        const v2 = mat.transform(v)
+        expectVec2Components(v2, [1, 4])
       })
     })
 
     describe('.createScale', () => {
       it('creates scale matrix', () => {
         const mat = Mat2.createScaleXY(1, 2)
-        const vec = Vec2.create(1, 2)
-        const vec2 = mat.transform(vec)
-        expectVec2Components(vec2, [1, 4])
+        const v = vec2(1, 2)
+        const v2 = mat.transform(v)
+        expectVec2Components(v2, [1, 4])
       })
     })
   })
@@ -270,7 +271,7 @@ describe('Mat2', () => {
     })
 
     it('setScale', () => {
-      expectComponents(mat.setScale(Vec2.create(21, 22)).transpose(), [21, 2, 3, 22])
+      expectComponents(mat.setScale(vec2(21, 22)).transpose(), [21, 2, 3, 22])
     })
 
     it('setScale', () => {

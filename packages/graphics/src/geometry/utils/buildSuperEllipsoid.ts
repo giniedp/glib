@@ -62,12 +62,11 @@ export function buildSuperEllipsoid(builder: GeometryBuilder, options?: BuildSup
       let y = sign(sinPhi) * Math.pow(Math.abs(sinPhi), power1)
 
       let normal = Vec3.create(x, y, z)
-      let texCoord = Vec2.create(du, dv)
 
       builder.addVertex({
         position: Vec3.multiplyScalar(normal, radius),
         normal: normal.normalize(),
-        texture: texCoord,
+        texture: [du, dv],
       })
     }
   }

@@ -8,7 +8,7 @@ import {
   typedInputAccessor,
   TypedInputAccessor,
 } from '@gglib/graphics'
-import { Vec2, Vec3 } from '@gglib/math'
+import { IVec2, vec2, vec2$init, Vec3 } from '@gglib/math'
 import { VIGNETTE_GLSL_FRAGMENT, VIGNETTE_GLSL_VERTEX } from './vignette.glsl'
 import { VIGNETTE_WGSL } from './vignette.wgsl'
 
@@ -24,8 +24,8 @@ export function vignetteShaderOptions(): ShaderModuleOptions {
 }
 
 export type VignetteShaderParams = {
-  'params.center': Vec2
-  'params.radius': Vec2
+  'params.center': IVec2
+  'params.radius': IVec2
   'params.inner': number
   'params.strength': number
   'params.power': number
@@ -36,8 +36,8 @@ export type VignetteShaderParams = {
 
 export function vignetteShaderParams(): VignetteShaderParams {
   return {
-    'params.center': Vec2.create(0.5, 0.5),
-    'params.radius': Vec2.create(0.5, 0.5),
+    'params.center': vec2(0.5, 0.5),
+    'params.radius': vec2(0.5, 0.5),
     'params.inner': 0.5,
     'params.strength': 0.5,
     'params.power': 1,
@@ -77,8 +77,8 @@ export class VignetteShader implements Renderable {
     const params = this.params
 
     params.set('texture', this.textureInput)
-    params.get('params.center').init(this.centerX, this.centerY)
-    params.get('params.radius').init(this.radiusX, this.radiusY)
+    vec2$init(params.get('params.center'), this.centerX, this.centerY)
+    vec2$init(params.get('params.radius'), this.radiusX, this.radiusY)
     params.set('params.inner', this.inner)
     params.set('params.strength', this.strength)
     params.set('params.power', this.power)

@@ -1,12 +1,12 @@
-import { Vec2 } from '@gglib/math'
+import { IVec2, vec2 } from '@gglib/math'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { inputAccessor, typedInputAccessor } from './ProgramInputAccessor'
+import { typedInputAccessor } from './ProgramInputAccessor'
 
 describe('typedParams', () => {
-  let params: { foo: number; bar: Vec2 }
+  let params: { foo: number; bar: IVec2 }
 
   beforeEach(() => {
-    params = { foo: 42, bar: Vec2.create(1, 2) }
+    params = { foo: 42, bar: vec2(1, 2) }
   })
 
   describe('get()', () => {

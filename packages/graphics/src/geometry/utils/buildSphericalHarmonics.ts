@@ -1,4 +1,4 @@
-import { Vec2, Vec3 } from '@gglib/math'
+import { Vec3 } from '@gglib/math'
 import type { GeometryBuilder } from '../GeometryBuilder'
 
 /**
@@ -45,12 +45,11 @@ export function buildSphericalHarmonics(
       let z = scale * Math.cos(phi)
 
       let normal = Vec3.create(x, y, z)
-      let texCoord = Vec2.create(du, dv)
 
       builder.addVertex({
         position: Vec3.multiplyScalar(normal, radius),
         normal: normal.normalize(),
-        texture: texCoord,
+        texture: [du, dv],
       })
     }
   }

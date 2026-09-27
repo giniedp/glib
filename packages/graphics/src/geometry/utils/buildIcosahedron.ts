@@ -1,9 +1,9 @@
-import { IVec3, Vec2, Vec3 } from '@gglib/math'
+import { IVec3, Vec3 } from '@gglib/math'
 import type { Device } from '../../Device'
 import type { Geometry } from '../Geometry'
 import { buildGeometry, GeometryBuilder } from '../GeometryBuilder'
-import { trianglesToLines } from './indices'
 import { resolveLines } from './buildParametricSurface'
+import { trianglesToLines } from './indices'
 
 export const BuildPolyhedronDefaults = {
   radius: 1,
@@ -232,7 +232,7 @@ export function buildPolyhedron(builder: GeometryBuilder, options?: BuildPolyhed
         z: v.z * radius + oz,
       }),
       normal: invert ? Vec3.createFrom(v).negate() : v,
-      texture: Vec2.create(u, t),
+      texture: [u, t],
     })
   }
 

@@ -12,7 +12,7 @@ import {
   type ShaderModuleOptions,
   TRUE,
 } from '@gglib/graphics'
-import { Mat4, Vec2, Vec4 } from '@gglib/math'
+import { Mat4, vec2, Vec4 } from '@gglib/math'
 import { type NwMaterialProps } from './GltfExtension'
 import SCHEMA from './IllumMaterial.meta'
 import WGSL from './IllumMaterial.wgsl'
@@ -277,7 +277,7 @@ export class IllumMaterial extends MaterialWithSchema(SCHEMA) {
     this.DiffuseColor = Vec4.create(1, 1, 1, 1)
     this.SpecularColor = Vec4.create(1, 1, 1, 1)
     this.EmissiveColor = Vec4.create()
-    this.DetailTiling = Vec2.create(1, 1)
+    this.DetailTiling = vec2(1, 1)
 
     this.EmittanceMapGamma = 1.0
     this.ObmDisplacement = 0.004

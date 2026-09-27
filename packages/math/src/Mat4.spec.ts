@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { IVec2, IVec3, Mat4, Quat, Vec2, Vec3, Vec4 } from './index'
+import { IVec2, IVec3, Mat4, Quat, vec2, Vec3, Vec4 } from './index'
 
 describe('Mat4', () => {
   function expectComponents(v: Mat4, parts: number[]) {
@@ -1326,13 +1326,13 @@ describe('Mat4', () => {
 
   describe('#transform', () => {
     it('transforms V2', () => {
-      expectVec2Components(Mat4.createRotationX(Math.PI * 0.5).transformV2(Vec2.create(1, 0)), [1, 0])
-      expectVec2Components(Mat4.createRotationX(Math.PI * 0.5).transformV2(Vec2.create(0, 1)), [0, 0])
-      expectVec2Components(Mat4.createRotationY(Math.PI * 0.5).transformV2(Vec2.create(1, 0)), [0, 0])
-      expectVec2Components(Mat4.createRotationY(Math.PI * 0.5).transformV2(Vec2.create(0, 1)), [0, 1])
-      expectVec2Components(Mat4.createRotationZ(Math.PI * 0.5).transformV2(Vec2.create(1, 0)), [0, 1])
-      expectVec2Components(Mat4.createRotationZ(Math.PI * 0.5).transformV2(Vec2.create(0, 1)), [-1, 0])
-      expectVec2Components(Mat4.createTranslationXYZ(1, 2, 3).transformV2(Vec2.create(0, 0)), [1, 2])
+      expectVec2Components(Mat4.createRotationX(Math.PI * 0.5).transformV2(vec2(1, 0)), [1, 0])
+      expectVec2Components(Mat4.createRotationX(Math.PI * 0.5).transformV2(vec2(0, 1)), [0, 0])
+      expectVec2Components(Mat4.createRotationY(Math.PI * 0.5).transformV2(vec2(1, 0)), [0, 0])
+      expectVec2Components(Mat4.createRotationY(Math.PI * 0.5).transformV2(vec2(0, 1)), [0, 1])
+      expectVec2Components(Mat4.createRotationZ(Math.PI * 0.5).transformV2(vec2(1, 0)), [0, 1])
+      expectVec2Components(Mat4.createRotationZ(Math.PI * 0.5).transformV2(vec2(0, 1)), [-1, 0])
+      expectVec2Components(Mat4.createTranslationXYZ(1, 2, 3).transformV2(vec2(0, 0)), [1, 2])
     })
     it('transforms V3', () => {
       expectVec3Components(Mat4.createRotationX(Math.PI * 0.5).transformV3(Vec3.create(1, 0, 0)), [1, 0, 0])
@@ -1372,13 +1372,13 @@ describe('Mat4', () => {
 
   describe('#transformNormal', () => {
     it('transforms V2', () => {
-      expectVec2Components(Mat4.createRotationX(Math.PI * 0.5).transformV2Normal(Vec2.create(1, 0)), [1, 0])
-      expectVec2Components(Mat4.createRotationX(Math.PI * 0.5).transformV2Normal(Vec2.create(0, 1)), [0, 0])
-      expectVec2Components(Mat4.createRotationY(Math.PI * 0.5).transformV2Normal(Vec2.create(1, 0)), [0, 0])
-      expectVec2Components(Mat4.createRotationY(Math.PI * 0.5).transformV2Normal(Vec2.create(0, 1)), [0, 1])
-      expectVec2Components(Mat4.createRotationZ(Math.PI * 0.5).transformV2Normal(Vec2.create(1, 0)), [0, 1])
-      expectVec2Components(Mat4.createRotationZ(Math.PI * 0.5).transformV2Normal(Vec2.create(0, 1)), [-1, 0])
-      expectVec2Components(Mat4.createTranslationXYZ(1, 2, 3).transformV2Normal(Vec2.create(0, 0)), [0, 0])
+      expectVec2Components(Mat4.createRotationX(Math.PI * 0.5).transformV2Normal(vec2(1, 0)), [1, 0])
+      expectVec2Components(Mat4.createRotationX(Math.PI * 0.5).transformV2Normal(vec2(0, 1)), [0, 0])
+      expectVec2Components(Mat4.createRotationY(Math.PI * 0.5).transformV2Normal(vec2(1, 0)), [0, 0])
+      expectVec2Components(Mat4.createRotationY(Math.PI * 0.5).transformV2Normal(vec2(0, 1)), [0, 1])
+      expectVec2Components(Mat4.createRotationZ(Math.PI * 0.5).transformV2Normal(vec2(1, 0)), [0, 1])
+      expectVec2Components(Mat4.createRotationZ(Math.PI * 0.5).transformV2Normal(vec2(0, 1)), [-1, 0])
+      expectVec2Components(Mat4.createTranslationXYZ(1, 2, 3).transformV2Normal(vec2(0, 0)), [0, 0])
     })
     it('transforms V3', () => {
       expectVec3Components(Mat4.createRotationX(Math.PI * 0.5).transformV3Normal(Vec3.create(1, 0, 0)), [1, 0, 0])

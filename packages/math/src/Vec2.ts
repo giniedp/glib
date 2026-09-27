@@ -35,6 +35,7 @@ export function vec2(a?: number | IVec2 | IVec3 | IVec4 | number[] | null, b?: n
 
   return { x, y }
 }
+
 /**
  * A vector with two components.
  *
@@ -969,4 +970,715 @@ export class Vec2 implements IVec2 {
   public static format(vec: IVec2, fractionDigits: number = 5) {
     return 'x: '.concat(vec.x.toFixed(fractionDigits), ', y: ', vec.y.toFixed(fractionDigits))
   }
+}
+
+/**
+ * Temporary variable for short lived calculations. Do not store references to this variable.
+ */
+vec2.$0 = { x: 0, y: 0 }
+
+/**
+ * Temporary variable for short lived calculations. Do not store references to this variable.
+ */
+vec2.$1 = { x: 0, y: 0 }
+
+/**
+ * Temporary variable for short lived calculations. Do not store references to this variable.
+ */
+vec2.$2 = { x: 0, y: 0 }
+
+/**
+ * Initializes the given vector
+ *
+ * @param out - the vector to initialize
+ * @param x - The x component
+ * @param y - The y component
+ */
+export function vec2$init(out: IVec2, x: number, y: number) {
+  out.x = x
+  out.y = y
+}
+
+/**
+ * Initializes the given vector
+ *
+ * @param out - the vector to initialize
+ * @param value - The x and y component
+ */
+export function vec2$initFill(out: IVec2, value: number) {
+  out.x = value
+  out.y = value
+}
+
+/**
+ * Initializes the given vector with random values in range [0..1]
+ *
+ * @param out - the vector to initialize
+ */
+export function vec2$initRandom(out: IVec2, min: number = 0, max: number = 1): void {
+  out.x = lerp(min, max, Math.random())
+  out.y = lerp(min, max, Math.random())
+}
+
+/**
+ * Creates a copy of a vector
+ *
+ * @param vec
+ * @param out
+ */
+export function vec2copy(vec: IVec2, out?: IVec2): IVec2 {
+  out ||= { x: 0, y: 0 }
+  out.x = vec.x
+  out.y = vec.y
+  return out
+}
+
+/**
+ * Copies the components of `src` successively into the given array.
+ *
+ * @param vec - The vector to copy
+ * @param array - The array to copy into
+ * @param offset - Zero based index where to start writing in the array
+ * @returns the given array parameter
+ */
+export function vec2toArray(vec: IVec2): [number, number]
+export function vec2toArray(vec: IVec2, array: number[], offset?: number): number[]
+export function vec2toArray(vec: IVec2, array: number[] = [], offset: number = 0): number[] {
+  array[offset] = vec.x
+  array[offset + 1] = vec.y
+  return array
+}
+
+/**
+ * Checks for component wise equality
+ */
+export function vec2equals(a: IVec2, b: IVec2): boolean {
+  return a.x === b.x && a.y === b.y
+}
+
+/**
+ * Calculates the length of this vector
+ */
+export function vec2length(vec: IVec2): number {
+  const x = vec.x
+  const y = vec.y
+  return Math.sqrt(x * x + y * y)
+}
+
+/**
+ * Calculates the squared length of this vector
+ */
+export function vec2lengthSquared(vec: IVec2): number {
+  const x = vec.x
+  const y = vec.y
+  return x * x + y * y
+}
+/**
+ * Calculates the distance between two vectors
+ */
+export function vec2distance(a: IVec2, b: IVec2): number {
+  const x = a.x - b.x
+  const y = a.y - b.y
+  return Math.sqrt(x * x + y * y)
+}
+/**
+ * Calculates the squared distance between two vectors
+ */
+export function vec2distanceSquared(a: IVec2, b: IVec2): number {
+  const x = a.x - b.x
+  const y = a.y - b.y
+  return x * x + y * y
+}
+/**
+ * Calculates the dot product of two vectors
+ */
+export function vec2dot(a: IVec2, b: IVec2): number {
+  return a.x * b.x + a.y * b.y
+}
+
+/**
+ * Normalizes a vector.
+ */
+export function vec2$normalize(vec: IVec2): void {
+  const x = vec.x
+  const y = vec.y
+  const d = 1.0 / Math.sqrt(x * x + y * y)
+  vec.x = x * d
+  vec.y = y * d
+}
+
+/**
+ * Normalizes a vector.
+ */
+export function vec2normalize(vec: IVec2, out?: IVec2): IVec2 {
+  const x = vec.x
+  const y = vec.y
+  const d = 1.0 / Math.sqrt(x * x + y * y)
+  out ||= { x: 0, y: 0 }
+  out.x = x * d
+  out.y = y * d
+  return out
+}
+
+/**
+ * Inverts a vector.
+ */
+export function vec2$invert(vec: IVec2): void {
+  vec.x = 1.0 / vec.x
+  vec.y = 1.0 / vec.y
+}
+
+/**
+ * Inverts a vector.
+ */
+export function vec2invert(vec: IVec2, out?: IVec2): IVec2 {
+  out ||= { x: 0, y: 0 }
+  out.x = 1.0 / vec.x
+  out.y = 1.0 / vec.y
+  return out
+}
+
+/**
+ * Negates the components of a vector.
+ */
+export function vec2$negate(vec: IVec2): void {
+  vec.x = -vec.x
+  vec.y = -vec.y
+}
+
+/**
+ * Negates the components of a vector.
+ */
+export function vec2negate(vec: IVec2, out?: IVec2): IVec2 {
+  out ||= { x: 0, y: 0 }
+  out.x = -vec.x
+  out.y = -vec.y
+  return out
+}
+
+/**
+ * Adds components of two vectors
+ *
+ * @param $ - The vector to add to
+ * @param other - The vector to add
+ */
+export function vec2$add($: IVec2, other: IVec2): void {
+  $.x += other.x
+  $.y += other.y
+}
+
+/**
+ * Adds components of two vectors
+ *
+ * @param a - The first vector
+ * @param b - The second vector
+ * @param out - The vector to write to
+ */
+export function vec2add(a: IVec2, b: IVec2, out?: IVec2): IVec2 {
+  out ||= { x: 0, y: 0 }
+  out.x = a.x + b.x
+  out.y = a.y + b.y
+  return out
+}
+
+/**
+ * Adds a value to all components
+ *
+ * @param $ - The vector to add to
+ * @param value - The value to add
+ */
+export function vec2$addScalar($: IVec2, value: number): void {
+  $.x += value
+  $.y += value
+}
+
+/**
+ * Adds a value to all components
+ *
+ * @param vec - The vector
+ * @param value - The value
+ * @param out - The vector to write to
+ */
+export function vec2addScalar(vec: IVec2, value: number, out?: IVec2): IVec2 {
+  out ||= { x: 0, y: 0 }
+  out.x = vec.x + value
+  out.y = vec.y + value
+  return out
+}
+
+/**
+ * Adds components of two vectors
+ *
+ * @param $ - The vector to add to
+ * @param other - The vector to add
+ * @param scale - The value to scale with
+ */
+export function vec2$addScaled($: IVec2, other: IVec2, scale: number): void {
+  $.x += other.x * scale
+  $.y += other.y * scale
+}
+
+/**
+ * Adds components of two vectors
+ *
+ * @param a - The first vector
+ * @param b - The second vector
+ * @param out - The vector to write to
+ */
+export function vec2addScaled(a: IVec2, b: IVec2, scale: number, out?: IVec2): IVec2 {
+  out ||= { x: 0, y: 0 }
+  out.x = a.x + b.x * scale
+  out.y = a.y + b.y * scale
+  return out
+}
+
+/**
+ * Subtracts components of two vectors
+ *
+ * @param $ - The vector to subtract from
+ * @param other - The vector to subtract
+ */
+export function vec2$subtract($: IVec2, other: IVec2): void {
+  $.x -= other.x
+  $.y -= other.y
+}
+
+/**
+ * Subtracts components of two vectors
+ *
+ * @param a - The first vector
+ * @param b - The second vector
+ * @param out - The vector to write to
+ */
+export function vec2subtract(a: IVec2, b: IVec2, out?: IVec2): IVec2 {
+  out ||= { x: 0, y: 0 }
+  out.x = a.x - b.x
+  out.y = a.y - b.y
+  return out
+}
+
+/**
+ * Subtracts a value from all components
+ *
+ * @param $ - The vector to subtract from
+ * @param value - The value to subtract
+ */
+export function vec2$subtractScalar($: IVec2, value: number): void {
+  $.x -= value
+  $.y -= value
+}
+
+/**
+ * Subtracts a value from all components
+ *
+ * @param vec - The vector
+ * @param value - The value
+ * @param out - The vector to write to
+ */
+export function vec2subtractScalar(vec: IVec2, value: number, out?: IVec2): IVec2 {
+  out ||= { x: 0, y: 0 }
+  out.x = vec.x - value
+  out.y = vec.y - value
+  return out
+}
+
+/**
+ * Subtracts components of two vectors
+ *
+ * @param $ - The vector to subtract from
+ * @param other - The vector to subtract
+ * @param scale - The value to scale with
+ */
+export function vec2$subtractScaled($: IVec2, other: IVec2, scale: number): void {
+  $.x -= other.x * scale
+  $.y -= other.y * scale
+}
+
+/**
+ * Subtracts components of two vectors
+ *
+ * @param a - The first vector
+ * @param b - The second vector
+ * @param scale - The value to scale `b` with
+ * @param out - The vector to write to
+ */
+export function vec2subtractScaled(a: IVec2, b: IVec2, scale: number, out?: IVec2): IVec2 {
+  out ||= { x: 0, y: 0 }
+  out.x = a.x - b.x * scale
+  out.y = a.y - b.y * scale
+  return out
+}
+
+/**
+ * Multiplies components of two vectors
+ *
+ * @param $ - The vector to multiply
+ * @param other - The vector to multiply with
+ */
+export function vec2$multiply($: IVec2, other: IVec2): void {
+  $.x *= other.x
+  $.y *= other.y
+}
+
+/**
+ * Multiplies components of two vectors
+ *
+ * @param a - The first vector
+ * @param b - The second vector
+ * @param out - The vector to write to
+ */
+export function vec2multiply(a: IVec2, b: IVec2, out?: IVec2): IVec2 {
+  out ||= { x: 0, y: 0 }
+  out.x = a.x * b.x
+  out.y = a.y * b.y
+  return out
+}
+
+/**
+ * Multiplies all components with a value
+ *
+ * @param $ - The vector to multiply
+ * @param value - The value to multiply with
+ */
+export function vec2$multiplyScalar($: IVec2, value: number): void {
+  $.x *= value
+  $.y *= value
+}
+
+/**
+ * Multiplies all components with a value
+ *
+ * @param vec - The vector
+ * @param value - The value
+ * @param out - The vector to write to
+ */
+export function vec2multiplyScalar(vec: IVec2, value: number, out?: IVec2): IVec2 {
+  out ||= { x: 0, y: 0 }
+  out.x = vec.x * value
+  out.y = vec.y * value
+  return out
+}
+
+/**
+ * Divides components of two vectors
+ *
+ * @param $ - The vector to divide
+ * @param other - The vector to divide by
+ */
+export function vec2$divide($: IVec2, other: IVec2): void {
+  $.x /= other.x
+  $.y /= other.y
+}
+
+/**
+ * Divides components of two vectors
+ *
+ * @param a - The first vector
+ * @param b - The second vector
+ * @param out - The vector to write to
+ */
+export function vec2divide(a: IVec2, b: IVec2, out?: IVec2): IVec2 {
+  out ||= { x: 0, y: 0 }
+  out.x = a.x / b.x
+  out.y = a.y / b.y
+  return out
+}
+
+/**
+ * Divides all components by a value
+ *
+ * @param $ - The vector to divide
+ * @param value - The value to divide by
+ */
+export function vec2$divideScalar($: IVec2, value: number): void {
+  value = 1 / value
+  $.x *= value
+  $.y *= value
+}
+
+/**
+ * Divides all components by a value
+ *
+ * @param vec - The vector
+ * @param value - The value
+ * @param out - The vector to write to
+ */
+export function vec2divideScalar(vec: IVec2, value: number, out?: IVec2): IVec2 {
+  value = 1 / value
+  out ||= { x: 0, y: 0 }
+  out.x = vec.x * value
+  out.y = vec.y * value
+  return out
+}
+
+/**
+ * Transforms a vector with the given 4x4 matrix
+ *
+ * @param $ - The vector to transform
+ * @param mat - The matrix
+ */
+export function vec2$transformByMat4($: IVec2, mat: { data: ArrayLike<number> }): void {
+  const x = $.x
+  const y = $.y
+  const d = mat.data
+  $.x = x * d[0] + y * d[4] + d[12]
+  $.y = x * d[1] + y * d[5] + d[13]
+}
+
+/**
+ * Transforms a vector with the given 4x4 matrix
+ *
+ * @param vec - The vector to transform
+ * @param mat - The matrix
+ * @param out - The vector to write to
+ */
+export function vec2transformByMat4(vec: IVec2, mat: { data: ArrayLike<number> }, out?: IVec2): IVec2 {
+  const x = vec.x
+  const y = vec.y
+  const d = mat.data
+  out ||= { x: 0, y: 0 }
+  out.x = x * d[0] + y * d[4] + d[12]
+  out.y = x * d[1] + y * d[5] + d[13]
+  return out
+}
+
+/**
+ * Transforms a vector with the given 3x3 matrix
+ *
+ * @param $ - The vector to transform
+ * @param mat - The matrix
+ */
+export function vec2$transformByMat3($: IVec2, mat: { data: ArrayLike<number> }): void {
+  const x = $.x
+  const y = $.y
+  const d = mat.data
+  $.x = x * d[0] + y * d[3]
+  $.y = x * d[1] + y * d[4]
+}
+
+/**
+ * Transforms a vector with the given 3x3 matrix
+ *
+ * @param vec - The vector to transform
+ * @param mat - The matrix
+ * @param out - The vector to write to
+ */
+export function vec2transformByMat3(vec: IVec2, mat: { data: ArrayLike<number> }, out?: IVec2): IVec2 {
+  const x = vec.x
+  const y = vec.y
+  const d = mat.data
+  out ||= { x: 0, y: 0 }
+  out.x = x * d[0] + y * d[3]
+  out.y = x * d[1] + y * d[4]
+  return out
+}
+
+/**
+ * Transforms a vector with the given 2x2 matrix
+ *
+ * @param $ - The vector to transform
+ * @param mat - The matrix
+ */
+export function vec2$transformByMat2($: IVec2, mat: { data: ArrayLike<number> }): void {
+  const x = $.x
+  const y = $.y
+  const d = mat.data
+  $.x = x * d[0] + y * d[2]
+  $.y = x * d[1] + y * d[3]
+}
+
+/**
+ * Transforms a vector with the given 2x2 matrix
+ *
+ * @param vec - The vector to transform
+ * @param mat - The matrix
+ * @param out - The vector to write to
+ */
+export function vec2transformByMat2(vec: IVec2, mat: { data: ArrayLike<number> }, out?: IVec2): IVec2 {
+  const x = vec.x
+  const y = vec.y
+  const d = mat.data
+  out ||= { x: 0, y: 0 }
+  out.x = x * d[0] + y * d[2]
+  out.y = x * d[1] + y * d[3]
+  return out
+}
+
+/**
+ * Clamps all components between 0 and 1
+ *
+ * @param vec - The vector to clamp
+ */
+export function vec2$saturate(vec: IVec2): void {
+  vec.x = vec.x < 0 ? 0 : vec.x > 1 ? 1 : vec.x
+  vec.y = vec.y < 0 ? 0 : vec.y > 1 ? 1 : vec.y
+}
+
+/**
+ * Clamps all components between 0 and 1
+ *
+ * @param vec - The vector to clamp
+ * @param out - The vector to write to
+ */
+export function vec2saturate(vec: IVec2, out?: IVec2): IVec2 {
+  out ||= { x: 0, y: 0 }
+  out.x = vec.x < 0 ? 0 : vec.x > 1 ? 1 : vec.x
+  out.y = vec.y < 0 ? 0 : vec.y > 1 ? 1 : vec.y
+  return out
+}
+
+/**
+ * Clamps components between the components of the min and max vectors
+ *
+ * @param vec - The vector to clamp
+ * @param min - Vector with the minimum component values
+ * @param max - Vector with the maximum component values
+ */
+export function vec2$clamp(vec: IVec2, min: IVec2, max: IVec2): void {
+  vec.x = clamp(vec.x, min.x, max.x)
+  vec.y = clamp(vec.y, min.y, max.y)
+}
+
+/**
+ * Clamps components between the components of the min and max vectors
+ *
+ * @param vec - The vector to clamp
+ * @param min - Vector with the minimum component values
+ * @param max - Vector with the maximum component values
+ * @param out - The vector to write to
+ */
+export function vec2clamp(vec: IVec2, min: IVec2, max: IVec2, out?: IVec2): IVec2 {
+  out ||= { x: 0, y: 0 }
+  out.x = clamp(vec.x, min.x, max.x)
+  out.y = clamp(vec.y, min.y, max.y)
+  return out
+}
+
+/**
+ * Clamps all components between min and max values
+ *
+ * @param vec - The vector to clamp
+ * @param min - The minimum value
+ * @param max - The maximum value
+ * @param out - The vector to write to
+ */
+export function vec2$clampScalar(vec: IVec2, min: number, max: number): void {
+  vec.x = vec.x < min ? min : vec.x > max ? max : vec.x
+  vec.y = vec.y < min ? min : vec.y > max ? max : vec.y
+}
+
+/**
+ * Clamps all components between min and max values
+ *
+ * @param vec - The vector to clamp
+ * @param min - The minimum value
+ * @param max - The maximum value
+ * @param out - The vector to write to
+ */
+export function vec2clampScalar(vec: IVec2, min: number, max: number, out?: IVec2): IVec2 {
+  out ||= { x: 0, y: 0 }
+  out.x = vec.x < min ? min : vec.x > max ? max : vec.x
+  out.y = vec.y < min ? min : vec.y > max ? max : vec.y
+  return out
+}
+
+/**
+ * Component wise min operation of two vectors
+ *
+ * @param a - The first vector
+ * @param b - The second vector
+ * @param out - The vector to write to
+ */
+export function vec2min(a: IVec2, b: IVec2, out?: IVec2): IVec2 {
+  out ||= { x: 0, y: 0 }
+  out.x = a.x < b.x ? a.x : b.x
+  out.y = a.y < b.y ? a.y : b.y
+  return out
+}
+
+/**
+ * Component wise min operation of a vector and a value
+ *
+ * @param vec - The vector
+ * @param value - The value
+ * @param out - The vector to write to
+ */
+export function vec2minScalar(vec: IVec2, value: number, out?: IVec2): IVec2 {
+  out ||= { x: 0, y: 0 }
+  out.x = vec.x < value ? vec.x : value
+  out.y = vec.y < value ? vec.y : value
+  return out
+}
+
+/**
+ * Component wise max operation of two vectors
+ *
+ * @param a - The first vector
+ * @param b - The second vector
+ * @param out - The vector to write to
+ */
+export function vec2max(a: IVec2, b: IVec2, out?: IVec2): IVec2 {
+  out ||= { x: 0, y: 0 }
+  out.x = a.x > b.x ? a.x : b.x
+  out.y = a.y > b.y ? a.y : b.y
+  return out
+}
+
+/**
+ * Component wise max operation of a vector and a value
+ *
+ * @param vec - The vector
+ * @param value - The value
+ * @param out - The vector to write to
+ */
+export function vec2maxScalar(vec: IVec2, value: number, out?: IVec2): IVec2 {
+  out ||= { x: 0, y: 0 }
+  out.x = vec.x > value ? vec.x : value
+  out.y = vec.y > value ? vec.y : value
+  return out
+}
+
+/**
+ * Component wise linear interpolation between two vectors
+ *
+ * @param a - The first vector
+ * @param b - The second vector
+ * @param t - The interpolation value. Assumed to be in range [0:1]
+ * @param out - The vector to write to
+ */
+export function vec2lerp(a: IVec2, b: IVec2, t: number, out?: IVec2): IVec2 {
+  out ||= { x: 0, y: 0 }
+  out.x = a.x + (b.x - a.x) * t
+  out.y = a.y + (b.y - a.y) * t
+  return out
+}
+
+/**
+ * Component wise barycentric interpolation of three vectors
+ *
+ * @param a - The first vector
+ * @param b - The second vector
+ * @param c - The third vector
+ * @param t1 - The first interpolation value. Assumed to be in range [0:1]
+ * @param t2 - The second interpolation value. Assumed to be in range [0:1]
+ * @param out - The vector to write to
+ */
+export function vec2barycentric(a: IVec2, b: IVec2, c: IVec2, t1: number, t2: number, out?: IVec2): IVec2 {
+  out ||= { x: 0, y: 0 }
+  out.x = a.x + t1 * (b.x - a.x) + t2 * (c.x - a.x)
+  out.y = a.y + t1 * (b.y - a.y) + t2 * (c.y - a.y)
+  return out
+}
+
+/**
+ * Formats a vector into a readable string
+ *
+ * @remarks
+ * Mainly meant for debugging. Do not use this for serialization.
+ *
+ * @param vec - The vector to format
+ * @param fractionDigits - Number of digits after decimal point
+ */
+export function vec2format(vec: IVec2, fractionDigits: number = 5): string {
+  return 'x: '.concat(vec.x.toFixed(fractionDigits), ', y: ', vec.y.toFixed(fractionDigits))
 }

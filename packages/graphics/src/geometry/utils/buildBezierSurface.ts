@@ -1,4 +1,4 @@
-import { IVec3, Mat4, Vec2, Vec3, Vec4 } from '@gglib/math'
+import { IVec3, Mat4, Vec3, Vec4 } from '@gglib/math'
 import type { GeometryBuilder } from '../GeometryBuilder'
 import { trianglesToLines } from './indices'
 
@@ -124,7 +124,7 @@ export function buildBezierSurface(builder: GeometryBuilder, options: BuildBezie
       builder.addVertex({
         position: Vec3.createFrom({ x: p.x + ox, y: p.y + oy, z: p.z + oz }),
         normal: Vec3.createFrom({ x: 0, y: 1, z: 0 }), // TODO: compute from surface tangents
-        texture: Vec2.createFrom({ x: i / segments, y: j / segments }),
+        texture: [i / segments, j / segments],
       })
     }
   }

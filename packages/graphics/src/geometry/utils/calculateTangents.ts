@@ -1,4 +1,4 @@
-import { Vec2, Vec3 } from '@gglib/math'
+import { vec2, vec2subtract, Vec3 } from '@gglib/math'
 import { FrontFace } from '../../enums'
 import { GeometryBuilderChannelMap } from '../GeometryBuilderChannel'
 
@@ -36,13 +36,13 @@ export function calculateTangents(
   let p1 = Vec3.create()
   let p2 = Vec3.create()
   let p3 = Vec3.create()
-  let t1 = Vec2.create()
-  let t2 = Vec2.create()
-  let t3 = Vec2.create()
+  let t1 = vec2()
+  let t2 = vec2()
+  let t3 = vec2()
   let d1 = Vec3.create()
   let d2 = Vec3.create()
-  let uv1 = Vec2.create()
-  let uv2 = Vec2.create()
+  let uv1 = vec2()
+  let uv2 = vec2()
 
   // zero out tangents
   for (let i = 0; i < vCount; i++) {
@@ -88,8 +88,8 @@ export function calculateTangents(
     Vec3.subtract(p2, p1, d1)
     Vec3.subtract(p3, p1, d2)
 
-    Vec2.subtract(t2, t1, uv1)
-    Vec2.subtract(t3, t1, uv2)
+    vec2subtract(t2, t1, uv1)
+    vec2subtract(t3, t1, uv2)
 
     let r = 1 / (uv1.x * uv2.y - uv1.y * uv2.x)
     let dir1 = Vec3.subtract(Vec3.multiplyScalar(d1, uv2.y), Vec3.multiplyScalar(d2, uv1.y)).multiplyScalar(r)

@@ -8,7 +8,7 @@ import {
   Texture,
   VertexBuffer,
 } from '@gglib/graphics'
-import { IVec4, lerp, vec2, Vec2, vec3, Vec3, vec4, Vec4, type IVec3 } from '@gglib/math'
+import { IVec4, lerp, vec2, vec2$init, vec3, Vec3, vec4, Vec4, type IVec3 } from '@gglib/math'
 import { ParticleMaterial } from './ParticleMaterial'
 // import { ParticleEffect } from './ParticleEffect'
 
@@ -185,10 +185,10 @@ export class ParticleChannel {
     mtl.EndVelocity = settings.endVelocity
     mtl.MinColor = Vec4.initFrom(mtl.MinColor || vec4(), settings.minColor)
     mtl.MaxColor = Vec4.initFrom(mtl.MaxColor || vec4(), settings.maxColor)
-    mtl.RotateSpeed = Vec2.init(mtl.RotateSpeed || vec2, settings.minRotateSpeed, settings.maxRotateSpeed)
-    mtl.StartSize = Vec2.init(mtl.StartSize || vec2(), settings.minStartSize, settings.maxStartSize)
-    mtl.EndSize = Vec2.init(mtl.EndSize || vec2(), settings.minEndSize, settings.maxEndSize)
-    mtl.Scale = Vec2.init(mtl.Scale || vec2(), 0.5 / this.device.output.aspectRatio, 0.5)
+    vec2$init((mtl.RotateSpeed ||= vec2()), settings.minRotateSpeed, settings.maxRotateSpeed)
+    vec2$init((mtl.StartSize ||= vec2()), settings.minStartSize, settings.maxStartSize)
+    vec2$init((mtl.EndSize ||= vec2()), settings.minEndSize, settings.maxEndSize)
+    vec2$init((mtl.Scale ||= vec2()), 0.5 / this.device.output.aspectRatio, 0.5)
     mtl.Time = this.time
     mtl.ColorMap = settings.texture || this.device.defaultTexture
   }

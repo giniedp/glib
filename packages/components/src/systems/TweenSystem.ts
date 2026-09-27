@@ -1,5 +1,5 @@
 import { GameSystem, GameWorld } from '@gglib/ecs'
-import { type IVec2, type IVec3, type IVec4, Vec2, Vec3, Vec4, clamp, easeLinear } from '@gglib/math'
+import { type IVec2, type IVec3, type IVec4, Vec3, Vec4, clamp, easeLinear, vec2toArray } from '@gglib/math'
 import { eventSource } from '@gglib/utils'
 import { TimeSystem } from './TimeSystem'
 
@@ -263,8 +263,8 @@ export class TweenSystem extends GameSystem {
   public startV2(options: TweenOptions<IVec2>) {
     return this.start({
       ...options,
-      from: Vec2.toArray(options.from),
-      to: Vec2.toArray(options.to),
+      from: vec2toArray(options.from),
+      to: vec2toArray(options.to),
     })
   }
 

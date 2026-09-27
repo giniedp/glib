@@ -1,4 +1,4 @@
-import { IVec2, IVec3, Vec2, Vec3 } from '@gglib/math'
+import { IVec2, IVec3, vec2, vec2subtract, Vec3 } from '@gglib/math'
 import { Color } from '../../Color'
 import { PrimitiveType } from '../../enums'
 import type { GeometryBuilder } from '../GeometryBuilder'
@@ -159,7 +159,7 @@ export function buildParametricSurface(builder: GeometryBuilder, options: BuildP
   const vertices: Array<{
     position: Vec3
     normal: Vec3
-    texture: Vec2
+    texture: IVec2
     tangent: Vec3
     bitangent: Vec3
   }> = []
@@ -175,7 +175,7 @@ export function buildParametricSurface(builder: GeometryBuilder, options: BuildP
       vertices.push({
         position: Vec3.convert(position(u, v, s, t)),
         normal: normal ? Vec3.convert(normal(u, v, s, t)) : Vec3.create(),
-        texture: texture ? Vec2.convert(texture(s, t, s, t)) : Vec2.create(s, t),
+        texture: texture ? texture(s, t, s, t) : vec2(s, t),
         tangent: Vec3.create(),
         bitangent: Vec3.create(),
       })
@@ -213,8 +213,8 @@ export function buildParametricSurface(builder: GeometryBuilder, options: BuildP
     const t1 = vertices[i1].texture
     const t2 = vertices[i2].texture
 
-    Vec2.subtract(t1, t0, uv0)
-    Vec2.subtract(t2, t0, uv1)
+    vec2subtract(t1, t0, uv0)
+    vec2subtract(t2, t0, uv1)
     const r = 1.0 / (uv0.x * uv1.y - uv0.y * uv1.x)
 
     nrm.init(
@@ -290,7 +290,7 @@ export function buildParametricLines(builder: GeometryBuilder, options: BuildPar
     position: Vec3
     normal: Vec3
     color: number
-    texture: Vec2
+    texture: IVec2
     tangent: Vec3
     bitangent: Vec3
   }> = []
@@ -307,7 +307,7 @@ export function buildParametricLines(builder: GeometryBuilder, options: BuildPar
         position: Vec3.convert(position(u, v, s, t)),
         normal: normal ? Vec3.convert(normal(u, v, s, t)) : Vec3.create(),
         color: color ? color(u, v, s, t) : Color.packToRGBA(Color.White),
-        texture: texture ? Vec2.convert(texture(s, t, s, t)) : Vec2.create(s, t),
+        texture: texture ? texture(s, t, s, t) : vec2(s, t),
         tangent: Vec3.create(),
         bitangent: Vec3.create(),
       })
@@ -345,8 +345,8 @@ export function buildParametricLines(builder: GeometryBuilder, options: BuildPar
     const t1 = vertices[i1].texture
     const t2 = vertices[i2].texture
 
-    Vec2.subtract(t1, t0, uv0)
-    Vec2.subtract(t2, t0, uv1)
+    vec2subtract(t1, t0, uv0)
+    vec2subtract(t2, t0, uv1)
     const r = 1.0 / (uv0.x * uv1.y - uv0.y * uv1.x)
 
     nrm.init(
