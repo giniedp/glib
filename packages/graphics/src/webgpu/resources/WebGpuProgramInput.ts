@@ -19,7 +19,17 @@ function invalidSetter(): void {
   throw new Error('Cannot set value on texture or sampler parameter.')
 }
 
-export type WebGpuParameterValue = InputValueType | GPUTexture | GPUTextureView | GPUExternalTexture
+export type WebGpuParameterValue =
+  | InputValueType
+  | GPUTexture
+  | GPUTextureView
+  | GPUExternalTexture
+  | GPUBuffer
+  | GPUBufferBinding
+
+function isBufferValue(value: unknown): value is Buffer | GPUBuffer {
+  return value instanceof Buffer || (typeof GPUBuffer !== 'undefined' && value instanceof GPUBuffer)
+}
 
 export class WebGpuProgramInput extends ProgramInput {
   public readonly name: string
@@ -94,6 +104,18 @@ export class WebGpuProgramInput extends ProgramInput {
         this.set = () => {
           console.warn(`Unsupported parameter type '${this.type}' for '${this.name}'`)
         }
+    }
+
+    if (resource.isBuffer) {
+      // allow binding external buffers through set(), e.g. storage buffers fed via input blocks
+      const setValue = this.set
+      this.set = (value: WebGpuParameterValue) => {
+        if (isBufferValue(value)) {
+          this.setBuffer(value)
+        } else {
+          setValue.call(this, value)
+        }
+      }
     }
   }
 

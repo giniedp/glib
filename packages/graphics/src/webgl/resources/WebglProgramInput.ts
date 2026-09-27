@@ -73,6 +73,16 @@ export class WebglProgramInput extends ProgramInput {
           throw new Error(`Unsupported parameter type for '${this.name}'`)
         }
     }
+
+    // allow binding external buffers through set()
+    const setValue = this.set
+    this.set = (value: InputValueType) => {
+      if (value instanceof Buffer) {
+        this.setBuffer(value)
+      } else {
+        setValue.call(this, value)
+      }
+    }
   }
 
   public set(_value: InputValueType): void {

@@ -257,7 +257,7 @@ function resolveInput(resources: ReadonlyArray<WebGpuShaderResource>, path: stri
   }
 
   if (!isIndexed && parts.length === 2) {
-    const resource = findTextureOrSamplerInBlock(resources, parts[0], parts[1])
+    const resource = findResourceInBlock(resources, parts[0], parts[1])
     if (resource) {
       return new WebGpuProgramInput(path, resource, resource.info)
     }
@@ -314,6 +314,13 @@ function findUniformBlock(list: ReadonlyArray<WebGpuShaderResource>, name: strin
   if (!list) {
     return null
   }
+  // prefer the resource whose variable name is the block name.
+  // Other resources may be annotated with the same block (e.g. storage buffers in a shared block)
+  for (const item of list) {
+    if (item.isBuffer && isShaderName(item.info, name) && isBlockOrName(item.info, name)) {
+      return item
+    }
+  }
   for (const item of list) {
     if (item.isBuffer && isBlockOrName(item.info, name)) {
       return item
@@ -338,7 +345,15 @@ function findNonUniformByShaderName(
   return null
 }
 
-function findTextureOrSamplerInBlock(
+/**
+ * Finds a texture, sampler or buffer resource that is annotated with the given `@block`
+ * and has the given variable name (or `@alias`).
+ *
+ * @remarks
+ * A buffer is only matched if it is not the block root itself (block name differs from variable name),
+ * so that paths into uniform block members keep resolving through the member walk.
+ */
+function findResourceInBlock(
   list: ReadonlyArray<WebGpuShaderResource>,
   block: string,
   name: string,
@@ -349,7 +364,13 @@ function findTextureOrSamplerInBlock(
     return null
   }
   for (const item of list) {
-    if ((item.isTexture || item.isSampler) && isBlockOrName(item.info, block) && isAliasOrName(item.info, name)) {
+    if (!isBlockOrName(item.info, block) || !isAliasOrName(item.info, name)) {
+      continue
+    }
+    if (item.isTexture || item.isSampler) {
+      return item
+    }
+    if (item.isBuffer && !isShaderName(item.info, block)) {
       return item
     }
   }

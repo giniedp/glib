@@ -5,7 +5,16 @@ import { Buffer } from './Buffer'
 import type { Texture } from './Texture'
 
 export type MatrixLike = { elements: ArrayLike<number> } | ArrayLike<number>
-export type InputValueType = number | IVec2 | IVec3 | IVec4 | ArrayLike<number> | MatrixLike | Texture | SamplerState
+export type InputValueType =
+  | number
+  | IVec2
+  | IVec3
+  | IVec4
+  | ArrayLike<number>
+  | MatrixLike
+  | Texture
+  | SamplerState
+  | Buffer
 export type InputTypeName =
   | 'scalar'
   | 'array'
@@ -23,6 +32,7 @@ export type InputTypeName =
   | 'mat4x4'
   | 'texture'
   | 'sampler'
+  | 'buffer'
 
 export type InputTypeMap = {
   scalar: number
@@ -41,6 +51,7 @@ export type InputTypeMap = {
   mat4x4: MatrixLike
   texture: Texture
   sampler: SamplerState
+  buffer: Buffer
 }
 
 export type InputBlockName = Brand<string, 'InputBlockName'>
@@ -68,6 +79,10 @@ export function inputSlotTexture(block: string, input: string): InputSlot<'textu
 
 export function inputSlotSampler(block: string, input: string): InputSlot<'sampler'> {
   return inputSlot(block, input, 'sampler')
+}
+
+export function inputSlotBuffer(block: string, input: string): InputSlot<'buffer'> {
+  return inputSlot(block, input, 'buffer')
 }
 
 export function inputSlotVec2(block: string, input: string): InputSlot<'vec2'> {
