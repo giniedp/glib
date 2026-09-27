@@ -1,4 +1,5 @@
 export * from './BloomPass'
+export * from './FxaaPass'
 export * from './PixelatePass'
-export * from './VignettePass'
 export * from './TonemapPass'
+export * from './VignettePass'
