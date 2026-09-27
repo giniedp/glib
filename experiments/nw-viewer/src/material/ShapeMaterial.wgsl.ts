@@ -7,8 +7,11 @@ struct InstanceBlock {
   color:     vec4f,
 };
 
+// @private
 @group(0) @binding(0) var<uniform> global: GlobalBlock;
+// @private
 @group(0) @binding(1) var<uniform> view: ViewBlock;
+
 @group(0) @binding(2) var<uniform> object: ObjectBlock;
 @group(0) @binding(3) var<storage, read> instances: array<InstanceBlock, 1>;
 

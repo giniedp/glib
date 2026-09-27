@@ -1,6 +1,5 @@
 import {
   BlendState,
-  CommonBlocks,
   CullState,
   Effect,
   type EffectOptions,
@@ -17,7 +16,7 @@ import type { NwMaterialProps } from './GltfExtension'
 import { TextureModifier } from './TexMod'
 import SCHEMA from './VegetationMaterial.meta'
 import WGSL from './VegetationMaterial.wgsl'
-import { type FeatureFlag, getShaderConstants, MaterialLayerMasks } from './common'
+import { type FeatureFlag, getShaderConstants, InputBlocks, MaterialLayerMasks } from './common'
 import { MtlFlag } from './types'
 import { MtlUtil, paramValue, paramVec4 } from './utils'
 
@@ -39,7 +38,7 @@ export function vegetationEffectOptions(constants: Record<string, number>): Effe
     meta: {},
     program: {
       shader: vegetationShaderOptions(constants),
-      sharedBlocks: [CommonBlocks.Global, CommonBlocks.View, CommonBlocks.Frame],
+      sharedBlocks: [InputBlocks.Global, InputBlocks.View, InputBlocks.Frame, InputBlocks.Lights],
       perInstanceTransformBlock: 'object',
     },
   }

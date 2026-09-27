@@ -1,4 +1,5 @@
-import { Color, CommonBlocks, MaterialWithSchema, type EffectOptions, type ShaderModuleOptions } from '@gglib/graphics'
+import { Color, MaterialWithSchema, type EffectOptions, type ShaderModuleOptions } from '@gglib/graphics'
+import { InputBlocks } from './common'
 import Schema from './UnknownMaterial.meta'
 import WGSL from './UnknownMaterial.wgsl'
 
@@ -18,7 +19,7 @@ export function unknownEffectOptions(): EffectOptions {
     meta: {},
     program: {
       shader: unknownShaderOptions(),
-      sharedBlocks: [CommonBlocks.Global, CommonBlocks.View, CommonBlocks.Frame],
+      sharedBlocks: [InputBlocks.Global, InputBlocks.View, InputBlocks.Frame, InputBlocks.Lights],
       perInstanceTransformBlock: 'object',
     },
   }

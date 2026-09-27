@@ -1,6 +1,5 @@
 import {
   BlendState,
-  CommonBlocks,
   CullState,
   DepthState,
   Effect,
@@ -19,7 +18,7 @@ import SCHEMA from './GeometryBeamSimpleMaterial.meta'
 import WGSL from './GeometryBeamSimpleMaterial.wgsl'
 import type { NwMaterialProps } from './GltfExtension'
 import { TextureModifier } from './TexMod'
-import { getShaderConstants, MaterialLayerMasks, type FeatureFlag } from './common'
+import { getShaderConstants, InputBlocks, MaterialLayerMasks, type FeatureFlag } from './common'
 import { MtlUtil, paramValue, paramVec4 } from './utils'
 
 export function geometryBeamSimpleShaderOptions(constants: Record<string, number>): ShaderModuleOptions {
@@ -40,7 +39,7 @@ export function geometryBeamSimpleEffectOptions(constants: Record<string, number
     meta: {},
     program: {
       shader: geometryBeamSimpleShaderOptions(constants),
-      sharedBlocks: [CommonBlocks.Global, CommonBlocks.View, CommonBlocks.Frame],
+      sharedBlocks: [InputBlocks.Global, InputBlocks.View, InputBlocks.Frame, InputBlocks.Lights],
       perInstanceTransformBlock: 'object',
     },
   }

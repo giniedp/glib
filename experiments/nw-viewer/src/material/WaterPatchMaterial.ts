@@ -1,6 +1,5 @@
 import {
   BlendState,
-  CommonBlocks,
   CullState,
   MaterialWithSchema,
   SamplerState,
@@ -8,6 +7,7 @@ import {
   type ShaderModuleOptions,
 } from '@gglib/graphics'
 import { Vec3 } from '@gglib/math'
+import { InputBlocks } from './common'
 import SCHEMA from './WaterPatchMaterial.meta'
 import WGSL from './WaterPatchMaterial.wgsl'
 
@@ -27,7 +27,7 @@ export function waterPatchEffectOptions(): EffectOptions {
     meta: {},
     program: {
       shader: waterPatchShaderOptions(),
-      sharedBlocks: [CommonBlocks.Global, CommonBlocks.View, CommonBlocks.Frame],
+      sharedBlocks: [InputBlocks.Global, InputBlocks.View, InputBlocks.Frame, InputBlocks.Lights],
     },
   }
 }

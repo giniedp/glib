@@ -1,9 +1,7 @@
 import {
   BlendState,
-  CommonBlocks,
   CullState,
   DepthState,
-  Device,
   type EffectOptions,
   type MaterialOptions,
   MaterialWithSchema,
@@ -12,13 +10,13 @@ import {
   TRUE,
 } from '@gglib/graphics'
 import { Mat4, Vec4 } from '@gglib/math'
-import { type FeatureFlag, getShaderConstants, MaterialLayerMasks } from './common'
+import { type FeatureFlag, getShaderConstants, InputBlocks, MaterialLayerMasks } from './common'
 import SCHEMA from './GlassMaterial.meta'
 import WGSL from './GlassMaterial.wgsl'
 import { type NwMaterialProps } from './GltfExtension'
 import { TextureModifier } from './TexMod'
 import { MtlFlag } from './types'
-import { MtlUtil, paramVec4, paramValue } from './utils'
+import { MtlUtil, paramValue, paramVec4 } from './utils'
 
 export function glassShaderOptions(): ShaderModuleOptions {
   return {
@@ -36,7 +34,7 @@ export function glassEffectOptions(): EffectOptions {
     meta: {},
     program: {
       shader: glassShaderOptions(),
-      sharedBlocks: [CommonBlocks.Global, CommonBlocks.View, CommonBlocks.Frame],
+      sharedBlocks: [InputBlocks.Global, InputBlocks.View, InputBlocks.Frame, InputBlocks.Lights],
       perInstanceTransformBlock: 'object',
     },
   }

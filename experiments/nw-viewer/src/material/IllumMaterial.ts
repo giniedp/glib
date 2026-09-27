@@ -1,9 +1,7 @@
 import {
   BlendState,
-  CommonBlocks,
   CullState,
   DepthState,
-  Device,
   Effect,
   type EffectOptions,
   type MaterialOptions,
@@ -19,7 +17,7 @@ import { type NwMaterialProps } from './GltfExtension'
 import SCHEMA from './IllumMaterial.meta'
 import WGSL from './IllumMaterial.wgsl'
 import { TextureModifier } from './TexMod'
-import { type FeatureFlag, getShaderConstants, MaterialLayerMasks } from './common'
+import { type FeatureFlag, getShaderConstants, InputBlocks, MaterialLayerMasks } from './common'
 
 import { MtlFlag } from './types'
 import { MtlUtil, paramValue, paramVec3, paramVec4 } from './utils'
@@ -42,7 +40,7 @@ export function illumEffectOptions(constants: Record<string, number>): EffectOpt
     meta: {},
     program: {
       shader: illumShaderOptions(constants),
-      sharedBlocks: [CommonBlocks.Global, CommonBlocks.View, CommonBlocks.Frame],
+      sharedBlocks: [InputBlocks.Global, InputBlocks.View, InputBlocks.Frame, InputBlocks.Lights],
       perInstanceTransformBlock: 'object',
     },
   }

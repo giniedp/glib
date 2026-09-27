@@ -33,10 +33,15 @@ struct InstanceBlock {
   heightUvTransformCoarse: vec4f,
 };
 
+// @private
 @group(0) @binding(0) var<uniform>       global  : GlobalBlock;
+// @private
 @group(0) @binding(1) var<uniform>       view    : ViewBlock;
+// @private
 @group(0) @binding(2) var<uniform>       frame   : FrameBlock;
+// @private
 @group(0) @binding(3) var<uniform>       lights  : LightBlock;
+// @private
 // @block global
 @group(0) @binding(4) var envMap                 : texture_cube<f32>;
 
@@ -70,7 +75,7 @@ struct VertexInput {
 struct VertexOutput {
   @builtin(position) Position: vec4f,
 
-  @location(0) vNormal:    vec3f,
+  @location(0) @interpolate(perspective, centroid) vNormal:    vec3f,
   @location(1) vWorldPos:  vec3f,
   @location(2) vToEyeInWS: vec3f,
   @location(3) vTexCoord:  vec4f,

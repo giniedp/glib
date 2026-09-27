@@ -1,6 +1,5 @@
 import {
   BlendState,
-  CommonBlocks,
   CullState,
   DepthState,
   Effect,
@@ -14,7 +13,7 @@ import {
   type ShaderModuleOptions,
 } from '@gglib/graphics'
 import { vec4, Vec4 } from '@gglib/math'
-import { getShaderConstants, MaterialLayerMasks, type FeatureFlag } from './common'
+import { getShaderConstants, InputBlocks, MaterialLayerMasks, type FeatureFlag } from './common'
 import SCHEMA from './FxMeshAdvancedTranspMaterial.meta'
 import WGSL from './FxMeshAdvancedTranspMaterial.wgsl'
 import type { NwMaterialProps } from './GltfExtension'
@@ -39,7 +38,7 @@ export function fxMeshAdvancedTranspEffectOptions(constants: Record<string, numb
     meta: {},
     program: {
       shader: fxMeshAdvancedTranspShaderOptions(constants),
-      sharedBlocks: [CommonBlocks.Global, CommonBlocks.View, CommonBlocks.Frame],
+      sharedBlocks: [InputBlocks.Global, InputBlocks.View, InputBlocks.Frame, InputBlocks.Lights],
       perInstanceTransformBlock: 'object',
     },
   }

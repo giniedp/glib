@@ -97,13 +97,17 @@ struct MaterialBlock {
   enabledUvModDecalEmissive      : u32,     // _ModifyEmissiveMultiplierUV
 }
 
+// @private
 @group(0) @binding(0) var<uniform>       global  : GlobalBlock;
+// @private
 @group(0) @binding(1) var<uniform>       view    : ViewBlock;
+// @private
 @group(0) @binding(2) var<uniform>       frame   : FrameBlock;
+// @private
 @group(0) @binding(3) var<uniform>       lights  : LightBlock;
+
 @group(1) @binding(0) var<storage, read> object  : array<ObjectBlock, 1>; // per instance data
 @group(2) @binding(0) var<uniform>       material: MaterialBlock;
-
 @group(2) @binding(1) var samplerLinear      : sampler;
 @group(2) @binding(2) var samplerPoint       : sampler;
 
@@ -149,9 +153,9 @@ struct FragmentInput {
   @location(3)       uvEmittance   : vec4f,
   @location(4)       uvDetail      : vec4f,
   @location(5)       uvScreen      : vec4f,
-  @location(6)       worldTangent  : vec4f,
-  @location(7)       worldBitangent: vec3f,
-  @location(8)       worldNormal   : vec3f,
+  @location(6) @interpolate(perspective, centroid)       worldTangent  : vec4f,
+  @location(7) @interpolate(perspective, centroid)       worldBitangent: vec3f,
+  @location(8) @interpolate(perspective, centroid)       worldNormal   : vec3f,
   @location(9)       vertexColor   : vec4f,
   @location(10)      toEye         : vec3f,
   @location(11)      color         : vec4f,

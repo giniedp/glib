@@ -1,6 +1,5 @@
 import {
   BlendState,
-  CommonBlocks,
   CullState,
   DepthState,
   MaterialWithSchema,
@@ -16,7 +15,7 @@ import SCHEMA from './GeometryfogMaterial.meta'
 import WGSL from './GeometryfogMaterial.wgsl'
 import type { NwMaterialProps } from './GltfExtension'
 import { TextureModifier } from './TexMod'
-import { getShaderConstants, MaterialLayerMasks, type FeatureFlag } from './common'
+import { getShaderConstants, InputBlocks, MaterialLayerMasks, type FeatureFlag } from './common'
 import { MtlUtil, paramValue, paramVec4 } from './utils'
 
 export function geometryfogShaderOptions(): ShaderModuleOptions {
@@ -35,7 +34,7 @@ export function geometryfogEffectOptions(): EffectOptions {
     meta: {},
     program: {
       shader: geometryfogShaderOptions(),
-      sharedBlocks: [CommonBlocks.Global, CommonBlocks.View, CommonBlocks.Frame],
+      sharedBlocks: [InputBlocks.Global, InputBlocks.View, InputBlocks.Frame, InputBlocks.Lights],
       perInstanceTransformBlock: 'object',
     },
   }

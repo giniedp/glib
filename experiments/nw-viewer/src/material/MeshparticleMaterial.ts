@@ -1,9 +1,7 @@
 import {
   BlendState,
-  CommonBlocks,
   CullState,
   DepthState,
-  Device,
   MaterialWithSchema,
   SamplerState,
   TRUE,
@@ -16,8 +14,8 @@ import type { NwMaterialProps } from './GltfExtension'
 import SCHEMA from './MeshparticleMaterial.meta'
 import WGSL from './MeshparticleMaterial.wgsl'
 import { TextureModifier } from './TexMod'
-import { getShaderConstants, MaterialLayerMasks, type FeatureFlag } from './common'
-import { MtlUtil, paramVec4, paramValue } from './utils'
+import { getShaderConstants, InputBlocks, MaterialLayerMasks, type FeatureFlag } from './common'
+import { MtlUtil, paramValue, paramVec4 } from './utils'
 
 export function meshparticleShaderOptions(): ShaderModuleOptions {
   return {
@@ -35,7 +33,7 @@ export function meshparticleEffectOptions(): EffectOptions {
     meta: {},
     program: {
       shader: meshparticleShaderOptions(),
-      sharedBlocks: [CommonBlocks.Global, CommonBlocks.View, CommonBlocks.Frame],
+      sharedBlocks: [InputBlocks.Global, InputBlocks.View, InputBlocks.Frame, InputBlocks.Lights],
       perInstanceTransformBlock: 'object',
     },
   }

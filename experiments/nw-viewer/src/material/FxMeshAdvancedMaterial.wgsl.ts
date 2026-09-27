@@ -107,13 +107,18 @@ struct MaterialBlock {
   deformWave1                    : vec4f,
 }
 
+// @private
 @group(0) @binding(0) var<uniform>       global  : GlobalBlock;
+// @private
 @group(0) @binding(1) var<uniform>       view    : ViewBlock;
+// @private
 @group(0) @binding(2) var<uniform>       frame   : FrameBlock;
+// @private
 @group(0) @binding(3) var<uniform>       lights  : LightBlock;
-@group(1) @binding(0) var<storage, read> object  : array<ObjectBlock, 1>; // per instance data
-@group(2) @binding(0) var<uniform>       material: MaterialBlock;
 
+@group(1) @binding(0) var<storage, read> object  : array<ObjectBlock, 1>; // per instance data
+
+@group(2) @binding(0) var<uniform>       material: MaterialBlock;
 @group(2) @binding(1) var samplerLinear      : sampler;
 @group(2) @binding(2) var samplerPoint       : sampler;
 
@@ -153,9 +158,9 @@ struct FragmentInput {
   @location(1) uvBase        : vec4f,
   @location(2) uvEmittance   : vec4f,
   @location(3) uvScreen      : vec4f,
-  @location(4) worldTangent  : vec4f,
-  @location(5) worldNormal   : vec3f,
-  @location(6) worldBitangent: vec3f,
+  @location(4) @interpolate(perspective, centroid) worldTangent  : vec4f,
+  @location(5) @interpolate(perspective, centroid) worldNormal   : vec3f,
+  @location(6) @interpolate(perspective, centroid) worldBitangent: vec3f,
   @location(7) vertexColor   : vec4f,
   @location(8) toEye         : vec3f,
 };

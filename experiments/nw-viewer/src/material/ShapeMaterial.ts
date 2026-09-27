@@ -9,7 +9,7 @@ import {
 } from '@gglib/graphics'
 import Schema from './ShapeMaterial.meta'
 import WGSL from './ShapeMaterial.wgsl'
-import { MaterialLayerMasks } from './common'
+import { MaterialLayerMasks, InputBlocks } from './common'
 
 export function shapeShaderOptions(): ShaderModuleOptions {
   return {
@@ -27,7 +27,7 @@ export function shapeEffectOptions(): EffectOptions {
     meta: {},
     program: {
       shader: shapeShaderOptions(),
-      sharedBlocks: [CommonBlocks.Global, CommonBlocks.View, CommonBlocks.Frame],
+      sharedBlocks: [InputBlocks.Global, InputBlocks.View, InputBlocks.Frame, InputBlocks.Lights],
     },
   }
 }

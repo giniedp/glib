@@ -1,9 +1,7 @@
 import {
   BlendState,
-  CommonBlocks,
   CullState,
   DepthState,
-  Device,
   Effect,
   MaterialWithSchema,
   RenderVariant,
@@ -19,8 +17,8 @@ import type { NwMaterialProps } from './GltfExtension'
 import SCHEMA from './ParticleImposterMaterial.meta'
 import WGSL from './ParticleImposterMaterial.wgsl'
 import { TextureModifier } from './TexMod'
-import { getShaderConstants, MaterialLayerMasks, type FeatureFlag } from './common'
-import { MtlUtil, paramVec4, paramValue } from './utils'
+import { getShaderConstants, InputBlocks, MaterialLayerMasks, type FeatureFlag } from './common'
+import { MtlUtil, paramValue, paramVec4 } from './utils'
 
 export function particleImposterShaderOptions(constants: Record<string, number>): ShaderModuleOptions {
   return {
@@ -40,7 +38,7 @@ export function particleImposterEffectOptions(constants: Record<string, number>)
     meta: {},
     program: {
       shader: particleImposterShaderOptions(constants),
-      sharedBlocks: [CommonBlocks.Global, CommonBlocks.View, CommonBlocks.Frame],
+      sharedBlocks: [InputBlocks.Global, InputBlocks.View, InputBlocks.Frame, InputBlocks.Lights],
       perInstanceTransformBlock: 'object',
     },
   }

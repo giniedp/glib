@@ -30,7 +30,7 @@ export function terrainPatchEffectOptions(): EffectOptions {
     meta: {},
     program: {
       shader: terrainPatchShaderOptions(),
-      sharedBlocks: [InputBlocks.Global, InputBlocks.View, InputBlocks.Frame],
+      sharedBlocks: [InputBlocks.Global, InputBlocks.View, InputBlocks.Frame, InputBlocks.Lights],
     },
   }
 }

@@ -1,6 +1,5 @@
 import {
   BlendState,
-  CommonBlocks,
   CullState,
   DepthState,
   Effect,
@@ -14,7 +13,7 @@ import {
   type ShaderModuleOptions,
 } from '@gglib/graphics'
 import { Noise2DKey } from '../content'
-import { getShaderConstants, MaterialLayerMasks, type FeatureFlag } from './common'
+import { getShaderConstants, InputBlocks, MaterialLayerMasks, type FeatureFlag } from './common'
 import Schema from './DistanceCloudsMaterial.meta'
 import DISTANCE_CLOUDS_SHADER from './DistanceCloudsMaterial.wgsl'
 import type { NwMaterialProps } from './GltfExtension'
@@ -39,7 +38,7 @@ export function distanceCloudsEffectOptions(constants: Record<string, number>): 
     meta: {},
     program: {
       shader: distanceCloudsOptions(constants),
-      sharedBlocks: [CommonBlocks.Global, CommonBlocks.View, CommonBlocks.Frame],
+      sharedBlocks: [InputBlocks.Global, InputBlocks.View, InputBlocks.Frame, InputBlocks.Lights],
     },
   }
 }

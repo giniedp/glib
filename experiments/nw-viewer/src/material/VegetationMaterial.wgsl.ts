@@ -57,13 +57,17 @@ struct MaterialBlock {
   deformWave1                    : vec4f,
 };
 
+// @private
 @group(0) @binding(0) var<uniform>       global  : GlobalBlock;
+// @private
 @group(0) @binding(1) var<uniform>       view    : ViewBlock;
+// @private
 @group(0) @binding(2) var<uniform>       frame   : FrameBlock;
+// @private
 @group(0) @binding(3) var<uniform>       lights  : LightBlock;
+
 @group(1) @binding(0) var<storage, read> object  : array<ObjectBlock, 1>; // per instance data
 @group(2) @binding(0) var<uniform>       material: MaterialBlock;
-
 @group(2) @binding(1) var samplerLinear      : sampler;
 @group(2) @binding(2) var samplerPoint       : sampler;
 
@@ -101,9 +105,9 @@ struct FragmentInput {
   @builtin(position) position   : vec4f,
   @location(0) toEye            : vec3f, // cameraPosition - worldPos
   @location(1) worldPos         : vec3f, // world space position
-  @location(2) worldTangent     : vec4f, // .xyz = world tangent,   .w = handedness
-  @location(3) worldBitangent   : vec3f, // .xyz = world bitangent
-  @location(4) worldNormal      : vec3f, // .xyz = world normal
+  @location(2) @interpolate(perspective, centroid) worldTangent     : vec4f, // .xyz = world tangent,   .w = handedness
+  @location(3) @interpolate(perspective, centroid) worldBitangent   : vec3f, // .xyz = world bitangent
+  @location(4) @interpolate(perspective, centroid) worldNormal      : vec3f, // .xyz = world normal
   @location(5) uvBase           : vec4f, //
   @location(6) uvBlend          : vec4f, // unused
   @location(7) uvEmittance      : vec4f, // .xy = emittance UV, .zw = intensity UV

@@ -50,13 +50,17 @@ struct MaterialBlock {
   enabledUvModDecalEmissive      : u32,     // _ModifyEmissiveMultiplierUV
 };
 
+// @private
 @group(0) @binding(0) var<uniform>       global  : GlobalBlock;
+// @private
 @group(0) @binding(1) var<uniform>       view    : ViewBlock;
+// @private
 @group(0) @binding(2) var<uniform>       frame   : FrameBlock;
-// @group(0) @binding(3) var<uniform>    lights  : LightBlock;
+// -@private
+// -@group(0) @binding(3) var<uniform>    lights  : LightBlock;
+
 @group(1) @binding(0) var<storage, read> object  : array<ObjectBlock, 1>;
 @group(2) @binding(0) var<uniform>       material: MaterialBlock;
-
 @group(2) @binding(1) var samplerLinear  : sampler;
 @group(2) @binding(2) var samplerPoint   : sampler;
 

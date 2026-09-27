@@ -61,9 +61,13 @@ struct InstanceBlock {
   heightUvTransformCoarse: vec4f,
 };
 
+// @private
 @group(0) @binding(0) var<uniform> global: GlobalBlock;
+// @private
 @group(0) @binding(1) var<uniform> frame: FrameBlock;
+// @private
 @group(0) @binding(2) var<uniform> view: ViewBlock;
+
 @group(0) @binding(3) var<uniform> object: ObjectBlock;
 @group(0) @binding(4) var<uniform> material: MaterialBlock;
 

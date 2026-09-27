@@ -132,11 +132,16 @@ struct MaterialBlock {
   deformWave1                    : vec4f,
 };
 
+// @private
 @group(0) @binding(0) var<uniform>       global  : GlobalBlock;
+// @private
 @group(0) @binding(1) var<uniform>       view    : ViewBlock;
+// @private
 @group(0) @binding(2) var<uniform>       frame   : FrameBlock;
+// @private
 @group(0) @binding(3) var<uniform>       lights  : LightBlock;
 // @block global
+// @private
 @group(0) @binding(4) var envMap                 : texture_cube<f32>;
 
 @group(1) @binding(0) var<storage, read> object  : array<ObjectBlock, 1>; // per instance data
@@ -149,7 +154,7 @@ struct MaterialBlock {
 @group(3) @binding(0) var diffuseMap         : texture_2d<f32>; // $Diffuse      (diffuseMap, diffuseMap_Decal)
 @group(3) @binding(1) var normalMap          : texture_2d<f32>; // $Normal       (normalMap)
 @group(3) @binding(2) var specularMap        : texture_2d<f32>; // $Specular     (specularMap)
-// @group(3) @binding(3) var envMap             : texture_2d<f32>; // $Env          (envMap)
+//-@group(3) @binding(3) var envMap             : texture_2d<f32>; // $Env          (envMap)
 @group(3) @binding(4) var detailMap          : texture_2d<f32>; // $Detail       (detailMap) .ag=detail normal, .r=diffuse/gloss tint
 @group(3) @binding(5) var translucencyMap    : texture_2d<f32>; // $SecondSmoothness, $Translucency (translucencyMap)
 @group(3) @binding(6) var heightMap          : texture_2d<f32>; // $Heightmap    (heightMap) Height for offset bump, POM, silhouette POM, and displacement mapping defined by a Grayscale texture
@@ -179,9 +184,9 @@ struct FragmentInput {
   @location(2)       uvBlend       : vec4f,
   @location(3)       uvEmittance   : vec4f,
   @location(4)       uvDetail      : vec4f,
-  @location(5)       worldTangent  : vec3f,
-  @location(6)       worldBitangent: vec3f,
-  @location(7)       worldNormal   : vec3f,
+  @location(5) @interpolate(perspective, centroid)       worldTangent  : vec3f,
+  @location(6) @interpolate(perspective, centroid)       worldBitangent: vec3f,
+  @location(7) @interpolate(perspective, centroid)       worldNormal   : vec3f,
   @location(8)       vertexColor   : vec4f,
   @location(9)       viewVec       : vec3f,  // un-normalized; normalize in PS
   @location(10)      ambient       : vec4f,
