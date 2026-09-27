@@ -4,7 +4,6 @@ export const COMMON_WGSL = /* wgsl */ `
 
 const TRUE: u32 = 1u;
 const FALSE: u32 = 0u;
-const LIGHT_COUNT:            u32 = 4u;
 const LIGHT_TYPE_OFF:         u32 = 0u;
 const LIGHT_TYPE_DIRECTIONAL: u32 = 1u;
 const LIGHT_TYPE_POINT:       u32 = 2u;
@@ -233,14 +232,47 @@ struct FrameBlock {
   index: f32,
 };
 
+// Forward+ cluster parameters, written each frame by the LightSystem
 struct LightBlock {
-  // @alias lightColor
-  color:     array<vec4f, LIGHT_COUNT>,
-  // @alias lightPosition
-  position:  array<vec4f, LIGHT_COUNT>,
-  // @alias lightDirection
-  direction: array<vec4f, LIGHT_COUNT>,
+  // xyz = cluster grid dimensions, w = number of lights in lightList
+  clusterGrid  : vec4f,
+  // x = near, y = far, z = slice scale, w = slice bias
+  // slice = floor(log(viewDepth) * scale + bias)
+  clusterDepth : vec4f,
 };
+
+// A single scene light as stored in the light storage buffer
+struct Light {
+  position : vec4f, // xyz = world position, w = range
+  color    : vec4f, // rgb = diffuse color (intensity applied), w = specular multiplier
+  direction: vec4f, // xyz = emit direction (projector, area), w = light type
+  tangent  : vec4f, // xyz = area light width axis, w = attenuation bulb size
+  params   : vec4f, // x = area half width, y = area half height, z = cos outer cone, w = cos inner cone
+  bounds   : vec4f, // xyz = world bounding sphere center, w = radius
+};
+
+// Offset and count into lightIndices, one entry per cluster
+struct LightCluster {
+  offset: u32,
+  count : u32,
+};
+
+// Index into lightList. Wrapped in a struct, so the meta codegen yields a named slot
+struct LightIndex {
+  light: u32,
+};
+
+// Shared light buffers, fed by the LightSystem through the 'lights' input block.
+// Declared with a single element, the bound buffers are larger (same approach as the per instance object buffer).
+// @private
+// @block lights
+@group(0) @binding(8)  var<storage, read> lightList    : array<Light, 1>;
+// @private
+// @block lights
+@group(0) @binding(9)  var<storage, read> lightClusters: array<LightCluster, 1>;
+// @private
+// @block lights
+@group(0) @binding(10) var<storage, read> lightIndices : array<LightIndex, 1>;
 
 struct LightParams {
   Color: vec4f,
@@ -260,6 +292,7 @@ struct ShadeOutput {
   diffuse: vec3f,
   specular: vec3f,
   diffuseBack: vec3f, // transmittance
+  specularRoughness: f32, // specular anti-aliased roughness, use for environment reflections
 }
 
 struct SurfaceParams {
@@ -276,6 +309,7 @@ struct LightResult {
   diffuse   : vec3f,
   specular  : vec3f,
   falloff   : f32,
+  specularDirection: vec3f, // optional direction for specular (area lights), zero if unused
 };
 
 struct FragmentOutput {
@@ -292,29 +326,145 @@ fn getLight(light: LightParams, lightType: u32, position: vec3f) -> LightResult 
     result.falloff = 1.0;
     return result;
   }
-  if (lightType == LIGHT_TYPE_POINT) {
-    let range = max(0.00001, light.Position.w);
-    let toLight = light.Position.xyz - position;
-    result.direction = normalize(toLight);
-    result.diffuse = light.Color.rgb;
-    result.specular = light.Color.rgb;
-    result.falloff = clamp(1.0 - length(toLight) / range, 0.0, 1.0);
-    return result;
-  }
-  if (lightType == LIGHT_TYPE_SPOT) {
-    let range = max(0.00001, light.Position.w);
-    let toLight = light.Position.xyz - position;
-    let lightDir = normalize(toLight);
-    var lightAtt = clamp(1.0 - length(toLight) / range, 0.0, 1.0);
-    let cosAngle = light.Direction.w;
-    lightAtt = lightAtt * smoothstep(cosAngle, cosAngle + 0.0174533, dot(lightDir, normalize(-light.Direction.xyz)));
-    result.direction = lightDir;
-    result.diffuse = light.Color.rgb;
-    result.specular = light.Color.rgb;
-    result.falloff = lightAtt;
-    return result;
-  }
   return result;
+}
+
+fn getPhysicalLightAttenuation(fDist : f32, fInvRadius : f32, fAttenuationBulbSize : f32) -> f32 {
+    let radius = 1.0 / fInvRadius;
+    var d = fDist;
+
+    // Fadeout last 20% of radius
+    let fadeoutFactor = saturate((radius - d) * (fInvRadius / 0.2));
+
+    // Light attenuation model: 1 / (1 + d/lightsize)^2
+    d = max(d - fAttenuationBulbSize, 0.0);
+    let denom = 1.0 + d / fAttenuationBulbSize;
+    let fAttenuation = fadeoutFactor * fadeoutFactor / (denom * denom);
+
+    return fAttenuation;
+}
+
+fn closestPointOnRect(p: vec3f, center: vec3f, axisX: vec3f, axisY: vec3f, halfW: f32, halfH: f32) -> vec3f {
+  let d = p - center;
+  let x = clamp(dot(d, axisX), -halfW, halfW);
+  let y = clamp(dot(d, axisY), -halfH, halfH);
+  return center + axisX * x + axisY * y;
+}
+
+fn getClusterLight(light: Light, position: vec3f, reflectDir: vec3f) -> LightResult {
+  var result: LightResult;
+  let lightType = u32(light.direction.w);
+  let range = max(light.position.w, 0.0001);
+  let bulb = light.tangent.w;
+  let dir = light.direction.xyz;
+
+  result.diffuse = light.color.rgb;
+  result.specular = light.color.rgb * light.color.w;
+
+  if (lightType == LIGHT_TYPE_POINT) {
+    let toLight = light.position.xyz - position;
+    let dist = length(toLight);
+    result.direction = toLight / max(dist, 1e-5);
+    result.falloff = getPhysicalLightAttenuation(dist, 1.0/range, bulb);
+    return result;
+  }
+
+  if (lightType == LIGHT_TYPE_SPOT) {
+    let toLight = light.position.xyz - position;
+    let dist = length(toLight);
+    let L = toLight / max(dist, 1e-5);
+    let cone = smoothstep(light.params.z, light.params.w, dot(-L, dir));
+    result.direction = L;
+    result.falloff = getPhysicalLightAttenuation(dist, 1.0/range, bulb) * cone;
+    return result;
+  }
+
+  if (lightType == LIGHT_TYPE_AREA) {
+    let axisX = light.tangent.xyz;
+    let axisY = cross(dir, axisX);
+    let halfW = light.params.x;
+    let halfH = light.params.y;
+    let center = light.position.xyz;
+
+    // only the front side emits light
+    if (dot(position - center, dir) <= 0.0) {
+      result.falloff = 0.0;
+      return result;
+    }
+
+    // diffuse: closest point on the rectangle
+    let pDiffuse = closestPointOnRect(position, center, axisX, axisY, halfW, halfH);
+    let toLight = pDiffuse - position;
+    let dist = length(toLight);
+    result.direction = toLight / max(dist, 1e-5);
+    result.falloff = getPhysicalLightAttenuation(dist, 1.0/range, max(bulb, min(halfW, halfH)));
+
+    // optional emission cone (disabled when cos outer <= -1)
+    if (light.params.z > -1.0) {
+      result.falloff *= smoothstep(light.params.z, light.params.w, dot(-result.direction, dir));
+    }
+
+    // specular: representative point where the reflection ray hits the light plane
+    var pSpec = pDiffuse;
+    let denom = dot(reflectDir, dir);
+    if (denom < -1e-4) {
+      let t = dot(center - position, dir) / denom;
+      if (t > 0.0) {
+        pSpec = closestPointOnRect(position + reflectDir * t, center, axisX, axisY, halfW, halfH);
+      }
+    }
+    result.specularDirection = normalize(pSpec - position);
+    return result;
+  }
+
+  result.falloff = 0.0;
+  return result;
+}
+
+// Returns the Forward+ cluster index for a world position, or -1 if outside the cluster volume
+fn getLightClusterIndex(lights: LightBlock, worldPos: vec3f) -> i32 {
+  let grid = vec3u(lights.clusterGrid.xyz);
+  if (grid.x == 0u || grid.y == 0u || grid.z == 0u || lights.clusterGrid.w < 1.0) {
+    return -1;
+  }
+  let viewPos = view.viewMatrix * vec4f(worldPos, 1.0);
+  let depth = -viewPos.z;
+  if (depth <= 0.0 || depth > lights.clusterDepth.y) {
+    return -1;
+  }
+  let clip = view.projectionMatrix * viewPos;
+  let uv = saturate((clip.xy / clip.w) * 0.5 + 0.5);
+  let tx = min(u32(uv.x * f32(grid.x)), grid.x - 1u);
+  let ty = min(u32(uv.y * f32(grid.y)), grid.y - 1u);
+  let slice = log(max(depth, lights.clusterDepth.x)) * lights.clusterDepth.z + lights.clusterDepth.w;
+  let tz = min(u32(max(slice, 0.0)), grid.z - 1u);
+  return i32(tx + ty * grid.x + tz * grid.x * grid.y);
+}
+
+fn shadeLight(output: ptr<function, ShadeOutput>, surface: SurfaceParams, toEye: vec3f, light: LightResult) {
+  let V = toEye;
+  let L = light.direction;
+  let Kd = light.diffuse * light.falloff;
+  let Kr = light.specular * light.falloff;
+
+  let normal = surface.Normal.xyz;
+  let roughness = surface.Roughness;
+  let NdotL = saturate(dot(normal, L));
+  let cDiffuse = Kd * diffuseBRDF(roughness, normal, V, L, NdotL);
+
+  // area lights provide a separate representative direction for specular
+  let Ls = select(L, light.specularDirection, dot(light.specularDirection, light.specularDirection) > 0.5);
+  let NdotLs = saturate(dot(normal, Ls));
+  let cSpecular = Kr * specularBRDF(roughness, normal, V, Ls, surface.Specular.rgb, 1.0);
+
+  let ck = vec3(1.0); // pLight.fOcclShadow * pLight.fFallOff * pLight.cFilter;
+
+  (*output).diffuse += cDiffuse * ck;
+  if (length(surface.Transmittance.rgb) > 0.0) {
+    let fTransmitance = pow(saturate(dot(-normal, L) * 0.6 + 0.4), 1 / (1 - surface.Transmittance.a));
+    (*output).diffuse += fTransmitance * Kd * surface.Transmittance.rgb * ck;
+  }
+  (*output).specular += cSpecular * ck * NdotLs;
 }
 
 fn accumulateLight(lights: LightBlock, env: GlobalBlock, surface: SurfaceParams, toEye: vec3f, worldPos: vec3f) -> vec3f {
@@ -324,55 +474,27 @@ fn accumulateLight(lights: LightBlock, env: GlobalBlock, surface: SurfaceParams,
 
 fn accumulateLightShade(lights: LightBlock, env: GlobalBlock, surface: SurfaceParams, toEye: vec3f, worldPos: vec3f) -> ShadeOutput {
   var output: ShadeOutput;
-  var i : i32 = -1;
-  loop {
-    if (i >=0 && u32(i) >= LIGHT_COUNT) {
-      break;
+
+  // --- sun
+  var sun: LightParams;
+  sun.Color = env.sunColor.xyzw;
+  sun.Position = vec4f(0.0);
+  sun.Direction = vec4f(env.sunDirection, 0.0);
+  shadeLight(&output, surface, toEye, getLight(sun, LIGHT_TYPE_DIRECTIONAL, worldPos));
+
+  // --- clustered lights (Forward+)
+  let clusterIndex = getLightClusterIndex(lights, worldPos);
+  if (clusterIndex < 0) {
+    return output;
+  }
+  let cluster = lightClusters[clusterIndex];
+  let reflectDir = reflect(-toEye, surface.Normal.xyz);
+  for (var i = 0u; i < cluster.count; i++) {
+    let light = lightList[lightIndices[cluster.offset + i].light];
+    let result = getClusterLight(light, worldPos, reflectDir);
+    if (result.falloff > 0.0) {
+      shadeLight(&output, surface, toEye, result);
     }
-    var lightType: u32 = 1u;
-    var lightParams: LightParams;
-
-    if (i < 0) {
-      lightType = LIGHT_TYPE_DIRECTIONAL;
-      lightParams.Color = env.sunColor.xyzw;
-      lightParams.Position = vec4f(0.0);
-      lightParams.Direction = vec4f(env.sunDirection, 0.0);
-    } else {
-      lightType = u32(lights.color[i].w);
-      lightParams = LightParams(
-        lights.color[i],
-        lights.position[i],
-        lights.direction[i]
-      );
-    }
-    if (lightType <= 0u) {
-      break;
-    }
-
-    let light = getLight(lightParams, lightType, worldPos);
-
-    var shade : ShadeParams;
-    shade.V = toEye;
-    shade.L = light.direction;
-    shade.Kd = light.diffuse * light.falloff;
-    shade.Kr = light.specular * light.falloff;
-
-    let normal = surface.Normal.xyz;
-    let NdotL = saturate(dot(normal, shade.L));
-    let roughness = surface.Roughness;
-    var cDiffuse =  shade.Kd * diffuseBRDF(roughness, normal, shade.V, shade.L, NdotL);
-    var cSpecular = shade.Kr * specularBRDF(roughness, normal, shade.V, shade.L, surface.Specular.rgb, 1.0);
-
-    let ck = vec3(1.0); // pLight.fOcclShadow * pLight.fFallOff * pLight.cFilter;
-
-    output.diffuse += cDiffuse * ck;
-    if (length(surface.Transmittance.rgb) > 0.0) {
-      let fTransmitance = pow(saturate(dot(-surface.Normal.xyz, shade.L) * 0.6 + 0.4), 1 / (1 - surface.Transmittance.a));
-      output.diffuse += fTransmitance * shade.Kd * surface.Transmittance.rgb * ck;
-    }
-    output.specular += cSpecular * ck * NdotL;
-
-    i = i + 1;
   }
 
   return output;
@@ -447,6 +569,52 @@ fn specularBRDF( roughness: f32, N: vec3f, V: vec3f, L: vec3f, F0: vec3f, normal
   let  finalSpecular = NDF * G * fresnel;
 
   return finalSpecular;
+}
+
+fn getAverageQuadNormal(pixelPos: vec2i, n: vec3f) -> vec3f {
+  var outN = n;
+  outN -= dpdxFine(outN) * (f32(pixelPos.x & 1) - 0.5);
+  outN -= dpdyFine(outN) * (f32(pixelPos.y & 1) - 0.5);
+  return outN;
+}
+
+fn getKaplanyanFilteringRect(
+  tbn: mat3x3f,
+  pixelPos: vec2i,
+  roughnessMaxFootprint: f32
+) -> vec2<f32> {
+    // Shading frame
+    let T        = tbn[0];
+    let ShFrameN = normalize(tbn[2]);
+    let ShFrameS = normalize(T - ShFrameN * dot(ShFrameN, T));
+    let ShFrameT = cross(ShFrameN, ShFrameS);
+
+    var hppW = getAverageQuadNormal(pixelPos, ShFrameN);
+
+    hppW /= dot(ShFrameN, hppW);
+    let hpp = vec2<f32>(dot(hppW, ShFrameS), dot(hppW, ShFrameT));
+
+    var filteringRect = (abs(dpdxFine(hpp)) + abs(dpdyFine(hpp))) * 0.5;
+    return min(vec2f(roughnessMaxFootprint + 1e-5), filteringRect);
+}
+
+fn getKaplanyanRoughness(
+  tbn : mat3x3f,
+  pixelPos : vec2i,
+  roughness : f32,
+  roughnessBoost: f32,
+  roughnessMaxFootprint: f32,
+) -> f32 {
+  let filteringRect = getKaplanyanFilteringRect(tbn, pixelPos, roughnessMaxFootprint);
+
+  let covariance = filteringRect * filteringRect * 2.0 * roughnessBoost;
+  let maxIsotropicEdge = max(covariance.x, covariance.y);
+
+  return sqrt(roughness * roughness + maxIsotropicEdge);
+}
+
+fn getReflectColorRoughness(cubeMap: texture_cube<f32>, cubeSampler: sampler, reflection: vec3f, roughness: f32) -> vec3f {
+  return getReflectColor(cubeMap, cubeSampler, reflection, roughnessToSmoothness(roughness));
 }
 
 fn getReflectColor(cubeMap: texture_cube<f32>, cubeSampler: sampler, reflection: vec3f, gloss: f32) -> vec3f {

@@ -191,7 +191,11 @@ fn fs_main(input: VertexOutput) -> FragmentOutput {
   let alpha = 1.0;
   let specular = vec3f(mix(fineParams.specular, coarseParams.specular, blend));
   let roughness = mix(fineParams.roughness, coarseParams.roughness, blend);
-  let gloss = roughnessToSmoothness(roughness);
+  var gloss = roughnessToSmoothness(roughness);
+  // specular aliasing
+  let pixelPos = vec2i(floor(input.Position.xy));
+  let r = getKaplanyanRoughness(tbn, pixelPos, smoothnessToRoughness(gloss), 2.0, 0.3);
+  gloss = roughnessToSmoothness(r);
 
   let reflectVec = normalize(reflect(-toEye, normal));
   var reflectColor = getReflectColor(envMap, colorMapSampler, reflectVec, gloss).rgb;

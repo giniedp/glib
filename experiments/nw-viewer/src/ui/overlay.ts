@@ -19,6 +19,7 @@ import {
 } from 'tweak-ui'
 import { DebugShapeSystem } from '../game/debug/DebugShapeSystem'
 import { SkyLightSystem } from '../game/level/SkyLightSystem'
+import { LightSystem } from '../game/light/LightSystem'
 import { DebugOptions } from '../material'
 import type { LevelLoadOption, NwViewer } from '../viewer'
 import { NwSceneBrowser } from './browser'
@@ -28,6 +29,7 @@ import svgTree from './icons/list-tree.svg?raw'
 import { uiRegistry } from './registry'
 import { CameraComponentProps } from './registry/uiCameraComponent'
 import { DebugShapeSystemProps } from './registry/uiDebugShapeSystem'
+import { LightSystemProps } from './registry/uiLightSystem'
 import { TimeOfDayProps } from './registry/uiTimeOfDay'
 
 export function attachOverlay(element: HTMLDivElement, viewer: NwViewer) {
@@ -235,6 +237,7 @@ const OverlayComponent: ClosureComponent<OverlayComponentAttrs> = () => {
                     uiGroup({ title: 'Time of Day' }, [
                       h(TimeOfDayProps, { data: viewer.world.getSystem(SkyLightSystem).timeOfDay }),
                     ]),
+                    uiGroup({ title: 'Lights' }, [h(LightSystemProps, { data: viewer.world.getSystem(LightSystem) })]),
                   ]),
                 ],
               ),

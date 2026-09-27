@@ -22,6 +22,7 @@ import {
 import { ContentService } from '../../content'
 import { DebugLayer, DebugShapeComponent } from '../debug/DebugShapeComponent'
 import { TimeOfDayComponent } from '../level/TimeOfDayComponent'
+import { LightComponent } from '../light/LightComponent'
 import { MeshLoaderComponent } from './MeshLoaderComponent'
 
 export interface SliceSpawnerComponentOptions {
@@ -229,17 +230,14 @@ export class SliceSpawnerComponent implements GameComponent, ActivatableComponen
                 range = Math.max(range, light.maxViewDistance * light.viewDistanceMultiplier)
               }
               debug.add({
-                type: 'bounds-sphere',
+                type: 'sphere',
                 color: vec3(light.color),
                 alpha: 0.125,
                 solid: true,
-                layer: DebugLayer.Light,
+                layer: DebugLayer.LightPoint,
+                instances: [Mat4.createScaleUniform(light.range)],
               })
-              components.push(
-                new BoundsComponent({
-                  sphere: BoundingSphere.create(0, 0, 0, light.range),
-                }),
-              )
+              components.push(new LightComponent(light))
               break
             }
             case 'Area': {
@@ -247,25 +245,14 @@ export class SliceSpawnerComponent implements GameComponent, ActivatableComponen
                 range = Math.max(range, light.maxViewDistance * light.viewDistanceMultiplier)
               }
               debug.add({
-                type: 'bounds-box',
+                type: 'box',
                 color: vec3(light.color),
                 alpha: 0.125,
                 solid: true,
-                layer: DebugLayer.Light,
-                // instances: [Mat4.createScaleXYZ(light.areaWidth, light.areaHeight, light.range)],
+                layer: DebugLayer.LightArea,
+                instances: [Mat4.createScaleXYZ(light.areaWidth * 0.5, light.areaHeight * 0.5, light.range * 0.5)],
               })
-              components.push(
-                new BoundsComponent({
-                  box: BoundingBox.create(
-                    -light.areaWidth * 0.5,
-                    -light.areaHeight * 0.5,
-                    0,
-                    light.areaWidth * 0.5,
-                    light.areaHeight * 0.5,
-                    light.range,
-                  ),
-                }),
-              )
+              components.push(new LightComponent(light))
               break
             }
             case 'Projector': {
@@ -273,7 +260,13 @@ export class SliceSpawnerComponent implements GameComponent, ActivatableComponen
                 range = Math.max(range, light.maxViewDistance * light.viewDistanceMultiplier)
               }
 
-              const proj = Mat4.createPerspectiveFieldOfView(light.projectorFOV * DEGREE_TO_RAD, 1, 0.1, light.range, 0)
+              const proj = Mat4.createPerspectiveFieldOfView(
+                light.projectorFOV * DEGREE_TO_RAD,
+                1,
+                Math.max(0.001, light.projectorNearPlane),
+                light.range,
+                0,
+              )
                 .rotateZ(90 * DEGREE_TO_RAD)
                 .rotateY(90 * DEGREE_TO_RAD)
                 .invert()
@@ -284,10 +277,10 @@ export class SliceSpawnerComponent implements GameComponent, ActivatableComponen
                 color: vec3(light.color),
                 alpha: 0.125,
                 solid: true,
-                layer: DebugLayer.Light,
+                layer: DebugLayer.LightSpot,
                 instances: [proj],
               })
-
+              components.push(new LightComponent(light))
               break
             }
             case 'Probe': {
@@ -299,7 +292,8 @@ export class SliceSpawnerComponent implements GameComponent, ActivatableComponen
                 color: vec3(light.color),
                 alpha: 0.125,
                 solid: true,
-                layer: DebugLayer.Light,
+                layer: DebugLayer.LightProbe,
+                // instances: [Mat4.createScaleXYZ(light.boxWidth, light.boxHeight, light.boxDepth)]
               })
               components.push(
                 new BoundsComponent({

@@ -1,4 +1,12 @@
-import { CommonInputs, inputSlotScalar, inputSlotTexture, inputSlotVec3, inputSlotVec4, TRUE } from '@gglib/graphics'
+import {
+  CommonInputs,
+  inputSlotBuffer,
+  inputSlotScalar,
+  inputSlotTexture,
+  inputSlotVec3,
+  inputSlotVec4,
+  TRUE,
+} from '@gglib/graphics'
 
 export const InputBlocks = {
   Global: 'global',
@@ -6,9 +14,35 @@ export const InputBlocks = {
   Frame: 'frame',
   Object: 'object',
   Material: 'material',
+  Lights: 'lights',
 }
 
 export const InputSlots = {
+  /**
+   * Forward+ light data, written by the LightSystem. Shared by all materials.
+   */
+  Lights: {
+    /**
+     * xyz = cluster grid dimensions, w = light count
+     */
+    ClusterGrid: inputSlotVec4('lights', 'clusterGrid'),
+    /**
+     * x = near, y = far, z = slice scale, w = slice bias
+     */
+    ClusterDepth: inputSlotVec4('lights', 'clusterDepth'),
+    /**
+     * Storage buffer with all light records
+     */
+    LightList: inputSlotBuffer('lights', 'lightList'),
+    /**
+     * Storage buffer with offset and count per cluster
+     */
+    LightClusters: inputSlotBuffer('lights', 'lightClusters'),
+    /**
+     * Storage buffer with light indices referenced by the clusters
+     */
+    LightIndices: inputSlotBuffer('lights', 'lightIndices'),
+  },
   View: {
     ViewMatrix: CommonInputs.View.ViewMatrix,
     ProjectionMatrix: CommonInputs.View.ProjectionMatrix,

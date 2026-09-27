@@ -11,11 +11,19 @@ import {
   type SchedulerStats,
 } from '@gglib/components'
 import { type GameEntity } from '@gglib/ecs'
-import { ResolveMsaaEffect, ResolveMsaaOperator, TonemapOperator } from '@gglib/effects'
+import { TonemapOperator } from '@gglib/effects'
 import { Color, CommonInputs, type DeviceStats } from '@gglib/graphics'
 import { DDS, GLTF, HDR } from '@gglib/loaders'
 import { DEGREE_TO_RAD, Mat4, RAD_TO_DEGREE, SpaceBasis, Vec3, Vec4 } from '@gglib/math'
-import { BloomPass, GeometryPass, RenderChannel, Renderer, TonemapPass, type RendererStats } from '@gglib/render'
+import {
+  BloomPass,
+  FxaaPass,
+  GeometryPass,
+  RenderChannel,
+  Renderer,
+  TonemapPass,
+  type RendererStats,
+} from '@gglib/render'
 import { brand, lfmt, type EventType } from '@gglib/utils'
 import { redrawUi } from 'tweak-ui'
 import { getLevelListUrl } from './api'
@@ -27,6 +35,7 @@ import { DebugShapeSystem } from './game/debug/DebugShapeSystem'
 import { RaycastSystem, type RaySelection } from './game/debug/RaycastSystem'
 import { LevelSystem } from './game/level/LevelSystem'
 import { SkyLightSystem } from './game/level/SkyLightSystem'
+import { LightSystem } from './game/light/LightSystem'
 import { RegionSystem } from './game/region/RegionSystem'
 import { SliceSystem } from './game/slice/SliceSystem'
 import { TerrainSystem } from './game/terrain/TerrainSystem'
@@ -96,6 +105,7 @@ export class NwViewer extends EcsGame {
     this.world.addSystem(new CapitalSystem())
     this.world.addSystem(new SliceSystem())
     this.world.addSystem(new SkyLightSystem())
+    this.world.addSystem(new LightSystem())
     this.world.addSystem(new LevelSystem())
     this.world.addSystem(new DebugShapeSystem())
     this.world.addSystem(new RaycastSystem())

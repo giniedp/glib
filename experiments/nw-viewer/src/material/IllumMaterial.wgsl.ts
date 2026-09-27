@@ -535,6 +535,11 @@ fn fs_main(input: FragmentInput) -> FragmentOutput {
     gloss  += gloss * cDetailMap.w;
   }
 
+  // if (SAA_FILTERING) {
+    let pixelPos = vec2i(floor(input.position.xy));
+    let r = getKaplanyanRoughness(tbn, pixelPos, smoothnessToRoughness(gloss), material.roughnessBoost, material.roughnessMaxFootprint);
+    gloss = roughnessToSmoothness(r);
+  // }
 
   // --- Environment mapping
   let reflectVec = normalize(reflect(-toEye, normal));
