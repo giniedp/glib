@@ -11,8 +11,11 @@ export const DebugLayer = {
   BoundsMeshInstance: 1 << 3,
   Slice: 1 << 4,
   SliceSpawn: 1 << 5,
-  Light: 1 << 6,
-  TimeOfDay: 1 << 7,
+  LightPoint: 1 << 6,
+  LightSpot: 1 << 7,
+  LightArea: 1 << 8,
+  LightProbe: 1 << 9,
+  TimeOfDay: 1 << 10,
 }
 
 export interface DebugShapeOptions {
