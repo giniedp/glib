@@ -204,6 +204,15 @@ describe('BufferRecorder', () => {
       expect(gpuBuffer.setSubData).not.toHaveBeenCalled()
     })
 
+    it('uploads the full buffer when grown past the gpu buffer size without writes', () => {
+      const rec = new BufferRecorder({ capacity: 1, autosize: true, recordByteSize: 8 })
+      const gpuBuffer = createGpuBuffer(8)
+      rec.setCount(4)
+      rec.upload(gpuBuffer)
+      expect(gpuBuffer.setData).toHaveBeenCalledWith(rec.buffer)
+      expect(gpuBuffer.setSubData).not.toHaveBeenCalled()
+    })
+
     it('uploads the full buffer when forced even if not dirty', () => {
       const rec = new BufferRecorder({ capacity: 2, autosize: false, recordByteSize: 16 })
       const gpuBuffer = createGpuBuffer(rec.buffer.byteLength)
@@ -278,7 +287,7 @@ describe('BufferRecorder', () => {
   describe('writeInt32 / write2Int32 / write3Int32 / write4Int32', () => {
     it('writeInt32 writes a single value', () => {
       const rec = new BufferRecorder({ capacity: 4, autosize: false, recordByteSize: 16 })
-      rec.writeInt32(-1, 0)
+      rec.writeInt32(-1)
       expect(rec.dataInt32[0]).toBe(-1)
     })
 
@@ -304,7 +313,7 @@ describe('BufferRecorder', () => {
   describe('writeUint32 / write2Uint32 / write3Uint32 / write4Uint32', () => {
     it('writeUint32 writes a value readable as an unsigned 32-bit integer', () => {
       const rec = new BufferRecorder({ capacity: 4, autosize: false, recordByteSize: 16 })
-      rec.writeUint32(4000000000, 0)
+      rec.writeUint32(4000000000)
       expect(rec.dataUint32[0]).toBe(4000000000)
     })
 

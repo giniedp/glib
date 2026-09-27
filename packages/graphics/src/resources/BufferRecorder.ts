@@ -62,6 +62,13 @@ export class BufferRecorder {
   public readonly recordIndex: number
 
   /**
+   * The current buffer size in bytes
+   */
+  public get sizeInBytes() {
+    return this.buffer.byteLength
+  }
+
+  /**
    * The number of contiguous records that can be added to the buffer without exceeding the current capacity.
    */
   public get remainingRecordCount(): number {
@@ -96,11 +103,11 @@ export class BufferRecorder {
 
   public constructor(options: BufferRecorderOptions) {
     if (options.recordByteSize % 4 !== 0) {
-      throw new Error(`Record byte size must be a multiple of 4 bytes (got ${this.strideInBytes})`)
+      throw new Error(`Record byte size must be a multiple of 4 bytes (got ${options.recordByteSize})`)
     }
 
     if (options.recordByteSize <= 0) {
-      throw new Error(`Record byte size must be greater than 0 (got ${this.strideInBytes})`)
+      throw new Error(`Record byte size must be greater than 0 (got ${options.recordByteSize})`)
     }
 
     if (options.capacity <= 0) {
@@ -241,13 +248,12 @@ export class BufferRecorder {
       throw new Error(`gpuBuffer must not be null`)
     }
 
-    if (!this.isDirty && !force) {
+    const tooSmall = gpuBuffer.size < this.buffer.byteLength
+    if (!force && !tooSmall && !this.isDirty) {
       return
     }
 
-    const needsFullUpload = force || !this.isDirty || gpuBuffer.size < this.buffer.byteLength
-
-    if (needsFullUpload) {
+    if (force || tooSmall) {
       gpuBuffer.setData(this.buffer)
     } else {
       const offset = this.dirtyStart * 4
@@ -313,7 +319,7 @@ export class BufferRecorder {
   /**
    * Writes 1 int32 value at the current position and advances by 1 elements.
    */
-  public writeInt32(c1: number, c2: number): this {
+  public writeInt32(c1: number): this {
     this.assertCursorSpace(1)
     this.dataInt32[this.writeEnd++] = c1
     return this
@@ -355,9 +361,9 @@ export class BufferRecorder {
   /**
    * Writes 1 uint32 value at the current position and advances by 1 elements.
    */
-  public writeUint32(c1: number, c2: number): this {
+  public writeUint32(c1: number): this {
     this.assertCursorSpace(1)
-    this.dataInt32[this.writeEnd++] = c1
+    this.dataUint32[this.writeEnd++] = c1
     return this
   }
 
