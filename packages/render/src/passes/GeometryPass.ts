@@ -12,7 +12,7 @@ import {
 import { FrameGraph, FrameResource } from '../FrameGraph'
 import { RenderChannel } from '../RenderChannel'
 import { RenderListMode } from '../RenderListMode'
-import { RenderContext, RenderPass } from '../types'
+import { RenderContext, RenderPass } from '../Types'
 
 export interface GeometryPassOptions {
   /**

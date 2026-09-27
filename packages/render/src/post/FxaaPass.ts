@@ -2,7 +2,7 @@ import { FxaaEffect } from '@gglib/effects'
 import { Device } from '@gglib/graphics'
 import { FrameGraph, FrameResource } from '../FrameGraph'
 import { RenderChannel } from '../RenderChannel'
-import { RenderContext, RenderPass } from '../types'
+import { RenderContext, RenderPass } from '../Types'
 
 export interface FxaaOptions {
   order?: number

@@ -10,7 +10,7 @@ import {
   RenderItem,
   RenderItemType,
   SpriteRenderItem,
-} from './types'
+} from './Types'
 
 export class RenderCollectorRegistry {
   private collectors = idMap<string, RenderCollector<RenderItem>>()

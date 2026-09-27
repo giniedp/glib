@@ -40,7 +40,7 @@ import {
   type RenderContext,
   type RenderScene,
   type RenderView,
-} from './types'
+} from './Types'
 
 export const ViewDataSymbol = Symbol('ViewData')
 export const ViewChannelsSymbol = Symbol('ViewChannels')

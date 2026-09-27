@@ -1,5 +1,5 @@
 import { FrameGraph, FrameResource } from './FrameGraph'
-import { type RenderContext, type RenderPass } from './types'
+import { type RenderContext, type RenderPass } from './Types'
 
 export interface RenderPipelineOptions {
   name?: string

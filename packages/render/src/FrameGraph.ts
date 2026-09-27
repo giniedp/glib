@@ -1,7 +1,7 @@
 import { Texture, TextureDescriptor, TextureUsage } from '@gglib/graphics'
 import { PooledList } from './PooledList'
 import { RenderChannel } from './RenderChannel'
-import { RenderPass } from './types'
+import { RenderPass } from './Types'
 
 export interface FrameResource<T = unknown> {
   /**

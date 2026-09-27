@@ -13,7 +13,7 @@ import {
 } from '@gglib/graphics'
 import { Mat4, Vec4 } from '@gglib/math'
 import { RenderListMode, Sortable } from './RenderListMode'
-import { RenderView } from './types'
+import { RenderView } from './Types'
 
 export class RenderListCache {
   private lists = new Map<RenderListMode, RenderList>()

@@ -3,7 +3,7 @@ import { Device } from '@gglib/graphics'
 import { Vec3 } from '@gglib/math'
 import { FrameGraph, FrameResource } from '../FrameGraph'
 import { RenderChannel } from '../RenderChannel'
-import { RenderContext, RenderPass } from '../types'
+import { RenderContext, RenderPass } from '../Types'
 
 export interface VignettePassOptions {
   order?: number

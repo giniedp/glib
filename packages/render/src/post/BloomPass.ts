@@ -11,7 +11,7 @@ import {
 import { BlendState, Color, Device, Texture, TextureDescriptor, TextureUsage } from '@gglib/graphics'
 import { FrameGraph, FrameResource } from '../FrameGraph'
 import { RenderChannel } from '../RenderChannel'
-import { RenderContext, RenderPass } from '../types'
+import { RenderContext, RenderPass } from '../Types'
 
 export interface BloomPassOptions {
   order?: number
