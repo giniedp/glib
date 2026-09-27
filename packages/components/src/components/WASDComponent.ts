@@ -1,6 +1,6 @@
 import { type GameComponent, GameEntity, InitializableComponent } from '@gglib/ecs'
 import { KeyboardKeys } from '@gglib/game'
-import { Quat, SpaceBasis, Vec3 } from '@gglib/math'
+import { lerp, Quat, SpaceBasis, vec3, Vec3 } from '@gglib/math'
 import { BehaviorComponent } from '../systems/BehaviorSystem'
 import { KeyboardInputSystem } from '../systems/KeyboardInputSystem'
 import { MouseInputSystem } from '../systems/MouseInputSystem'
@@ -65,7 +65,7 @@ export class WASDComponent implements GameComponent, InitializableComponent, Beh
   private isMouseDown: boolean = false
 
   private currentSpeed: number = 0
-  private direction = new Vec3(0, 0, 0)
+  private direction = vec3(0)
   private translation = new Vec3(0, 0, 0)
 
   private keyForwad = KeyboardKeys.KeyW
@@ -163,38 +163,40 @@ export class WASDComponent implements GameComponent, InitializableComponent, Beh
     this.moveSpeed = Math.min(this.moveSpeedMax, Math.max(this.moveSpeedMin, this.moveSpeed))
 
     let isMoving = false
-    this.translation.init(0, 0, 0)
+
+    Vec3.$0.init(0, 0, 0)
     if (keyboard.isPressed(this.keyForwad)) {
-      this.translation.add(this.space.forward)
+      Vec3.$0.add(this.space.forward)
       isMoving = true
     }
     if (keyboard.isPressed(this.keyBackward)) {
-      this.translation.add(this.space.backward)
+      Vec3.$0.add(this.space.backward)
       isMoving = true
     }
     if (keyboard.isPressed(this.keyRight)) {
-      this.translation.add(this.space.right)
+      Vec3.$0.add(this.space.right)
       isMoving = true
     }
     if (keyboard.isPressed(this.keyLeft)) {
-      this.translation.add(this.space.left)
+      Vec3.$0.add(this.space.left)
       isMoving = true
     }
     if (keyboard.isPressed(this.keyUp)) {
-      this.translation.add(this.space.up)
+      Vec3.$0.add(this.space.up)
       isMoving = true
     }
     if (keyboard.isPressed(this.keyDown)) {
-      this.translation.add(this.space.down)
+      Vec3.$0.add(this.space.down)
       isMoving = true
     }
-    if (this.translation.lengthSquared() > 0) {
+    if (Vec3.$0.lengthSquared() > 0) {
+      Vec3.lerp(this.translation, Vec3.$0, this.moveDamping, this.translation)
       node.world.transformV3Normal(this.translation, this.direction)
     }
 
     const boost = keyboard.isPressed(this.keyBoost) ? this.moveSpeedMultiplier : 1
     const targetSpeed = isMoving ? this.moveSpeed * boost : 0
-    this.currentSpeed += (targetSpeed - this.currentSpeed) * this.moveDamping
+    this.currentSpeed = lerp(this.currentSpeed, targetSpeed, this.moveDamping)
 
     if (this.orbitMode) {
       this.updateOrbit(dt)
