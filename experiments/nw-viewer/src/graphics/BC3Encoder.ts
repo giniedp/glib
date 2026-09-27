@@ -1,4 +1,11 @@
-import type { Device, Texture, WebGpuBuffer, WebGpuDevice, WebGpuTexture } from '@gglib/graphics'
+import {
+  BufferUsage,
+  type Device,
+  type Texture,
+  type WebGpuBuffer,
+  type WebGpuDevice,
+  type WebGpuTexture,
+} from '@gglib/graphics'
 import { BC3_ENCODE_SHADER } from './BC3Encoder.wgsl'
 
 export interface BC3EncoderOptions {
@@ -32,12 +39,12 @@ export class BC3Encoder {
     this.dstBuffer = this.device.createBuffer({
       name: 'bc3-encode-dst',
       size: blockCount * 16,
-      type: 'StorageBuffer',
+      usage: BufferUsage.STORAGE,
       readWrite: true,
     })
     this.paramsBuffer = this.device.createBuffer({
       name: 'bc3-encode-uniforms',
-      type: 'UniformBuffer',
+      usage: BufferUsage.UNIFORM,
       size: 4 * 4, // vec4f
     })
   }
