@@ -1,25 +1,21 @@
 ![Latest NPM release][version-shield]
 [![License][license-shield]][license-url]
 
-> This is a spare time project. Frequently changed. Occasionally maintained.
-
 # [G]glib
 
-A collection of graphics and game engine related libraries
-including packages to work with webGL, 3D math, content processing, scene management,
-shader composition and more.
+A collection of packages for creating real-time 3D web applications, such as games or anything else that requires 3D rendering in the browser.
+
+> This is a spare time project. Frequently changed. Occasionally maintained.
 
 # Project structure
 
-This project uses yarn workspaces and gulp tasks
-
 ```
-  ├── assets              // Contains assets (textures, models, materials etc.) that are shared across all apps
+  ├── assets              // Assets that are shared across docs examples and experiments
   ├── docs                // Vitepress documentation and examples
   ├── experiments         // Experimental projects using gglib
-  ├── packages            // Workspaces all gglib packages
+  ├── packages            // Workspaces for all gglib packages
   │   ├── ...             //
-  ├── tools               // Build tools
+  ├── tools               // Build tools and utilities
   │   ├── glib            // Tasks to compile and bundle gglib packages
   │   ├── ...             //
 ```
