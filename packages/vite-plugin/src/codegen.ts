@@ -38,14 +38,28 @@ function processWgsl(source: string) {
   }
   const wgsl = reflectWgsl(parseWgsl(source))
   for (const resource of wgsl?.resources || []) {
+    const isPrivate = resource.annotations['private'] != null
+    if (isPrivate) {
+      continue
+    }
     if (resource.texture || resource.sampler) {
       const block = resource.annotations['block'] || ''
       const name = resource.annotations['name'] || resource.name
       result[capitalize(name)] = [block, name, resource.texture ? 'texture' : 'sampler']
     } else {
-      const block = resource.annotations['block'] || resource.name
+      let block = resource.annotations['block'] || ''
+      let dropBlockName = !!block
+      const isStruct = !!resource.members?.length
+      if (!block && isStruct) {
+        block = resource.name
+        dropBlockName = true
+      }
+
       for (const member of resolveWgslMembers(resource)) {
-        member.path.shift() // drop block name
+        if (dropBlockName) {
+          member.path.shift()
+        }
+
         // replace array brackets with underscores, e.g. "lights[0].position" -> "lights_0.position"
         const property = member.path.map((it) => it.replace(/\[(\d+)\]/g, '_$1')).join()
         const key = member.path.join('.')
