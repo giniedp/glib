@@ -12,7 +12,7 @@ import {
   type MaterialOptions,
   type ShaderModuleOptions,
 } from '@gglib/graphics'
-import { Vec4 } from '@gglib/math'
+import { vec4 } from '@gglib/math'
 import { Noise3DKey } from '../content'
 import SCHEMA from './GeometryBeamSimpleMaterial.meta'
 import WGSL from './GeometryBeamSimpleMaterial.wgsl'
@@ -118,11 +118,11 @@ export class GeometryBeamSimpleMaterial extends MaterialWithSchema(SCHEMA) {
         depth: 16,
         format: 'rgba8unorm',
       })
-    this.DiffuseColor = Vec4.create(1, 1, 1, 1)
+    this.DiffuseColor = vec4(1, 1, 1, 1)
     this.SamplerLinear = SamplerState.LinearWrap
 
-    this.StartColor = new Vec4(1.0, 1.0, 1.0, 1.0)
-    this.EndColor = new Vec4(1.0, 1.0, 1.0, 1.0)
+    this.StartColor = vec4(1.0, 1.0, 1.0, 1.0)
+    this.EndColor = vec4(1.0, 1.0, 1.0, 1.0)
     this.FinalMultiplier = 1.0
     this.SoftIntersectionFactor = 1.0
     this.ViewDependencyFactor = 2.0
@@ -176,7 +176,7 @@ export class GeometryBeamSimpleMaterial extends MaterialWithSchema(SCHEMA) {
   }
 
   private setAttributes(attrs: NwMaterialProps['attrs'], flags: Set<FeatureFlag>) {
-    this.DiffuseColor = paramVec4(attrs.Diffuse, Vec4.One)
+    this.DiffuseColor = paramVec4(attrs.Diffuse, vec4.One)
   }
 
   private setPublicParams(params: PublicParams) {

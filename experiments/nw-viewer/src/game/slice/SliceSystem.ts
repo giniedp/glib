@@ -1,6 +1,6 @@
 import { EcsGame } from '@gglib/components'
 import { GameQuery, GameSystem, GameWorld } from '@gglib/ecs'
-import { spherePointIntersects, Vec3, type IVec3 } from '@gglib/math'
+import { mat4GetTranslation, spherePointIntersects, vec3, type IVec3 } from '@gglib/math'
 import { RegionComponent } from '../region/RegionComponent'
 import { SliceSpawnerComponent } from './SliceSpawnerComponent'
 
@@ -16,9 +16,10 @@ export class SliceSystem extends GameSystem {
     this.activeSlices = world.query({ scope: 'active', required: [SliceSpawnerComponent] })
   }
 
-  private camPosition = new Vec3()
+  private camPosition = vec3()
   public update() {
-    this.game.scene.getView(0).camera.world.getTranslation(this.camPosition)
+    const view = this.game.scene.getView(0)
+    mat4GetTranslation(view.camera.world, this.camPosition)
     for (const entity of this.activeRegions) {
       const region = entity.component(RegionComponent)
       this.updateSlices(region.slices, this.camPosition)
@@ -52,11 +53,9 @@ export class SliceSystem extends GameSystem {
       component.load()
       return
     }
-    const intersects = spherePointIntersects(
-      component.entity.getTransform().world.translation,
-      component.spawnRadius,
-      camera,
-    )
+    const world = component.entity.getTransform().world
+    const position = mat4GetTranslation(world, vec3.$0)
+    const intersects = spherePointIntersects(position, component.spawnRadius, camera)
     if (intersects) {
       component.spawn()
     }

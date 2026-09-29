@@ -6,12 +6,23 @@ import {
   DepthState,
   Device,
   FALSE,
-  PlatformId,
   FrameContext,
+  PlatformId,
   torusGeometry,
   TRUE,
 } from '@gglib/graphics'
-import { DEGREE_TO_RAD, Mat4, vec3, Vec3 } from '@gglib/math'
+import {
+  DEGREE_TO_RAD,
+  mat4$initIdentity,
+  mat4$initPerspectiveFieldOfView,
+  mat4$initTranslation,
+  mat4$invert,
+  mat4$rotateX,
+  mat4$rotateY,
+  mat4$rotateZ,
+  mat4Identity,
+  vec3,
+} from '@gglib/math'
 import { mountUi } from 'tweak-ui'
 
 const params = {
@@ -36,13 +47,13 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   })
 
   const geometry = torusGeometry(device)
-  const material = new BasicMaterial(device)
+  const material = new BasicMaterial(device, { properties: {} })
   const texture = device.createTexture({ source: '/textures/formats/uv_checker.png' })
 
-  const world = Mat4.createIdentity()
-  const view = Mat4.createIdentity()
-  const projection = Mat4.createIdentity()
-  const cameraPosition = Vec3.create(0, 0, 3)
+  const world = mat4Identity()
+  const view = mat4Identity()
+  const projection = mat4Identity()
+  const cameraPosition = vec3(0, 0, 3)
 
   const rtColor = device.createRenderTarget({
     format: device.output.format,
@@ -69,13 +80,13 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
 
     const t = ctx.time
 
-    world
-      .initIdentity()
-      .rotateX(t * 25 * DEGREE_TO_RAD)
-      .rotateY(t * 15 * DEGREE_TO_RAD)
-      .rotateZ(t * 10 * DEGREE_TO_RAD)
-    view.initTranslation(cameraPosition).invert()
-    projection.initPerspectiveFieldOfView(60 * DEGREE_TO_RAD, device.output.aspectRatio, 0.1, 100, device.ndcMinZ)
+    mat4$initIdentity(world)
+    mat4$rotateX(world, t * 25 * DEGREE_TO_RAD)
+    mat4$rotateY(world, t * 15 * DEGREE_TO_RAD)
+    mat4$rotateZ(world, t * 10 * DEGREE_TO_RAD)
+    mat4$initTranslation(view, cameraPosition)
+    mat4$invert(view)
+    mat4$initPerspectiveFieldOfView(projection, 60 * DEGREE_TO_RAD, device.output.aspectRatio, 0.1, 100, device.ndcMinZ)
 
     material.World = world
     material.View = view

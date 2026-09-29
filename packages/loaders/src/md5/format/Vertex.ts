@@ -1,4 +1,4 @@
-import { Vec2 } from './Vec2'
+import { IVec2 } from '@gglib/math'
 
 export interface Vertex {
   /**
@@ -8,7 +8,7 @@ export interface Vertex {
   /**
    * The texture coordinate at this vertex
    */
-  uv: Vec2
+  uv: IVec2
   /**
    * The index into the weight array where this vertex’s first weight is located.
    */

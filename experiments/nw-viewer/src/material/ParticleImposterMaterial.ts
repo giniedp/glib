@@ -12,7 +12,7 @@ import {
   type MaterialOptions,
   type ShaderModuleOptions,
 } from '@gglib/graphics'
-import { Mat4, Vec4 } from '@gglib/math'
+import { mat4Identity, vec4 } from '@gglib/math'
 import type { NwMaterialProps } from './GltfExtension'
 import SCHEMA from './ParticleImposterMaterial.meta'
 import WGSL from './ParticleImposterMaterial.wgsl'
@@ -92,7 +92,7 @@ export class ParticleImposterMaterial extends MaterialWithSchema(SCHEMA) {
     this.SamplerLinear = SamplerState.LinearWrap
     this.SamplerPoint = SamplerState.PointWrap
 
-    this.DiffuseColor = Vec4.create(1, 1, 1, 1)
+    this.DiffuseColor = vec4(1, 1, 1, 1)
     this.AnimAmplitude = 0.3
     this.AnimOffset = 0.0
     this.AnimSpeed = 0.5
@@ -102,7 +102,7 @@ export class ParticleImposterMaterial extends MaterialWithSchema(SCHEMA) {
     this.DiffuseRange = 1.0
     this.SoftIntersectionFactor = 1.0
 
-    this.UvModDiffuse = Mat4.createIdentity()
+    this.UvModDiffuse = mat4Identity()
   }
 
   private setTextures(maps: NwMaterialProps['textures']) {
@@ -138,7 +138,7 @@ export class ParticleImposterMaterial extends MaterialWithSchema(SCHEMA) {
   }
 
   private setAttributes(attrs: NwMaterialProps['attrs'], flags: Set<FeatureFlag>) {
-    this.DiffuseColor = paramVec4(attrs.Diffuse, Vec4.One)
+    this.DiffuseColor = paramVec4(attrs.Diffuse, vec4.One)
     if (attrs.Opacity < 1) {
       this.DiffuseColor.w = attrs.Opacity
     }

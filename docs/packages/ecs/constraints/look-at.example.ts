@@ -9,9 +9,9 @@ import {
 import { ContentLoader } from '@gglib/content'
 
 import { GameComponent, GameEntity, InitializableComponent } from '@gglib/ecs'
-import { BasicMaterial, PlatformId } from '@gglib/graphics'
+import { PlatformId } from '@gglib/graphics'
 import { GLTF, MTL } from '@gglib/loaders'
-import { DEGREE_TO_RAD, Quat, SpaceBasis, Vec3 } from '@gglib/math'
+import { DEGREE_TO_RAD, quatCreateAxisAngle, SpaceBasis, vec3 } from '@gglib/math'
 import { Renderer } from '@gglib/render'
 
 export default (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
@@ -39,7 +39,7 @@ class Game extends EcsGame {
       parent: this.scene.entity,
       components: [new LightComponent()],
       transform: new TransformComponent({
-        rotation: Quat.create().initAxisAngle(Vec3.UnitX, 45 * DEGREE_TO_RAD),
+        rotation: quatCreateAxisAngle(vec3.UnitX, 45 * DEGREE_TO_RAD),
       }),
     })
   }
@@ -49,7 +49,7 @@ class Game extends EcsGame {
       name: 'camera',
       parent: this.scene.entity,
       transform: new TransformComponent({
-        position: Vec3.create(0, 0, 0),
+        position: vec3(0, 0, 0),
         keepWorld: true,
       }),
       components: [
@@ -65,14 +65,14 @@ class Game extends EcsGame {
     this.entity1 = this.createEntity({
       parent: this.scene.entity,
       transform: new TransformComponent({
-        position: Vec3.create(0, -3, -10),
+        position: vec3(0, -3, -10),
       }),
       components: [new ModelComponent(), new CubeLoader('yellow')],
     })
     this.createEntity({
       parent: this.scene.entity,
       transform: new TransformComponent({
-        position: Vec3.create(0, 5, -10),
+        position: vec3(0, 5, -10),
       }),
       components: [
         new CubeLoader('red'),
@@ -89,7 +89,7 @@ class Game extends EcsGame {
     this.createEntity({
       parent: this.scene.entity,
       transform: new TransformComponent({
-        position: Vec3.create(-10, 0, -10),
+        position: vec3(-10, 0, -10),
       }),
       components: [
         new CubeLoader('green'),
@@ -106,7 +106,7 @@ class Game extends EcsGame {
     this.createEntity({
       parent: this.scene.entity,
       transform: new TransformComponent({
-        position: Vec3.create(10, 0, -10),
+        position: vec3(10, 0, -10),
       }),
       components: [
         new CubeLoader('blue'),

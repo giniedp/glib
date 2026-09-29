@@ -1,21 +1,63 @@
-import { BoundingBox, BoundingSphere, IVec3, Mat4, Plane, Ray, vec3, Vec3 } from '@gglib/math'
+import {
+  BoundingBox,
+  BoundingSphere,
+  IRay,
+  IVec3,
+  mat4,
+  Mat4,
+  mat4$initWorld,
+  mat4$invert,
+  mat4$scale,
+  mat4CreateLookAt,
+  mat4CreatePerspectiveFieldOfView,
+  mat4Identity,
+  mat4Invert,
+  mat4Premultiply,
+  ray$init,
+  ray$initFrom,
+  rayCreate,
+  rayIntersectsBoxAt,
+  rayIntersectsPlaneAt,
+  rayIntersectsSphereAt,
+  rayPositionAt,
+  vec3,
+  vec3$addScaled,
+  vec3$applyMat4,
+  vec3$applyMat4Rotation,
+  vec3$initFill,
+  vec3$initFrom,
+  vec3$multiply,
+  vec3$normalize,
+  vec3$projectMat4,
+  vec3$reflect,
+  vec3$subtract,
+  vec3ApplyMat4,
+  vec3Copy,
+  vec3Distance,
+  vec3Dot,
+  vec3Normalize,
+  vec3Subtract,
+  vec3ToArray,
+  vec4,
+  vec4$init,
+} from '@gglib/math'
 
-const tmpVec1 = Vec3.create() // temporary vector
-const localRay = Ray.create() // temporary ray
+const tmpVec1 = vec3() // temporary vector
+const localRay = rayCreate() // temporary ray
 const EPSILON = 0.001
 
 interface Shape {
   material: Material
-  intersectsAt(ray: Ray, out: IVec3): number
+  intersectsAt(ray: IRay, out: IVec3): number
   normalAt(surface: IVec3, out: IVec3): void
 }
 
 interface Pixel {
-  hitPoint: Vec3 // current hit point in world space
-  hitNormal: Vec3 // normal at current hit point
+  hitPoint: IVec3 // current hit point in world space
+  hitNormal: IVec3 // normal at current hit point
   shape: Shape // shape that has been hit
   material: Material // material of shape
-  color: Vec3 // accumulated pixel color
+  color: IVec3 // accumulated pixel color
 }
 
 class Material {
@@ -24,21 +66,21 @@ class Material {
     public metallic: number,
     public roughness: number,
   ) {}
-  public scatter(r: Ray, p: Pixel) {
+  public scatter(r: IRay, p: Pixel) {
     if (Math.random() <= this.metallic) {
-      Vec3.copy(p.hitPoint, /*out*/ r.position)
-      Vec3.reflect(r.direction, p.hitNormal, /*out*/ r.direction)
+      vec3$initFrom(r.position, p.hitPoint)
+      vec3$reflect(r.direction, p.hitNormal)
       r.direction.x += Math.random() * this.roughness
       r.direction.y += Math.random() * this.roughness
       r.direction.z += Math.random() * this.roughness
-      Vec3.normalize(r.direction, /*out*/ r.direction)
-      return Vec3.dot(r.direction, p.hitNormal) > 0
+      vec3$normalize(r.direction)
+      return vec3Dot(r.direction, p.hitNormal) > 0
     } else {
-      Vec3.copy(p.hitPoint, /*out*/ r.position)
+      vec3$initFrom(r.position, p.hitPoint)
       r.direction.x = Math.random() + p.hitNormal.x
       r.direction.y = Math.random() + p.hitNormal.y
       r.direction.z = Math.random() + p.hitNormal.z
-      Vec3.normalize(r.direction, /*out*/ r.direction)
+      vec3$normalize(r.direction)
       return true
     }
   }
@@ -55,10 +97,10 @@ class SphereShape implements Shape {
     this.volume.initFromCenterRadius(center, radius)
   }
 
-  public intersectsAt(ray: Ray, out: IVec3): number {
-    let d = ray.intersectsSphereAt(this.volume)
+  public intersectsAt(ray: IRay, out: IVec3): number {
+    let d = rayIntersectsSphereAt(ray, this.volume)
     if (d > EPSILON) {
-      ray.positionAt(d, out)
+      rayPositionAt(ray, d, out)
     } else {
       d = Number.NaN
     }
@@ -66,13 +108,13 @@ class SphereShape implements Shape {
   }
 
   public normalAt(surfacePoint: IVec3, out: IVec3) {
-    Vec3.subtract(surfacePoint, this.volume.center, out)
-    return Vec3.normalize(out, out)
+    vec3Subtract(surfacePoint, this.volume.center, out)
+    return vec3$normalize(out)
   }
 }
 
 class PlaneShape implements Shape {
-  private volume = Plane.create(0, 1, 0, 0)
+  private volume = vec4(0, 1, 0, 0)
 
   constructor(
     public position: IVec3,
@@ -80,27 +122,27 @@ class PlaneShape implements Shape {
     public size: number,
     public material: Material,
   ) {
-    this.volume.init(normal.x, normal.y, normal.z, 0)
+    vec4$init(this.volume, normal.x, normal.y, normal.z, 0)
   }
 
-  public intersectsAt(ray: Ray, out: IVec3): number {
-    localRay.initFrom(ray)
-    Vec3.subtract(ray.position, this.position, ray.position)
+  public intersectsAt(ray: IRay, out: IVec3): number {
+    ray$initFrom(localRay, ray)
+    vec3$subtract(localRay.position, this.position)
 
-    let d = localRay.intersectsPlaneAt(this.volume)
+    let d = rayIntersectsPlaneAt(localRay, this.volume)
     if (Number.isNaN(d) || d < 0) {
       return Number.NaN
     }
-    localRay.positionAt(d, out)
+    rayPositionAt(localRay, d, out)
     if (Math.abs(out.x) > this.size || Math.abs(out.y) > this.size || Math.abs(out.z) > this.size) {
       return Number.NaN
     }
-    ray.positionAt(d, out)
+    rayPositionAt(ray, d, out)
     return d
   }
 
   public normalAt(point: IVec3, out: IVec3) {
-    Vec3.copy(this.volume, out)
+    vec3Copy(this.volume, out)
   }
 }
 
@@ -114,53 +156,58 @@ class BoxShape implements Shape {
     scale: IVec3,
     public material: Material,
   ) {
-    this.transform = Mat4.createWorld(position, forward, Vec3.UnitY).scale(scale)
-    this.inverse = Mat4.invert(this.transform)
+    this.transform = mat4()
+    mat4$initWorld(this.transform, position, forward, vec3.UnitY)
+    mat4$scale(this.transform, scale)
+    this.inverse = mat4Invert(this.transform)
   }
 
-  public intersectsAt(ray: Ray, out: IVec3): number {
-    this.inverse.transformV3(ray.position, localRay.position)
-    this.inverse.transformV3Normal(ray.direction, localRay.direction)
-    let d = localRay.intersectsBoxAt(this.volume)
+  public intersectsAt(ray: IRay, out: IVec3): number {
+    ray$initFrom(localRay, ray)
+    vec3$applyMat4(localRay.position, this.inverse)
+    vec3$applyMat4Rotation(localRay.direction, this.inverse)
+    let d = rayIntersectsBoxAt(localRay, this.volume)
     if (d > EPSILON) {
-      localRay.positionAt(d, out)
-      this.transform.transformV3(out)
-      d = Vec3.distance(out, ray.position)
+      rayPositionAt(localRay, d, out)
+      vec3$applyMat4(out, this.transform)
+      d = vec3Distance(out, ray.position)
+    } else {
+      d = Number.NaN
     }
     return d
   }
 
   public normalAt(point: IVec3, out: IVec3) {
-    this.inverse.transformV3(point, out)
+    vec3ApplyMat4(point, this.inverse, out)
     out.x = Math.abs(out.x) > 1 - EPSILON ? out.x : 0
     out.y = Math.abs(out.y) > 1 - EPSILON ? out.y : 0
     out.z = Math.abs(out.z) > 1 - EPSILON ? out.z : 0
-    this.transform.transformV3Normal(out)
-    Vec3.normalize(out, out)
+    vec3$applyMat4Rotation(out, this.transform)
+    vec3$normalize(out)
   }
 }
 
 class Scene {
   public camera = {
-    world: Mat4.createIdentity(),
-    view: Mat4.createIdentity(),
-    projection: Mat4.createIdentity(),
+    world: mat4Identity(),
+    view: mat4Identity(),
+    projection: mat4Identity(),
   }
 
   public objects: Shape[] = []
 
-  private viewProj: Mat4 = Mat4.createIdentity()
-  private viewProjInv: Mat4 = Mat4.createIdentity()
+  private viewProj: Mat4 = mat4Identity()
+  private viewProjInv: Mat4 = mat4Identity()
 
-  public intersect(ray: Ray, pixel: Pixel) {
+  public intersect(ray: IRay, pixel: Pixel) {
     let d = Number.MAX_VALUE
     pixel.shape = null!
     for (let i = 0; i < this.objects.length; i++) {
-      let d1 = this.objects[i].intersectsAt(ray, /* out */ Vec3.$0)
+      let d1 = this.objects[i].intersectsAt(ray, /* out */ vec3.$0)
       if (!isNaN(d1) && d1 < d && d1 > 0) {
         d = d1
         pixel.shape = this.objects[i]
-        Vec3.copy(Vec3.$0, pixel.hitPoint)
+        vec3Copy(vec3.$0, pixel.hitPoint)
       }
     }
     if (pixel.shape != null) {
@@ -171,17 +218,18 @@ class Scene {
     return false
   }
 
-  public initRay(u: number, v: number, out: Ray) {
-    const start = Vec3.create(u * 2 - 1, -(v * 2 - 1), 0)
-    const end = Vec3.copy(start).setZ(1)
-    this.viewProjInv.transformP3(start)
-    this.viewProjInv.transformP3(end)
-    return out.initV(start, end.subtract(start).normalize())
+  public initRay(u: number, v: number, out: IRay) {
+    const start = vec3(u * 2 - 1, -(v * 2 - 1), 0)
+    const end = vec3(start.x, start.y, 1)
+    vec3$projectMat4(start, this.viewProjInv)
+    vec3$projectMat4(end, this.viewProjInv)
+    ray$init(out, start, vec3Normalize(vec3Subtract(end, start)))
+    return out
   }
 
   public update() {
-    Mat4.premultiply(this.camera.view, this.camera.projection, this.viewProj)
-    Mat4.invert(this.viewProj, this.viewProjInv)
+    mat4Premultiply(this.camera.view, this.camera.projection, this.viewProj)
+    mat4Invert(this.viewProj, this.viewProjInv)
   }
 
   public render(
@@ -190,36 +238,36 @@ class Scene {
   ) {
     this.update()
 
-    const ray = Ray.create(0, 0, 0, 0, 0, 1)
+    const ray = rayCreate(vec3(), vec3(0, 0, 1))
     const pixel: Pixel = {
-      color: Vec3.create(),
-      hitPoint: Vec3.create(),
-      hitNormal: Vec3.create(),
+      color: vec3(),
+      hitPoint: vec3(),
+      hitNormal: vec3(),
       shape: null!,
       material: null!,
     }
     let i = 0
     for (let y = options.y1; y < options.y2; y++) {
       for (let x = options.x1; x < options.x2; x++) {
-        pixel.color.initFill(0)
+        vec3$initFill(pixel.color, 0)
         this.initRay((x + Math.random()) * options.dx, (y + Math.random()) * options.dy, ray)
         this.trace(ray, options.depth, pixel)
-        pixel.color.toArray(data, i)
+        vec3ToArray(pixel.color, data, i)
         i += 3
       }
     }
   }
 
-  private trace(ray: Ray, depth: number, pixel: Pixel) {
+  private trace(ray: IRay, depth: number, pixel: Pixel) {
     if (this.intersect(ray, pixel)) {
       // pixel.color.add(pixel.hitNormal)
       if (depth >= 0 && pixel.material.scatter(ray, pixel)) {
         const mat = pixel.material
-        Vec3.addScaled(ray.position, ray.direction, EPSILON, ray.position)
+        vec3$addScaled(ray.position, ray.direction, EPSILON)
         this.trace(ray, depth - 1, pixel)
-        pixel.color.multiply(mat.attenuation)
+        vec3$multiply(pixel.color, mat.attenuation)
       } else {
-        pixel.color.initFill(0)
+        vec3$initFill(pixel.color, 0)
       }
     } else {
       const t = (ray.direction.y + 1) * 0.5
@@ -232,7 +280,7 @@ class Scene {
 
 export const scene = new Scene()
 scene.objects.push(
-  new PlaneShape(vec3(0, 0, 0), Vec3.UnitY, 80, new Material(vec3(0.9, 0.9, 0.9), 0, 0)),
+  new PlaneShape(vec3(0, 0, 0), vec3.UnitY, 80, new Material(vec3(0.9, 0.9, 0.9), 0, 0)),
 
   new SphereShape(vec3(-45, 24, -10), 20, new Material(vec3(1, 1, 1), 1, 0)),
   new SphereShape(vec3(0, 24, -10), 20, new Material(vec3(1, 1, 1), 0.5, 0.5)),
@@ -253,5 +301,6 @@ for (let i = 0; i <= 10; i++) {
 for (let i = 0; i <= 10; i++) {
   scene.objects.push(new SphereShape(vec3(-1 * (i - 5) * 11, 2, 32), 2, new Material(vec3(1, 1, 1), 1 - i / 10, 0)))
 }
-scene.camera.view = Mat4.createLookAt(vec3(0, 50, 75), vec3(0, 20, 0), Vec3.UnitY).invert()
-scene.camera.projection = Mat4.createPerspectiveFieldOfView(Math.PI / 3, 300 / 150, 0.1, 10, -1)
+scene.camera.view = mat4CreateLookAt(vec3(0, 50, 75), vec3(0, 20, 0), vec3.UnitY)
+mat4$invert(scene.camera.view)
+scene.camera.projection = mat4CreatePerspectiveFieldOfView(Math.PI / 3, 300 / 150, 0.1, 10, -1)

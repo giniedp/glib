@@ -9,7 +9,7 @@ import {
   type ShaderModule,
   type WebGpuDevice,
 } from '@gglib/graphics'
-import { type IVec3, type Mat4, Vec4, vec4 } from '@gglib/math'
+import { vec4, vec4$init, type IVec3, type Mat4 } from '@gglib/math'
 import { LIGHT_CLUSTER_WGSL } from './LightClusterShader.wgsl'
 
 // must match LIGHT_TYPE_* constants in material/common.wgsl.ts
@@ -120,9 +120,9 @@ export class LightClusterShader {
   private counterBuffer: Buffer
   private shader: ShaderModule
 
-  private paramsProjection = new Vec4()
-  private paramsGrid = new Vec4()
-  private paramsDepth = new Vec4()
+  private paramsProjection = vec4()
+  private paramsGrid = vec4()
+  private paramsDepth = vec4()
 
   public constructor(device: WebGpuDevice, options?: LightClusterShaderOptions) {
     this.device = device
@@ -275,9 +275,9 @@ export class LightClusterShader {
     this.lightData.commit()
     this.counterBuffer.setSubData(0, this.zeroData)
 
-    this.paramsProjection.init(projection.m00, projection.m11, projection.m20, projection.m21)
-    this.paramsGrid.init(this.gridX, this.gridY, this.gridZ, count)
-    this.paramsDepth.init(this.clusterNear, this.clusterFar, this.maxIndices, 0)
+    vec4$init(this.paramsProjection, projection[0], projection[5], projection[8], projection[9])
+    vec4$init(this.paramsGrid, this.gridX, this.gridY, this.gridZ, count)
+    vec4$init(this.paramsDepth, this.clusterNear, this.clusterFar, this.maxIndices, 0)
 
     const program = this.shader.program
     program.mustSet('params.viewMatrix', view)

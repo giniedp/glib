@@ -1,9 +1,9 @@
 import { BehaviorComponent, CameraComponent, EcsGame, ModelComponent, TransformComponent } from '@gglib/components'
 import { ContentLoader } from '@gglib/content'
 import { GameComponent, GameEntity, InitializableComponent } from '@gglib/ecs'
-import { BasicMaterial, PlatformId } from '@gglib/graphics'
+import { PlatformId } from '@gglib/graphics'
 import { GLTF, MTL, OBJ } from '@gglib/loaders'
-import { DEGREE_TO_RAD, Quat, Vec3 } from '@gglib/math'
+import { DEGREE_TO_RAD, quatCreateAxisAngle, vec3 } from '@gglib/math'
 import { Renderer } from '@gglib/render'
 
 export default (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
@@ -33,8 +33,8 @@ class Game extends EcsGame {
         }),
       ],
       transform: new TransformComponent({
-        position: Vec3.create(0, 12, 8),
-        rotation: Quat.create().initAxisAngle(Vec3.NegativeUnitX, 56 * DEGREE_TO_RAD),
+        position: vec3(0, 12, 8),
+        rotation: quatCreateAxisAngle(vec3.NegativeUnitX, 56 * DEGREE_TO_RAD),
       }),
     })
     this.scene.setCamera(0, entity.component(CameraComponent))
@@ -47,7 +47,7 @@ class Game extends EcsGame {
       parent: this.scene.entity,
       components: [new ModelComponent(), new BodyComponent(20)],
       transform: new TransformComponent({
-        scale: Vec3.create(1.5, 1.5, 1.5),
+        scale: vec3(1.5, 1.5, 1.5),
       }),
     })
 
@@ -65,8 +65,8 @@ class Game extends EcsGame {
       parent: earthOrbit,
       components: [new ModelComponent(), new BodyComponent(60)],
       transform: new TransformComponent({
-        position: Vec3.create(5, 0, 0),
-        scale: Vec3.create(0.7, 0.7, 0.7),
+        position: vec3(5, 0, 0),
+        scale: vec3(0.7, 0.7, 0.7),
       }),
     })
 
@@ -77,7 +77,7 @@ class Game extends EcsGame {
       parent: earthOrbit,
       components: [new PivotComponent(45)],
       transform: new TransformComponent({
-        position: Vec3.create(5, 0, 0),
+        position: vec3(5, 0, 0),
       }),
     })
 
@@ -87,8 +87,8 @@ class Game extends EcsGame {
       parent: moonOrbit,
       components: [new ModelComponent(), new BodyComponent(120)],
       transform: new TransformComponent({
-        position: Vec3.create(1.8, 0, 0),
-        scale: Vec3.create(0.3, 0.3, 0.3),
+        position: vec3(1.8, 0, 0),
+        scale: vec3(0.3, 0.3, 0.3),
       }),
     })
   }

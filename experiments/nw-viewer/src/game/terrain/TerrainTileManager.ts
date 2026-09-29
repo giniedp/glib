@@ -1,5 +1,5 @@
 import { Device } from '@gglib/graphics'
-import { Vec4 } from '@gglib/math'
+import { vec4, vec4$init, type IVec4 } from '@gglib/math'
 import { addItemIfAbsent } from '@gglib/utils'
 import { MATERIAL_TEXTURE_SIZE } from '../../constants'
 import { TileTexturManager, type TileSlotHandle } from '../../graphics'
@@ -8,8 +8,8 @@ import { TerrainTileRenderer } from './TerrainTileRenderer'
 
 export interface TerrainTile {
   slot: TileSlotHandle
-  macroUvTransform: Vec4
-  colorUvTransform: Vec4
+  macroUvTransform: IVec4
+  colorUvTransform: IVec4
   renderVersion: number
 }
 
@@ -61,8 +61,8 @@ export class TerrainTileManager {
       ({
         renderVersion: -1,
         slot: null,
-        macroUvTransform: Vec4.create(1, 1, 0, 0),
-        colorUvTransform: Vec4.create(1, 1, 0, 0),
+        macroUvTransform: vec4(1, 1, 0, 0),
+        colorUvTransform: vec4(1, 1, 0, 0),
       } satisfies TerrainTile)
 
     if (this.texture.availableLayers) {
@@ -73,8 +73,9 @@ export class TerrainTileManager {
     }
 
     tile.renderVersion = -1
-    tile.macroUvTransform.init(1, 1, 0, 0)
-    tile.colorUvTransform.init(1, 1, 0, 0)
+
+    vec4$init(tile.macroUvTransform, 1, 1, 0, 0)
+    vec4$init(tile.colorUvTransform, 1, 1, 0, 0)
     return tile
   }
 

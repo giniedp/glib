@@ -1,245 +1,260 @@
+import { describe, expect, it } from 'vitest'
 import { BoundingBox } from './BoundingBox'
 import { BoundingSphere } from './BoundingSphere'
-import { PlaneIntersectionType } from './Collision'
-import { Plane } from './Plane'
-import { Vec3 } from './Vec3'
-import { describe, it, expect,  } from 'vitest'
+import {
+  PlaneIntersectionType,
+  planeBoxIntersection,
+  planePointIntersection,
+  planeSphereIntersection,
+} from './Collision'
+import { plane$initNormalDistance, planeCreateNormalDistance, planeDistanceToPoint, planeGetNormal } from './Plane'
+import { vec3, vec3$initRandom } from './Vec3'
+import { vec4 } from './Vec4'
 
-describe('Plane', () => {
-
-  it('constructor', () => {
-    expect(new Plane().x).toBe(0)
-    expect(new Plane().y).toBe(0)
-    expect(new Plane().z).toBe(0)
-    expect(new Plane().w).toBe(0)
-
-    expect(new Plane(1, 2, 3, 4).x).toBe(1)
-    expect(new Plane(1, 2, 3, 4).y).toBe(2)
-    expect(new Plane(1, 2, 3, 4).z).toBe(3)
-    expect(new Plane(1, 2, 3, 4).w).toBe(4)
+describe('plane', () => {
+  describe('plane$initNormalDistance', () => {
+    it('sets normal and distance', () => {
+      expect(plane$initNormalDistance(vec4(), vec3(1, 2, 3), 4)).toEqual(vec4(1, 2, 3, 4))
+    })
+    it('returns out', () => {
+      const out = vec4()
+      expect(plane$initNormalDistance(out, vec3(1, 2, 3), 4)).toBe(out)
+    })
   })
 
-  it('setter & getter', () => {
-    expect(new Plane().setX(1).x).toBe(1)
-    expect(new Plane().setY(1).y).toBe(1)
-    expect(new Plane().setZ(1).z).toBe(1)
-    expect(new Plane().setW(1).w).toBe(1)
-
-    expect(new Plane().set('x', 1).x).toBe(1)
-    expect(new Plane().set('y', 1).y).toBe(1)
-    expect(new Plane().set('z', 1).z).toBe(1)
-    expect(new Plane().set('w', 1).w).toBe(1)
-
-    expect(new Plane(1, 2, 3, 4).get('x')).toBe(1)
-    expect(new Plane(1, 2, 3, 4).get('y')).toBe(2)
-    expect(new Plane(1, 2, 3, 4).get('z')).toBe(3)
-    expect(new Plane(1, 2, 3, 4).get('w')).toBe(4)
+  describe('planecreateNormalDistance', () => {
+    it('creates plane', () => {
+      expect(planeCreateNormalDistance(vec3(1, 2, 3), 4)).toEqual(vec4(1, 2, 3, 4))
+    })
   })
 
-  it('init', () => {
-    expect(new Plane().init(1, 2, 3, 4).x).toBe(1)
-    expect(new Plane().init(1, 2, 3, 4).y).toBe(2)
-    expect(new Plane().init(1, 2, 3, 4).z).toBe(3)
-    expect(new Plane().init(1, 2, 3, 4).w).toBe(4)
+  describe('planegetNormal', () => {
+    it('gets normal', () => {
+      expect(planeGetNormal(vec4(1, 2, 3, 4))).toEqual(vec3(1, 2, 3))
+    })
+    it('writes to out', () => {
+      const out = vec3()
+      expect(planeGetNormal(vec4(1, 2, 3, 4), out)).toBe(out)
+      expect(out).toEqual(vec3(1, 2, 3))
+    })
   })
 
-  it('create', () => {
-    expect(Plane.create(1, 2, 3, 4)).toEqual(new Plane(1, 2, 3, 4))
-    expect(Plane.create(1, 2, 3, 4)).toEqual(new Plane(1, 2, 3, 4))
-    expect(Plane.create(1, 2, 3, 4)).toEqual(new Plane(1, 2, 3, 4))
-    expect(Plane.create(1, 2, 3, 4)).toEqual(new Plane(1, 2, 3, 4))
+  describe('planedistanceToPoint', () => {
+    it('calculates signed distance', () => {
+      expect(planeDistanceToPoint(vec4(1, 0, 0, -1), vec3(-1, 0, 0))).toBe(-2)
+      expect(planeDistanceToPoint(vec4(1, 0, 0, -1), vec3(0, 0, 0))).toBe(-1)
+      expect(planeDistanceToPoint(vec4(1, 0, 0, -1), vec3(1, 0, 0))).toBe(0)
+      expect(planeDistanceToPoint(vec4(1, 0, 0, -1), vec3(2, 0, 0))).toBe(1)
+
+      expect(planeDistanceToPoint(vec4(0, 1, 0, -1), vec3(0, -1, 0))).toBe(-2)
+      expect(planeDistanceToPoint(vec4(0, 1, 0, -1), vec3(0, 0, 0))).toBe(-1)
+      expect(planeDistanceToPoint(vec4(0, 1, 0, -1), vec3(0, 1, 0))).toBe(0)
+      expect(planeDistanceToPoint(vec4(0, 1, 0, -1), vec3(0, 2, 0))).toBe(1)
+
+      expect(planeDistanceToPoint(vec4(0, 0, 1, -1), vec3(0, 0, -1))).toBe(-2)
+      expect(planeDistanceToPoint(vec4(0, 0, 1, -1), vec3(0, 0, 0))).toBe(-1)
+      expect(planeDistanceToPoint(vec4(0, 0, 1, -1), vec3(0, 0, 1))).toBe(0)
+      expect(planeDistanceToPoint(vec4(0, 0, 1, -1), vec3(0, 0, 2))).toBe(1)
+    })
   })
 
-  it('getNormal', () => {
-    expect(new Plane(1, 2, 3).getNormal()).toEqual(Vec3.create(1, 2, 3))
-    expect(new Plane(1, 2, 3).getNormal({})).toEqual(Vec3.init({}, 1, 2, 3))
-  })
-
-  it('distanceToPoint', () => {
-    expect(new Plane(1, 0, 0, -1).distanceToPoint(Vec3.init({}, -1, 0, 0))).toBe(-2)
-    expect(new Plane(1, 0, 0, -1).distanceToPoint(Vec3.init({}, 0, 0, 0))).toBe(-1)
-    expect(new Plane(1, 0, 0, -1).distanceToPoint(Vec3.init({}, 1, 0, 0))).toBe(0)
-    expect(new Plane(1, 0, 0, -1).distanceToPoint(Vec3.init({}, 2, 0, 0))).toBe(1)
-
-    expect(new Plane(0, 1, 0, -1).distanceToPoint(Vec3.init({}, 0, -1, 0))).toBe(-2)
-    expect(new Plane(0, 1, 0, -1).distanceToPoint(Vec3.init({}, 0, 0, 0))).toBe(-1)
-    expect(new Plane(0, 1, 0, -1).distanceToPoint(Vec3.init({}, 0, 1, 0))).toBe(0)
-    expect(new Plane(0, 1, 0, -1).distanceToPoint(Vec3.init({}, 0, 2, 0))).toBe(1)
-
-    expect(new Plane(0, 0, 1, -1).distanceToPoint(Vec3.init({}, 0, 0, -1))).toBe(-2)
-    expect(new Plane(0, 0, 1, -1).distanceToPoint(Vec3.init({}, 0, 0, 0))).toBe(-1)
-    expect(new Plane(0, 0, 1, -1).distanceToPoint(Vec3.init({}, 0, 0, 1))).toBe(0)
-    expect(new Plane(0, 0, 1, -1).distanceToPoint(Vec3.init({}, 0, 0, 2))).toBe(1)
-  })
-
-  it('intersectsPoint', () => {
+  it('planePointIntersection', () => {
     for (let i = 0; i < 10; i++) {
       const r = 0
-      const point = Vec3.createRandom()
-      expect(Plane.create(-1, 0, 0, point.x - r - 0.1).intersectsPoint(point)).toBe(PlaneIntersectionType.Back)
-      expect(Plane.create(-1, 0, 0, point.x - r).intersectsPoint(point)).toBe(PlaneIntersectionType.Intersects)
-      expect(Plane.create(-1, 0, 0, point.x).intersectsPoint(point)).toBe(PlaneIntersectionType.Intersects)
-      expect(Plane.create(-1, 0, 0, point.x + r).intersectsPoint(point)).toBe(PlaneIntersectionType.Intersects)
-      expect(Plane.create(-1, 0, 0, point.x + r + 0.1).intersectsPoint(point)).toBe(PlaneIntersectionType.Front)
+      const point = vec3$initRandom(vec3())
+      expect(planePointIntersection(vec4(-1, 0, 0, point.x - r - 0.1), point)).toBe(PlaneIntersectionType.Back)
+      expect(planePointIntersection(vec4(-1, 0, 0, point.x - r), point)).toBe(PlaneIntersectionType.Intersects)
+      expect(planePointIntersection(vec4(-1, 0, 0, point.x), point)).toBe(PlaneIntersectionType.Intersects)
+      expect(planePointIntersection(vec4(-1, 0, 0, point.x + r), point)).toBe(PlaneIntersectionType.Intersects)
+      expect(planePointIntersection(vec4(-1, 0, 0, point.x + r + 0.1), point)).toBe(PlaneIntersectionType.Front)
 
-      expect(Plane.create(1, 0, 0, -point.x - r - 0.1).intersectsPoint(point)).toBe(PlaneIntersectionType.Back)
-      expect(Plane.create(1, 0, 0, -point.x - r).intersectsPoint(point)).toBe(PlaneIntersectionType.Intersects)
-      expect(Plane.create(1, 0, 0, -point.x).intersectsPoint(point)).toBe(PlaneIntersectionType.Intersects)
-      expect(Plane.create(1, 0, 0, -point.x + r).intersectsPoint(point)).toBe(PlaneIntersectionType.Intersects)
-      expect(Plane.create(1, 0, 0, -point.x + r + 0.1).intersectsPoint(point)).toBe(PlaneIntersectionType.Front)
+      expect(planePointIntersection(vec4(1, 0, 0, -point.x - r - 0.1), point)).toBe(PlaneIntersectionType.Back)
+      expect(planePointIntersection(vec4(1, 0, 0, -point.x - r), point)).toBe(PlaneIntersectionType.Intersects)
+      expect(planePointIntersection(vec4(1, 0, 0, -point.x), point)).toBe(PlaneIntersectionType.Intersects)
+      expect(planePointIntersection(vec4(1, 0, 0, -point.x + r), point)).toBe(PlaneIntersectionType.Intersects)
+      expect(planePointIntersection(vec4(1, 0, 0, -point.x + r + 0.1), point)).toBe(PlaneIntersectionType.Front)
 
-      expect(Plane.create(0, -1, 0, point.y - r - 0.1).intersectsPoint(point)).toBe(PlaneIntersectionType.Back)
-      expect(Plane.create(0, -1, 0, point.y - r).intersectsPoint(point)).toBe(PlaneIntersectionType.Intersects)
-      expect(Plane.create(0, -1, 0, point.y).intersectsPoint(point)).toBe(PlaneIntersectionType.Intersects)
-      expect(Plane.create(0, -1, 0, point.y + r).intersectsPoint(point)).toBe(PlaneIntersectionType.Intersects)
-      expect(Plane.create(0, -1, 0, point.y + r + 0.1).intersectsPoint(point)).toBe(PlaneIntersectionType.Front)
+      expect(planePointIntersection(vec4(0, -1, 0, point.y - r - 0.1), point)).toBe(PlaneIntersectionType.Back)
+      expect(planePointIntersection(vec4(0, -1, 0, point.y - r), point)).toBe(PlaneIntersectionType.Intersects)
+      expect(planePointIntersection(vec4(0, -1, 0, point.y), point)).toBe(PlaneIntersectionType.Intersects)
+      expect(planePointIntersection(vec4(0, -1, 0, point.y + r), point)).toBe(PlaneIntersectionType.Intersects)
+      expect(planePointIntersection(vec4(0, -1, 0, point.y + r + 0.1), point)).toBe(PlaneIntersectionType.Front)
 
-      expect(Plane.create(0, 1, 0, -point.y - r - 0.1).intersectsPoint(point)).toBe(PlaneIntersectionType.Back)
-      expect(Plane.create(0, 1, 0, -point.y - r).intersectsPoint(point)).toBe(PlaneIntersectionType.Intersects)
-      expect(Plane.create(0, 1, 0, -point.y).intersectsPoint(point)).toBe(PlaneIntersectionType.Intersects)
-      expect(Plane.create(0, 1, 0, -point.y + r).intersectsPoint(point)).toBe(PlaneIntersectionType.Intersects)
-      expect(Plane.create(0, 1, 0, -point.y + r + 0.1).intersectsPoint(point)).toBe(PlaneIntersectionType.Front)
+      expect(planePointIntersection(vec4(0, 1, 0, -point.y - r - 0.1), point)).toBe(PlaneIntersectionType.Back)
+      expect(planePointIntersection(vec4(0, 1, 0, -point.y - r), point)).toBe(PlaneIntersectionType.Intersects)
+      expect(planePointIntersection(vec4(0, 1, 0, -point.y), point)).toBe(PlaneIntersectionType.Intersects)
+      expect(planePointIntersection(vec4(0, 1, 0, -point.y + r), point)).toBe(PlaneIntersectionType.Intersects)
+      expect(planePointIntersection(vec4(0, 1, 0, -point.y + r + 0.1), point)).toBe(PlaneIntersectionType.Front)
 
-      expect(Plane.create(0, 0, -1, point.z - r - 0.1).intersectsPoint(point)).toBe(PlaneIntersectionType.Back)
-      expect(Plane.create(0, 0, -1, point.z - r).intersectsPoint(point)).toBe(PlaneIntersectionType.Intersects)
-      expect(Plane.create(0, 0, -1, point.z).intersectsPoint(point)).toBe(PlaneIntersectionType.Intersects)
-      expect(Plane.create(0, 0, -1, point.z + r).intersectsPoint(point)).toBe(PlaneIntersectionType.Intersects)
-      expect(Plane.create(0, 0, -1, point.z + r + 0.1).intersectsPoint(point)).toBe(PlaneIntersectionType.Front)
+      expect(planePointIntersection(vec4(0, 0, -1, point.z - r - 0.1), point)).toBe(PlaneIntersectionType.Back)
+      expect(planePointIntersection(vec4(0, 0, -1, point.z - r), point)).toBe(PlaneIntersectionType.Intersects)
+      expect(planePointIntersection(vec4(0, 0, -1, point.z), point)).toBe(PlaneIntersectionType.Intersects)
+      expect(planePointIntersection(vec4(0, 0, -1, point.z + r), point)).toBe(PlaneIntersectionType.Intersects)
+      expect(planePointIntersection(vec4(0, 0, -1, point.z + r + 0.1), point)).toBe(PlaneIntersectionType.Front)
 
-      expect(Plane.create(0, 0, 1, -point.z - r - 0.1).intersectsPoint(point)).toBe(PlaneIntersectionType.Back)
-      expect(Plane.create(0, 0, 1, -point.z - r).intersectsPoint(point)).toBe(PlaneIntersectionType.Intersects)
-      expect(Plane.create(0, 0, 1, -point.z).intersectsPoint(point)).toBe(PlaneIntersectionType.Intersects)
-      expect(Plane.create(0, 0, 1, -point.z + r).intersectsPoint(point)).toBe(PlaneIntersectionType.Intersects)
-      expect(Plane.create(0, 0, 1, -point.z + r + 0.1).intersectsPoint(point)).toBe(PlaneIntersectionType.Front)
+      expect(planePointIntersection(vec4(0, 0, 1, -point.z - r - 0.1), point)).toBe(PlaneIntersectionType.Back)
+      expect(planePointIntersection(vec4(0, 0, 1, -point.z - r), point)).toBe(PlaneIntersectionType.Intersects)
+      expect(planePointIntersection(vec4(0, 0, 1, -point.z), point)).toBe(PlaneIntersectionType.Intersects)
+      expect(planePointIntersection(vec4(0, 0, 1, -point.z + r), point)).toBe(PlaneIntersectionType.Intersects)
+      expect(planePointIntersection(vec4(0, 0, 1, -point.z + r + 0.1), point)).toBe(PlaneIntersectionType.Front)
     }
   })
 
-  it('intersectsSphere', () => {
+  it('planeSphereIntersection', () => {
     for (let i = 0; i < 10; i++) {
       const sphere = BoundingSphere.create(Math.random(), Math.random(), Math.random(), 0.1 + Math.random())
       const r = sphere.radius
       const e = 0.000001
-      expect(Plane.create(-1, 0, 0, sphere.center.x - r - e).intersectsSphere(sphere)).toBe(PlaneIntersectionType.Back)
-      expect(Plane.create(-1, 0, 0, sphere.center.x - r + e).intersectsSphere(sphere)).toBe(PlaneIntersectionType.Intersects)
-      expect(Plane.create(-1, 0, 0, sphere.center.x).intersectsSphere(sphere)).toBe(PlaneIntersectionType.Intersects)
-      expect(Plane.create(-1, 0, 0, sphere.center.x + r - e).intersectsSphere(sphere)).toBe(PlaneIntersectionType.Intersects)
-      expect(Plane.create(-1, 0, 0, sphere.center.x + r + e).intersectsSphere(sphere)).toBe(PlaneIntersectionType.Front)
+      expect(planeSphereIntersection(vec4(-1, 0, 0, sphere.center.x - r - e), sphere.center, sphere.radius)).toBe(
+        PlaneIntersectionType.Back,
+      )
+      expect(planeSphereIntersection(vec4(-1, 0, 0, sphere.center.x - r + e), sphere.center, sphere.radius)).toBe(
+        PlaneIntersectionType.Intersects,
+      )
+      expect(planeSphereIntersection(vec4(-1, 0, 0, sphere.center.x), sphere.center, sphere.radius)).toBe(
+        PlaneIntersectionType.Intersects,
+      )
+      expect(planeSphereIntersection(vec4(-1, 0, 0, sphere.center.x + r - e), sphere.center, sphere.radius)).toBe(
+        PlaneIntersectionType.Intersects,
+      )
+      expect(planeSphereIntersection(vec4(-1, 0, 0, sphere.center.x + r + e), sphere.center, sphere.radius)).toBe(
+        PlaneIntersectionType.Front,
+      )
 
-      expect(Plane.create(1, 0, 0, -sphere.center.x - r - e).intersectsSphere(sphere)).toBe(PlaneIntersectionType.Back)
-      expect(Plane.create(1, 0, 0, -sphere.center.x - r + e).intersectsSphere(sphere)).toBe(PlaneIntersectionType.Intersects)
-      expect(Plane.create(1, 0, 0, -sphere.center.x).intersectsSphere(sphere)).toBe(PlaneIntersectionType.Intersects)
-      expect(Plane.create(1, 0, 0, -sphere.center.x + r - e).intersectsSphere(sphere)).toBe(PlaneIntersectionType.Intersects)
-      expect(Plane.create(1, 0, 0, -sphere.center.x + r + e).intersectsSphere(sphere)).toBe(PlaneIntersectionType.Front)
+      expect(planeSphereIntersection(vec4(1, 0, 0, -sphere.center.x - r - e), sphere.center, sphere.radius)).toBe(
+        PlaneIntersectionType.Back,
+      )
+      expect(planeSphereIntersection(vec4(1, 0, 0, -sphere.center.x - r + e), sphere.center, sphere.radius)).toBe(
+        PlaneIntersectionType.Intersects,
+      )
+      expect(planeSphereIntersection(vec4(1, 0, 0, -sphere.center.x), sphere.center, sphere.radius)).toBe(
+        PlaneIntersectionType.Intersects,
+      )
+      expect(planeSphereIntersection(vec4(1, 0, 0, -sphere.center.x + r - e), sphere.center, sphere.radius)).toBe(
+        PlaneIntersectionType.Intersects,
+      )
+      expect(planeSphereIntersection(vec4(1, 0, 0, -sphere.center.x + r + e), sphere.center, sphere.radius)).toBe(
+        PlaneIntersectionType.Front,
+      )
 
-      expect(Plane.create(0, -1, 0, sphere.center.y - r - e).intersectsSphere(sphere)).toBe(PlaneIntersectionType.Back)
-      expect(Plane.create(0, -1, 0, sphere.center.y - r + e).intersectsSphere(sphere)).toBe(PlaneIntersectionType.Intersects)
-      expect(Plane.create(0, -1, 0, sphere.center.y).intersectsSphere(sphere)).toBe(PlaneIntersectionType.Intersects)
-      expect(Plane.create(0, -1, 0, sphere.center.y + r - e).intersectsSphere(sphere)).toBe(PlaneIntersectionType.Intersects)
-      expect(Plane.create(0, -1, 0, sphere.center.y + r + e).intersectsSphere(sphere)).toBe(PlaneIntersectionType.Front)
+      expect(planeSphereIntersection(vec4(0, -1, 0, sphere.center.y - r - e), sphere.center, sphere.radius)).toBe(
+        PlaneIntersectionType.Back,
+      )
+      expect(planeSphereIntersection(vec4(0, -1, 0, sphere.center.y - r + e), sphere.center, sphere.radius)).toBe(
+        PlaneIntersectionType.Intersects,
+      )
+      expect(planeSphereIntersection(vec4(0, -1, 0, sphere.center.y), sphere.center, sphere.radius)).toBe(
+        PlaneIntersectionType.Intersects,
+      )
+      expect(planeSphereIntersection(vec4(0, -1, 0, sphere.center.y + r - e), sphere.center, sphere.radius)).toBe(
+        PlaneIntersectionType.Intersects,
+      )
+      expect(planeSphereIntersection(vec4(0, -1, 0, sphere.center.y + r + e), sphere.center, sphere.radius)).toBe(
+        PlaneIntersectionType.Front,
+      )
 
-      expect(Plane.create(0, 1, 0, -sphere.center.y - r - e).intersectsSphere(sphere)).toBe(PlaneIntersectionType.Back)
-      expect(Plane.create(0, 1, 0, -sphere.center.y - r + e).intersectsSphere(sphere)).toBe(PlaneIntersectionType.Intersects)
-      expect(Plane.create(0, 1, 0, -sphere.center.y).intersectsSphere(sphere)).toBe(PlaneIntersectionType.Intersects)
-      expect(Plane.create(0, 1, 0, -sphere.center.y + r - e).intersectsSphere(sphere)).toBe(PlaneIntersectionType.Intersects)
-      expect(Plane.create(0, 1, 0, -sphere.center.y + r + e).intersectsSphere(sphere)).toBe(PlaneIntersectionType.Front)
+      expect(planeSphereIntersection(vec4(0, 1, 0, -sphere.center.y - r - e), sphere.center, sphere.radius)).toBe(
+        PlaneIntersectionType.Back,
+      )
+      expect(planeSphereIntersection(vec4(0, 1, 0, -sphere.center.y - r + e), sphere.center, sphere.radius)).toBe(
+        PlaneIntersectionType.Intersects,
+      )
+      expect(planeSphereIntersection(vec4(0, 1, 0, -sphere.center.y), sphere.center, sphere.radius)).toBe(
+        PlaneIntersectionType.Intersects,
+      )
+      expect(planeSphereIntersection(vec4(0, 1, 0, -sphere.center.y + r - e), sphere.center, sphere.radius)).toBe(
+        PlaneIntersectionType.Intersects,
+      )
+      expect(planeSphereIntersection(vec4(0, 1, 0, -sphere.center.y + r + e), sphere.center, sphere.radius)).toBe(
+        PlaneIntersectionType.Front,
+      )
 
-      expect(Plane.create(0, 0, -1, sphere.center.z - r - e).intersectsSphere(sphere)).toBe(PlaneIntersectionType.Back)
-      expect(Plane.create(0, 0, -1, sphere.center.z - r + e).intersectsSphere(sphere)).toBe(PlaneIntersectionType.Intersects)
-      expect(Plane.create(0, 0, -1, sphere.center.z).intersectsSphere(sphere)).toBe(PlaneIntersectionType.Intersects)
-      expect(Plane.create(0, 0, -1, sphere.center.z + r - e).intersectsSphere(sphere)).toBe(PlaneIntersectionType.Intersects)
-      expect(Plane.create(0, 0, -1, sphere.center.z + r + e).intersectsSphere(sphere)).toBe(PlaneIntersectionType.Front)
+      expect(planeSphereIntersection(vec4(0, 0, -1, sphere.center.z - r - e), sphere.center, sphere.radius)).toBe(
+        PlaneIntersectionType.Back,
+      )
+      expect(planeSphereIntersection(vec4(0, 0, -1, sphere.center.z - r + e), sphere.center, sphere.radius)).toBe(
+        PlaneIntersectionType.Intersects,
+      )
+      expect(planeSphereIntersection(vec4(0, 0, -1, sphere.center.z), sphere.center, sphere.radius)).toBe(
+        PlaneIntersectionType.Intersects,
+      )
+      expect(planeSphereIntersection(vec4(0, 0, -1, sphere.center.z + r - e), sphere.center, sphere.radius)).toBe(
+        PlaneIntersectionType.Intersects,
+      )
+      expect(planeSphereIntersection(vec4(0, 0, -1, sphere.center.z + r + e), sphere.center, sphere.radius)).toBe(
+        PlaneIntersectionType.Front,
+      )
 
-      expect(Plane.create(0, 0, 1, -sphere.center.z - r - e).intersectsSphere(sphere)).toBe(PlaneIntersectionType.Back)
-      expect(Plane.create(0, 0, 1, -sphere.center.z - r + e).intersectsSphere(sphere)).toBe(PlaneIntersectionType.Intersects)
-      expect(Plane.create(0, 0, 1, -sphere.center.z).intersectsSphere(sphere)).toBe(PlaneIntersectionType.Intersects)
-      expect(Plane.create(0, 0, 1, -sphere.center.z + r - e).intersectsSphere(sphere)).toBe(PlaneIntersectionType.Intersects)
-      expect(Plane.create(0, 0, 1, -sphere.center.z + r + e).intersectsSphere(sphere)).toBe(PlaneIntersectionType.Front)
+      expect(planeSphereIntersection(vec4(0, 0, 1, -sphere.center.z - r - e), sphere.center, sphere.radius)).toBe(
+        PlaneIntersectionType.Back,
+      )
+      expect(planeSphereIntersection(vec4(0, 0, 1, -sphere.center.z - r + e), sphere.center, sphere.radius)).toBe(
+        PlaneIntersectionType.Intersects,
+      )
+      expect(planeSphereIntersection(vec4(0, 0, 1, -sphere.center.z), sphere.center, sphere.radius)).toBe(
+        PlaneIntersectionType.Intersects,
+      )
+      expect(planeSphereIntersection(vec4(0, 0, 1, -sphere.center.z + r - e), sphere.center, sphere.radius)).toBe(
+        PlaneIntersectionType.Intersects,
+      )
+      expect(planeSphereIntersection(vec4(0, 0, 1, -sphere.center.z + r + e), sphere.center, sphere.radius)).toBe(
+        PlaneIntersectionType.Front,
+      )
     }
   })
 
-  it('intersectsBox', () => {
+  it('planeBoxIntersection', () => {
     for (let i = 0; i < 10; i++) {
       const r = Math.random()
-      const point = Vec3.createRandom()
+      const point = vec3$initRandom(vec3())
       const box = BoundingBox.create(point.x - r, point.y - r, point.z - r, point.x + r, point.y + r, point.z + r)
-      expect(Plane.create(-1, 0, 0, point.x - r - 0.1).intersectsBox(box)).toBe(PlaneIntersectionType.Back)
-      expect(Plane.create(-1, 0, 0, point.x - r).intersectsBox(box)).toBe(PlaneIntersectionType.Intersects)
-      expect(Plane.create(-1, 0, 0, point.x).intersectsBox(box)).toBe(PlaneIntersectionType.Intersects)
-      expect(Plane.create(-1, 0, 0, point.x + r).intersectsBox(box)).toBe(PlaneIntersectionType.Intersects)
-      expect(Plane.create(-1, 0, 0, point.x + r + 0.1).intersectsBox(box)).toBe(PlaneIntersectionType.Front)
+      expect(planeBoxIntersection(vec4(-1, 0, 0, point.x - r - 0.1), box.min, box.max)).toBe(PlaneIntersectionType.Back)
+      expect(planeBoxIntersection(vec4(-1, 0, 0, point.x - r), box.min, box.max)).toBe(PlaneIntersectionType.Intersects)
+      expect(planeBoxIntersection(vec4(-1, 0, 0, point.x), box.min, box.max)).toBe(PlaneIntersectionType.Intersects)
+      expect(planeBoxIntersection(vec4(-1, 0, 0, point.x + r), box.min, box.max)).toBe(PlaneIntersectionType.Intersects)
+      expect(planeBoxIntersection(vec4(-1, 0, 0, point.x + r + 0.1), box.min, box.max)).toBe(
+        PlaneIntersectionType.Front,
+      )
 
-      expect(Plane.create(1, 0, 0, -point.x - r - 0.1).intersectsBox(box)).toBe(PlaneIntersectionType.Back)
-      expect(Plane.create(1, 0, 0, -point.x - r).intersectsBox(box)).toBe(PlaneIntersectionType.Intersects)
-      expect(Plane.create(1, 0, 0, -point.x).intersectsBox(box)).toBe(PlaneIntersectionType.Intersects)
-      expect(Plane.create(1, 0, 0, -point.x + r).intersectsBox(box)).toBe(PlaneIntersectionType.Intersects)
-      expect(Plane.create(1, 0, 0, -point.x + r + 0.1).intersectsBox(box)).toBe(PlaneIntersectionType.Front)
+      expect(planeBoxIntersection(vec4(1, 0, 0, -point.x - r - 0.1), box.min, box.max)).toBe(PlaneIntersectionType.Back)
+      expect(planeBoxIntersection(vec4(1, 0, 0, -point.x - r), box.min, box.max)).toBe(PlaneIntersectionType.Intersects)
+      expect(planeBoxIntersection(vec4(1, 0, 0, -point.x), box.min, box.max)).toBe(PlaneIntersectionType.Intersects)
+      expect(planeBoxIntersection(vec4(1, 0, 0, -point.x + r), box.min, box.max)).toBe(PlaneIntersectionType.Intersects)
+      expect(planeBoxIntersection(vec4(1, 0, 0, -point.x + r + 0.1), box.min, box.max)).toBe(
+        PlaneIntersectionType.Front,
+      )
 
-      expect(Plane.create(0, -1, 0, point.y - r - 0.1).intersectsBox(box)).toBe(PlaneIntersectionType.Back)
-      expect(Plane.create(0, -1, 0, point.y - r).intersectsBox(box)).toBe(PlaneIntersectionType.Intersects)
-      expect(Plane.create(0, -1, 0, point.y).intersectsBox(box)).toBe(PlaneIntersectionType.Intersects)
-      expect(Plane.create(0, -1, 0, point.y + r).intersectsBox(box)).toBe(PlaneIntersectionType.Intersects)
-      expect(Plane.create(0, -1, 0, point.y + r + 0.1).intersectsBox(box)).toBe(PlaneIntersectionType.Front)
+      expect(planeBoxIntersection(vec4(0, -1, 0, point.y - r - 0.1), box.min, box.max)).toBe(PlaneIntersectionType.Back)
+      expect(planeBoxIntersection(vec4(0, -1, 0, point.y - r), box.min, box.max)).toBe(PlaneIntersectionType.Intersects)
+      expect(planeBoxIntersection(vec4(0, -1, 0, point.y), box.min, box.max)).toBe(PlaneIntersectionType.Intersects)
+      expect(planeBoxIntersection(vec4(0, -1, 0, point.y + r), box.min, box.max)).toBe(PlaneIntersectionType.Intersects)
+      expect(planeBoxIntersection(vec4(0, -1, 0, point.y + r + 0.1), box.min, box.max)).toBe(
+        PlaneIntersectionType.Front,
+      )
 
-      expect(Plane.create(0, 1, 0, -point.y - r - 0.1).intersectsBox(box)).toBe(PlaneIntersectionType.Back)
-      expect(Plane.create(0, 1, 0, -point.y - r).intersectsBox(box)).toBe(PlaneIntersectionType.Intersects)
-      expect(Plane.create(0, 1, 0, -point.y).intersectsBox(box)).toBe(PlaneIntersectionType.Intersects)
-      expect(Plane.create(0, 1, 0, -point.y + r).intersectsBox(box)).toBe(PlaneIntersectionType.Intersects)
-      expect(Plane.create(0, 1, 0, -point.y + r + 0.1).intersectsBox(box)).toBe(PlaneIntersectionType.Front)
+      expect(planeBoxIntersection(vec4(0, 1, 0, -point.y - r - 0.1), box.min, box.max)).toBe(PlaneIntersectionType.Back)
+      expect(planeBoxIntersection(vec4(0, 1, 0, -point.y - r), box.min, box.max)).toBe(PlaneIntersectionType.Intersects)
+      expect(planeBoxIntersection(vec4(0, 1, 0, -point.y), box.min, box.max)).toBe(PlaneIntersectionType.Intersects)
+      expect(planeBoxIntersection(vec4(0, 1, 0, -point.y + r), box.min, box.max)).toBe(PlaneIntersectionType.Intersects)
+      expect(planeBoxIntersection(vec4(0, 1, 0, -point.y + r + 0.1), box.min, box.max)).toBe(
+        PlaneIntersectionType.Front,
+      )
 
-      expect(Plane.create(0, 0, -1, point.z - r - 0.1).intersectsBox(box)).toBe(PlaneIntersectionType.Back)
-      expect(Plane.create(0, 0, -1, point.z - r).intersectsBox(box)).toBe(PlaneIntersectionType.Intersects)
-      expect(Plane.create(0, 0, -1, point.z).intersectsBox(box)).toBe(PlaneIntersectionType.Intersects)
-      expect(Plane.create(0, 0, -1, point.z + r).intersectsBox(box)).toBe(PlaneIntersectionType.Intersects)
-      expect(Plane.create(0, 0, -1, point.z + r + 0.1).intersectsBox(box)).toBe(PlaneIntersectionType.Front)
+      expect(planeBoxIntersection(vec4(0, 0, -1, point.z - r - 0.1), box.min, box.max)).toBe(PlaneIntersectionType.Back)
+      expect(planeBoxIntersection(vec4(0, 0, -1, point.z - r), box.min, box.max)).toBe(PlaneIntersectionType.Intersects)
+      expect(planeBoxIntersection(vec4(0, 0, -1, point.z), box.min, box.max)).toBe(PlaneIntersectionType.Intersects)
+      expect(planeBoxIntersection(vec4(0, 0, -1, point.z + r), box.min, box.max)).toBe(PlaneIntersectionType.Intersects)
+      expect(planeBoxIntersection(vec4(0, 0, -1, point.z + r + 0.1), box.min, box.max)).toBe(
+        PlaneIntersectionType.Front,
+      )
 
-      expect(Plane.create(0, 0, 1, -point.z - r - 0.1).intersectsBox(box)).toBe(PlaneIntersectionType.Back)
-      expect(Plane.create(0, 0, 1, -point.z - r).intersectsBox(box)).toBe(PlaneIntersectionType.Intersects)
-      expect(Plane.create(0, 0, 1, -point.z).intersectsBox(box)).toBe(PlaneIntersectionType.Intersects)
-      expect(Plane.create(0, 0, 1, -point.z + r).intersectsBox(box)).toBe(PlaneIntersectionType.Intersects)
-      expect(Plane.create(0, 0, 1, -point.z + r + 0.1).intersectsBox(box)).toBe(PlaneIntersectionType.Front)
+      expect(planeBoxIntersection(vec4(0, 0, 1, -point.z - r - 0.1), box.min, box.max)).toBe(PlaneIntersectionType.Back)
+      expect(planeBoxIntersection(vec4(0, 0, 1, -point.z - r), box.min, box.max)).toBe(PlaneIntersectionType.Intersects)
+      expect(planeBoxIntersection(vec4(0, 0, 1, -point.z), box.min, box.max)).toBe(PlaneIntersectionType.Intersects)
+      expect(planeBoxIntersection(vec4(0, 0, 1, -point.z + r), box.min, box.max)).toBe(PlaneIntersectionType.Intersects)
+      expect(planeBoxIntersection(vec4(0, 0, 1, -point.z + r + 0.1), box.min, box.max)).toBe(
+        PlaneIntersectionType.Front,
+      )
     }
-  })
-
-  it.skip('intersectsCapsule', () => {
-    // for (let i = 0; i < 1; i++) {
-    //   const r = 1
-    //   const point = Vec3.createRandom().multiplyScalar(10)
-    //   const capsule = BoundingCapsule.create(point.x, point.y + r, point.z, point.x, point.y - r, point.z, r)
-    //   expect(Plane.create(-1, 0, 0, point.x - r - 0.1).intersectsCapsule(capsule)).toBe(PlaneIntersectionType.Back)
-    //   expect(Plane.create(-1, 0, 0, point.x - r).intersectsCapsule(capsule)).toBe(PlaneIntersectionType.Intersects)
-    //   expect(Plane.create(-1, 0, 0, point.x).intersectsCapsule(capsule)).toBe(PlaneIntersectionType.Intersects)
-    //   expect(Plane.create(-1, 0, 0, point.x + r).intersectsCapsule(capsule)).toBe(PlaneIntersectionType.Intersects)
-    //   expect(Plane.create(-1, 0, 0, point.x + r + 0.1).intersectsCapsule(capsule)).toBe(PlaneIntersectionType.Front)
-
-    //   expect(Plane.create(1, 0, 0, -point.x - r - 0.1).intersectsCapsule(capsule)).toBe(PlaneIntersectionType.Back)
-    //   expect(Plane.create(1, 0, 0, -point.x - r).intersectsCapsule(capsule)).toBe(PlaneIntersectionType.Intersects)
-    //   expect(Plane.create(1, 0, 0, -point.x).intersectsCapsule(capsule)).toBe(PlaneIntersectionType.Intersects)
-    //   expect(Plane.create(1, 0, 0, -point.x + r).intersectsCapsule(capsule)).toBe(PlaneIntersectionType.Intersects)
-    //   expect(Plane.create(1, 0, 0, -point.x + r + 0.1).intersectsCapsule(capsule)).toBe(PlaneIntersectionType.Front)
-
-    //   expect(Plane.create(0, -1, 0, point.y - 2 * r - 0.1).intersectsCapsule(capsule)).toBe(PlaneIntersectionType.Back)
-    //   expect(Plane.create(0, -1, 0, point.y - 2 * r).intersectsCapsule(capsule)).toBe(PlaneIntersectionType.Intersects)
-    //   expect(Plane.create(0, -1, 0, point.y).intersectsCapsule(capsule)).toBe(PlaneIntersectionType.Intersects)
-    //   expect(Plane.create(0, -1, 0, point.y + 2 * r).intersectsCapsule(capsule)).toBe(PlaneIntersectionType.Intersects)
-    //   expect(Plane.create(0, -1, 0, point.y + 2 * r + 0.1).intersectsCapsule(capsule)).toBe(PlaneIntersectionType.Front)
-
-    //   expect(Plane.create(0, 1, 0, -(point.y - 2 * r - 0.1)).intersectsCapsule(capsule)).toBe(PlaneIntersectionType.Front)
-    //   expect(Plane.create(0, 1, 0, -(point.y - 2 * r)).intersectsCapsule(capsule)).toBe(PlaneIntersectionType.Intersects)
-    //   expect(Plane.create(0, 1, 0, -(point.y)).intersectsCapsule(capsule)).toBe(PlaneIntersectionType.Intersects)
-    //   expect(Plane.create(0, 1, 0, -(point.y + 2 * r)).intersectsCapsule(capsule)).toBe(PlaneIntersectionType.Intersects)
-    //   expect(Plane.create(0, 1, 0, -(point.y + 2 * r + 0.1)).intersectsCapsule(capsule)).toBe(PlaneIntersectionType.Back)
-
-    //   expect(Plane.create(0, 0, -1, point.z - r - 0.1).intersectsCapsule(capsule)).toBe(PlaneIntersectionType.Back)
-    //   expect(Plane.create(0, 0, -1, point.z - r).intersectsCapsule(capsule)).toBe(PlaneIntersectionType.Intersects)
-    //   expect(Plane.create(0, 0, -1, point.z).intersectsCapsule(capsule)).toBe(PlaneIntersectionType.Intersects)
-    //   expect(Plane.create(0, 0, -1, point.z + r).intersectsCapsule(capsule)).toBe(PlaneIntersectionType.Intersects)
-    //   expect(Plane.create(0, 0, -1, point.z + r + 0.1).intersectsCapsule(capsule)).toBe(PlaneIntersectionType.Front)
-
-    //   expect(Plane.create(0, 0, 1, -(point.z - r - 0.1)).intersectsCapsule(capsule)).toBe(PlaneIntersectionType.Front)
-    //   expect(Plane.create(0, 0, 1, -(point.z - r)).intersectsCapsule(capsule)).toBe(PlaneIntersectionType.Intersects)
-    //   expect(Plane.create(0, 0, 1, -(point.z)).intersectsCapsule(capsule)).toBe(PlaneIntersectionType.Intersects)
-    //   expect(Plane.create(0, 0, 1, -(point.z + r)).intersectsCapsule(capsule)).toBe(PlaneIntersectionType.Intersects)
-    //   expect(Plane.create(0, 0, 1, -(point.z + r + 0.1)).intersectsCapsule(capsule)).toBe(PlaneIntersectionType.Back)
-    // }
   })
 })

@@ -23,7 +23,18 @@ import {
   TextureUsage,
 } from '@gglib/graphics'
 import { GLTF } from '@gglib/loaders'
-import { DEGREE_TO_RAD, Mat4, vec3, Vec3 } from '@gglib/math'
+import {
+  DEGREE_TO_RAD,
+  mat4$initLookAt,
+  mat4$initPerspectiveFieldOfView,
+  mat4$initTranslationXYZ,
+  mat4$invert,
+  mat4$rotateX,
+  mat4$rotateY,
+  mat4Identity,
+  vec3,
+  vec3Normalize,
+} from '@gglib/math'
 import { Model } from '@gglib/model'
 
 export default async (canvas: HTMLCanvasElement) => {
@@ -71,7 +82,7 @@ export default async (canvas: HTMLCanvasElement) => {
 
     material.AmbientColor = Color.fromHex('#ffd500')
     material.AmbientColorTop = Color.fromHex('#00b86b')
-    material.AmbientDirection = Vec3.normalize(vec3(-1, 1, 0))
+    material.AmbientDirection = vec3Normalize(vec3(-1, 1, 0))
 
     return material
   })
@@ -83,13 +94,14 @@ export default async (canvas: HTMLCanvasElement) => {
 
   let model: Model | null = null
 
-  const world = Mat4.createIdentity()
-    .rotateX(25 * DEGREE_TO_RAD)
-    .rotateY(-45 * DEGREE_TO_RAD)
+  const world = mat4Identity()
+  mat4$rotateX(world, 25 * DEGREE_TO_RAD)
+  mat4$rotateY(world, -45 * DEGREE_TO_RAD)
+
   const camera = {
-    position: Vec3.create(),
-    view: Mat4.createIdentity(),
-    projection: Mat4.createIdentity(),
+    position: vec3(),
+    view: mat4Identity(),
+    projection: mat4Identity(),
   }
 
   let accumX = 0
@@ -102,13 +114,15 @@ export default async (canvas: HTMLCanvasElement) => {
     accumY += (mouse.yNormalized - accumY) * 0.1
 
     const offset = Math.sin(0.75 * Math.PI + time * Math.PI * 0.5) * 0.05
-    world
-      .initTranslationXYZ(0, offset, 0)
-      .rotateX((25 + accumY * 15) * DEGREE_TO_RAD)
-      .rotateY((-45 + accumX * 15) * DEGREE_TO_RAD)
 
-    camera.view.initLookAt(vec3(0, 0, 5), vec3(0, 0, 0), Vec3.UnitY).invert()
-    camera.projection.initPerspectiveFieldOfView(
+    mat4$initTranslationXYZ(world, 0, offset, 0)
+    mat4$rotateX(world, (25 + accumY * 15) * DEGREE_TO_RAD)
+    mat4$rotateY(world, (-45 + accumX * 15) * DEGREE_TO_RAD)
+
+    mat4$initLookAt(camera.view, vec3(0, 0, 5), vec3(0, 0, 0), vec3.UnitY)
+    mat4$invert(camera.view)
+    mat4$initPerspectiveFieldOfView(
+      camera.projection,
       45 * DEGREE_TO_RAD,
       device.output.aspectRatio,
       0.01,

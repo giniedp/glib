@@ -1,4 +1,4 @@
-import { Mat4, vec3 } from '@gglib/math'
+import { Mat4, mat4$multiply, mat4CreateRotationZ, mat4CreateScale, mat4CreateTranslation, vec3 } from '@gglib/math'
 import { brand, Brand } from '@gglib/utils'
 import {
   AcquireTextureOptions,
@@ -189,7 +189,10 @@ export interface CommonUvInfo {
 }
 
 export function uvInfoToMat4(info: CommonUvInfo): Mat4 {
-  return Mat4.createTranslation(vec3(info.offset ?? [0, 0], 0))
-    .multiply(Mat4.createRotationZ(-(info.rotation ?? 0)))
-    .multiply(Mat4.createScale(vec3(info.scale ?? [1, 1], 1)))
+  const t = mat4CreateTranslation(vec3(info.offset ?? [0, 0], 0))
+  const r = mat4CreateRotationZ(-(info.rotation ?? 0))
+  const s = mat4CreateScale(vec3(info.scale ?? [1, 1], 1))
+  mat4$multiply(t, r)
+  mat4$multiply(t, s)
+  return t
 }

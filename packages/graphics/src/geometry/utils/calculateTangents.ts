@@ -1,4 +1,15 @@
-import { vec2, vec2subtract, Vec3 } from '@gglib/math'
+import {
+  vec2,
+  vec2Subtract,
+  vec3,
+  vec3$init,
+  vec3$normalize,
+  vec3Cross,
+  vec3Dot,
+  vec3LengthSquared,
+  vec3MultiplyScalar,
+  vec3Subtract,
+} from '@gglib/math'
 import { FrontFace } from '../../enums'
 import { GeometryBuilderChannelMap } from '../GeometryBuilderChannel'
 
@@ -33,14 +44,14 @@ export function calculateTangents(
   const bitangents = channels.bitangent
   const textures = channels.texture || channels.texcoord
 
-  let p1 = Vec3.create()
-  let p2 = Vec3.create()
-  let p3 = Vec3.create()
+  let p1 = vec3()
+  let p2 = vec3()
+  let p3 = vec3()
   let t1 = vec2()
   let t2 = vec2()
   let t3 = vec2()
-  let d1 = Vec3.create()
-  let d2 = Vec3.create()
+  let d1 = vec3()
+  let d2 = vec3()
   let uv1 = vec2()
   let uv2 = vec2()
 
@@ -85,15 +96,15 @@ export function calculateTangents(
     t3.x = textures.read(i2, 0)
     t3.y = textures.read(i2, 1)
 
-    Vec3.subtract(p2, p1, d1)
-    Vec3.subtract(p3, p1, d2)
+    vec3Subtract(p2, p1, d1)
+    vec3Subtract(p3, p1, d2)
 
-    vec2subtract(t2, t1, uv1)
-    vec2subtract(t3, t1, uv2)
+    vec2Subtract(t2, t1, uv1)
+    vec2Subtract(t3, t1, uv2)
 
     let r = 1 / (uv1.x * uv2.y - uv1.y * uv2.x)
-    let dir1 = Vec3.subtract(Vec3.multiplyScalar(d1, uv2.y), Vec3.multiplyScalar(d2, uv1.y)).multiplyScalar(r)
-    let dir2 = Vec3.subtract(Vec3.multiplyScalar(d2, uv1.x), Vec3.multiplyScalar(d1, uv2.x)).multiplyScalar(r)
+    let dir1 = vec3MultiplyScalar(vec3Subtract(vec3MultiplyScalar(d1, uv2.y), vec3MultiplyScalar(d2, uv1.y)), r)
+    let dir2 = vec3MultiplyScalar(vec3Subtract(vec3MultiplyScalar(d2, uv1.x), vec3MultiplyScalar(d1, uv2.x)), r)
 
     tangents.write(i0, 0, tangents.read(i0, 0) + dir1.x)
     tangents.write(i0, 1, tangents.read(i0, 1) + dir1.y)
@@ -120,9 +131,9 @@ export function calculateTangents(
     bitangents.write(i2, 2, bitangents.read(i2, 2) + dir2.z)
   }
 
-  let normal = Vec3.create()
-  let tangent = Vec3.create()
-  let bitangent = Vec3.create()
+  let normal = vec3()
+  let tangent = vec3()
+  let bitangent = vec3()
 
   // orthogonalize
   for (let i = 0; i < vCount; i++) {
@@ -138,16 +149,16 @@ export function calculateTangents(
     bitangent.y = bitangents.read(i, 1)
     bitangent.z = bitangents.read(i, 2)
 
-    let t = Vec3.subtract(tangent, Vec3.multiplyScalar(normal, normal.dot(tangent)))
-    let h = Vec3.cross(normal, tangent).dot(bitangent) < 0 ? -1 : 1
-    let b = Vec3.cross(normal, t).multiplyScalar(h)
+    let t = vec3Subtract(tangent, vec3MultiplyScalar(normal, vec3Dot(normal, tangent)))
+    let h = vec3Dot(vec3Cross(normal, tangent), bitangent) < 0 ? -1 : 1
+    let b = vec3MultiplyScalar(vec3Cross(normal, t), h)
 
-    if (!t.lengthSquared() || !b.lengthSquared()) {
-      t.init(1, 0, 0)
-      b.init(0, 0, 1)
+    if (!vec3LengthSquared(t) || !vec3LengthSquared(b)) {
+      vec3$init(t, 1, 0, 0)
+      vec3$init(b, 0, 0, 1)
     } else {
-      t.normalize()
-      b.normalize()
+      vec3$normalize(t)
+      vec3$normalize(b)
     }
 
     tangents.write(i, 0, tangent.x)

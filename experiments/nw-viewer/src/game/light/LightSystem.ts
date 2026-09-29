@@ -1,7 +1,7 @@
 import { EcsGame } from '@gglib/components'
 import { GameQuery, GameSystem, GameWorld } from '@gglib/ecs'
 import { Device, type WebGpuDevice } from '@gglib/graphics'
-import { DEGREE_TO_RAD, Vec3 } from '@gglib/math'
+import { DEGREE_TO_RAD, mat4GetRight, mat4GetTranslation, mat4GetUp, vec3, vec3$normalize } from '@gglib/math'
 import { Renderer } from '@gglib/render'
 import { InputBlocks, InputSlots } from '../../material'
 import { LightClusterShader, type LightClusterLight, type LightClusterShaderOptions } from './LightClusterShader'
@@ -34,10 +34,10 @@ export class LightSystem extends GameSystem {
 
   private light: LightClusterLight = {
     type: 'point',
-    position: new Vec3(),
-    direction: new Vec3(),
-    tangent: new Vec3(),
-    color: new Vec3(),
+    position: vec3(),
+    direction: vec3(),
+    tangent: vec3(),
+    color: vec3(),
     range: 0,
     specular: 0,
     bulbSize: 0,
@@ -109,11 +109,11 @@ export class LightSystem extends GameSystem {
     }
 
     const world = component.entity.getTransform().world
-    world.getTranslation(out.position as Vec3)
+    mat4GetTranslation(world, out.position)
     // CryEngine convention: lights emit along local +X
     // area lights span their width along local +Y and their height along local +Z
-    world.getRight(out.direction as Vec3).normalize()
-    world.getUp(out.tangent as Vec3).normalize()
+    vec3$normalize(mat4GetRight(world, out.direction))
+    vec3$normalize(mat4GetUp(world, out.tangent))
 
     const color = config.color || [1, 1, 1, 1]
     out.color.x = (color[0] ?? 1) * diffuse

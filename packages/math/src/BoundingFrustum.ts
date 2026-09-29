@@ -1,13 +1,12 @@
 import { BoundingBox } from './BoundingBox'
 import { BoundingCapsule } from './BoundingCapsule'
 import { BoundingSphere } from './BoundingSphere'
-import type { BoundingVolume } from './BoundingVolume'
 import { Intersection, IntersectionType, Intersects, planePlanePlaneIntersection } from './Collision'
-import { Mat4 } from './Mat4'
-import { Ray } from './Ray'
+import { Mat4, mat4$initFrom, mat4Format, mat4Identity, mat4Premultiply } from './Mat4'
+import { IRay } from './Ray'
 import type { IVec3, IVec4 } from './Types'
-import { Vec3 } from './Vec3'
-import { Vec4 } from './Vec4'
+import { vec3Format, vec3Length } from './Vec3'
+import { vec4Format } from './Vec4'
 
 export type BoundingFrustumPlane = number & {
   readonly __brand: number
@@ -33,7 +32,7 @@ export const BoundingFrustumPlane = {
  *
  * @public
  */
-export class BoundingFrustum implements BoundingVolume {
+export class BoundingFrustum {
   /**
    * Gets and sets the frustum matrix
    *
@@ -97,7 +96,7 @@ export class BoundingFrustum implements BoundingVolume {
    */
   public readonly corners: IVec3[]
 
-  private $matrix: Mat4 = Mat4.createIdentity()
+  private $matrix: Mat4 = mat4Identity()
 
   /**
    * Constructs a new instance of {@link BoundingFrustum}
@@ -114,13 +113,13 @@ export class BoundingFrustum implements BoundingVolume {
       this.corners[i] = { x: 0, y: 0, z: 0 }
     }
     if (matrix) {
-      this.$matrix.initFrom(matrix)
+      mat4$initFrom(this.$matrix, matrix)
     }
-    this.matrix = matrix || Mat4.createIdentity()
+    this.matrix = matrix || mat4Identity()
   }
 
   public updateFromViewProjection(view: Mat4, projection: Mat4) {
-    Mat4.premultiply(view, projection, this.matrix)
+    mat4Premultiply(view, projection, this.matrix)
     this.update()
   }
 
@@ -134,7 +133,7 @@ export class BoundingFrustum implements BoundingVolume {
    */
   public update(transform?: Mat4) {
     if (transform) {
-      this.$matrix.initFrom(transform)
+      mat4$initFrom(this.$matrix, transform)
     }
     this.updatePlanes()
     this.updateCorners()
@@ -146,7 +145,7 @@ export class BoundingFrustum implements BoundingVolume {
     // 1 5 9  13
     // 2 6 10 14
     // 3 7 11 15
-    const m = this.matrix.elements
+    const m = this.matrix
     let plane: IVec4
 
     plane = this.planes[BoundingFrustumPlane.X_NEG]
@@ -187,7 +186,7 @@ export class BoundingFrustum implements BoundingVolume {
 
     for (let i = 0; i < 6; i++) {
       plane = this.planes[i]
-      const l = 1.0 / Vec3.magnitude(plane)
+      const l = 1.0 / vec3Length(plane)
       plane.x = plane.x * l
       plane.y = plane.y * l
       plane.z = plane.z * l
@@ -217,7 +216,7 @@ export class BoundingFrustum implements BoundingVolume {
   /**
    * Checks for intersaction with a ray
    */
-  public intersectsRay(ray: Ray): boolean {
+  public intersectsRay(ray: IRay): boolean {
     return Intersects.frustumRay(this, ray)
   }
   /**
@@ -308,14 +307,14 @@ export class BoundingFrustum implements BoundingVolume {
   }
 
   public format(fractionDigits?: number) {
-    let result = 'matrix:\n' + this.matrix.format(fractionDigits) + '\n'
+    let result = 'matrix:\n' + mat4Format(this.matrix) + '\n'
     result += 'planes:\n'
     for (const plane of this.planes) {
-      result += Vec4.format(plane, fractionDigits) + '\n'
+      result += vec4Format(plane, fractionDigits) + '\n'
     }
     result += 'corners:\n'
     for (const corner of this.corners) {
-      result += Vec3.format(corner, fractionDigits) + '\n'
+      result += vec3Format(corner, fractionDigits) + '\n'
     }
     return result
   }

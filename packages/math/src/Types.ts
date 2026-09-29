@@ -13,7 +13,7 @@ export interface IVec2 {
  *
  * @public
  */
-export interface IVec3 extends  IVec2 {
+export interface IVec3 extends IVec2 {
   z: number
 }
 
@@ -22,7 +22,7 @@ export interface IVec3 extends  IVec2 {
  *
  * @public
  */
-export interface IVec4 extends  IVec3 {
+export interface IVec4 extends IVec3 {
   w: number
 }
 
@@ -51,17 +51,14 @@ export interface ISize {
  *
  * @public
  */
-export interface IRect extends IPoint, ISize {
-}
+export interface IRect extends IPoint, ISize {}
 
 /**
  * An object holding an array of numbers, intended to be used as a matrix
  *
  * @public
  */
-export interface IMat {
-  elements: ArrayLike<number>
-}
+export type IMat = ArrayLike<number>
 
 /**
  * Something that looks like an array
@@ -72,30 +69,3 @@ export interface ArrayLike<T> {
   length: number
   [n: number]: T
 }
-
-/**
- * @public
- */
-export type Mat4Elements = [
-  number, number, number, number,
-  number, number, number, number,
-  number, number, number, number,
-  number, number, number, number
-] | Float32Array | Float64Array
-
-/**
- * @public
- */
-export type Mat3Elements = [
-  number, number, number,
-  number, number, number,
-  number, number, number,
-] | Float32Array | Float64Array
-
-/**
- * @public
- */
-export type Mat2Elements = [
-  number, number,
-  number, number,
-] | Float32Array | Float64Array

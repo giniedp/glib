@@ -1,5 +1,5 @@
 import { BlendState, Color, createDevice, Device, PlatformId, vertexLayout } from '@gglib/graphics'
-import { Mat4, vec3 } from '@gglib/math'
+import { mat4CreateTranslationXYZ } from '@gglib/math'
 import { mountUi } from 'tweak-ui'
 
 const settings = {
@@ -40,12 +40,12 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   })
 
   const quadA = {
-    world: Mat4.createTranslation(vec3(-0.2, -0.1, 0)),
+    world: mat4CreateTranslationXYZ(-0.2, -0.1, 0),
     color: Color.Red.toVec4(),
     program: shader.program.clone(),
   }
   const quadB = {
-    world: Mat4.createTranslation(vec3(0.2, 0.1, 0)),
+    world: mat4CreateTranslationXYZ(0.2, 0.1, 0),
     color: Color.LimeGreen.toVec4(),
     program: shader.program.clone(),
   }

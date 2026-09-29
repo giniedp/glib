@@ -7,9 +7,22 @@ import {
   SpatialComponent,
 } from '@gglib/components'
 import { GameEntity, GameQuery, GameSystem, GameWorld, GetComponent } from '@gglib/ecs'
-import type { Mesh } from '@gglib/graphics'
 import { KeyboardKeys, MouseButton } from '@gglib/game'
-import { Intersection, Mat4, Ray, Vec3, type BoundingBox, type Transform } from '@gglib/math'
+import type { Mesh } from '@gglib/graphics'
+import {
+  Intersection,
+  mat4,
+  mat4Invert,
+  rayCreate,
+  rayIntersectsBoxAt,
+  rayPositionAt,
+  vec3,
+  vec3ApplyMat4,
+  vec3ApplyMat4Rotation,
+  vec3Distance,
+  type BoundingBox,
+  type Transform,
+} from '@gglib/math'
 import { brand, EventEmitter, type EventType } from '@gglib/utils'
 
 export interface RaySelection {
@@ -78,7 +91,7 @@ export class RaycastSystem extends GameSystem {
     }
   }
 
-  private tmpRay = Ray.create()
+  private tmpRay = rayCreate()
 
   private raycast(output: RaySelection[]) {
     const ray = this.camera.createRay(this.mouse.xNormalized, this.mouse.yNormalized)
@@ -97,20 +110,20 @@ export class RaycastSystem extends GameSystem {
 
             // transform ray into local space of mesh
             const localRay = this.tmpRay
-            const inv = Mat4.invert(node.world, Mat4.$0)
-            inv.transformV3(ray.position, localRay.position)
-            inv.transformV3Normal(ray.direction, localRay.direction)
+            const inv = mat4Invert(node.world, mat4.$0)
+            vec3ApplyMat4(ray.position, inv, localRay.position)
+            vec3ApplyMat4Rotation(ray.direction, inv, localRay.direction)
 
             // check intersection
-            const dLocal = localRay.intersectsBoxAt(mesh.boundingBox)
+            const dLocal = rayIntersectsBoxAt(localRay, mesh.boundingBox)
             if (isNaN(dLocal) || dLocal < 0) {
               continue
             }
 
             // transform intersection point back into world space
-            localRay.positionAt(dLocal, Vec3.$0)
-            node.world.transformV3(Vec3.$0, Vec3.$0)
-            const distance = Vec3.distance(ray.position, Vec3.$0)
+            rayPositionAt(localRay, dLocal, vec3.$0)
+            vec3ApplyMat4(vec3.$0, node.world, vec3.$0)
+            const distance = vec3Distance(ray.position, vec3.$0)
 
             // store result
             if (distance > 0 && distance < this.maxPickDistance) {

@@ -1,18 +1,17 @@
 import { ContentLoader } from '@gglib/content'
 import { ParticleChannel } from '@gglib/effects'
 import { MouseInput } from '@gglib/game'
-import {
-  BlendState,
-  Color,
-  createDevice,
-  CullState,
-  DepthState,
-  FrameContext,
-  PlatformId,
-  TextureUsage,
-} from '@gglib/graphics'
+import { BlendState, Color, createDevice, CullState, DepthState, FrameContext, PlatformId } from '@gglib/graphics'
 import { HDR } from '@gglib/loaders'
-import { DEGREE_TO_RAD, Mat4, vec3, Vec3 } from '@gglib/math'
+import {
+  DEGREE_TO_RAD,
+  mat4$initLookAt,
+  mat4$initPerspectiveFieldOfView,
+  mat4$invert,
+  mat4Identity,
+  vec3,
+  vec3$initSpherical,
+} from '@gglib/math'
 import { mountUi } from 'tweak-ui'
 
 const files = {
@@ -63,9 +62,9 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     phi: 90,
     fow: 45,
     distance: 2,
-    position: Vec3.create(),
-    view: Mat4.createIdentity(),
-    projection: Mat4.createIdentity(),
+    position: vec3(),
+    view: mat4Identity(),
+    projection: mat4Identity(),
   }
 
   mountUi(tools, (ui) => {
@@ -91,14 +90,17 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     }
 
     // prettier-ignore
-    camera.position.initSpherical(
+    vec3$initSpherical(
+      camera.position,
       camera.phi * DEGREE_TO_RAD,
       camera.theta * DEGREE_TO_RAD,
       camera.distance * 2,
     )
 
-    camera.view.initLookAt(camera.position, Vec3.Zero, Vec3.UnitY).invert()
-    camera.projection.initPerspectiveFieldOfView(
+    mat4$initLookAt(camera.view, camera.position, vec3.Zero, vec3.UnitY)
+    mat4$invert(camera.view)
+    mat4$initPerspectiveFieldOfView(
+      camera.projection,
       camera.fow * DEGREE_TO_RAD,
       device.output.aspectRatio,
       0.01,

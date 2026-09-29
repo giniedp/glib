@@ -1,10 +1,10 @@
 import { type GameComponent, GameEntity } from '@gglib/ecs'
-import { Vec3 } from '@gglib/math'
+import { IVec3, vec3, vec3$applyMat4Rotation, vec3$initFrom, vec3Equals, vec3Lerp } from '@gglib/math'
 import { TransformComponent } from '../components/TransformComponent'
 import type { BehaviorComponent } from '../systems/BehaviorSystem'
 
-let p0: Vec3
-let p1: Vec3
+let p0: IVec3
+let p1: IVec3
 
 /**
  * Options for the {@link CopyScaleConstraint}
@@ -120,21 +120,24 @@ export class CopyScaleConstraint implements GameComponent, BehaviorComponent {
       return
     }
 
-    const source = (p0 = p0 || Vec3.create()).initFrom(this.source.scale)
-    const target = (p1 = p1 || Vec3.create()).initFrom(this.target.scale)
+    const source = (p0 = p0 || vec3())
+    const target = (p1 = p1 || vec3())
+
+    vec3$initFrom(source, this.source.scale)
+    vec3$initFrom(target, this.target.scale)
 
     if (this.sourceSpace === 'world' && this.source.parent) {
-      this.source.parent.world.transformV3Normal(source, source)
+      vec3$applyMat4Rotation(source, this.source.parent.world)
     }
 
     if (this.targetSpace === 'world' && this.target.parent) {
-      this.target.parent.world.transformV3Normal(target, target)
+      vec3$applyMat4Rotation(target, this.target.parent.world)
     }
 
-    Vec3.lerp(target, source, this.weight, source)
+    vec3Lerp(target, source, this.weight, source)
 
     if (this.targetSpace === 'world' && this.target.parent) {
-      this.target.parent.worldInverse.transformV3Normal(source, source)
+      vec3$applyMat4Rotation(source, this.target.parent.worldInverse)
     }
 
     if (!this.copyX) {
@@ -146,7 +149,7 @@ export class CopyScaleConstraint implements GameComponent, BehaviorComponent {
     if (!this.copyZ) {
       source.z = this.target.scale.z
     }
-    if (!source.equals(this.target.scale)) {
+    if (!vec3Equals(source, this.target.scale)) {
       this.target.setScale(source)
       if (this.commit) {
         this.target.updateIfNeeded()

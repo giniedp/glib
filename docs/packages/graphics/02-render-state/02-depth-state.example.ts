@@ -1,5 +1,13 @@
 import { Color, createDevice, DepthState, Device, PlatformId, Texture, vertexLayout } from '@gglib/graphics'
-import { DEGREE_TO_RAD, Mat4, Vec3 } from '@gglib/math'
+import {
+  DEGREE_TO_RAD,
+  mat4$initPerspectiveFieldOfView,
+  mat4$initTranslation,
+  mat4$invert,
+  mat4CreateTranslationXYZ,
+  mat4Identity,
+  vec3,
+} from '@gglib/math'
 import { mountUi } from 'tweak-ui'
 
 const settings = {
@@ -39,12 +47,12 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   // Each object needs it's own shader program copy
   const nearQuad = {
     program: shader.program.clone(),
-    world: Mat4.createTranslationXYZ(-0.4, 0, 0.4),
+    world: mat4CreateTranslationXYZ(-0.4, 0, 0.4),
     color: Color.Red,
   }
   const farQuad = {
     program: shader.program.clone(),
-    world: Mat4.createTranslationXYZ(0.4, 0, -0.4),
+    world: mat4CreateTranslationXYZ(0.4, 0, -0.4),
     color: Color.Blue,
   }
 
@@ -66,9 +74,9 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     sampleCount: 4,
   })
 
-  const view = Mat4.createIdentity()
-  const projection = Mat4.createIdentity()
-  const cameraPosition = Vec3.create(0, 0, 2)
+  const view = mat4Identity()
+  const projection = mat4Identity()
+  const cameraPosition = vec3(0, 0, 2)
 
   const pass = device.renderPass
   function frame() {
@@ -76,8 +84,9 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     depthTarget.resizeToMatch(device.output)
     renderTarget.resizeToMatch(device.output)
 
-    view.initTranslation(cameraPosition).invert()
-    projection.initPerspectiveFieldOfView(60 * DEGREE_TO_RAD, device.output.aspectRatio, 0.1, 100, device.ndcMinZ)
+    mat4$initTranslation(view, cameraPosition)
+    mat4$invert(view)
+    mat4$initPerspectiveFieldOfView(projection, 60 * DEGREE_TO_RAD, device.output.aspectRatio, 0.1, 100, device.ndcMinZ)
 
     pass.setRenderTarget(0, renderTarget, 0, 0, device.output)
     if (settings.depthEnabled) {

@@ -9,7 +9,7 @@ import {
   type MaterialOptions,
   type ShaderModuleOptions,
 } from '@gglib/graphics'
-import { Mat4, Vec4 } from '@gglib/math'
+import { mat4Identity, vec4 } from '@gglib/math'
 import type { NwMaterialProps } from './GltfExtension'
 import SCHEMA from './MeshparticleMaterial.meta'
 import WGSL from './MeshparticleMaterial.wgsl'
@@ -118,8 +118,8 @@ export class MeshparticleMaterial extends MaterialWithSchema(SCHEMA) {
     this.SamplerLinear = SamplerState.LinearWrap
     this.SamplerPoint = SamplerState.PointWrap
 
-    this.DiffuseColor = new Vec4(1, 1, 1, 1)
-    this.DissolveColor = new Vec4(1, 1, 1, 1)
+    this.DiffuseColor = vec4(1, 1, 1, 1)
+    this.DissolveColor = vec4(1, 1, 1, 1)
     this.AmbStrength = 1.0
     this.Brightness = 1.0
     this.FadingFeaturing = 0.55
@@ -132,11 +132,11 @@ export class MeshparticleMaterial extends MaterialWithSchema(SCHEMA) {
     this.DissolveEdgeThickness = 0.0
     this.DissolvePercentage = 0.0
 
-    this.UvModCustom = Mat4.createIdentity()
-    this.UvModDecalEmissive = Mat4.createIdentity()
-    this.UvModDetail = Mat4.createIdentity()
-    this.UvModDiffuse = Mat4.createIdentity()
-    this.UvModEmittance = Mat4.createIdentity()
+    this.UvModCustom = mat4Identity()
+    this.UvModDecalEmissive = mat4Identity()
+    this.UvModDetail = mat4Identity()
+    this.UvModDiffuse = mat4Identity()
+    this.UvModEmittance = mat4Identity()
   }
 
   private setTextures(maps: NwMaterialProps['textures']) {
@@ -275,7 +275,7 @@ export class MeshparticleMaterial extends MaterialWithSchema(SCHEMA) {
   }
 
   private setAttributes(attrs: NwMaterialProps['attrs'], flags: Set<FeatureFlag>) {
-    this.DiffuseColor = paramVec4(attrs.Diffuse, Vec4.One)
+    this.DiffuseColor = paramVec4(attrs.Diffuse, vec4.One)
 
     if (attrs.Specular) {
       //

@@ -1,5 +1,13 @@
 import { Device, Mesh } from '@gglib/graphics'
-import { BoundingBox, BoundingSphere, Mat4, Transform } from '@gglib/math'
+import {
+  BoundingBox,
+  BoundingSphere,
+  Mat4,
+  mat4Decompose,
+  quat$initIdentity,
+  Transform,
+  vec3$initFill,
+} from '@gglib/math'
 import { uuid } from '@gglib/utils'
 import type { AnimationData } from './AnimationData'
 import { AnimationPlayer } from './AnimationPlayer'
@@ -254,11 +262,11 @@ export class Model {
   public updateScene(world?: Mat4 | null) {
     const root = this._sceneRoot
     if (world) {
-      world.decompose(root.scale, root.rotation, root.translation)
+      mat4Decompose(world, root.scale, root.rotation, root.translation)
     } else {
-      root.scale.init(1, 1, 1)
-      root.rotation.initIdentity()
-      root.translation.init(0, 0, 0)
+      vec3$initFill(root.scale, 1)
+      quat$initIdentity(root.rotation)
+      vec3$initFill(root.translation, 0)
     }
 
     root.markAsChanged()

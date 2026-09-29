@@ -1,4 +1,4 @@
-import { IVec3, Vec3 } from '@gglib/math'
+import { IVec3, vec3, vec3AddScaled } from '@gglib/math'
 import { Color } from '../../Color'
 import { Buffer } from '../../resources/Buffer'
 import type { GeometryBuilder } from '../GeometryBuilder'
@@ -52,9 +52,9 @@ export function buildVertexNormals(builder: GeometryBuilder, vertexBuffer: Buffe
   const tangent = channels.tangent
   const bitangent = channels.bitangent
 
-  const p0 = Vec3.create()
-  const p1 = Vec3.create()
-  const n = Vec3.create()
+  const p0 = vec3()
+  const p1 = vec3()
+  const n = vec3()
   const scale = 0.1
 
   for (let i = 0; i < vertexBuffer[0].elementCount; i++) {
@@ -65,7 +65,7 @@ export function buildVertexNormals(builder: GeometryBuilder, vertexBuffer: Buffe
     n.x = normal.read(i, 0)
     n.y = normal.read(i, 1)
     n.z = normal.read(i, 2)
-    Vec3.addScaled(p0, n, scale, p1)
+    vec3AddScaled(p0, n, scale, p1)
 
     builder.addIndex(builder.indexCount)
     builder.addVertex({
@@ -82,7 +82,7 @@ export function buildVertexNormals(builder: GeometryBuilder, vertexBuffer: Buffe
       n.x = tangent.read(i, 0)
       n.y = tangent.read(i, 1)
       n.z = tangent.read(i, 2)
-      Vec3.addScaled(p0, n, scale, p1)
+      vec3AddScaled(p0, n, scale, p1)
 
       builder.addIndex(builder.indexCount)
       builder.addVertex({
@@ -100,7 +100,7 @@ export function buildVertexNormals(builder: GeometryBuilder, vertexBuffer: Buffe
       n.x = bitangent.read(i, 0)
       n.y = bitangent.read(i, 1)
       n.z = bitangent.read(i, 2)
-      Vec3.addScaled(p0, n, scale, p1)
+      vec3AddScaled(p0, n, scale, p1)
 
       builder.addIndex(builder.indexCount)
       builder.addVertex({

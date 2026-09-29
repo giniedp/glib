@@ -1,11 +1,27 @@
-import { Mat4 } from './Mat4'
-import { Quat } from './Quat'
+import {
+  Mat4,
+  mat4$initFrom,
+  mat4$initFromRTS,
+  mat4$initLookAt,
+  mat4Decompose,
+  mat4Identity,
+  mat4Invert,
+  mat4Premultiply,
+} from './Mat4'
+import {
+  quat$initAxisAngle,
+  quat$initFromMat4,
+  quat$initYawPitchRoll,
+  quat$invert,
+  quat$premultiply,
+  quatCreateIdentity,
+} from './Quat'
 import type { IVec3, IVec4 } from './Types'
-import { Vec3 } from './Vec3'
+import { vec3, vec3$add, vec3$init, vec3$multiply, vec3$normalize, vec3ApplyQuat } from './Vec3'
+import { vec4, vec4$initFrom } from './Vec4'
 
-const tempQuat = Quat.createIdentity()
-const tempMat = Mat4.createIdentity()
-const tempVec = Vec3.create()
+const tempQuat = quatCreateIdentity()
+const tempMat = mat4Identity()
 
 export interface ITransformBase {
   /**
@@ -82,7 +98,7 @@ export class Transform<T = unknown> implements ITransform {
    * If changed directly, make sure that the `needsUpdate` property is set to true to
    * indicate that the matrix must be updated
    */
-  public readonly scale: Vec3 = new Vec3(1, 1, 1)
+  public readonly scale: IVec3 = vec3(1)
 
   /**
    * The translation vector in local space
@@ -92,7 +108,7 @@ export class Transform<T = unknown> implements ITransform {
    * If changed directly, make sure that the `needsUpdate` property is set to true to
    * indicate that the matrix must be updated
    */
-  public readonly translation: Vec3 = new Vec3(0, 0, 0)
+  public readonly translation: IVec3 = vec3(0)
 
   /**
    * The rotation quaternion in local space
@@ -102,7 +118,7 @@ export class Transform<T = unknown> implements ITransform {
    * If changed directly, make sure that the `needsUpdate` property is set to true to
    * indicate that the matrix must be updated
    */
-  public readonly rotation: Quat = new Quat(0, 0, 0, 1)
+  public readonly rotation: IVec4 = vec4(0, 0, 0, 1)
 
   /**
    * The current local transform matrix
@@ -111,7 +127,7 @@ export class Transform<T = unknown> implements ITransform {
    * This is updated automatically on every frame if the `needsUpdate` property
    * is `true`.
    */
-  public readonly matrix: Mat4 = Mat4.createIdentity()
+  public readonly matrix: Mat4 = mat4Identity()
 
   /**
    * The current world transform matrix
@@ -120,7 +136,7 @@ export class Transform<T = unknown> implements ITransform {
    * This is updated automatically on every frame if the `needsUpdate` property
    * is `true`.
    */
-  public readonly world: Mat4 = Mat4.createIdentity()
+  public readonly world: Mat4 = mat4Identity()
 
   /**
    * Indicates that the world transform should be kept when the transform is set to a new parent
@@ -136,7 +152,7 @@ export class Transform<T = unknown> implements ITransform {
    */
   public get worldInverse(): Mat4 {
     if (this.worldInvChanged) {
-      Mat4.invert(this.world, this.worldInv)
+      mat4Invert(this.world, this.worldInv)
       this.worldInvChanged = false
     }
     return this.worldInv
@@ -149,9 +165,9 @@ export class Transform<T = unknown> implements ITransform {
    * This is marked as dirty on every frame, if `world` matrix has been updated.
    * The fnal value is recalculated on demand if needed.
    */
-  public get worldRotation(): Quat {
+  public get worldRotation(): IVec4 {
     if (this.worldRotChanged) {
-      this.worldRot.initFromMat4(this.world)
+      quat$initFromMat4(this.worldRot, this.world)
       this.worldRotChanged = false
     }
     return this.worldRot
@@ -164,9 +180,10 @@ export class Transform<T = unknown> implements ITransform {
    * This is marked as dirty on every frame, if `world` matrix has been updated.
    * The fnal value is recalculated on demand if needed.
    */
-  public get worldRotationInverse(): Quat {
+  public get worldRotationInverse(): IVec4 {
     if (this.worldRotInvChanged) {
-      this.worldRotInv.initFrom(this.worldRotation).invert()
+      quat$initFromMat4(this.worldRot, this.world)
+      quat$invert(this.worldRot)
       this.worldRotInvChanged = false
     }
     return this.worldRotInv
@@ -191,13 +208,13 @@ export class Transform<T = unknown> implements ITransform {
   //public needsUpdate: boolean = true
 
   protected worldInvChanged: boolean
-  protected worldInv = Mat4.createIdentity()
+  protected worldInv = mat4Identity()
 
   protected worldRotChanged: boolean
-  protected worldRot = Quat.createIdentity()
+  protected worldRot = quatCreateIdentity()
 
   protected worldRotInvChanged: boolean
-  protected worldRotInv = Quat.createIdentity()
+  protected worldRotInv = quatCreateIdentity()
 
   /**
    * Adds a child transform. Depending on the `keepWorld` flag, the operation is performed
@@ -283,12 +300,12 @@ export class Transform<T = unknown> implements ITransform {
     if (parent) {
       this.parent = parent
       this.parent.children.push(this)
-      Mat4.premultiply(this.parent.worldInverse, this.world, this.matrix)
+      mat4Premultiply(this.parent.worldInverse, this.world, this.matrix)
     } else {
-      this.matrix.initFrom(this.world)
+      mat4$initFrom(this.matrix, this.world)
     }
 
-    Mat4.decompose(this.matrix, this.scale, this.rotation, this.translation)
+    mat4Decompose(this.matrix, this.scale, this.rotation, this.translation)
     this.handleParentChange(parent, oldParent)
   }
 
@@ -397,7 +414,7 @@ export class Transform<T = unknown> implements ITransform {
    * Updates the local transform matrix and sets the `needsUpdate` flag to true
    */
   public updateLocalTransform(): void {
-    this.matrix.initFromRTS(this.rotation, this.translation, this.scale)
+    mat4$initFromRTS(this.matrix, this.rotation, this.translation, this.scale)
     this.nextVersion++
   }
 
@@ -405,12 +422,12 @@ export class Transform<T = unknown> implements ITransform {
    * Updates the local and world transforms.
    */
   public updateWorldTransform(): void {
-    this.matrix.initFromRTS(this.rotation, this.translation, this.scale)
+    mat4$initFromRTS(this.matrix, this.rotation, this.translation, this.scale)
     this.subtreeChanged = true
     if (this.parent) {
-      Mat4.premultiply(this.matrix, this.parent.world, this.world)
+      mat4Premultiply(this.matrix, this.parent.world, this.world)
     } else {
-      this.world.initFrom(this.matrix)
+      mat4$initFrom(this.world, this.matrix)
     }
 
     this.handleWorldUpdated()
@@ -426,7 +443,7 @@ export class Transform<T = unknown> implements ITransform {
    * @param quaternion - The quaternion to initialize from
    */
   public setRotation(quaternion: IVec4): this {
-    this.rotation.initFrom(quaternion)
+    vec4$initFrom(this.rotation, quaternion)
     this.markAsChanged()
     return this
   }
@@ -438,7 +455,7 @@ export class Transform<T = unknown> implements ITransform {
    * @param angle - The rotation angle in radians
    */
   public setRotationAxisAngleV(axis: IVec3, angle: number): this {
-    this.rotation.initAxisAngle(axis, angle)
+    quat$initAxisAngle(this.rotation, axis, angle)
     this.markAsChanged()
     return this
   }
@@ -452,7 +469,9 @@ export class Transform<T = unknown> implements ITransform {
    * @param angle - The rotation angle in radians
    */
   public setRotationAxisAngle(x: number, y: number, z: number, angle: number): this {
-    this.rotation.initAxisAngle(tempVec.init(x, y, z).normalize(), angle)
+    vec3$init(vec3.$0, x, y, z)
+    vec3$normalize(vec3.$0)
+    quat$initAxisAngle(this.rotation, vec3.$0, angle)
     this.markAsChanged()
     return this
   }
@@ -465,7 +484,7 @@ export class Transform<T = unknown> implements ITransform {
    * @param roll - The roll angle in rad
    */
   public setRotationYawPitchRoll(yaw: number, pitch: number, roll: number): this {
-    this.rotation.initYawPitchRoll(yaw, pitch, roll)
+    quat$initYawPitchRoll(this.rotation, yaw, pitch, roll)
     this.markAsChanged()
     return this
   }
@@ -477,7 +496,7 @@ export class Transform<T = unknown> implements ITransform {
    * @param angle - The rotation angle in rad
    */
   public rotateAxisAngleV(axis: IVec3, angle: number): this {
-    this.rotation.preMultiply(tempQuat.initAxisAngle(axis, angle))
+    quat$premultiply(this.rotation, quat$initAxisAngle(tempQuat, axis, angle))
     this.markAsChanged()
     return this
   }
@@ -491,7 +510,8 @@ export class Transform<T = unknown> implements ITransform {
    * @param angle - The rotation angle in radians
    */
   public rotateAxisAngle(x: number, y: number, z: number, angle: number): this {
-    return this.rotateAxisAngleV(tempVec.init(x, y, z), angle)
+    vec3$init(vec3.$0, x, y, z)
+    return this.rotateAxisAngleV(vec3.$0, angle)
   }
 
   /**
@@ -502,7 +522,7 @@ export class Transform<T = unknown> implements ITransform {
    * @param roll - The roll angle in rad
    */
   public rotateYawPitchRoll(yaw: number, pitch: number, roll: number): this {
-    this.rotation.preMultiply(tempQuat.initYawPitchRoll(yaw, pitch, roll))
+    quat$premultiply(this.rotation, quat$initYawPitchRoll(tempQuat, yaw, pitch, roll))
     this.markAsChanged()
     return this
   }
@@ -778,7 +798,8 @@ export class Transform<T = unknown> implements ITransform {
   }
 
   public lookAt(v: IVec3, up: IVec3): this {
-    this.rotation.initFromMat4(tempMat.initLookAt(this.translation, v, up))
+    mat4$initLookAt(tempMat, this.translation, v, up)
+    quat$initFromMat4(this.rotation, tempMat)
     this.markAsChanged()
     return this
   }
@@ -791,9 +812,9 @@ export class Transform<T = unknown> implements ITransform {
    * @returns The given `out` parameter or a new vector.
    */
   public transform<T extends IVec3>(v: IVec3, out?: T): T {
-    Quat.transform(this.rotation, v, out)
-    Vec3.multiply(this.scale, out, out)
-    Vec3.add(this.translation, out)
+    vec3ApplyQuat(v, this.rotation, out)
+    vec3$multiply(out, this.scale)
+    vec3$add(out, this.translation)
     return out
   }
 
@@ -805,8 +826,8 @@ export class Transform<T = unknown> implements ITransform {
    * @returns The given `out` parameter or a new vector.
    */
   public transformNormal<T extends IVec3>(v: IVec3, out?: T): T {
-    Quat.transform(this.rotation, v, out)
-    Vec3.multiply(this.scale, out, out)
+    vec3ApplyQuat(v, this.rotation, out)
+    vec3$multiply(out, this.scale)
     return out
   }
 }

@@ -13,7 +13,7 @@ import { CommonMaterial, IblSampler, skyboxMaterial, SkyboxMaterial, TonemapOper
 import { MouseListener } from '@gglib/game'
 import { boxGeometry, FALSE, Texture, TRUE } from '@gglib/graphics'
 import { DDS, GLTF, HDR, KTX } from '@gglib/loaders'
-import { Mat3 } from '@gglib/math'
+import { Mat3, mat3CreateIdentity, vec3$initFrom } from '@gglib/math'
 import { AnimationPlayer, Model } from '@gglib/model'
 import { BloomPass, GeometryPass, Renderer, TonemapPass } from '@gglib/render'
 
@@ -42,7 +42,7 @@ export class ModelViewer extends EcsGame {
   private panoramaUrl: string
   private panoramaMap: Texture
   private iblSampler: IblSampler
-  private iblRotation: Mat3 = Mat3.createIdentity()
+  private iblRotation: Mat3 = mat3CreateIdentity()
 
   public bloomPass: BloomPass
   public tonemapPass: TonemapPass
@@ -188,7 +188,7 @@ export class ModelViewer extends EcsGame {
     const wasd = this.cam.component(WASDComponent)
     wasd.orbitMode = true
     wasd.targetRadius = radius * scale * 2
-    wasd.orbitCenter.initFrom(model.boundingSphere.center)
+    vec3$initFrom(wasd.orbitCenter, model.boundingSphere.center)
     return model
   }
 

@@ -11,7 +11,7 @@ export function capitalEntity(parent: GameEntity, options: CapitalComponentOptio
     name: `Capital`,
     parent,
     transform: new TransformComponent({
-      // world: Mat4.createTranslation(gameToRenderCoordinate(options.center, 0)),
+      // world: mat4CreateTranslation(gameToRenderCoordinate(options.center, 0)),
       keepWorld: true,
     }),
     components: [new CapitalComponent(options)],

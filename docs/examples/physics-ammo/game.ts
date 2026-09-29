@@ -11,9 +11,9 @@ import {
 
 import { GameEntity } from '@gglib/ecs'
 import { KeyboardKeys } from '@gglib/game'
-import { BasicMaterial, Color, CommonInputs, Device, PlatformId } from '@gglib/graphics'
+import { Color, CommonInputs, Device, PlatformId } from '@gglib/graphics'
 import { MTL, OBJ } from '@gglib/loaders'
-import { DEGREE_TO_RAD, vec3, Vec3, vec4 } from '@gglib/math'
+import { DEGREE_TO_RAD, mat4$initPerspectiveFieldOfView, vec3, vec3Normalize, vec4 } from '@gglib/math'
 import { Renderer } from '@gglib/render'
 import Ammo from 'ammojs-typed'
 import { mountUi } from 'tweak-ui'
@@ -61,7 +61,7 @@ class Game extends EcsGame {
     renderer.linearToSrgb = true
     renderer.inputs.set(CommonInputs.Global.AmbientColor, Color.Black)
     renderer.inputs.set(CommonInputs.Global.AmbientColorTop, Color.White)
-    renderer.inputs.set(CommonInputs.Global.AmbientDirection, Vec3.normalize(vec3(1, 1, 1)))
+    renderer.inputs.set(CommonInputs.Global.AmbientDirection, vec3Normalize(vec3(1, 1, 1)))
 
     this.createCamera()
     this.createLight()
@@ -198,15 +198,16 @@ class Game extends EcsGame {
   }
 
   public override onUpdate(time: number, dt: number) {
-    this.scene
-      .getView(0)
-      .camera.projection.initPerspectiveFieldOfView(
-        70 * DEGREE_TO_RAD,
-        this.world.getSystem(Device).output.aspectRatio,
-        0.01,
-        100,
-        this.device.ndcMinZ,
-      )
+    const view = this.scene.getView(0)
+
+    mat4$initPerspectiveFieldOfView(
+      view.camera.projection,
+      70 * DEGREE_TO_RAD,
+      this.world.getSystem(Device).output.aspectRatio,
+      0.01,
+      100,
+      this.device.ndcMinZ,
+    )
     if (this.keyboard.justPressed(KeyboardKeys.Enter)) {
       this.resetCubes()
     }

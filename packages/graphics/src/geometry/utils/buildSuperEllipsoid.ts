@@ -1,4 +1,4 @@
-import { Vec2, Vec3 } from '@gglib/math'
+import { vec3, vec3MultiplyScalar, vec3Normalize } from '@gglib/math'
 import type { Device } from '../../Device'
 import type { Geometry } from '../Geometry'
 import { buildGeometry, GeometryBuilder } from '../GeometryBuilder'
@@ -61,11 +61,11 @@ export function buildSuperEllipsoid(builder: GeometryBuilder, options?: BuildSup
       let z = tmp * sign(sinTheta) * Math.pow(Math.abs(sinTheta), power2)
       let y = sign(sinPhi) * Math.pow(Math.abs(sinPhi), power1)
 
-      let normal = Vec3.create(x, y, z)
+      let normal = vec3(x, y, z)
 
       builder.addVertex({
-        position: Vec3.multiplyScalar(normal, radius),
-        normal: normal.normalize(),
+        position: vec3MultiplyScalar(normal, radius),
+        normal: vec3Normalize(normal),
         texture: [du, dv],
       })
     }

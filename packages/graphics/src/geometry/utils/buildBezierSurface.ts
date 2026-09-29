@@ -1,4 +1,4 @@
-import { IVec3, Mat4, Vec3, Vec4 } from '@gglib/math'
+import { IVec3, Mat4, mat4Create, vec3, vec4, vec4Dot, vec4FromArray, vec4ApplyMat4 } from '@gglib/math'
 import type { GeometryBuilder } from '../GeometryBuilder'
 import { trianglesToLines } from './indices'
 
@@ -8,11 +8,11 @@ import { trianglesToLines } from './indices'
  */
 export const BezierBasisMatrix: Mat4 =
   // prettier-ignore
-  Mat4.create(
+  mat4Create(
     1,  0,  0, 0,
-  -3,  3,  0, 0,
+   -3,  3,  0, 0,
     3, -6,  3, 0,
-  -1,  3, -3, 1,
+   -1,  3, -3, 1,
   )
 
 export interface BuildBezierSurfaceOptions {
@@ -88,42 +88,42 @@ export function buildBezierSurface(builder: GeometryBuilder, options: BuildBezie
   // build vertices
   for (let i = 0; i <= segments; i++) {
     const ti = i / segments
-    const si = Vec4.create(1, ti, ti * ti, ti * ti * ti)
+    const si = vec4(1, ti, ti * ti, ti * ti * ti)
 
-    const p1 = Vec3.create(
-      Vec4.createFromArray(controlPoints, 0, 3).transformByMat4(basis).dot(si),
-      Vec4.createFromArray(controlPoints, 1, 3).transformByMat4(basis).dot(si),
-      Vec4.createFromArray(controlPoints, 2, 3).transformByMat4(basis).dot(si),
+    const p1 = vec3(
+      vec4Dot(vec4ApplyMat4(vec4FromArray(controlPoints, 0, 3), basis), si),
+      vec4Dot(vec4ApplyMat4(vec4FromArray(controlPoints, 1, 3), basis), si),
+      vec4Dot(vec4ApplyMat4(vec4FromArray(controlPoints, 2, 3), basis), si),
     )
-    const p2 = Vec3.create(
-      Vec4.createFromArray(controlPoints, 12, 3).transformByMat4(basis).dot(si),
-      Vec4.createFromArray(controlPoints, 13, 3).transformByMat4(basis).dot(si),
-      Vec4.createFromArray(controlPoints, 14, 3).transformByMat4(basis).dot(si),
+    const p2 = vec3(
+      vec4Dot(vec4ApplyMat4(vec4FromArray(controlPoints, 12, 3), basis), si),
+      vec4Dot(vec4ApplyMat4(vec4FromArray(controlPoints, 13, 3), basis), si),
+      vec4Dot(vec4ApplyMat4(vec4FromArray(controlPoints, 14, 3), basis), si),
     )
-    const p3 = Vec3.create(
-      Vec4.createFromArray(controlPoints, 24, 3).transformByMat4(basis).dot(si),
-      Vec4.createFromArray(controlPoints, 25, 3).transformByMat4(basis).dot(si),
-      Vec4.createFromArray(controlPoints, 26, 3).transformByMat4(basis).dot(si),
+    const p3 = vec3(
+      vec4Dot(vec4ApplyMat4(vec4FromArray(controlPoints, 24, 3), basis), si),
+      vec4Dot(vec4ApplyMat4(vec4FromArray(controlPoints, 25, 3), basis), si),
+      vec4Dot(vec4ApplyMat4(vec4FromArray(controlPoints, 26, 3), basis), si),
     )
-    const p4 = Vec3.create(
-      Vec4.createFromArray(controlPoints, 36, 3).transformByMat4(basis).dot(si),
-      Vec4.createFromArray(controlPoints, 37, 3).transformByMat4(basis).dot(si),
-      Vec4.createFromArray(controlPoints, 38, 3).transformByMat4(basis).dot(si),
+    const p4 = vec3(
+      vec4Dot(vec4ApplyMat4(vec4FromArray(controlPoints, 36, 3), basis), si),
+      vec4Dot(vec4ApplyMat4(vec4FromArray(controlPoints, 37, 3), basis), si),
+      vec4Dot(vec4ApplyMat4(vec4FromArray(controlPoints, 38, 3), basis), si),
     )
 
     for (let j = 0; j <= segments; j++) {
       const tj = j / segments
-      const sj = Vec4.create(1, tj, tj * tj, tj * tj * tj)
+      const sj = vec4(1, tj, tj * tj, tj * tj * tj)
 
-      const p = Vec3.create(
-        Vec4.create(p1.x, p2.x, p3.x, p4.x).transformByMat4(basis).dot(sj),
-        Vec4.create(p1.y, p2.y, p3.y, p4.y).transformByMat4(basis).dot(sj),
-        Vec4.create(p1.z, p2.z, p3.z, p4.z).transformByMat4(basis).dot(sj),
+      const p = vec3(
+        vec4Dot(vec4ApplyMat4(vec4(p1.x, p2.x, p3.x, p4.x), basis), sj),
+        vec4Dot(vec4ApplyMat4(vec4(p1.y, p2.y, p3.y, p4.y), basis), sj),
+        vec4Dot(vec4ApplyMat4(vec4(p1.z, p2.z, p3.z, p4.z), basis), sj),
       )
 
       builder.addVertex({
-        position: Vec3.createFrom({ x: p.x + ox, y: p.y + oy, z: p.z + oz }),
-        normal: Vec3.createFrom({ x: 0, y: 1, z: 0 }), // TODO: compute from surface tangents
+        position: vec3(p.x + ox, p.y + oy, p.z + oz),
+        normal: vec3(0, 1, 0), // TODO: compute from surface tangents
         texture: [i / segments, j / segments],
       })
     }

@@ -2,10 +2,24 @@ import type { BoundingBox } from './BoundingBox'
 import type { BoundingCapsule } from './BoundingCapsule'
 import type { BoundingFrustum } from './BoundingFrustum'
 import type { BoundingSphere } from './BoundingSphere'
-import { Mat4 } from './Mat4'
-import type { Ray } from './Ray'
+import { Mat4, mat4GetTranslation } from './Mat4'
+import type { IRay } from './Ray'
 import type { IVec3, IVec4 } from './Types'
-import { Vec3 } from './Vec3'
+import {
+  vec3,
+  vec3Add,
+  vec3AddScaled,
+  vec3Clamp,
+  vec3Copy,
+  vec3Cross,
+  vec3Distance,
+  vec3DistanceSquared,
+  vec3DivideScalar,
+  vec3Dot,
+  vec3LengthSquared,
+  vec3MultiplyScalar,
+  vec3Subtract,
+} from './Vec3'
 
 export type IntersectionType = number & {
   readonly __brand: number
@@ -62,12 +76,12 @@ export const PlaneIntersectionType = {
 
 const EPSILON = Number.EPSILON
 
-const v3temp1 = Vec3.create()
-const v3temp2 = Vec3.create()
-const v3temp3 = Vec3.create()
-const v3temp4 = Vec3.create()
-const v3temp5 = Vec3.create()
-const v3temp6 = Vec3.create()
+const v3temp1 = vec3()
+const v3temp2 = vec3()
+const v3temp3 = vec3()
+const v3temp4 = vec3()
+const v3temp5 = vec3()
+const v3temp6 = vec3()
 
 /**
  * Calculates a point on a line segment that is closest to a given point
@@ -82,10 +96,10 @@ export function closestPointOnSegment<T>(point: IVec3, segmentStart: IVec3, segm
 export function closestPointOnSegment(point: IVec3, segmentStart: IVec3, segmentEnd: IVec3, out: IVec3): IVec3 {
   // Real Time Collision Detection Chapter 5.1.2 page 128
 
-  const ab = Vec3.subtract(segmentEnd, segmentStart, v3temp1)
+  const ab = vec3Subtract(segmentEnd, segmentStart, v3temp1)
   // project c onto ab, computing parametrized position d(t) = a + t * (b - a)
-  const ac = Vec3.subtract(point, segmentStart, v3temp2)
-  let t = Vec3.dot(ac, ab) / Vec3.lengthSquared(ab)
+  const ac = vec3Subtract(point, segmentStart, v3temp2)
+  let t = vec3Dot(ac, ab) / vec3LengthSquared(ab)
   // if outside segment, clamp t (and therefore d) to closest endpoint
   t = t < 0.0 ? 0.0 : t > 1.0 ? 1.0 : t
   // compute projected position from the clamped t
@@ -124,11 +138,11 @@ export function closestPointOnPlane(point: IVec3, plane: IVec4, out: IVec3): IVe
  */
 export function closestPointOnTriangle<T>(point: IVec3, a: IVec3, b: IVec3, c: IVec3, out: T): T & IVec3
 export function closestPointOnTriangle(point: IVec3, a: IVec3, b: IVec3, c: IVec3, out: IVec3): IVec3 {
-  const ab = Vec3.subtract(b, a, v3temp1)
-  const ac = Vec3.subtract(c, a, v3temp2)
-  const ap = Vec3.subtract(point, a, v3temp3)
-  const d1 = Vec3.dot(ab, ap)
-  const d2 = Vec3.dot(ac, ap)
+  const ab = vec3Subtract(b, a, v3temp1)
+  const ac = vec3Subtract(c, a, v3temp2)
+  const ap = vec3Subtract(point, a, v3temp3)
+  const d1 = vec3Dot(ab, ap)
+  const d2 = vec3Dot(ac, ap)
   if (d1 <= 0 && d2 <= 0) {
     // barycentric coordinates (1, 0, 0)
     out.x = a.x
@@ -137,9 +151,9 @@ export function closestPointOnTriangle(point: IVec3, a: IVec3, b: IVec3, c: IVec
     return out
   }
 
-  const bp = Vec3.subtract(point, b, v3temp4)
-  const d3 = Vec3.dot(ab, bp)
-  const d4 = Vec3.dot(ac, bp)
+  const bp = vec3Subtract(point, b, v3temp4)
+  const d3 = vec3Dot(ab, bp)
+  const d4 = vec3Dot(ac, bp)
   if (d3 <= 0 && d4 <= 0) {
     // barycentric coordinates (0, 1, 0)
     out.x = b.x
@@ -157,9 +171,9 @@ export function closestPointOnTriangle(point: IVec3, a: IVec3, b: IVec3, c: IVec
     return out
   }
 
-  const cp = Vec3.subtract(point, c, v3temp5)
-  const d5 = Vec3.dot(ab, cp)
-  const d6 = Vec3.dot(ac, cp)
+  const cp = vec3Subtract(point, c, v3temp5)
+  const d5 = vec3Dot(ab, cp)
+  const d6 = vec3Dot(ac, cp)
   if (d5 <= 0 && d6 <= 0) {
     // barycentric coordinates (0, 0, 1)
     out.x = c.x
@@ -215,12 +229,12 @@ export function closestPointsOfSegments(
 ): number {
   // Real Time Collision Detection Chapter 5.1.9 page 150
 
-  const d1 = Vec3.subtract(segment1End, segment1Start, v3temp1) // direction vector of segmen s1
-  const d2 = Vec3.subtract(segment2End, segment2Start, v3temp2) // direction vector of segmen s2
-  const r = Vec3.subtract(segment1Start, segment2Start, v3temp3)
-  let a = d1.lengthSquared() // squared length of segment s1, always nonnegative
-  let e = d2.lengthSquared() // squared length of segment s2, always nonnegative
-  let f = Vec3.dot(d2, r)
+  const d1 = vec3Subtract(segment1End, segment1Start, v3temp1) // direction vector of segmen s1
+  const d2 = vec3Subtract(segment2End, segment2Start, v3temp2) // direction vector of segmen s2
+  const r = vec3Subtract(segment1Start, segment2Start, v3temp3)
+  let a = vec3LengthSquared(d1) // squared length of segment s1, always nonnegative
+  let e = vec3LengthSquared(d2) // squared length of segment s2, always nonnegative
+  let f = vec3Dot(d2, r)
 
   let s = 0
   let t = 0
@@ -228,24 +242,24 @@ export function closestPointsOfSegments(
   // check if either or both segments degenerate into points
   if (a <= EPSILON && e <= EPSILON) {
     // both segments degenerate into points
-    Vec3.copy(segment1Start, outP1)
-    Vec3.copy(segment2Start, outP2)
-    return Vec3.distanceSquared(outP1, outP2)
+    vec3Copy(segment1Start, outP1)
+    vec3Copy(segment2Start, outP2)
+    return vec3DistanceSquared(outP1, outP2)
   }
   if (a <= EPSILON) {
     // first segment degenerates into point
     t = f / e // s = 0 => t = (b*s + f) / e = f / e
     t = t < 0 ? 0 : t > 1 ? 1 : t
   } else if (e <= EPSILON) {
-    let c = Vec3.dot(d1, r)
+    let c = vec3Dot(d1, r)
     // second segment degenerates into point
     t = 0
     s = -c / a // t = 0 => s = *b*t -c) / a = -c / a
     s = s < 0 ? 0 : s > 1 ? 1 : s
   } else {
-    let c = Vec3.dot(d1, r)
+    let c = vec3Dot(d1, r)
     // the generat londegenerate case starts here
-    let b = Vec3.dot(d1, d2)
+    let b = vec3Dot(d1, d2)
     let denom = a * e - b * b // alwasy nonnegative
 
     if (denom !== 0) {
@@ -267,9 +281,9 @@ export function closestPointsOfSegments(
       s = s < 0 ? 0 : s > 1 ? 1 : s
     }
   }
-  Vec3.addScaled(segment1Start, d1, s, outP1)
-  Vec3.addScaled(segment2Start, d2, s, outP2)
-  return Vec3.distanceSquared(outP1, outP2)
+  vec3AddScaled(segment1Start, d1, s, outP1)
+  vec3AddScaled(segment2Start, d2, s, outP2)
+  return vec3DistanceSquared(outP1, outP2)
 }
 
 /**
@@ -285,23 +299,23 @@ export function distancePlaneToPoint(plane: IVec4, point: IVec3): number {
 export function distanceSquaredPointToSegment(a: IVec3, b: IVec3, c: IVec3): number {
   // Real Time Collision Detection Chapter 5.1.3 page 130
 
-  const ab = Vec3.subtract(b, a, v3temp1)
-  const ac = Vec3.subtract(c, a, v3temp2)
-  const bc = Vec3.subtract(c, b, v3temp3)
+  const ab = vec3Subtract(b, a, v3temp1)
+  const ac = vec3Subtract(c, a, v3temp2)
+  const bc = vec3Subtract(c, b, v3temp3)
 
-  const e = Vec3.dot(ac, ab)
+  const e = vec3Dot(ac, ab)
   // handle cases where c projects outside ab
   if (e < 0.0) {
-    return Vec3.lengthSquared(ac)
+    return vec3LengthSquared(ac)
   }
 
-  const f = Vec3.lengthSquared(ab)
+  const f = vec3LengthSquared(ab)
   if (e >= f) {
-    return Vec3.lengthSquared(bc)
+    return vec3LengthSquared(bc)
   }
 
   // handle cases where c projects onto ab
-  return Vec3.lengthSquared(ac) - (e * e) / f
+  return vec3LengthSquared(ac) - (e * e) / f
 }
 
 /**
@@ -313,7 +327,7 @@ export function distanceSquaredPointToSegment(a: IVec3, b: IVec3, c: IVec3): num
  * @param plane - the plane
  */
 export function rayPlaneIntersects(orig: IVec3, dir: IVec3, plane: IVec4): boolean {
-  return (plane.w - Vec3.dot(plane, orig)) / Vec3.dot(plane, dir) >= 0 // TODO:
+  return (plane.w - vec3Dot(plane, orig)) / vec3Dot(plane, dir) >= 0 // TODO:
 }
 
 /**
@@ -326,9 +340,9 @@ export function rayPlaneIntersects(orig: IVec3, dir: IVec3, plane: IVec4): boole
  * @returns the distance to intersection point or `Number.NaN` in case of no intersection.
  */
 export function rayPlaneIntersectsAt(orig: IVec3, dir: IVec3, plane: IVec4): number {
-  const d = Vec3.dot(plane, dir)
+  const d = vec3Dot(plane, dir)
   if (Math.abs(d) > EPSILON) {
-    return (plane.w - Vec3.dot(plane, orig)) / d // TODO:
+    return (plane.w - vec3Dot(plane, orig)) / d // TODO:
   }
   return Number.NaN
 }
@@ -343,14 +357,14 @@ export function rayPlaneIntersectsAt(orig: IVec3, dir: IVec3, plane: IVec4): num
  * @param radius - the sphere radius
  */
 export function raySphereIntersects(orig: IVec3, dir: IVec3, center: IVec3, radius: number): boolean {
-  const m = Vec3.subtract(orig, center, v3temp1)
-  const c = Vec3.dot(m, m) - radius * radius
+  const m = vec3Subtract(orig, center, v3temp1)
+  const c = vec3Dot(m, m) - radius * radius
   // if there is definitely at least one real root, there must be an intersection
   if (c <= 0) {
     return true
   }
 
-  const b = Vec3.dot(m, dir)
+  const b = vec3Dot(m, dir)
   // exit if rays origin outside sphere and ray pointing away from sphere
   if (b > 0) {
     return false
@@ -371,9 +385,9 @@ export function raySphereIntersects(orig: IVec3, dir: IVec3, center: IVec3, radi
  * @returns the distance to intersection point or `Number.NaN` in case of no intersection.
  */
 export function raySphereIntersectsAt(orig: IVec3, dir: IVec3, center: IVec3, radius: number): number {
-  const m = Vec3.subtract(orig, center, v3temp1)
-  const b = Vec3.dot(m, dir)
-  const c = Vec3.dot(m, m) - radius * radius
+  const m = vec3Subtract(orig, center, v3temp1)
+  const b = vec3Dot(m, dir)
+  const c = vec3Dot(m, m) - radius * radius
   // exit if rays origin outside sphere (c < 0) and ray pointing away from sphere (b > 0)
   if (c > 0 && b > 0) {
     return Number.NaN
@@ -508,32 +522,34 @@ export function rayBoxIntersectsAt(rayPos: IVec3, rayDir: IVec3, boxMin: IVec3, 
  * @param v2 - the third triangle vertex
  */
 export function rayTriangleIntersects(orig: IVec3, dir: IVec3, v0: IVec3, v1: IVec3, v2: IVec3): boolean {
-  const edge1 = Vec3.subtract(v1, v0, v3temp1)
-  const edge2 = Vec3.subtract(v2, v0, v3temp2)
+  const edge1 = vec3Subtract(v1, v0, v3temp1)
+  const edge2 = vec3Subtract(v2, v0, v3temp2)
 
   // Compute triangle normal.
-  const n = Vec3.cross(edge1, edge2, v3temp3)
+  const n = vec3Cross(edge1, edge2, v3temp3)
 
-  // Compute denominator d. If d <= 0, segment is parallel to or points away from triangle
-  const d = Vec3.dot(dir, n)
+  // Compute denominator d. If d <= 0, ray is parallel to or points away from triangle.
+  // Real Time Collision Detection 5.3.6 uses the reversed direction qp = p - q, hence the negation.
+  const d = -vec3Dot(dir, n)
   if (d < Number.EPSILON) {
     return false
   }
 
-  // Compute intersection t value of pq with plane of triangle. A ray ContainmentType.intersects if t >= 0
-  const ap = Vec3.subtract(orig, v0, v3temp4)
-  const result = Vec3.dot(ap, n)
+  // Compute intersection t value of ray with plane of triangle. The ray intersects if t >= 0
+  const ap = vec3Subtract(orig, v0, v3temp4)
+  const result = vec3Dot(ap, n)
   if (result < 0) {
     return false
   }
 
-  // Compute barycentric coordinate components and tes if within bounds
-  const e = Vec3.cross(dir, ap, v3temp5)
-  const v = Vec3.dot(edge2, e)
+  // Compute barycentric coordinate components and test if within bounds
+  // e = cross(qp, ap) with qp = -dir
+  const e = vec3Cross(ap, dir, v3temp5)
+  const v = vec3Dot(edge2, e)
   if (v < 0 || v > d) {
     return false
   }
-  const w = -Vec3.dot(edge1, e)
+  const w = -vec3Dot(edge1, e)
   if (w < 0 || v + w > d) {
     return false
   }
@@ -552,32 +568,34 @@ export function rayTriangleIntersects(orig: IVec3, dir: IVec3, v0: IVec3, v1: IV
  * @returns the distance to intersection point or `Number.NaN` in case of no intersection.
  */
 export function rayTriangleIntersectsAt(orig: IVec3, dir: IVec3, v0: IVec3, v1: IVec3, v2: IVec3): number {
-  const ab = Vec3.subtract(v1, v0, v3temp1)
-  const ac = Vec3.subtract(v2, v0, v3temp2)
+  const ab = vec3Subtract(v1, v0, v3temp1)
+  const ac = vec3Subtract(v2, v0, v3temp2)
 
   // Compute triangle normal.
-  const n = Vec3.cross(ab, ac, v3temp3)
+  const n = vec3Cross(ab, ac, v3temp3)
 
-  // Compute denominator d. If d <= 0, segment is parallel to or points away from triangle
-  const d = Vec3.dot(dir, n)
+  // Compute denominator d. If d <= 0, ray is parallel to or points away from triangle.
+  // Real Time Collision Detection 5.3.6 uses the reversed direction qp = p - q, hence the negation.
+  const d = -vec3Dot(dir, n)
   if (d <= 0) {
     return Number.NaN
   }
 
-  // Compute intersection t value of pq with plane of triangle. A ray ContainmentType.intersects if t >= 0
-  const ap = Vec3.subtract(orig, v0, v3temp4)
-  let result = Vec3.dot(ap, n)
+  // Compute intersection t value of ray with plane of triangle. The ray intersects if t >= 0
+  const ap = vec3Subtract(orig, v0, v3temp4)
+  let result = vec3Dot(ap, n)
   if (result < 0) {
     return Number.NaN
   }
 
-  // Compute barycentric coordinate components and tes if within bounds
-  const e = Vec3.cross(dir, ap, v3temp5)
-  const v = Vec3.dot(ac, e)
+  // Compute barycentric coordinate components and test if within bounds
+  // e = cross(qp, ap) with qp = -dir
+  const e = vec3Cross(ap, dir, v3temp5)
+  const v = vec3Dot(ac, e)
   if (v < 0 || v > d) {
     return Number.NaN
   }
-  const w = -Vec3.dot(ab, e)
+  const w = -vec3Dot(ab, e)
   if (w < 0 || v + w > d) {
     return Number.NaN
   }
@@ -705,17 +723,17 @@ export function planeFrustumIntersection(plane: IVec4, frustum: BoundingFrustum)
  * @returns `true` if the planes intersects, `false` otherwise
  */
 export function planePlaneIntersects(plane1: IVec4, plane2: IVec4, outPosition: IVec3, outDirection: IVec3): boolean {
-  Vec3.cross(plane1, plane2, outDirection)
-  const denom = Vec3.lengthSquared(outDirection)
+  vec3Cross(plane1, plane2, outDirection)
+  const denom = vec3LengthSquared(outDirection)
   if (denom < EPSILON) {
     return false
   }
 
-  const p1 = Vec3.multiplyScalar(plane2, plane1.w, v3temp1)
-  const p2 = Vec3.multiplyScalar(plane1, -plane2.w, v3temp2)
-  Vec3.add(p1, p2, outPosition)
-  Vec3.cross(outPosition, outDirection, outPosition)
-  Vec3.divideScalar(outPosition, denom, outPosition)
+  const p1 = vec3MultiplyScalar(plane2, plane1.w, v3temp1)
+  const p2 = vec3MultiplyScalar(plane1, -plane2.w, v3temp2)
+  vec3Add(p1, p2, outPosition)
+  vec3Cross(outPosition, outDirection, outPosition)
+  vec3DivideScalar(outPosition, denom, outPosition)
 
   return true
 }
@@ -746,8 +764,8 @@ export function planePlanePlaneIntersection(p1: IVec4, p2: IVec4, p3: IVec4, out
   m3.y = p2.z
   m3.z = p3.z
 
-  const u = Vec3.cross(m2, m3, v3temp4)
-  const denom = Vec3.dot(m1, u)
+  const u = vec3Cross(m2, m3, v3temp4)
+  const denom = vec3Dot(m1, u)
 
   if (Math.abs(denom) < EPSILON) {
     out.x = 0
@@ -760,13 +778,13 @@ export function planePlanePlaneIntersection(p1: IVec4, p2: IVec4, p3: IVec4, out
   d.x = p1.w
   d.y = p2.w
   d.z = p3.w
-  const v = Vec3.cross(m1, d, v3temp6)
+  const v = vec3Cross(m1, d, v3temp6)
   const ood = 1 / denom
 
   if (out) {
-    out.x = Vec3.dot(d, u) * ood
-    out.y = Vec3.dot(m3, v) * ood
-    out.z = -Vec3.dot(m2, v) * ood
+    out.x = vec3Dot(d, u) * ood
+    out.y = vec3Dot(m3, v) * ood
+    out.z = -vec3Dot(m2, v) * ood
   }
 
   return true
@@ -800,8 +818,8 @@ export function boxPointIntersects(min: IVec3, max: IVec3, point: IVec3): boolea
  * @returns
  */
 export function boxPointDistanceSquared(min: IVec3, max: IVec3, point: IVec3): number {
-  Vec3.clamp(point, min, max, Vec3.$0)
-  return Vec3.distanceSquared(point, Vec3.$0)
+  vec3Clamp(point, min, max, vec3.$0)
+  return vec3DistanceSquared(point, vec3.$0)
 }
 
 /**
@@ -813,9 +831,9 @@ export function boxPointDistanceSquared(min: IVec3, max: IVec3, point: IVec3): n
  * @returns
  */
 export function boxMat4DistanceSquared(min: IVec3, max: IVec3, mat: Mat4): number {
-  const p0 = mat.getTranslation(Vec3.$0)
-  const p1 = Vec3.clamp(p0, min, max, Vec3.$1)
-  return Vec3.distanceSquared(p0, p1)
+  const p0 = mat4GetTranslation(mat, vec3.$0)
+  const p1 = vec3Clamp(p0, min, max, vec3.$1)
+  return vec3DistanceSquared(p0, p1)
 }
 
 /**
@@ -856,8 +874,8 @@ export function boxPlaneIntersects(min: IVec3, max: IVec3, plane: IVec4): boolea
  * @param radius - the sphere radius
  */
 export function boxSphereIntersects(min: IVec3, max: IVec3, center: IVec3, radius: number): boolean {
-  const c = Vec3.clamp(center, min, max, Vec3.$0)
-  const d = Vec3.distanceSquared(center, c)
+  const c = vec3Clamp(center, min, max, vec3.$0)
+  const d = vec3DistanceSquared(center, c)
   return d <= radius * radius
 }
 
@@ -910,7 +928,7 @@ export function boxCapsuleIntersects(
  * @param point - the point
  */
 export function spherePointIntersects(center: IVec3, radius: number, point: IVec3): boolean {
-  return Vec3.distanceSquared(point, center) <= radius * radius
+  return vec3DistanceSquared(point, center) <= radius * radius
 }
 
 /**
@@ -936,7 +954,7 @@ export function spherePlaneIntersects(center: IVec3, radius: number, plane: IVec
  */
 export function sphereSphereIntersects(c1: IVec3, r1: number, c2: IVec3, r2: number): boolean {
   // Calculate squared distance between centers
-  const d2 = Vec3.distanceSquared(c1, c2)
+  const d2 = vec3DistanceSquared(c1, c2)
   // Spheres intersect if squared distance is less than squared sum of radii
   const r = r1 + r2
   return d2 <= r * r
@@ -954,8 +972,8 @@ export function sphereSphereIntersects(c1: IVec3, r1: number, c2: IVec3, r2: num
  */
 export function sphereTriangleIntersects(center: IVec3, radius: number, v0: IVec3, v1: IVec3, v2: IVec3): boolean {
   const p = closestPointOnTriangle(center, v0, v1, v2, v3temp1)
-  Vec3.subtract(p, center, p)
-  return Vec3.lengthSquared(p) <= radius * radius
+  vec3Subtract(p, center, p)
+  return vec3LengthSquared(p) <= radius * radius
 }
 
 /**
@@ -1059,7 +1077,7 @@ export function frustumPlaneIntersects(frustum: BoundingFrustum, plane: IVec4): 
   let back: boolean
   let front: boolean
   for (const point of frustum.corners) {
-    const d = Vec3.dot(point, plane) + plane.w
+    const d = vec3Dot(point, plane) + plane.w
     if (d < 0) {
       back = true
     } else {
@@ -1108,8 +1126,8 @@ export function boxBoxIntersection(min1: IVec3, max1: IVec3, min2: IVec3, max2: 
  * @param radius - the sphere radius
  */
 export function boxPhereIntersection(min: IVec3, max: IVec3, center: IVec3, radius: number): IntersectionType {
-  const vector = Vec3.clamp(center, min, max, v3temp1)
-  const distance = Vec3.distanceSquared(center, vector)
+  const vector = vec3Clamp(center, min, max, v3temp1)
+  const distance = vec3DistanceSquared(center, vector)
   if (distance > radius * radius) {
     return IntersectionType.Disjoint
   }
@@ -1263,7 +1281,7 @@ export function sphereBoxIntersection(center: IVec3, radius: number, min: IVec3,
  * @param r2 - the other sphere radius
  */
 export function sphereSphereIntersection(c1: IVec3, r1: number, c2: IVec3, r2: number): IntersectionType {
-  const distance = Vec3.distance(c1, c2)
+  const distance = vec3Distance(c1, c2)
   if (r1 + r2 < distance) {
     return IntersectionType.Disjoint
   }
@@ -1311,7 +1329,7 @@ export function sphereFrustumIntersection(center: IVec3, radius: number, frustum
   let inside = 0
   let outside = 0
   for (const point of frustum.corners) {
-    const d2 = Vec3.distanceSquared(point, center)
+    const d2 = vec3DistanceSquared(point, center)
     if (d2 - r2 <= Number.EPSILON) {
       inside++
     } else {
@@ -1408,29 +1426,29 @@ export function frustumCapuleIntersection(
 }
 
 export const Intersects = {
-  // rayPoint: (ray: Ray, point: IVec3): boolean => {
+  // rayPoint: (ray: IRay, point: IVec3): boolean => {
   //   return rayPointIntersects(ray.position, ray.direction, point)
   // },
-  rayPlane: (ray: Ray, plane: IVec4): boolean => {
+  rayPlane: (ray: IRay, plane: IVec4): boolean => {
     return rayPlaneIntersects(ray.position, ray.direction, plane)
   },
-  rayBox: (ray: Ray, box: BoundingBox): boolean => {
+  rayBox: (ray: IRay, box: BoundingBox): boolean => {
     return rayBoxIntersects(ray.position, ray.direction, box.min, box.max)
   },
-  raySphere: (ray: Ray, sphere: BoundingSphere): boolean => {
+  raySphere: (ray: IRay, sphere: BoundingSphere): boolean => {
     return raySphereIntersects(ray.position, ray.direction, sphere.center, sphere.radius)
   },
-  // rayCapsule: (ray: Ray, capsule: BoundingCapsule): boolean => {
+  // rayCapsule: (ray: IRay, capsule: BoundingCapsule): boolean => {
   //   return rayCapsuleIntersects(ray.position, ray.direction, capsule.start, capsule.end, capsule.radius)
   // },
-  // rayFrustum: (ray: Ray, frustum: BoundingFrustum): boolean => {
+  // rayFrustum: (ray: IRay, frustum: BoundingFrustum): boolean => {
   //   return rayFrustumIntersects(ray.position, ray.direction, frustum)
   // },
 
   boxPoint: (box: BoundingBox, point: IVec3): boolean => {
     return boxPointIntersects(box.min, box.max, point)
   },
-  boxRay: (box: BoundingBox, ray: Ray): boolean => {
+  boxRay: (box: BoundingBox, ray: IRay): boolean => {
     return rayBoxIntersects(ray.position, ray.direction, box.min, box.max)
   },
   boxPlane: (box: BoundingBox, plane: IVec4): boolean => {
@@ -1452,7 +1470,7 @@ export const Intersects = {
   spherePoint: (sphere: BoundingSphere, point: IVec3): boolean => {
     return spherePointIntersects(sphere.center, sphere.radius, point)
   },
-  sphereRay: (sphere: BoundingSphere, ray: Ray): boolean => {
+  sphereRay: (sphere: BoundingSphere, ray: IRay): boolean => {
     return raySphereIntersects(ray.position, ray.direction, sphere.center, sphere.radius)
   },
   spherePlane: (sphere: BoundingSphere, plane: IVec4): boolean => {
@@ -1474,7 +1492,7 @@ export const Intersects = {
   frustumPoint: (frustum: BoundingFrustum, point: IVec3): boolean => {
     return frustumPointIntersects(frustum, point)
   },
-  frustumRay: (frustum: BoundingFrustum, ray: Ray): boolean => {
+  frustumRay: (frustum: BoundingFrustum, ray: IRay): boolean => {
     throw new Error('frustum-ray intersection is not implemented yet')
   },
   frustumPlane: (frustum: BoundingFrustum, plane: IVec4): boolean => {
@@ -1495,7 +1513,7 @@ export const Intersects = {
 }
 
 export const Intersection = {
-  rayBox: (ray: Ray, box: BoundingBox): IntersectionType => {
+  rayBox: (ray: IRay, box: BoundingBox): IntersectionType => {
     return rayBoxIntersects(ray.position, ray.direction, box.min, box.max)
       ? IntersectionType.Intersects
       : IntersectionType.Disjoint

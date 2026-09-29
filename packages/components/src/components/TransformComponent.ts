@@ -6,7 +6,18 @@ import {
   type GameComponent,
   type GameTransform,
 } from '@gglib/ecs'
-import { Mat4, Transform, type IVec3, type IVec4 } from '@gglib/math'
+import {
+  Mat4,
+  mat4$initFrom,
+  mat4$initFromRTS,
+  mat4Decompose,
+  mat4Premultiply,
+  Transform,
+  vec3$initFrom,
+  vec4$initFrom,
+  type IVec3,
+  type IVec4,
+} from '@gglib/math'
 import { brand, EventType } from '@gglib/utils'
 
 /**
@@ -98,30 +109,30 @@ export class TransformComponent
   constructor(options: TransformComponentOptions = {}) {
     super()
     if (options.scale) {
-      this.scale.initFrom(options.scale)
+      vec3$initFrom(this.scale, options.scale)
     }
     if (options.position) {
-      this.translation.initFrom(options.position)
+      vec3$initFrom(this.translation, options.position)
     }
     if (options.rotation) {
-      this.rotation.initFrom(options.rotation)
+      vec4$initFrom(this.rotation, options.rotation)
     }
     if (options.local) {
-      this.matrix.initFrom(options.local)
-      this.matrix.decompose(this.scale, this.rotation, this.translation)
+      mat4$initFrom(this.matrix, options.local)
+      mat4Decompose(this.matrix, this.scale, this.rotation, this.translation)
     } else {
-      this.matrix.initFromRTS(this.rotation, this.translation, this.scale)
+      mat4$initFromRTS(this.matrix, this.rotation, this.translation, this.scale)
     }
     if (options.world) {
-      this.world.initFrom(options.world)
+      mat4$initFrom(this.world, options.world)
       if (!options.local && !options.scale && !options.position && !options.rotation) {
-        this.world.decompose(this.scale, this.rotation, this.translation)
+        mat4Decompose(this.world, this.scale, this.rotation, this.translation)
       }
     } else {
       if (this.parent) {
-        Mat4.premultiply(this.matrix, this.parent.world, this.world)
+        mat4Premultiply(this.matrix, this.parent.world, this.world)
       } else {
-        this.world.initFrom(this.matrix)
+        mat4$initFrom(this.world, this.matrix)
       }
     }
 

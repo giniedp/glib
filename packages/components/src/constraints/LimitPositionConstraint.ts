@@ -1,9 +1,9 @@
 import { type GameComponent, GameEntity } from '@gglib/ecs'
-import { type IVec3, Vec3, lerp } from '@gglib/math'
+import { type IVec3, lerp, vec3, vec3$initFrom, vec3$applyMat4, vec3Equals } from '@gglib/math'
 import { TransformComponent } from '../components/TransformComponent'
 import type { BehaviorComponent } from '../systems/BehaviorSystem'
 
-let p0: Vec3
+let p0: IVec3
 
 /**
  * Options for the {@link LimitTranslationConstraint}
@@ -127,13 +127,15 @@ export class LimitPositionConstraint implements GameComponent, BehaviorComponent
       return
     }
 
-    const position = (p0 = p0 || Vec3.create()).initFrom(this.target.translation)
+    const position = (p0 = p0 || vec3())
+    vec3$initFrom(position, this.target.translation)
+
     const min = this.min
     const max = this.max
     const useWorldspace = this.space === 'world' && !!this.target.parent
 
     if (useWorldspace) {
-      position.transformByMat4(this.target.parent.world)
+      vec3$applyMat4(position, this.target.parent.world)
     }
 
     if (min) {
@@ -148,10 +150,10 @@ export class LimitPositionConstraint implements GameComponent, BehaviorComponent
     }
 
     if (useWorldspace) {
-      position.transformByMat4(this.target.parent.worldInverse)
+      vec3$applyMat4(position, this.target.parent.worldInverse)
     }
 
-    if (!position.equals(this.target.translation)) {
+    if (!vec3Equals(position, this.target.translation)) {
       this.target.setPositionV(position)
       if (this.commit) {
         this.target.updateIfNeeded()

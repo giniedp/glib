@@ -1,10 +1,10 @@
+import { describe, expect, it } from 'vitest'
 import { BoundingBox } from './BoundingBox'
-import { Vec3 } from './Vec3'
-import { BoundingSphere } from './BoundingSphere'
 import { BoundingFrustum } from './BoundingFrustum'
+import { BoundingSphere } from './BoundingSphere'
+import { mat4Equals, mat4Identity } from './Mat4'
 import { IVec4 } from './Types'
-import { Mat4 } from './Mat4'
-import { describe, it, expect } from 'vitest'
+import { vec3 } from './Vec3'
 
 describe('BoundingFrustum', () => {
   function expectVec4Components(v: IVec4, x: number, y: number, z: number, w: number) {
@@ -17,7 +17,7 @@ describe('BoundingFrustum', () => {
   describe('new', () => {
     it('initializes with identity matrix', () => {
       const frustum = new BoundingFrustum()
-      expect(frustum.matrix.equals(Mat4.createIdentity())).toBe(true)
+      expect(mat4Equals(frustum.matrix, mat4Identity())).toBe(true)
       expectVec4Components(frustum.planeNegX, -1, 0, 0, -1)
       expectVec4Components(frustum.planePosX, 1, 0, 0, -1)
       expectVec4Components(frustum.planeNegY, 0, -1, 0, -1)
@@ -184,19 +184,19 @@ describe('BoundingFrustum', () => {
     it('tests for containment', () => {
       const frustum = new BoundingFrustum()
 
-      expect(frustum.intersectsPoint(Vec3.create(-1, -1, -1))).toBe(true)
-      expect(frustum.intersectsPoint(Vec3.create(-1, -1, 1))).toBe(true)
-      expect(frustum.intersectsPoint(Vec3.create(-1, 1, -1))).toBe(true)
-      expect(frustum.intersectsPoint(Vec3.create(-1, 1, -1))).toBe(true)
-      expect(frustum.intersectsPoint(Vec3.create(1, -1, -1))).toBe(true)
-      expect(frustum.intersectsPoint(Vec3.create(1, -1, -1))).toBe(true)
+      expect(frustum.intersectsPoint(vec3(-1, -1, -1))).toBe(true)
+      expect(frustum.intersectsPoint(vec3(-1, -1, 1))).toBe(true)
+      expect(frustum.intersectsPoint(vec3(-1, 1, -1))).toBe(true)
+      expect(frustum.intersectsPoint(vec3(-1, 1, -1))).toBe(true)
+      expect(frustum.intersectsPoint(vec3(1, -1, -1))).toBe(true)
+      expect(frustum.intersectsPoint(vec3(1, -1, -1))).toBe(true)
 
-      expect(frustum.intersectsPoint(Vec3.create(-1 - Number.EPSILON, 0, 0))).toBe(false)
-      expect(frustum.intersectsPoint(Vec3.create(1 + Number.EPSILON, 0, 0))).toBe(false)
-      expect(frustum.intersectsPoint(Vec3.create(0, -1 - Number.EPSILON, 0))).toBe(false)
-      expect(frustum.intersectsPoint(Vec3.create(0, 1 + Number.EPSILON, 0))).toBe(false)
-      expect(frustum.intersectsPoint(Vec3.create(0, 0, -1 - Number.EPSILON))).toBe(false)
-      expect(frustum.intersectsPoint(Vec3.create(0, 0, 1 + Number.EPSILON))).toBe(false)
+      expect(frustum.intersectsPoint(vec3(-1 - Number.EPSILON, 0, 0))).toBe(false)
+      expect(frustum.intersectsPoint(vec3(1 + Number.EPSILON, 0, 0))).toBe(false)
+      expect(frustum.intersectsPoint(vec3(0, -1 - Number.EPSILON, 0))).toBe(false)
+      expect(frustum.intersectsPoint(vec3(0, 1 + Number.EPSILON, 0))).toBe(false)
+      expect(frustum.intersectsPoint(vec3(0, 0, -1 - Number.EPSILON))).toBe(false)
+      expect(frustum.intersectsPoint(vec3(0, 0, 1 + Number.EPSILON))).toBe(false)
     })
   })
 })

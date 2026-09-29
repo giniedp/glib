@@ -11,7 +11,7 @@ import {
 import { GameEntity, type CreateEntityOptions, type GameComponent } from '@gglib/ecs'
 
 import { Color } from '@gglib/graphics'
-import { Mat4, Vec3, type IVec3 } from '@gglib/math'
+import { mat4CreateTranslation, vec3AddScalars, type IVec3 } from '@gglib/math'
 import type { Model } from '@gglib/model'
 import { ContentService } from '../../content'
 import { DebugLayer, DebugShapeComponent } from '../debug/DebugShapeComponent'
@@ -30,7 +30,7 @@ export function impostorEntityOptions(parent: GameEntity, options: ImpostorCompo
     name: options.name,
     transform: new TransformComponent({
       keepWorld: true,
-      world: Mat4.createTranslation(options.origin),
+      world: mat4CreateTranslation(options.origin),
       lifeCycle: LifeCycleFlags.Propagate, // is controlled by RegionSystem
     }),
     components: [
@@ -59,7 +59,7 @@ export class RegionImpostorComponent implements GameComponent {
 
   public constructor(data: ImpostorComponentOptions) {
     this.min = data.origin
-    this.max = Vec3.copy(data.origin).addXYZ(data.cellSize, data.cellSize, data.regionSize)
+    this.max = vec3AddScalars(data.origin, data.cellSize, data.cellSize, data.regionSize)
     this.modelUrl = data.model
   }
 

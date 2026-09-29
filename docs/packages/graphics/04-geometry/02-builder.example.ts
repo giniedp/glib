@@ -1,5 +1,13 @@
-import { Color, createDevice, CullState, Device, GeometryBuilder, PlatformId, FrameContext } from '@gglib/graphics'
-import { DEGREE_TO_RAD, Mat4, Vec3 } from '@gglib/math'
+import { Color, createDevice, CullState, Device, FrameContext, GeometryBuilder, PlatformId } from '@gglib/graphics'
+import {
+  DEGREE_TO_RAD,
+  mat4$initLookAt,
+  mat4$initPerspectiveFieldOfView,
+  mat4$initRotationY,
+  mat4$invert,
+  mat4Identity,
+  vec3,
+} from '@gglib/math'
 
 export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
   const device: Device = await createDevice({ canvas, platform, autosize: true }).ready
@@ -46,10 +54,10 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     wgsl: { source: wgsl },
   })
 
-  const world = Mat4.createIdentity()
-  const view = Mat4.createIdentity()
-  const projection = Mat4.createIdentity()
-  const cameraPosition = Vec3.create(0, 1, 2)
+  const world = mat4Identity()
+  const view = mat4Identity()
+  const projection = mat4Identity()
+  const cameraPosition = vec3(0, 1, 2)
 
   const pass = device.renderPass
   function frame(ctx: FrameContext) {
@@ -59,9 +67,11 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     if (!shader.isValid) {
       return
     }
-    world.initIdentity().rotateY(ctx.time * 25 * DEGREE_TO_RAD)
-    view.initLookAt(cameraPosition, Vec3.Zero, Vec3.UnitY).invert()
-    projection.initPerspectiveFieldOfView(50 * DEGREE_TO_RAD, device.output.aspectRatio, 0.1, 100, device.ndcMinZ)
+
+    mat4$initRotationY(world, ctx.time * 25 * DEGREE_TO_RAD)
+    mat4$initLookAt(view, cameraPosition, vec3.Zero, vec3.UnitY)
+    mat4$invert(view)
+    mat4$initPerspectiveFieldOfView(projection, 50 * DEGREE_TO_RAD, device.output.aspectRatio, 0.1, 100, device.ndcMinZ)
 
     shader.program.set('uWorld', world)
     shader.program.set('uView', view)

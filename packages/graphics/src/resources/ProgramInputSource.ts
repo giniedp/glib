@@ -21,7 +21,7 @@ import { InputKey, inputSlot, InputSlot, InputTypeMap, InputTypeName, InputValue
  * @example
  * ```ts
  * const source = new ProgramInputBlock('material')
- * source.set('material.baseColor', Vec3.create(1, 0, 0))
+ * source.set('material.baseColor', vec3(1, 0, 0))
  * source.set('material.roughness', 0.5)
  * ```
  */

@@ -11,7 +11,7 @@ import {
   type ScheduledTask,
 } from '@gglib/components'
 import { GetComponent, type CreateEntityOptions, type GameComponent, type GameEntity, type Type } from '@gglib/ecs'
-import { Mat4, Vec3, type IVec3 } from '@gglib/math'
+import { mat4CreateTranslation, vec3, vec3AddScalar, vec3Copy, type IVec3 } from '@gglib/math'
 
 import { lfmt } from '@gglib/utils'
 import {
@@ -43,14 +43,14 @@ export interface RegionComponentOptions {
 }
 
 export function regionEntityOptions(parent: GameEntity, options: RegionComponentOptions): CreateEntityOptions {
-  const min = Vec3.copy(options.origin)
-  const max = Vec3.copy(options.origin).addScalar(options.regionSize)
+  const min = vec3Copy(options.origin)
+  const max = vec3AddScalar(options.origin, options.regionSize)
 
   return {
     name: options.regionName,
     parent,
     transform: new TransformComponent({
-      world: Mat4.createTranslation(options.origin),
+      world: mat4CreateTranslation(options.origin),
       lifeCycle: LifeCycleFlags.Propagate, // is controlled by RegionSystem
       keepWorld: true,
     }),
@@ -121,8 +121,8 @@ export class RegionComponent implements GameComponent {
     this.cellSize = data.cellSize
     this.oceanLevel = data.oceanLevel
     this.mountainHeight = data.mountainHeight
-    this.min = Vec3.copy(data.origin)
-    this.max = Vec3.copy(data.origin).addScalar(data.regionSize)
+    this.min = vec3Copy(data.origin)
+    this.max = vec3AddScalar(data.origin, data.regionSize)
   }
 
   public initialize(): void {
@@ -149,7 +149,7 @@ export class RegionComponent implements GameComponent {
         new TerrainRegionComponent({
           regionName: this.regionName,
           coatlicueName: this.coatlicueName,
-          origin: Vec3.copy(this.min),
+          origin: vec3Copy(this.min),
           regionSize: this.regionSize,
           mountainHeight: this.mountainHeight,
           regionMaterial: null,
@@ -253,7 +253,7 @@ export class RegionComponent implements GameComponent {
       const options = impostorEntityOptions(this.impostors, {
         name: item.model,
         model: item.model,
-        origin: Vec3.create(item.position.x, item.position.y, 0),
+        origin: vec3(item.position.x, item.position.y, 0),
         regionSize: this.regionSize,
         cellSize: this.cellSize,
       })

@@ -1,12 +1,21 @@
-import { EcsGame, BoundsComponent, MeshComponent, TransformComponent } from '@gglib/components'
+import { BoundsComponent, EcsGame, MeshComponent, TransformComponent } from '@gglib/components'
 import { GameQuery, GameSystem, GameWorld, GetComponent } from '@gglib/ecs'
 import { Device } from '@gglib/graphics'
-import { Mat4 } from '@gglib/math'
+import {
+  type Mat4,
+  mat4$initFrom,
+  mat4$initScaleUniform,
+  mat4$initScaleXYZ,
+  mat4$premultiply,
+  mat4$setTranslation,
+  mat4$setTranslationXYZ,
+  mat4Identity,
+} from '@gglib/math'
 import { DebugMesh } from './DebugMesh'
 import { DebugLayer, DebugShapeComponent, type DebugShapeEntry, type DebugShapeType } from './DebugShapeComponent'
 import { DebugShapeRenderComponent } from './DebugShapeRenderComponent'
 
-const tmp1 = Mat4.createIdentity()
+const tmp1 = mat4Identity()
 
 export class DebugShapeSystem extends GameSystem {
   private game: EcsGame
@@ -53,8 +62,8 @@ export class DebugShapeSystem extends GameSystem {
           const sizeZ = box.max.z - box.min.z
 
           const world = tmp1
-          world.initScaleXYZ(sizeX, sizeY, sizeZ)
-          world.setTranslationXYZ(box.min.x + sizeX * 0.5, box.min.y + sizeY * 0.5, box.min.z + sizeZ * 0.5)
+          mat4$initScaleXYZ(world, sizeX, sizeY, sizeZ)
+          mat4$setTranslationXYZ(world, box.min.x + sizeX * 0.5, box.min.y + sizeY * 0.5, box.min.z + sizeZ * 0.5)
           this.pushShape(root, ref, world)
         } else if (ref.boundsSphere) {
           const sphere = entity.component(BoundsComponent).world?.sphere
@@ -63,13 +72,14 @@ export class DebugShapeSystem extends GameSystem {
           }
 
           const world = tmp1
-          world.initScaleUniform(sphere.radius)
-          world.setTranslation(sphere.center)
+          mat4$initScaleUniform(world, sphere.radius)
+          mat4$setTranslation(world, sphere.center)
           this.pushShape(root, ref, world)
         } else {
           for (const instance of ref.transforms) {
             const world = tmp1
-            world.initFrom(instance).premultiply(entity.getTransform().world)
+            mat4$initFrom(world, instance)
+            mat4$premultiply(world, entity.getTransform().world)
             this.pushShape(root, ref, world)
           }
         }

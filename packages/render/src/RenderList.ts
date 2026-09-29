@@ -11,7 +11,15 @@ import {
   Renderable,
   RenderEncoder,
 } from '@gglib/graphics'
-import { Mat4, Vec4 } from '@gglib/math'
+import {
+  IVec4,
+  Mat4,
+  mat4GetRow,
+  mat4GetTranslation,
+  mat4GetTranslationX,
+  mat4GetTranslationY,
+  mat4GetTranslationZ,
+} from '@gglib/math'
 import { RenderListMode, Sortable } from './RenderListMode'
 import { RenderView } from './Types'
 
@@ -75,7 +83,7 @@ export class RenderList {
   protected drawInstanceOffset: number[] = []
   protected drawInstanceCount: number[] = []
 
-  protected viewForward: Vec4
+  protected viewForward: IVec4
   protected viewInputs: Record<string, ProgramInputBlock>
   protected viewRange: number
 
@@ -90,7 +98,7 @@ export class RenderList {
     instanceBuffer: BufferRecorder,
   ): void {
     this.mode = mode
-    this.viewForward = view.camera.view.getRow(2, this.viewForward)
+    this.viewForward = mat4GetRow(view.camera.view, 2, this.viewForward)
     this.viewInputs = viewInputs
     this.viewRange = view.camera.far - view.camera.near
     this.perInstanceTransforms = transformBuffer
@@ -99,10 +107,11 @@ export class RenderList {
   }
 
   public getDepth(world: Mat4): number {
+    mat4GetTranslation
     const depth = -(
-      this.viewForward.x * world.translationX +
-      this.viewForward.y * world.translationY +
-      this.viewForward.z * world.translationZ +
+      this.viewForward.x * mat4GetTranslationX(world) +
+      this.viewForward.y * mat4GetTranslationY(world) +
+      this.viewForward.z * mat4GetTranslationZ(world) +
       this.viewForward.w
     )
 

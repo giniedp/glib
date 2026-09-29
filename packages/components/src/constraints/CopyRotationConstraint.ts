@@ -1,10 +1,10 @@
 import { type GameComponent, GameEntity } from '@gglib/ecs'
-import { Quat } from '@gglib/math'
+import { IVec4, quat$premultiply, quatSlerp, vec4, vec4$initFrom, vec4Equals } from '@gglib/math'
 import { TransformComponent } from '../components/TransformComponent'
 import type { BehaviorComponent } from '../systems/BehaviorSystem'
 
-let p0: Quat
-let p1: Quat
+let p0: IVec4
+let p1: IVec4
 
 /**
  * Options for the {@link CopyRotationConstraint}
@@ -92,24 +92,24 @@ export class CopyRotationConstraint implements GameComponent, BehaviorComponent 
       return
     }
 
-    const source = (p0 = p0 || Quat.create()).initFrom(this.source.rotation)
-    const target = (p1 = p1 || Quat.create()).initFrom(this.target.rotation)
+    const source = vec4$initFrom((p0 = p0 || vec4()), this.source.rotation)
+    const target = vec4$initFrom((p1 = p1 || vec4()), this.target.rotation)
 
     if (this.sourceSpace === 'world' && this.source.parent) {
-      source.preMultiply(this.source.parent.worldRotation)
+      quat$premultiply(source, this.source.parent.worldRotation)
     }
 
     if (this.targetSpace === 'world' && this.target.parent) {
-      target.preMultiply(this.target.parent.worldRotation)
+      quat$premultiply(target, this.target.parent.worldRotation)
     }
 
-    Quat.slerp(target, source, this.weight, source)
+    quatSlerp(target, source, this.weight, source)
 
     if (this.targetSpace === 'world' && this.target.parent) {
-      source.preMultiply(this.target.parent.worldRotationInverse)
+      quat$premultiply(source, this.target.parent.worldRotationInverse)
     }
 
-    if (!source.equals(this.target.rotation)) {
+    if (!vec4Equals(source, this.target.rotation)) {
       this.target.setRotation(source)
       if (this.commit) {
         this.target.updateIfNeeded()

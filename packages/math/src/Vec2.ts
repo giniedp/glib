@@ -1,12 +1,5 @@
-import type { IVec2, IVec3, IVec4 } from './Types'
+import type { IMat, IVec2, IVec3, IVec4 } from './Types'
 import { clamp, lerp } from './utils/common'
-
-const keyLookup = {
-  0: 'x',
-  1: 'y',
-  x: 'x',
-  y: 'y',
-} as Record<number | string, 'x' | 'y'>
 
 export function vec2(): IVec2
 export function vec2(xyz: number | IVec2 | IVec3 | IVec4 | number[] | null): IVec2
@@ -37,942 +30,6 @@ export function vec2(a?: number | IVec2 | IVec3 | IVec4 | number[] | null, b?: n
 }
 
 /**
- * A vector with two components.
- *
- * @public
- */
-export class Vec2 implements IVec2 {
-  /**
-   * Temporary variable for short lived calculations. Do not store references to this variable.
-   */
-  public static readonly $0 = Vec2.create()
-  /**
-   * Temporary variable for short lived calculations. Do not store references to this variable.
-   */
-  public static readonly $1 = Vec2.create()
-  /**
-   * Temporary variable for short lived calculations. Do not store references to this variable.
-   */
-  public static readonly $2 = Vec2.create()
-
-  /**
-   * The X component
-   */
-  public x: number
-
-  /**
-   * The Y component
-   */
-  public y: number
-
-  /**
-   * Constructs a new instance of {@link Vec2}
-   *
-   * @param x - value for the X component
-   * @param y - value for the Y component
-   */
-  constructor(x?: number, y?: number) {
-    this.x = x ?? 0
-    this.y = y ?? 0
-  }
-
-  /**
-   * Sets the X component
-   */
-  public setX(value: number): this {
-    this.x = value
-    return this
-  }
-  /**
-   * Sets the Y component
-   */
-  public setY(value: number): this {
-    this.y = value
-    return this
-  }
-
-  /**
-   * Sets the component by using an index (or name)
-   */
-  public set(key: 0 | 1 | 'x' | 'y', value: number): this {
-    this[keyLookup[key]] = value
-    return this
-  }
-  /**
-   * Gets the component by using an index (or name)
-   */
-  public get(key: 0 | 1 | 'x' | 'y'): number {
-    return this[keyLookup[key]]
-  }
-
-  /**
-   * Creates a new vector.
-   * @param x - The x component
-   * @param y - The y component
-   * @returns A new vector.
-   */
-  public static create(x?: number, y?: number): Vec2 {
-    return new Vec2(x ?? 0, y ?? 0)
-  }
-
-  /**
-   * Initializes the given vector
-   *
-   * @param out - the vector to initialize
-   * @param x - The x component
-   * @param y - The y component
-   */
-  public static init<T>(out: T, x: number, y: number): T & IVec2
-  public static init(out: IVec2, x: number, y: number): IVec2 {
-    out.x = x
-    out.y = y
-    return out
-  }
-
-  /**
-   * Initializes the components of this vector with given values.
-   */
-  public init(x: number, y: number): this {
-    this.x = x
-    this.y = y
-    return this
-  }
-
-  /**
-   * Creates a new vector.
-   * @param value - The x and y component
-   * @returns A new vector.
-   */
-  public static createFill(value: number): Vec2 {
-    return new Vec2(value, value)
-  }
-
-  /**
-   * Initializes the given vector
-   *
-   * @param out - the vector to initialize
-   * @param value - The x and y component
-   */
-  public static initFill<T>(out: T, value: number): T & IVec2
-  public static initFill(out: IVec2, value: number): IVec2 {
-    out.x = value
-    out.y = value
-    return out
-  }
-
-  /**
-   * Initializes the components of this vector with given values.
-   */
-  public initFill(value: number): this {
-    this.x = value
-    this.y = value
-    return this
-  }
-
-  /**
-   * Creates a new vector with random values in range [0..1]
-   *
-   * @returns A new vector.
-   */
-  public static createRandom(min: number = 0, max: number = 1): Vec2 {
-    return new Vec2(lerp(min, max, Math.random()), lerp(min, max, Math.random()))
-  }
-
-  /**
-   * Initializes the given vector with random values in range [0..1]
-   *
-   * @param out - the vector to initialize
-   */
-  public static initRandom<T>(out: T, min: number, max: number): T & IVec2
-  public static initRandom(out: IVec2, min: number = 0, max: number = 1): IVec2 {
-    out.x = lerp(min, max, Math.random())
-    out.y = lerp(min, max, Math.random())
-    return out
-  }
-
-  /**
-   * Initializes the components of this vector with random values in range [0..1]
-   */
-  public initRandom(min: number = 0, max: number = 1): this {
-    this.x = lerp(min, max, Math.random())
-    this.y = lerp(min, max, Math.random())
-    return this
-  }
-
-  /**
-   * Initializes the components of this vector by taking the components from the given vector.
-   */
-  public static createFrom(other: IVec2): Vec2 {
-    return new Vec2(other.x, other.y)
-  }
-
-  /**
-   * Initializes the components of this vector by taking the components from the given vector.
-   */
-  public initFrom(other: IVec2): this {
-    this.x = other.x
-    this.y = other.y
-    return this
-  }
-
-  /**
-   * Initializes the components of this vector by taking values from the given array in successive order.
-   * @param buffer - The array to read from
-   * @param offset - The zero based index at which start reading the values
-   *
-   */
-  public static createFromArray(buffer: { [key: number]: number }, offset: number = 0): Vec2 {
-    return new Vec2(buffer[offset], buffer[offset + 1])
-  }
-
-  /**
-   * Initializes the components of this vector by taking values from the given array in successive order.
-   * @param buffer - The array to read from
-   * @param offset - The zero based index at which start reading the values
-   *
-   */
-  public initFromArray(buffer: { [key: number]: number }, offset: number = 0): this {
-    this.x = buffer[offset]
-    this.y = buffer[offset + 1]
-    return this
-  }
-
-  /**
-   * Copies the source vector to the destination vector
-   *
-   * @returns the destination vector.
-   */
-  public static copy(src: IVec2): Vec2
-  public static copy<T>(src: IVec2, dst: T): T & IVec2
-  public static copy(src: IVec2, dst?: IVec2): IVec2 {
-    dst = dst || new Vec2()
-    dst.x = src.x
-    dst.y = src.y
-    return dst
-  }
-
-  /**
-   * Creates a copy of this vector
-   * @returns The cloned vector
-   */
-  public copy(): Vec2
-  public copy<T>(out: T): T & IVec2
-  public copy(out?: IVec2): IVec2 {
-    out = out || new Vec2()
-    out.x = this.x
-    out.y = this.y
-    return out
-  }
-
-  /**
-   * Copies the components of `src` successively into the given array.
-   *
-   * @param vec - The vector to copy
-   * @param array - The array to copy into
-   * @param offset - Zero based index where to start writing in the array
-   * @returns the given array parameter
-   */
-  public static toArray(vec: IVec2): number[]
-  public static toArray<T>(vec: IVec2, array: T, offset?: number): T
-  public static toArray(vec: IVec2, array: number[] = [], offset: number = 0): number[] {
-    array[offset] = vec.x
-    array[offset + 1] = vec.y
-    return array
-  }
-
-  /**
-   * Copies the components successively into the given array.
-   * @param array - The array to copy into
-   * @param offset - Zero based index where to start writing in the array
-   * @returns the given array parameter
-   */
-  public toArray(): number[]
-  public toArray<T>(array: T, offset?: number): T
-  public toArray(array: number[] = [], offset: number = 0): number[] {
-    array[offset] = this.x
-    array[offset + 1] = this.y
-    return array
-  }
-
-  /**
-   * Checks for component wise equality
-   * @returns true if components are equal, false otherwise
-   */
-  public static equals(a: IVec2, b: IVec2): boolean {
-    return a.x === b.x && a.y === b.y
-  }
-
-  /**
-   * Checks for component wise equality with given vector
-   * @param other - The vector to compare with
-   * @returns true if components are equal, false otherwise
-   */
-  public equals(other: IVec2): boolean {
-    return this.x === other.x && this.y === other.y
-  }
-
-  /**
-   * Calculates the length of this vector
-   *
-   * @returns The length.
-   */
-  public static magnitude(vec: IVec2): number {
-    const x = vec.x
-    const y = vec.y
-    return Math.sqrt(x * x + y * y)
-  }
-
-  /**
-   * Calculates the length of this vector
-   * @returns The length.
-   */
-  public length(): number {
-    const x = this.x
-    const y = this.y
-    return Math.sqrt(x * x + y * y)
-  }
-
-  /**
-   * Calculates the squared length of this vector
-   *
-   * @returns The squared length.
-   */
-  public static lengthSquared(vec: IVec2): number {
-    const x = vec.x
-    const y = vec.y
-    return x * x + y * y
-  }
-
-  /**
-   * Calculates the squared length of this vector
-   * @returns The squared length.
-   */
-  public lengthSquared(): number {
-    const x = this.x
-    const y = this.y
-    return x * x + y * y
-  }
-
-  /**
-   * Calculates the distance to the given vector
-   *
-   *
-   * @returns The distance between the vectors.
-   */
-  public static distance(a: IVec2, b: IVec2): number {
-    const x = a.x - b.x
-    const y = a.y - b.y
-    return Math.sqrt(x * x + y * y)
-  }
-
-  /**
-   * Calculates the distance to the given vector
-   * @param other - The distant vector
-   * @returns The distance between the vectors.
-   */
-  public distance(other: IVec2): number {
-    const x = this.x - other.x
-    const y = this.y - other.y
-    return Math.sqrt(x * x + y * y)
-  }
-
-  /**
-   * Calculates the squared distance to the given vector
-   *
-   *
-   * @returns The squared distance between the vectors.
-   */
-  public static distanceSquared(a: IVec2, b: IVec2): number {
-    const x = a.x - b.x
-    const y = a.y - b.y
-    return x * x + y * y
-  }
-
-  /**
-   * Calculates the squared distance to the given vector
-   * @param other - The distant vector
-   * @returns The squared distance between the vectors.
-   */
-  public distanceSquared(other: IVec2): number {
-    const x = this.x - other.x
-    const y = this.y - other.y
-    return x * x + y * y
-  }
-
-  /**
-   * Calculates the dot product with the given vector
-   *
-   *
-   * @returns The dot product.
-   */
-  public static dot(a: IVec2, b: IVec2): number {
-    return a.x * b.x + a.y * b.y
-  }
-
-  /**
-   * Calculates the dot product with the given vector
-   *
-   * @returns The dot product.
-   */
-  public dot(other: IVec2): number {
-    return this.x * other.x + this.y * other.y
-  }
-
-  /**
-   * Normalizes the given vector.
-   * @param vec - The vector to normalize.
-   * @param out - The vector to write to.
-   * @returns The given `out` parameter or a new vector.
-   */
-  public static normalize(vec: IVec2): Vec2
-  public static normalize<T>(vec: IVec2, out: T): T & IVec2
-  public static normalize(vec: IVec2, out?: IVec2): IVec2 {
-    const x = vec.x
-    const y = vec.y
-    const d = 1.0 / Math.sqrt(x * x + y * y)
-    out = out || new Vec2()
-    out.x = x * d
-    out.y = y * d
-    return out
-  }
-
-  /**
-   * Normalizes this vector. Applies the result to this vector.
-   * @returns Reference to `this` for chaining.
-   */
-  public normalize(): Vec2 {
-    const x = this.x
-    const y = this.y
-    const d = 1.0 / Math.sqrt(x * x + y * y)
-    this.x *= d
-    this.y *= d
-    return this
-  }
-
-  /**
-   * Inverts the given vector.
-   * @param vec - The vector to invert.
-   * @param out - The vector to write to.
-   * @returns The given `out` parameter or a new vector.
-   */
-  public static invert(vec: IVec2): Vec2
-  public static invert<T>(vec: IVec2, out: T): T & IVec2
-  public static invert(vec: IVec2, out?: IVec2): IVec2 {
-    out = out || new Vec2()
-    out.x = 1.0 / vec.x
-    out.y = 1.0 / vec.y
-    return out
-  }
-
-  /**
-   * Inverts this vector.
-   * @returns Reference to `this` for chaining.
-   */
-  public invert(): this {
-    this.x = 1.0 / this.x
-    this.y = 1.0 / this.y
-    return this
-  }
-
-  /**
-   * Negates a vector. Applies the result to the second parameter or creates a new vector.
-   * @param vec - The vector to negate.
-   * @param out - The vector to write to.
-   * @returns The given `out` parameter or a new vector.
-   */
-  public static negate(vec: IVec2): Vec2
-  public static negate<T>(vec: IVec2, out: T): T & IVec2
-  public static negate(vec: IVec2, out?: IVec2): IVec2 {
-    out = out || new Vec2()
-    out.x = -vec.x
-    out.y = -vec.y
-    return out
-  }
-
-  /**
-   * Negates the components of this vector.
-   * @returns Reference to `this` for chaining.
-   */
-  public negate(): this {
-    this.x = -this.x
-    this.y = -this.y
-    return this
-  }
-
-  /**
-   * Performs the operation `out = vecA + vecB`
-   * @param vecA - The first vector.
-   * @param vecB - The second vector.
-   * @param out - The vector to write to.
-   * @returns The given `out` parameter or a new vector.
-   */
-  public static add(vecA: IVec2, vecB: IVec2): Vec2
-  public static add<T>(vecA: IVec2, vecB: IVec2, out: T): T & IVec2
-  public static add(vecA: IVec2, vecB: IVec2, out?: IVec2): IVec2 {
-    out = out || new Vec2()
-    out.x = vecA.x + vecB.x
-    out.y = vecA.y + vecB.y
-    return out
-  }
-
-  /**
-   * Performs the operation `this += other`
-   * @param other - The vector to add
-   * @returns Reference to `this` for chaining.
-   */
-  public add(other: IVec2): this {
-    this.x += other.x
-    this.y += other.y
-    return this
-  }
-
-  /**
-   * Adds a scalar to each component of a vector.
-   * @param vec - The first vector.
-   * @param scalar - The scalar to add.
-   * @param out - The vector to write to.
-   * @returns The given `out` parameter or a new vector.
-   */
-  public static addScalar(vec: IVec2, scalar: number): Vec2
-  public static addScalar<T>(vec: IVec2, scalar: number, out: T): T & IVec2
-  public static addScalar(vec: IVec2, scalar: number, out?: IVec2): IVec2 {
-    out = out || new Vec2()
-    out.x = vec.x + scalar
-    out.y = vec.y + scalar
-    return out
-  }
-
-  /**
-   * Adds the given scalar to `this`
-   * @param scalar - The scalar to add.
-   * @returns Reference to `this` for chaining.
-   */
-  public addScalar(scalar: number): this {
-    this.x += scalar
-    this.y += scalar
-    return this
-  }
-
-  /**
-   * Performs the calculation `this += other * scale`
-   * @param other - The vector to add
-   * @returns this vector for chaining
-   */
-  public addScaled(other: IVec2, scale: number): this {
-    this.x += other.x * scale
-    this.y += other.y * scale
-    return this
-  }
-
-  /**
-   * Subtracts the second vector from the first.
-   * @param vecA - The first vector.
-   * @param vecB - The second vector.
-   * @param out - The vector to write to.
-   * @returns The given `out` parameter or a new vector.
-   */
-  public static subtract(vecA: IVec2, vecB: IVec2): Vec2
-  public static subtract<T>(vecA: IVec2, vecB: IVec2, out: T): T & IVec2
-  public static subtract(vecA: IVec2, vecB: IVec2, out?: IVec2): IVec2 {
-    out = out || new Vec2()
-    out.x = vecA.x - vecB.x
-    out.y = vecA.y - vecB.y
-    return out
-  }
-
-  /**
-   * Subtracts the given from this vector from `this`.
-   * @param other - The vector to subtract.
-   * @returns Reference to `this` for chaining.
-   */
-  public subtract(other: IVec2): this {
-    this.x -= other.x
-    this.y -= other.y
-    return this
-  }
-
-  /**
-   * Subtracts a scalar from each component of a vector.
-   * @param vec - The first vector.
-   * @param scalar - The scalar to add.
-   * @param out - The vector to write to.
-   * @returns The given `out` parameter or a new vector.
-   */
-  public static subtractScalar(vec: IVec2, scalar: number): Vec2
-  public static subtractScalar<T>(vec: IVec2, scalar: number, out: T): T & IVec2
-  public static subtractScalar(vec: IVec2, scalar: number, out?: IVec2): IVec2 {
-    out = out || new Vec2()
-    out.x = vec.x - scalar
-    out.y = vec.y - scalar
-    return out
-  }
-
-  /**
-   * Subtracts the given scalar from `this`.
-   * @param scalar - The scalar to subtract.
-   * @returns Reference to `this` for chaining.
-   */
-  public subtractScalar(scalar: number): this {
-    this.x -= scalar
-    this.y -= scalar
-    return this
-  }
-
-  /**
-   * Performs the calculation `this -= other * scale`
-   * @param other - The vector to subtract
-   * @param scale - The value to multoply to `other`
-   * @returns this vector for chaining
-   */
-  public subtractScaled(other: IVec2, scale: number): this {
-    this.x -= other.x * scale
-    this.y -= other.y * scale
-    return this
-  }
-
-  /**
-   * Multiplies two vectors.
-   * @param vecA - The first vector.
-   * @param vecB - The second vector.
-   * @param out - The vector to write to.
-   * @returns The given `out` parameter or a new vector.
-   */
-  public static multiply(vecA: IVec2, vecB: IVec2): Vec2
-  public static multiply<T>(vecA: IVec2, vecB: IVec2, out: T): T & IVec2
-  public static multiply(vecA: IVec2, vecB: IVec2, out?: IVec2): IVec2 {
-    out = out || new Vec2()
-    out.x = vecA.x * vecB.x
-    out.y = vecA.y * vecB.y
-    return out
-  }
-
-  /**
-   * Multiplies `this` with the given vector.
-   * @param other - The vector to multiply.
-   * @returns Reference to `this` for chaining.
-   */
-  public multiply(other: IVec2): this {
-    this.x *= other.x
-    this.y *= other.y
-    return this
-  }
-
-  /**
-   * Multiplies a scalar to each component of a vector.
-   * @param vec - The first vector.
-   * @param scalar - The scalar to add.
-   * @param out - The vector to write to.
-   * @returns The given `out` parameter or a new vector.
-   */
-  public static multiplyScalar(vec: IVec2, scalar: number): Vec2
-  public static multiplyScalar<T>(vec: IVec2, scalar: number, out: T): T & IVec2
-  public static multiplyScalar(vec: IVec2, scalar: number, out?: IVec2): IVec2 {
-    out = out || new Vec2()
-    out.x = vec.x * scalar
-    out.y = vec.y * scalar
-    return out
-  }
-
-  /**
-   * Multiplies `this` with the given scalar.
-   * @param scalar - The scalar to multiply.
-   * @returns Reference to `this` for chaining.
-   */
-  public multiplyScalar(scalar: number): this {
-    this.x *= scalar
-    this.y *= scalar
-    return this
-  }
-
-  /**
-   * Divides the components of the first vector by the components of the second vector.
-   * @param vecA - The first vector.
-   * @param vecB - The second vector.
-   * @param out - The vector to write to.
-   * @returns The given `out` parameter or a new vector.
-   */
-  public static divide(vecA: IVec2, vecB: IVec2): Vec2
-  public static divide<T>(vecA: IVec2, vecB: IVec2, out: T): T & IVec2
-  public static divide(vecA: IVec2, vecB: IVec2, out?: IVec2): IVec2 {
-    out = out || new Vec2()
-    out.x = vecA.x / vecB.x
-    out.y = vecA.y / vecB.y
-    return out
-  }
-
-  /**
-   * Divides `this` by the given vector.
-   * @param other - The vector to divide with.
-   * @returns Reference to `this` for chaining.
-   */
-  public divide(other: IVec2): this {
-    this.x /= other.x
-    this.y /= other.y
-    return this
-  }
-
-  /**
-   * Divides the components of the first vector by the scalar.
-   * @param vec - The first vector.
-   * @param scalar - The scalar to use for division.
-   * @param out - The vector to write to.
-   * @returns The given `out` parameter or a new vector.
-   */
-  public static divideScalar(vec: IVec2, scalar: number): Vec2
-  public static divideScalar<T>(vec: IVec2, scalar: number, out: T): T & IVec2
-  public static divideScalar(vec: IVec2, scalar: number, out?: IVec2): IVec2 {
-    scalar = 1 / scalar
-    out = out || new Vec2()
-    out.x = vec.x * scalar
-    out.y = vec.y * scalar
-    return out
-  }
-
-  /**
-   * Divides `this` by the given scalar.
-   * @param scalar - The scalar to divide with.
-   * @returns Reference to `this` for chaining.
-   */
-  public divideScalar(scalar: number): this {
-    scalar = 1 / scalar
-    this.x *= scalar
-    this.y *= scalar
-    return this
-  }
-
-  /**
-   * Transforms `this` with the given matrix.
-   *
-   * @returns Reference to `this` for chaining.
-   */
-  public transformByMat4(mat: { data: ArrayLike<number> }): this {
-    const x = this.x
-    const y = this.y
-    const d = mat.data
-    this.x = x * d[0] + y * d[4] + d[12]
-    this.y = x * d[1] + y * d[5] + d[13]
-    return this
-  }
-
-  /**
-   * Transforms `this` with the given matrix.
-   *
-   * @returns Reference to `this` for chaining.
-   */
-  public transformByMat3(mat: { data: ArrayLike<number> }): this {
-    const x = this.x
-    const y = this.y
-    const d = mat.data
-    this.x = x * d[0] + y * d[3]
-    this.y = x * d[1] + y * d[4]
-    return this
-  }
-
-  /**
-   * Transforms `this` with the given matrix.
-   *
-   * @returns Reference to `this` for chaining.
-   */
-  public transformByMat2(mat: { data: ArrayLike<number> }): this {
-    const x = this.x
-    const y = this.y
-    const d = mat.data
-    this.x = x * d[0] + y * d[2]
-    this.y = x * d[1] + y * d[3]
-    return this
-  }
-
-  /**
-   * Performs a component wise clamp operation on the the given vector between 0 and 1.
-   * @param a - The vector to clamp.
-   * @param out - The vector to write to.
-   * @returns The given `out` parameter or a new vector.
-   */
-  public static saturate(a: IVec2): Vec2
-  public static saturate<T>(a: IVec2, out: T): T & IVec2
-  public static saturate(a: IVec2, out?: IVec2): IVec2 {
-    out = out || new Vec2()
-    out.x = a.x < 0 ? 0 : a.x > 1 ? 1 : a.x
-    out.y = a.y < 0 ? 0 : a.y > 1 ? 1 : a.y
-    return out
-  }
-
-  /**
-   * Performs a component wise clamp operation on the the given vector by using the given min and max vectors.
-   * @param a - The vector to clamp.
-   * @param min - Vector with the minimum component values.
-   * @param max - Vector with the maximum component values.
-   * @param out - The vector to write to.
-   * @returns The given `out` parameter or a new vector.
-   */
-  public static clamp(a: IVec2, min: IVec2, max: IVec2): Vec2
-  public static clamp<T>(a: IVec2, min: IVec2, max: IVec2, out: T): T & IVec2
-  public static clamp(a: IVec2, min: IVec2, max: IVec2, out?: IVec2): IVec2 {
-    out = out || new Vec2()
-    out.x = clamp(a.x, min.x, max.x)
-    out.y = clamp(a.y, min.y, max.y)
-    return out
-  }
-
-  /**
-   * Performs a component wise clamp operation on the the given vector by using the given min and max scalars.
-   * @param a - The vector to clamp.
-   * @param min - The minimum scalar value.
-   * @param max - The maximum scalar value.
-   * @param out - The vector to write to.
-   * @returns The given `out` parameter or a new vector.
-   */
-  public static clampScalar(a: IVec2, min: number, max: number): Vec2
-  public static clampScalar<T>(a: IVec2, min: number, max: number, out?: T): T & IVec2
-  public static clampScalar(a: IVec2, min: number, max: number, out?: IVec2): IVec2 {
-    out = out || new Vec2()
-    out.x = a.x < min ? min : a.x > max ? max : a.x
-    out.y = a.y < min ? min : a.y > max ? max : a.y
-    return out
-  }
-
-  /**
-   * Performs a component wise min operation on the the given vectors.
-   * @param a - The first vector.
-   * @param b - The second vector.
-   * @param out - The vector to write to.
-   * @returns The given `out` parameter or a new vector.
-   */
-  public static min(a: IVec2, b: IVec2): Vec2
-  public static min<T>(a: IVec2, b: IVec2, out?: T): T & IVec2
-  public static min(a: IVec2, b: IVec2, out?: IVec2): IVec2 {
-    out = out || new Vec2()
-    out.x = a.x < b.x ? a.x : b.x
-    out.y = a.y < b.y ? a.y : b.y
-    return out
-  }
-
-  /**
-   * Performs a component wise min operation on the the given vector and a scalar value.
-   * @param a - The vector.
-   * @param scalar - The scalar.
-   * @param out - The vector to write to.
-   * @returns The given `out` parameter or a new vector.
-   */
-  public static minScalar(a: IVec2, scalar: number): Vec2
-  public static minScalar<T>(a: IVec2, scalar: number, out?: T): T & IVec2
-  public static minScalar(a: IVec2, scalar: number, out?: IVec2): IVec2 {
-    out = out || new Vec2()
-    out.x = a.x < scalar ? a.x : scalar
-    out.y = a.y < scalar ? a.y : scalar
-    return out
-  }
-
-  /**
-   * Performs a component wise max operation on the the given vectors.
-   * @param a - The first vector.
-   * @param b - The second vector.
-   * @param out - The vector to write to.
-   * @returns The given `out` parameter or a new vector.
-   */
-  public static max(a: IVec2, b: IVec2): Vec2
-  public static max<T>(a: IVec2, b: IVec2, out?: T): T & IVec2
-  public static max(a: IVec2, b: IVec2, out?: IVec2): IVec2 {
-    out = out || new Vec2()
-    out.x = a.x > b.x ? a.x : b.x
-    out.y = a.y > b.y ? a.y : b.y
-    return out
-  }
-
-  /**
-   * Performs a component wise max operation on the the given vector and a scalar value.
-   * @param a - The vector.
-   * @param scalar - The scalar.
-   * @param out - The vector to write to.
-   * @returns The given `out` parameter or a new vector.
-   */
-  public static maxScalar(a: IVec2, scalar: number): Vec2
-  public static maxScalar<T>(a: IVec2, scalar: number, out?: T): T & IVec2
-  public static maxScalar(a: IVec2, scalar: number, out?: IVec2): IVec2 {
-    out = out || new Vec2()
-    out.x = a.x > scalar ? a.x : scalar
-    out.y = a.y > scalar ? a.y : scalar
-    return out
-  }
-
-  /**
-   * Performs a component wise linear interpolation between the given two vectors.
-   * @param a - The first vector.
-   * @param b - The second vector.
-   * @param t - The interpolation value. Assumed to be in range [0:1].
-   * @param out - The vector to write to.
-   * @returns The given `out` parameter or a new vector.
-   */
-  public static lerp(a: IVec2, b: IVec2, t: number): Vec2
-  public static lerp<T>(a: IVec2, b: IVec2, t: number, out?: T): T & IVec2
-  public static lerp(a: IVec2, b: IVec2, t: number, out?: IVec2): IVec2 {
-    out = out || new Vec2()
-    out.x = a.x + (b.x - a.x) * t
-    out.y = a.y + (b.y - a.y) * t
-    return out
-  }
-
-  /**
-   * Performs a component wise barycentric interpolation of the given vectors.
-   * @param a - The first vector.
-   * @param b - The second vector.
-   * @param c - The third vector.
-   * @param t1 - The first interpolation value. Assumed to be in range [0:1].
-   * @param t2 - The second interpolation value. Assumed to be in range [0:1].
-   * @param out - The vector to write to.
-   * @returns The given `out` parameter or a new vector.
-   */
-  public static barycentric(a: IVec2, b: IVec2, c: IVec2, t1: number, t2: number): Vec2
-  public static barycentric<T>(a: IVec2, b: IVec2, c: IVec2, t1: number, t2: number, out?: T): T & IVec2
-  public static barycentric(a: IVec2, b: IVec2, c: IVec2, t1: number, t2: number, out?: IVec2): IVec2 {
-    out = out || new Vec2()
-    out.x = a.x + t1 * (b.x - a.x) + t2 * (c.x - a.x)
-    out.y = a.y + t1 * (b.y - a.y) + t2 * (c.y - a.y)
-    return out
-  }
-
-  /**
-   * Tries to converts the given data to a vector
-   *
-   *
-   */
-  public static convert(data: any): Vec2 {
-    if (Array.isArray(data)) {
-      return new Vec2(data[0], data[1])
-    } else if (typeof data === 'number') {
-      return new Vec2(data, data)
-    } else {
-      return new Vec2(data.x, data.y)
-    }
-  }
-
-  /**
-   * Formats this into a readable string
-   *
-   * @remarks
-   * Mainly meant for debugging. Do not use this for serialization.
-   *
-   * @param fractionDigits - Number of digits after decimal point
-   */
-  public format(fractionDigits?: number) {
-    return Vec2.format(this, fractionDigits)
-  }
-
-  /**
-   * Formats given value into a readable string
-   *
-   * @remarks
-   * Mainly meant for debugging. Do not use this for serialization.
-   *
-   * @param vec - The value to format
-   * @param fractionDigits - Number of digits after decimal point
-   */
-  public static format(vec: IVec2, fractionDigits: number = 5) {
-    return 'x: '.concat(vec.x.toFixed(fractionDigits), ', y: ', vec.y.toFixed(fractionDigits))
-  }
-}
-
-/**
  * Temporary variable for short lived calculations. Do not store references to this variable.
  */
 vec2.$0 = { x: 0, y: 0 }
@@ -994,9 +51,10 @@ vec2.$2 = { x: 0, y: 0 }
  * @param x - The x component
  * @param y - The y component
  */
-export function vec2$init(out: IVec2, x: number, y: number) {
+export function vec2$init(out: IVec2, x: number, y: number): IVec2 {
   out.x = x
   out.y = y
+  return out
 }
 
 /**
@@ -1005,9 +63,10 @@ export function vec2$init(out: IVec2, x: number, y: number) {
  * @param out - the vector to initialize
  * @param value - The x and y component
  */
-export function vec2$initFill(out: IVec2, value: number) {
+export function vec2$initFill(out: IVec2, value: number): IVec2 {
   out.x = value
   out.y = value
+  return out
 }
 
 /**
@@ -1015,9 +74,10 @@ export function vec2$initFill(out: IVec2, value: number) {
  *
  * @param out - the vector to initialize
  */
-export function vec2$initRandom(out: IVec2, min: number = 0, max: number = 1): void {
+export function vec2$initRandom(out: IVec2, min: number = 0, max: number = 1): IVec2 {
   out.x = lerp(min, max, Math.random())
   out.y = lerp(min, max, Math.random())
+  return out
 }
 
 /**
@@ -1026,7 +86,7 @@ export function vec2$initRandom(out: IVec2, min: number = 0, max: number = 1): v
  * @param vec
  * @param out
  */
-export function vec2copy(vec: IVec2, out?: IVec2): IVec2 {
+export function vec2Copy(vec: IVec2, out?: IVec2): IVec2 {
   out ||= { x: 0, y: 0 }
   out.x = vec.x
   out.y = vec.y
@@ -1041,9 +101,9 @@ export function vec2copy(vec: IVec2, out?: IVec2): IVec2 {
  * @param offset - Zero based index where to start writing in the array
  * @returns the given array parameter
  */
-export function vec2toArray(vec: IVec2): [number, number]
-export function vec2toArray(vec: IVec2, array: number[], offset?: number): number[]
-export function vec2toArray(vec: IVec2, array: number[] = [], offset: number = 0): number[] {
+export function vec2ToArray(vec: IVec2): [number, number]
+export function vec2ToArray(vec: IVec2, array: number[], offset?: number): number[]
+export function vec2ToArray(vec: IVec2, array: number[] = [], offset: number = 0): number[] {
   array[offset] = vec.x
   array[offset + 1] = vec.y
   return array
@@ -1052,14 +112,14 @@ export function vec2toArray(vec: IVec2, array: number[] = [], offset: number = 0
 /**
  * Checks for component wise equality
  */
-export function vec2equals(a: IVec2, b: IVec2): boolean {
+export function vec2Equals(a: IVec2, b: IVec2): boolean {
   return a.x === b.x && a.y === b.y
 }
 
 /**
  * Calculates the length of this vector
  */
-export function vec2length(vec: IVec2): number {
+export function vec2Length(vec: IVec2): number {
   const x = vec.x
   const y = vec.y
   return Math.sqrt(x * x + y * y)
@@ -1068,7 +128,7 @@ export function vec2length(vec: IVec2): number {
 /**
  * Calculates the squared length of this vector
  */
-export function vec2lengthSquared(vec: IVec2): number {
+export function vec2LengthSquared(vec: IVec2): number {
   const x = vec.x
   const y = vec.y
   return x * x + y * y
@@ -1076,7 +136,7 @@ export function vec2lengthSquared(vec: IVec2): number {
 /**
  * Calculates the distance between two vectors
  */
-export function vec2distance(a: IVec2, b: IVec2): number {
+export function vec2Distance(a: IVec2, b: IVec2): number {
   const x = a.x - b.x
   const y = a.y - b.y
   return Math.sqrt(x * x + y * y)
@@ -1084,7 +144,7 @@ export function vec2distance(a: IVec2, b: IVec2): number {
 /**
  * Calculates the squared distance between two vectors
  */
-export function vec2distanceSquared(a: IVec2, b: IVec2): number {
+export function vec2DistanceSquared(a: IVec2, b: IVec2): number {
   const x = a.x - b.x
   const y = a.y - b.y
   return x * x + y * y
@@ -1092,25 +152,26 @@ export function vec2distanceSquared(a: IVec2, b: IVec2): number {
 /**
  * Calculates the dot product of two vectors
  */
-export function vec2dot(a: IVec2, b: IVec2): number {
+export function vec2Dot(a: IVec2, b: IVec2): number {
   return a.x * b.x + a.y * b.y
 }
 
 /**
  * Normalizes a vector.
  */
-export function vec2$normalize(vec: IVec2): void {
-  const x = vec.x
-  const y = vec.y
+export function vec2$normalize(out: IVec2): IVec2 {
+  const x = out.x
+  const y = out.y
   const d = 1.0 / Math.sqrt(x * x + y * y)
-  vec.x = x * d
-  vec.y = y * d
+  out.x = x * d
+  out.y = y * d
+  return out
 }
 
 /**
  * Normalizes a vector.
  */
-export function vec2normalize(vec: IVec2, out?: IVec2): IVec2 {
+export function vec2Normalize(vec: IVec2, out?: IVec2): IVec2 {
   const x = vec.x
   const y = vec.y
   const d = 1.0 / Math.sqrt(x * x + y * y)
@@ -1123,15 +184,16 @@ export function vec2normalize(vec: IVec2, out?: IVec2): IVec2 {
 /**
  * Inverts a vector.
  */
-export function vec2$invert(vec: IVec2): void {
-  vec.x = 1.0 / vec.x
-  vec.y = 1.0 / vec.y
+export function vec2$invert(out: IVec2): IVec2 {
+  out.x = 1.0 / out.x
+  out.y = 1.0 / out.y
+  return out
 }
 
 /**
  * Inverts a vector.
  */
-export function vec2invert(vec: IVec2, out?: IVec2): IVec2 {
+export function vec2Invert(vec: IVec2, out?: IVec2): IVec2 {
   out ||= { x: 0, y: 0 }
   out.x = 1.0 / vec.x
   out.y = 1.0 / vec.y
@@ -1141,15 +203,16 @@ export function vec2invert(vec: IVec2, out?: IVec2): IVec2 {
 /**
  * Negates the components of a vector.
  */
-export function vec2$negate(vec: IVec2): void {
-  vec.x = -vec.x
-  vec.y = -vec.y
+export function vec2$negate(out: IVec2): IVec2 {
+  out.x = -out.x
+  out.y = -out.y
+  return out
 }
 
 /**
  * Negates the components of a vector.
  */
-export function vec2negate(vec: IVec2, out?: IVec2): IVec2 {
+export function vec2Negate(vec: IVec2, out?: IVec2): IVec2 {
   out ||= { x: 0, y: 0 }
   out.x = -vec.x
   out.y = -vec.y
@@ -1159,12 +222,13 @@ export function vec2negate(vec: IVec2, out?: IVec2): IVec2 {
 /**
  * Adds components of two vectors
  *
- * @param $ - The vector to add to
+ * @param out - The vector to add to
  * @param other - The vector to add
  */
-export function vec2$add($: IVec2, other: IVec2): void {
-  $.x += other.x
-  $.y += other.y
+export function vec2$add(out: IVec2, other: IVec2): IVec2 {
+  out.x += other.x
+  out.y += other.y
+  return out
 }
 
 /**
@@ -1174,7 +238,7 @@ export function vec2$add($: IVec2, other: IVec2): void {
  * @param b - The second vector
  * @param out - The vector to write to
  */
-export function vec2add(a: IVec2, b: IVec2, out?: IVec2): IVec2 {
+export function vec2Add(a: IVec2, b: IVec2, out?: IVec2): IVec2 {
   out ||= { x: 0, y: 0 }
   out.x = a.x + b.x
   out.y = a.y + b.y
@@ -1184,12 +248,13 @@ export function vec2add(a: IVec2, b: IVec2, out?: IVec2): IVec2 {
 /**
  * Adds a value to all components
  *
- * @param $ - The vector to add to
+ * @param out - The vector to add to
  * @param value - The value to add
  */
-export function vec2$addScalar($: IVec2, value: number): void {
-  $.x += value
-  $.y += value
+export function vec2$addScalar(out: IVec2, value: number): IVec2 {
+  out.x += value
+  out.y += value
+  return out
 }
 
 /**
@@ -1199,7 +264,7 @@ export function vec2$addScalar($: IVec2, value: number): void {
  * @param value - The value
  * @param out - The vector to write to
  */
-export function vec2addScalar(vec: IVec2, value: number, out?: IVec2): IVec2 {
+export function vec2AddScalar(vec: IVec2, value: number, out?: IVec2): IVec2 {
   out ||= { x: 0, y: 0 }
   out.x = vec.x + value
   out.y = vec.y + value
@@ -1209,13 +274,14 @@ export function vec2addScalar(vec: IVec2, value: number, out?: IVec2): IVec2 {
 /**
  * Adds components of two vectors
  *
- * @param $ - The vector to add to
+ * @param out - The vector to add to
  * @param other - The vector to add
  * @param scale - The value to scale with
  */
-export function vec2$addScaled($: IVec2, other: IVec2, scale: number): void {
-  $.x += other.x * scale
-  $.y += other.y * scale
+export function vec2$addScaled(out: IVec2, other: IVec2, scale: number): IVec2 {
+  out.x += other.x * scale
+  out.y += other.y * scale
+  return out
 }
 
 /**
@@ -1225,7 +291,7 @@ export function vec2$addScaled($: IVec2, other: IVec2, scale: number): void {
  * @param b - The second vector
  * @param out - The vector to write to
  */
-export function vec2addScaled(a: IVec2, b: IVec2, scale: number, out?: IVec2): IVec2 {
+export function vec2AddScaled(a: IVec2, b: IVec2, scale: number, out?: IVec2): IVec2 {
   out ||= { x: 0, y: 0 }
   out.x = a.x + b.x * scale
   out.y = a.y + b.y * scale
@@ -1235,12 +301,13 @@ export function vec2addScaled(a: IVec2, b: IVec2, scale: number, out?: IVec2): I
 /**
  * Subtracts components of two vectors
  *
- * @param $ - The vector to subtract from
+ * @param out - The vector to subtract from
  * @param other - The vector to subtract
  */
-export function vec2$subtract($: IVec2, other: IVec2): void {
-  $.x -= other.x
-  $.y -= other.y
+export function vec2$subtract(out: IVec2, other: IVec2): IVec2 {
+  out.x -= other.x
+  out.y -= other.y
+  return out
 }
 
 /**
@@ -1250,7 +317,7 @@ export function vec2$subtract($: IVec2, other: IVec2): void {
  * @param b - The second vector
  * @param out - The vector to write to
  */
-export function vec2subtract(a: IVec2, b: IVec2, out?: IVec2): IVec2 {
+export function vec2Subtract(a: IVec2, b: IVec2, out?: IVec2): IVec2 {
   out ||= { x: 0, y: 0 }
   out.x = a.x - b.x
   out.y = a.y - b.y
@@ -1260,12 +327,13 @@ export function vec2subtract(a: IVec2, b: IVec2, out?: IVec2): IVec2 {
 /**
  * Subtracts a value from all components
  *
- * @param $ - The vector to subtract from
+ * @param out - The vector to subtract from
  * @param value - The value to subtract
  */
-export function vec2$subtractScalar($: IVec2, value: number): void {
-  $.x -= value
-  $.y -= value
+export function vec2$subtractScalar(out: IVec2, value: number): IVec2 {
+  out.x -= value
+  out.y -= value
+  return out
 }
 
 /**
@@ -1275,7 +343,7 @@ export function vec2$subtractScalar($: IVec2, value: number): void {
  * @param value - The value
  * @param out - The vector to write to
  */
-export function vec2subtractScalar(vec: IVec2, value: number, out?: IVec2): IVec2 {
+export function vec2SubtractScalar(vec: IVec2, value: number, out?: IVec2): IVec2 {
   out ||= { x: 0, y: 0 }
   out.x = vec.x - value
   out.y = vec.y - value
@@ -1285,13 +353,14 @@ export function vec2subtractScalar(vec: IVec2, value: number, out?: IVec2): IVec
 /**
  * Subtracts components of two vectors
  *
- * @param $ - The vector to subtract from
+ * @param out - The vector to subtract from
  * @param other - The vector to subtract
  * @param scale - The value to scale with
  */
-export function vec2$subtractScaled($: IVec2, other: IVec2, scale: number): void {
-  $.x -= other.x * scale
-  $.y -= other.y * scale
+export function vec2$subtractScaled(out: IVec2, other: IVec2, scale: number): IVec2 {
+  out.x -= other.x * scale
+  out.y -= other.y * scale
+  return out
 }
 
 /**
@@ -1302,7 +371,7 @@ export function vec2$subtractScaled($: IVec2, other: IVec2, scale: number): void
  * @param scale - The value to scale `b` with
  * @param out - The vector to write to
  */
-export function vec2subtractScaled(a: IVec2, b: IVec2, scale: number, out?: IVec2): IVec2 {
+export function vec2SubtractScaled(a: IVec2, b: IVec2, scale: number, out?: IVec2): IVec2 {
   out ||= { x: 0, y: 0 }
   out.x = a.x - b.x * scale
   out.y = a.y - b.y * scale
@@ -1312,12 +381,13 @@ export function vec2subtractScaled(a: IVec2, b: IVec2, scale: number, out?: IVec
 /**
  * Multiplies components of two vectors
  *
- * @param $ - The vector to multiply
+ * @param out - The vector to multiply
  * @param other - The vector to multiply with
  */
-export function vec2$multiply($: IVec2, other: IVec2): void {
-  $.x *= other.x
-  $.y *= other.y
+export function vec2$multiply(out: IVec2, other: IVec2): IVec2 {
+  out.x *= other.x
+  out.y *= other.y
+  return out
 }
 
 /**
@@ -1327,7 +397,7 @@ export function vec2$multiply($: IVec2, other: IVec2): void {
  * @param b - The second vector
  * @param out - The vector to write to
  */
-export function vec2multiply(a: IVec2, b: IVec2, out?: IVec2): IVec2 {
+export function vec2Multiply(a: IVec2, b: IVec2, out?: IVec2): IVec2 {
   out ||= { x: 0, y: 0 }
   out.x = a.x * b.x
   out.y = a.y * b.y
@@ -1337,12 +407,13 @@ export function vec2multiply(a: IVec2, b: IVec2, out?: IVec2): IVec2 {
 /**
  * Multiplies all components with a value
  *
- * @param $ - The vector to multiply
+ * @param out - The vector to multiply
  * @param value - The value to multiply with
  */
-export function vec2$multiplyScalar($: IVec2, value: number): void {
-  $.x *= value
-  $.y *= value
+export function vec2$multiplyScalar(out: IVec2, value: number): IVec2 {
+  out.x *= value
+  out.y *= value
+  return out
 }
 
 /**
@@ -1352,7 +423,7 @@ export function vec2$multiplyScalar($: IVec2, value: number): void {
  * @param value - The value
  * @param out - The vector to write to
  */
-export function vec2multiplyScalar(vec: IVec2, value: number, out?: IVec2): IVec2 {
+export function vec2MultiplyScalar(vec: IVec2, value: number, out?: IVec2): IVec2 {
   out ||= { x: 0, y: 0 }
   out.x = vec.x * value
   out.y = vec.y * value
@@ -1362,12 +433,13 @@ export function vec2multiplyScalar(vec: IVec2, value: number, out?: IVec2): IVec
 /**
  * Divides components of two vectors
  *
- * @param $ - The vector to divide
+ * @param out - The vector to divide
  * @param other - The vector to divide by
  */
-export function vec2$divide($: IVec2, other: IVec2): void {
-  $.x /= other.x
-  $.y /= other.y
+export function vec2$divide(out: IVec2, other: IVec2): IVec2 {
+  out.x /= other.x
+  out.y /= other.y
+  return out
 }
 
 /**
@@ -1377,7 +449,7 @@ export function vec2$divide($: IVec2, other: IVec2): void {
  * @param b - The second vector
  * @param out - The vector to write to
  */
-export function vec2divide(a: IVec2, b: IVec2, out?: IVec2): IVec2 {
+export function vec2Divide(a: IVec2, b: IVec2, out?: IVec2): IVec2 {
   out ||= { x: 0, y: 0 }
   out.x = a.x / b.x
   out.y = a.y / b.y
@@ -1387,13 +459,14 @@ export function vec2divide(a: IVec2, b: IVec2, out?: IVec2): IVec2 {
 /**
  * Divides all components by a value
  *
- * @param $ - The vector to divide
+ * @param out - The vector to divide
  * @param value - The value to divide by
  */
-export function vec2$divideScalar($: IVec2, value: number): void {
+export function vec2$divideScalar(out: IVec2, value: number): IVec2 {
   value = 1 / value
-  $.x *= value
-  $.y *= value
+  out.x *= value
+  out.y *= value
+  return out
 }
 
 /**
@@ -1403,7 +476,7 @@ export function vec2$divideScalar($: IVec2, value: number): void {
  * @param value - The value
  * @param out - The vector to write to
  */
-export function vec2divideScalar(vec: IVec2, value: number, out?: IVec2): IVec2 {
+export function vec2DivideScalar(vec: IVec2, value: number, out?: IVec2): IVec2 {
   value = 1 / value
   out ||= { x: 0, y: 0 }
   out.x = vec.x * value
@@ -1414,15 +487,16 @@ export function vec2divideScalar(vec: IVec2, value: number, out?: IVec2): IVec2 
 /**
  * Transforms a vector with the given 4x4 matrix
  *
- * @param $ - The vector to transform
+ * @param out - The vector to transform
  * @param mat - The matrix
  */
-export function vec2$transformByMat4($: IVec2, mat: { data: ArrayLike<number> }): void {
-  const x = $.x
-  const y = $.y
-  const d = mat.data
-  $.x = x * d[0] + y * d[4] + d[12]
-  $.y = x * d[1] + y * d[5] + d[13]
+export function vec2$transformByMat4(out: IVec2, mat: IMat): IVec2 {
+  const x = out.x
+  const y = out.y
+  const d = mat
+  out.x = x * d[0] + y * d[4] + d[12]
+  out.y = x * d[1] + y * d[5] + d[13]
+  return out
 }
 
 /**
@@ -1432,10 +506,10 @@ export function vec2$transformByMat4($: IVec2, mat: { data: ArrayLike<number> })
  * @param mat - The matrix
  * @param out - The vector to write to
  */
-export function vec2transformByMat4(vec: IVec2, mat: { data: ArrayLike<number> }, out?: IVec2): IVec2 {
+export function vec2TransformByMat4(vec: IVec2, mat: IMat, out?: IVec2): IVec2 {
   const x = vec.x
   const y = vec.y
-  const d = mat.data
+  const d = mat
   out ||= { x: 0, y: 0 }
   out.x = x * d[0] + y * d[4] + d[12]
   out.y = x * d[1] + y * d[5] + d[13]
@@ -1445,15 +519,16 @@ export function vec2transformByMat4(vec: IVec2, mat: { data: ArrayLike<number> }
 /**
  * Transforms a vector with the given 3x3 matrix
  *
- * @param $ - The vector to transform
+ * @param out - The vector to transform
  * @param mat - The matrix
  */
-export function vec2$transformByMat3($: IVec2, mat: { data: ArrayLike<number> }): void {
-  const x = $.x
-  const y = $.y
-  const d = mat.data
-  $.x = x * d[0] + y * d[3]
-  $.y = x * d[1] + y * d[4]
+export function vec2$transformByMat3(out: IVec2, mat: IMat): IVec2 {
+  const x = out.x
+  const y = out.y
+  const d = mat
+  out.x = x * d[0] + y * d[3]
+  out.y = x * d[1] + y * d[4]
+  return out
 }
 
 /**
@@ -1463,10 +538,10 @@ export function vec2$transformByMat3($: IVec2, mat: { data: ArrayLike<number> })
  * @param mat - The matrix
  * @param out - The vector to write to
  */
-export function vec2transformByMat3(vec: IVec2, mat: { data: ArrayLike<number> }, out?: IVec2): IVec2 {
+export function vec2TransformByMat3(vec: IVec2, mat: IMat, out?: IVec2): IVec2 {
   const x = vec.x
   const y = vec.y
-  const d = mat.data
+  const d = mat
   out ||= { x: 0, y: 0 }
   out.x = x * d[0] + y * d[3]
   out.y = x * d[1] + y * d[4]
@@ -1476,15 +551,16 @@ export function vec2transformByMat3(vec: IVec2, mat: { data: ArrayLike<number> }
 /**
  * Transforms a vector with the given 2x2 matrix
  *
- * @param $ - The vector to transform
+ * @param out - The vector to transform
  * @param mat - The matrix
  */
-export function vec2$transformByMat2($: IVec2, mat: { data: ArrayLike<number> }): void {
-  const x = $.x
-  const y = $.y
-  const d = mat.data
-  $.x = x * d[0] + y * d[2]
-  $.y = x * d[1] + y * d[3]
+export function vec2$transformByMat2(out: IVec2, mat: IMat): IVec2 {
+  const x = out.x
+  const y = out.y
+  const d = mat
+  out.x = x * d[0] + y * d[2]
+  out.y = x * d[1] + y * d[3]
+  return out
 }
 
 /**
@@ -1494,10 +570,10 @@ export function vec2$transformByMat2($: IVec2, mat: { data: ArrayLike<number> })
  * @param mat - The matrix
  * @param out - The vector to write to
  */
-export function vec2transformByMat2(vec: IVec2, mat: { data: ArrayLike<number> }, out?: IVec2): IVec2 {
+export function vec2TransformByMat2(vec: IVec2, mat: IMat, out?: IVec2): IVec2 {
   const x = vec.x
   const y = vec.y
-  const d = mat.data
+  const d = mat
   out ||= { x: 0, y: 0 }
   out.x = x * d[0] + y * d[2]
   out.y = x * d[1] + y * d[3]
@@ -1507,11 +583,12 @@ export function vec2transformByMat2(vec: IVec2, mat: { data: ArrayLike<number> }
 /**
  * Clamps all components between 0 and 1
  *
- * @param vec - The vector to clamp
+ * @param out - The vector to clamp
  */
-export function vec2$saturate(vec: IVec2): void {
-  vec.x = vec.x < 0 ? 0 : vec.x > 1 ? 1 : vec.x
-  vec.y = vec.y < 0 ? 0 : vec.y > 1 ? 1 : vec.y
+export function vec2$saturate(out: IVec2): IVec2 {
+  out.x = out.x < 0 ? 0 : out.x > 1 ? 1 : out.x
+  out.y = out.y < 0 ? 0 : out.y > 1 ? 1 : out.y
+  return out
 }
 
 /**
@@ -1520,7 +597,7 @@ export function vec2$saturate(vec: IVec2): void {
  * @param vec - The vector to clamp
  * @param out - The vector to write to
  */
-export function vec2saturate(vec: IVec2, out?: IVec2): IVec2 {
+export function vec2Saturate(vec: IVec2, out?: IVec2): IVec2 {
   out ||= { x: 0, y: 0 }
   out.x = vec.x < 0 ? 0 : vec.x > 1 ? 1 : vec.x
   out.y = vec.y < 0 ? 0 : vec.y > 1 ? 1 : vec.y
@@ -1530,13 +607,14 @@ export function vec2saturate(vec: IVec2, out?: IVec2): IVec2 {
 /**
  * Clamps components between the components of the min and max vectors
  *
- * @param vec - The vector to clamp
+ * @param out - The vector to clamp
  * @param min - Vector with the minimum component values
  * @param max - Vector with the maximum component values
  */
-export function vec2$clamp(vec: IVec2, min: IVec2, max: IVec2): void {
-  vec.x = clamp(vec.x, min.x, max.x)
-  vec.y = clamp(vec.y, min.y, max.y)
+export function vec2$clamp(out: IVec2, min: IVec2, max: IVec2): IVec2 {
+  out.x = clamp(out.x, min.x, max.x)
+  out.y = clamp(out.y, min.y, max.y)
+  return out
 }
 
 /**
@@ -1547,10 +625,24 @@ export function vec2$clamp(vec: IVec2, min: IVec2, max: IVec2): void {
  * @param max - Vector with the maximum component values
  * @param out - The vector to write to
  */
-export function vec2clamp(vec: IVec2, min: IVec2, max: IVec2, out?: IVec2): IVec2 {
+export function vec2Clamp(vec: IVec2, min: IVec2, max: IVec2, out?: IVec2): IVec2 {
   out ||= { x: 0, y: 0 }
   out.x = clamp(vec.x, min.x, max.x)
   out.y = clamp(vec.y, min.y, max.y)
+  return out
+}
+
+/**
+ * Clamps all components between min and max values
+ *
+ * @param out - The vector to clamp
+ * @param min - The minimum value
+ * @param max - The maximum value
+ * @param out - The vector to write to
+ */
+export function vec2$clampScalar(out: IVec2, min: number, max: number): IVec2 {
+  out.x = out.x < min ? min : out.x > max ? max : out.x
+  out.y = out.y < min ? min : out.y > max ? max : out.y
   return out
 }
 
@@ -1562,20 +654,7 @@ export function vec2clamp(vec: IVec2, min: IVec2, max: IVec2, out?: IVec2): IVec
  * @param max - The maximum value
  * @param out - The vector to write to
  */
-export function vec2$clampScalar(vec: IVec2, min: number, max: number): void {
-  vec.x = vec.x < min ? min : vec.x > max ? max : vec.x
-  vec.y = vec.y < min ? min : vec.y > max ? max : vec.y
-}
-
-/**
- * Clamps all components between min and max values
- *
- * @param vec - The vector to clamp
- * @param min - The minimum value
- * @param max - The maximum value
- * @param out - The vector to write to
- */
-export function vec2clampScalar(vec: IVec2, min: number, max: number, out?: IVec2): IVec2 {
+export function vec2ClampScalar(vec: IVec2, min: number, max: number, out?: IVec2): IVec2 {
   out ||= { x: 0, y: 0 }
   out.x = vec.x < min ? min : vec.x > max ? max : vec.x
   out.y = vec.y < min ? min : vec.y > max ? max : vec.y
@@ -1589,7 +668,7 @@ export function vec2clampScalar(vec: IVec2, min: number, max: number, out?: IVec
  * @param b - The second vector
  * @param out - The vector to write to
  */
-export function vec2min(a: IVec2, b: IVec2, out?: IVec2): IVec2 {
+export function vec2Min(a: IVec2, b: IVec2, out?: IVec2): IVec2 {
   out ||= { x: 0, y: 0 }
   out.x = a.x < b.x ? a.x : b.x
   out.y = a.y < b.y ? a.y : b.y
@@ -1603,7 +682,7 @@ export function vec2min(a: IVec2, b: IVec2, out?: IVec2): IVec2 {
  * @param value - The value
  * @param out - The vector to write to
  */
-export function vec2minScalar(vec: IVec2, value: number, out?: IVec2): IVec2 {
+export function vec2MinScalar(vec: IVec2, value: number, out?: IVec2): IVec2 {
   out ||= { x: 0, y: 0 }
   out.x = vec.x < value ? vec.x : value
   out.y = vec.y < value ? vec.y : value
@@ -1617,7 +696,7 @@ export function vec2minScalar(vec: IVec2, value: number, out?: IVec2): IVec2 {
  * @param b - The second vector
  * @param out - The vector to write to
  */
-export function vec2max(a: IVec2, b: IVec2, out?: IVec2): IVec2 {
+export function vec2Max(a: IVec2, b: IVec2, out?: IVec2): IVec2 {
   out ||= { x: 0, y: 0 }
   out.x = a.x > b.x ? a.x : b.x
   out.y = a.y > b.y ? a.y : b.y
@@ -1631,7 +710,7 @@ export function vec2max(a: IVec2, b: IVec2, out?: IVec2): IVec2 {
  * @param value - The value
  * @param out - The vector to write to
  */
-export function vec2maxScalar(vec: IVec2, value: number, out?: IVec2): IVec2 {
+export function vec2MaxScalar(vec: IVec2, value: number, out?: IVec2): IVec2 {
   out ||= { x: 0, y: 0 }
   out.x = vec.x > value ? vec.x : value
   out.y = vec.y > value ? vec.y : value
@@ -1646,7 +725,7 @@ export function vec2maxScalar(vec: IVec2, value: number, out?: IVec2): IVec2 {
  * @param t - The interpolation value. Assumed to be in range [0:1]
  * @param out - The vector to write to
  */
-export function vec2lerp(a: IVec2, b: IVec2, t: number, out?: IVec2): IVec2 {
+export function vec2Lerp(a: IVec2, b: IVec2, t: number, out?: IVec2): IVec2 {
   out ||= { x: 0, y: 0 }
   out.x = a.x + (b.x - a.x) * t
   out.y = a.y + (b.y - a.y) * t
@@ -1663,7 +742,7 @@ export function vec2lerp(a: IVec2, b: IVec2, t: number, out?: IVec2): IVec2 {
  * @param t2 - The second interpolation value. Assumed to be in range [0:1]
  * @param out - The vector to write to
  */
-export function vec2barycentric(a: IVec2, b: IVec2, c: IVec2, t1: number, t2: number, out?: IVec2): IVec2 {
+export function vec2Barycentric(a: IVec2, b: IVec2, c: IVec2, t1: number, t2: number, out?: IVec2): IVec2 {
   out ||= { x: 0, y: 0 }
   out.x = a.x + t1 * (b.x - a.x) + t2 * (c.x - a.x)
   out.y = a.y + t1 * (b.y - a.y) + t2 * (c.y - a.y)
@@ -1679,6 +758,6 @@ export function vec2barycentric(a: IVec2, b: IVec2, c: IVec2, t1: number, t2: nu
  * @param vec - The vector to format
  * @param fractionDigits - Number of digits after decimal point
  */
-export function vec2format(vec: IVec2, fractionDigits: number = 5): string {
+export function vec2Format(vec: IVec2, fractionDigits: number = 5): string {
   return 'x: '.concat(vec.x.toFixed(fractionDigits), ', y: ', vec.y.toFixed(fractionDigits))
 }

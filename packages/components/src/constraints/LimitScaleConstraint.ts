@@ -1,5 +1,5 @@
 import { type GameComponent, GameEntity } from '@gglib/ecs'
-import { type IVec3, Vec3, lerp } from '@gglib/math'
+import { type IVec3, lerp, vec3, vec3$applyMat4Rotation, vec3$initFrom, vec3Clamp, vec3Equals } from '@gglib/math'
 import { TransformComponent } from '../components/TransformComponent'
 import type { BehaviorComponent } from '../systems/BehaviorSystem'
 
@@ -107,17 +107,18 @@ export class LimitScaleConstraint implements GameComponent, BehaviorComponent {
       return
     }
 
-    const scale = Vec3.$0.initFrom(this.target.scale)
+    const scale = vec3.$0
+    vec3$initFrom(scale, this.target.scale)
     const min = this.min
     const max = this.max
     const useWorldspace = this.space === 'world' && !!this.target.parent
 
     if (useWorldspace) {
-      this.target.parent.world.transformV3Normal(scale, scale)
+      vec3$applyMat4Rotation(scale, this.target.parent.world)
     }
 
     if (this.weight >= 1) {
-      Vec3.clamp(scale, min || scale, max || scale)
+      vec3Clamp(scale, min || scale, max || scale, scale)
     } else {
       if (min) {
         scale.x = this.limitX && scale.x < min.x ? lerp(scale.x, min.x, this.weight) : scale.x
@@ -132,10 +133,10 @@ export class LimitScaleConstraint implements GameComponent, BehaviorComponent {
     }
 
     if (useWorldspace) {
-      this.target.parent.worldInverse.transformV3Normal(scale, scale)
+      vec3$applyMat4Rotation(scale, this.target.parent.worldInverse)
     }
 
-    if (!scale.equals(this.target.scale)) {
+    if (!vec3Equals(scale, this.target.scale)) {
       this.target.setScale(scale)
       if (this.commit) {
         this.target.updateIfNeeded()

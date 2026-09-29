@@ -1,18 +1,17 @@
 import type { BoundingFrustum } from './BoundingFrustum'
 import type { BoundingSphere } from './BoundingSphere'
-import type { BoundingVolume } from './BoundingVolume'
 import { Intersection, IntersectionType, Intersects } from './Collision'
-import type { Mat4 } from './Mat4'
-import type { Ray } from './Ray'
+import { mat4TransformNormal3Abs, mat4ApplyToVec3, type Mat4 } from './Mat4'
+import type { IRay } from './Ray'
 import type { ArrayLike, IVec3, IVec4 } from './Types'
-import { vec3, Vec3 } from './Vec3'
+import { vec3, vec3Equals, vec3Max, vec3Min, vec3ToArray } from './Vec3'
 
 /**
  * An axis aligned box volume.
  *
  * @public
  */
-export class BoundingBox implements BoundingVolume {
+export class BoundingBox {
   /**
    * The minimum contained point
    */
@@ -332,8 +331,8 @@ export class BoundingBox implements BoundingVolume {
   public static transform(box: BoundingBox, transform: Mat4, out?: BoundingBox): BoundingBox {
     out = out || new BoundingBox()
 
-    const center = Vec3.$0
-    const extent = Vec3.$1
+    const center = vec3.$0
+    const extent = vec3.$1
 
     center.x = (box.min.x + box.max.x) * 0.5
     center.y = (box.min.y + box.max.y) * 0.5
@@ -343,8 +342,8 @@ export class BoundingBox implements BoundingVolume {
     extent.y = (box.max.y - box.min.y) * 0.5
     extent.z = (box.max.z - box.min.z) * 0.5
 
-    transform.transformV3(center, center)
-    transform.transformV3NormalAbs(extent, extent)
+    mat4ApplyToVec3(transform, center, center)
+    mat4TransformNormal3Abs(transform, extent, extent)
 
     out.min.x = center.x - extent.x
     out.min.y = center.y - extent.y
@@ -366,8 +365,8 @@ export class BoundingBox implements BoundingVolume {
    */
   public toArray<T extends ArrayLike<number>>(array: T, offset?: number): T
   public toArray(array: number[] = [], offset: number = 0): number[] {
-    Vec3.toArray(this.min, array, offset)
-    Vec3.toArray(this.max, array, offset + 3)
+    vec3ToArray(this.min, array, offset)
+    vec3ToArray(this.max, array, offset + 3)
     return array
   }
 
@@ -380,8 +379,8 @@ export class BoundingBox implements BoundingVolume {
    */
   public static toArray<T>(box: BoundingBox, array: T, offset?: number): T
   public static toArray(box: BoundingBox, array: number[] = [], offset: number = 0): number[] {
-    Vec3.toArray(box.min, array, offset)
-    Vec3.toArray(box.max, array, offset + 3)
+    vec3ToArray(box.min, array, offset)
+    vec3ToArray(box.max, array, offset + 3)
     return array
   }
 
@@ -389,14 +388,14 @@ export class BoundingBox implements BoundingVolume {
    * Checks whether two instances are equal
    */
   public static equals(a: BoundingBox, b: BoundingBox): boolean {
-    return Vec3.equals(a.min, b.min) && Vec3.equals(a.max, b.max)
+    return vec3Equals(a.min, b.min) && vec3Equals(a.max, b.max)
   }
 
   /**
    * Checks for equality with another instance
    */
   public equals(other: BoundingBox): boolean {
-    return Vec3.equals(this.min, other.min) && Vec3.equals(this.max, other.max)
+    return vec3Equals(this.min, other.min) && vec3Equals(this.max, other.max)
   }
 
   /**
@@ -405,8 +404,8 @@ export class BoundingBox implements BoundingVolume {
    * @param other - the volume to merge
    */
   public merge(other: BoundingBox): this {
-    Vec3.min(this.min, other.min, this.min)
-    Vec3.max(this.max, other.max, this.max)
+    vec3Min(this.min, other.min, this.min)
+    vec3Max(this.max, other.max, this.max)
     return this
   }
 
@@ -420,8 +419,8 @@ export class BoundingBox implements BoundingVolume {
    */
   public static merge(box1: BoundingBox, box2: BoundingBox, out?: BoundingBox): BoundingBox {
     out = out || new BoundingBox()
-    Vec3.min(box1.min, box2.min, out.min)
-    Vec3.max(box1.max, box2.max, out.max)
+    vec3Min(box1.min, box2.min, out.min)
+    vec3Max(box1.max, box2.max, out.max)
     return out
   }
 
@@ -452,8 +451,8 @@ export class BoundingBox implements BoundingVolume {
    * @param point - the point to merge
    */
   public mergePoint(point: IVec3): this {
-    Vec3.min(this.min, point, this.min)
-    Vec3.max(this.max, point, this.max)
+    vec3Min(this.min, point, this.min)
+    vec3Max(this.max, point, this.max)
     return this
   }
 
@@ -467,8 +466,8 @@ export class BoundingBox implements BoundingVolume {
    */
   public static mergePoint(box: BoundingBox, point: IVec3, out?: BoundingBox): BoundingBox {
     out = out || new BoundingBox()
-    Vec3.min(box.min, point, out.min)
-    Vec3.max(box.max, point, out.max)
+    vec3Min(box.min, point, out.min)
+    vec3Max(box.max, point, out.max)
     return out
   }
 
@@ -481,7 +480,7 @@ export class BoundingBox implements BoundingVolume {
   /**
    * Checks whether the given ray intersects this volume
    */
-  public intersectsRay(ray: Ray): boolean {
+  public intersectsRay(ray: IRay): boolean {
     return Intersects.rayBox(ray, this)
   }
   /**
@@ -570,12 +569,6 @@ export class BoundingBox implements BoundingVolume {
    * Gets the 3D-coordinate of a corner of the box
    *
    * @param index - the corner index
-   */
-  public getCorner(index: number): Vec3
-  /**
-   * Gets the 3D-coordinate of a corner of the box
-   *
-   * @param index - the corner index
    * @param out - where the result should be written to
    */
   public getCorner<T>(index: number, out?: T): T & IVec3
@@ -589,19 +582,11 @@ export class BoundingBox implements BoundingVolume {
    * @param index - the corner index
    * @param min - this min point in box
    * @param max - this max point in box
-   */
-  public static getCorner(index: number, min: IVec3, max: IVec3): Vec3
-  /**
-   * Gets the 3D-coordinate of a corner of the box
-   *
-   * @param index - the corner index
-   * @param min - this min point in box
-   * @param max - this max point in box
    * @param out - where the result should be written to
    */
   public static getCorner<T>(index: number, min: IVec3, max: IVec3, out?: T): T & IVec3
   public static getCorner(index: number, min: IVec3, max: IVec3, out?: IVec3): IVec3 {
-    out = out || new Vec3()
+    out = out || vec3()
     if (index === 0) {
       out.x = min.x
       out.y = max.y

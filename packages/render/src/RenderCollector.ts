@@ -1,4 +1,5 @@
 import { Effect, Geometry, Material, RenderVariant, SpriteBatch, SpriteMode } from '@gglib/graphics'
+import { mat4$premultiply } from '@gglib/math'
 import { idMap } from '@gglib/utils'
 import { RenderList } from './RenderList'
 import {
@@ -217,7 +218,7 @@ export class SpriteRenderCollector implements RenderCollector<SpriteRenderItem> 
       sprite.flipY()
     }
     if (data.transform) {
-      sprite.transform.premultiply(data.transform)
+      mat4$premultiply(sprite.transform, data.transform)
     }
   }
 

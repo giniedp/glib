@@ -1,5 +1,3 @@
-import { Vec4 } from '@gglib/math'
-
 export const COMMON_WGSL = /* wgsl */ `
 
 const TRUE: u32 = 1u;

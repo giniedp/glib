@@ -9,9 +9,9 @@ import {
 } from '@gglib/components'
 import { ContentLoader } from '@gglib/content'
 import { GameComponent, GameEntity, InitializableComponent } from '@gglib/ecs'
-import { BasicMaterial, PlatformId } from '@gglib/graphics'
+import { PlatformId } from '@gglib/graphics'
 import { GLTF, MTL, OBJ } from '@gglib/loaders'
-import { easeInCubic, easeInOutCubic, easeLinear, easeOutCubic, Vec3 } from '@gglib/math'
+import { easeInCubic, easeInOutCubic, easeLinear, easeOutCubic, vec3 } from '@gglib/math'
 import { Renderer } from '@gglib/render'
 import { mountUi } from 'tweak-ui'
 
@@ -43,7 +43,7 @@ class Game extends EcsGame {
         }),
       ],
       transform: new TransformComponent({
-        position: Vec3.create(0, 10, 10),
+        position: vec3(0, 10, 10),
       }),
     })
     this.scene.setCamera(0, entity.component(CameraComponent))
@@ -54,7 +54,7 @@ class Game extends EcsGame {
       name: 'cube',
       parent: this.scene.entity,
       transform: new TransformComponent({
-        position: Vec3.create(0, 0, -10),
+        position: vec3(0, 0, -10),
       }),
       components: [new ModelComponent(), new CubeComponent()],
     })
@@ -79,7 +79,7 @@ class Game extends EcsGame {
       .startV3({
         ...options,
         from: transform.translation,
-        to: Vec3.create(transform.translation.x > 0 ? -5 : 5, 0, -5),
+        to: vec3(transform.translation.x > 0 ? -5 : 5, 0, -5),
       })
       .bind((tween) => {
         console.log(tween)

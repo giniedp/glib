@@ -6,7 +6,7 @@ import {
   type EffectOptions,
   type ShaderModuleOptions,
 } from '@gglib/graphics'
-import { clamp, vec2, vec3, Vec3, Vec4, type IVec3 } from '@gglib/math'
+import { clamp, vec2, vec3, vec3$init, vec3$normalize, vec4, vec4$init, type IVec3 } from '@gglib/math'
 import SkyMaterialSchema from './SkyMaterial.meta'
 import WGSL from './SkyMaterial.wgsl'
 
@@ -52,7 +52,7 @@ export class SkyMaterial extends MaterialWithSchema(SkyMaterialSchema) {
     this.setSkylightParams(0.001, 0.00025, -0.99, 650, 570, 475, vec3(20))
   }
 
-  public setMoonParams(latitude: number, longitude: number, size: number, direction: Vec3) {
+  public setMoonParams(latitude: number, longitude: number, size: number, direction: IVec3) {
     const moonLati = -Math.PI + (Math.PI * latitude) / 180.0
     const moonLong = 0.5 * Math.PI - (Math.PI * longitude) / 180.0
 
@@ -60,23 +60,23 @@ export class SkyMaterial extends MaterialWithSchema(SkyMaterialSchema) {
     const cosLonR = Math.cos(-0.5 * Math.PI)
     const sinLatR = Math.sin(moonLati + 0.5 * Math.PI)
     const cosLatR = Math.cos(moonLati + 0.5 * Math.PI)
-    const right = this.NightMoonTexGenRight || Vec3.create()
-    Vec3.init(right, sinLonR * cosLatR, sinLonR * sinLatR, cosLonR)
-    Vec3.normalize(right, right)
+    const right = this.NightMoonTexGenRight || vec3()
+    vec3$init(right, sinLonR * cosLatR, sinLonR * sinLatR, cosLonR)
+    vec3$normalize(right)
     this.NightMoonTexGenRight = right
 
     const sinLonU = Math.sin(moonLong + 0.5 * Math.PI)
     const cosLonU = Math.cos(moonLong + 0.5 * Math.PI)
     const sinLatU = Math.sin(moonLati)
     const cosLatU = Math.cos(moonLati)
-    const up = this.NightMoonTexGenUp || Vec3.create()
-    Vec3.init(up, sinLonU * cosLatU, sinLonU * sinLatU, cosLonU)
-    Vec3.normalize(up, up)
+    const up = this.NightMoonTexGenUp || vec3()
+    vec3$init(up, sinLonU * cosLatU, sinLonU * sinLatU, cosLonU)
+    vec3$normalize(up)
     this.NightMoonTexGenUp = up
 
-    const dirSize = this.NightMoonDirSize || Vec4.create()
-    Vec4.init(dirSize, direction.x, direction.y, direction.z, 25 - clamp(24 * size, 0, 1))
-    Vec3.normalize(dirSize, dirSize)
+    const dirSize = this.NightMoonDirSize || vec4()
+    vec4$init(dirSize, direction.x, direction.y, direction.z, 25 - clamp(24 * size, 0, 1))
+    vec3$normalize(dirSize)
     this.NightMoonDirSize = dirSize
   }
 

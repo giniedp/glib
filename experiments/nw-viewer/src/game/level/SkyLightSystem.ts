@@ -2,7 +2,7 @@ import { EcsGame } from '@gglib/components'
 import { GameQuery, GameSystem, GameWorld } from '@gglib/ecs'
 import { IblSampler, NishitaSkyEffect } from '@gglib/effects'
 import { Device, getMipmapCount, Texture, TextureUsage } from '@gglib/graphics'
-import { vec3, vec4 } from '@gglib/math'
+import { mat4GetTranslation, vec3, vec4 } from '@gglib/math'
 import { Renderer } from '@gglib/render'
 import { InputSlots } from '../../material'
 import { TimeOfDay } from './TimeOfDay'
@@ -48,7 +48,7 @@ export class SkyLightSystem extends GameSystem {
   }
   public override update(time: number, dt: number): void {
     const view = this.game.scene.getView(0).camera
-    const cam = view.world.getTranslation()
+    const cam = mat4GetTranslation(view.world)
 
     for (const entity of this.todQuery) {
       const it = entity.component(TimeOfDayComponent)

@@ -1,6 +1,6 @@
 import { AssetContainer, AssetType, LoadContext } from '@gglib/content'
 import { buildBox, Color, CommonMaterialProps, GeometryBuilder, MaterialOptions } from '@gglib/graphics'
-import { Mat4 } from '@gglib/math'
+import { mat4$initTranslationXYZ, mat4Identity } from '@gglib/math'
 import { ModelOptions } from '@gglib/model'
 
 export class PixelsContainer implements AssetContainer {
@@ -43,7 +43,7 @@ async function parsePixels(data: string): Promise<ModelOptions> {
   const builders: GeometryBuilder[] = []
   const materials: MaterialOptions[] = []
 
-  const transform = Mat4.createIdentity()
+  const transform = mat4Identity()
   const rows = data.split('\n')
   rows.forEach((row, y) => {
     const cols = row.trim().split('')
@@ -63,7 +63,8 @@ async function parsePixels(data: string): Promise<ModelOptions> {
       }
       const index = colors.indexOf(color)
       const builder = builders[index]
-      transform.initTranslationXYZ(
+      mat4$initTranslationXYZ(
+        transform,
         x - cols.length / 2 + 0.5 + x * gap,
         rows.length - y - rows.length / 2 + 0.5 - y * gap,
         0,

@@ -21,9 +21,9 @@ export function loadLayerMaterials(
         }
 
         const splat = await content.loadTexture(layer.splatMap)
-        const material = await content.loader.loadMaterial<TerrainCompositeMaterial>(layer.material + '.glb', {
+        const material = (await content.loader.loadMaterial(layer.material + '.glb', {
           baseUrl: content.nwbtFileUrl,
-        })
+        })) as TerrainCompositeMaterial
         material.SplatMap = splat
 
         task.context.push(material)

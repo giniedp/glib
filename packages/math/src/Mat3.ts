@@ -1,5 +1,5 @@
-import type { ArrayLike, IVec2, IVec3, IVec4, Mat3Elements } from './Types'
-import { Vec3 } from './Vec3'
+import type { ArrayLike, IVec3, IVec4 } from './Types'
+import { vec3 } from './Vec3'
 
 // prettier-ignore
 const
@@ -7,2582 +7,2034 @@ const
   C0R1 = 1, C1R1 = 4, C2R1 = 7,
   C0R2 = 2, C1R2 = 5, C2R2 = 8
 
+export type Mat3 = Float16Array | Float32Array | Float64Array | number[]
+
 /**
- * A 3x3 matrix using column major layout
- *
- * @public
- * @remarks
- * The matrix stores its values in a typed `Float32Array` array.
- * The elements are laid out in column major order meaning that
- * elements of each base vector reside next to each other.
+ * Creates a new matrix with all components set to 0
  */
-export class Mat3 {
-  /**
-   * The matrix data array
-   */
-  public readonly elements: Float32Array | Float64Array
-
-  /**
-   * Gets and sets value at column 0 row 0
-   */
-  public get m00() {
-    return this.elements[C0R0]
-  }
-  public set m00(v: number) {
-    this.elements[C0R0] = v
-  }
-
-  /**
-   * Gets and sets value at column 0 row 1
-   */
-  public get m01() {
-    return this.elements[C0R1]
-  }
-  public set m01(v: number) {
-    this.elements[C0R1] = v
-  }
-
-  /**
-   * Gets and sets value at column 0 row 2
-   */
-  public get m02() {
-    return this.elements[C0R2]
-  }
-  public set m02(v: number) {
-    this.elements[C0R2] = v
-  }
-
-  /**
-   * Gets and sets value at column 1 row 0
-   */
-  public get m10() {
-    return this.elements[C1R0]
-  }
-  public set m10(v: number) {
-    this.elements[C1R0] = v
-  }
-
-  /**
-   * Gets and sets value at column 1 row 1
-   */
-  public get m11() {
-    return this.elements[C1R1]
-  }
-  public set m11(v: number) {
-    this.elements[C1R1] = v
-  }
-
-  /**
-   * Gets and sets value at column 1 row 2
-   */
-  public get m12() {
-    return this.elements[C1R2]
-  }
-  public set m12(v: number) {
-    this.elements[C1R2] = v
-  }
-
-  /**
-   * Gets and sets value at column 2 row 0
-   */
-  public get m20() {
-    return this.elements[C2R0]
-  }
-  public set m20(v: number) {
-    this.elements[C2R0] = v
-  }
-
-  /**
-   * Gets and sets value at column 2 row 1
-   */
-  public get m21() {
-    return this.elements[C2R1]
-  }
-  public set m21(v: number) {
-    this.elements[C2R1] = v
-  }
-
-  /**
-   * Gets and sets value at column 2 row 2
-   */
-  public get m22() {
-    return this.elements[C2R2]
-  }
-  public set m22(v: number) {
-    this.elements[C2R2] = v
-  }
-
-  /**
-   * Constructs a new instance of {@link Mat4}
-   *
-   * @param elements - the data to initialize with
-   */
-  public constructor(elements?: Mat3Elements) {
-    if (Array.isArray(elements)) {
-      this.elements = new Float32Array(elements)
-    } else {
-      this.elements = elements || new Float32Array(9)
-    }
-  }
-
-  /**
-   * Gets the forward direction as a new vector
-   */
-  public getForward(): Vec3
-  /**
-   * Gets the forward direction into an existing vector
-   */
-  public getForward<T>(out?: T): T & IVec3
-  public getForward(out?: Vec3): Vec3 {
-    out = out || new Vec3()
-    out.x = -this.elements[C2R0]
-    out.y = -this.elements[C2R1]
-    out.z = -this.elements[C2R2]
-    return out
-  }
-
-  /**
-   * Sets the forward vector
-   */
-  public setForward(vec: IVec3): this {
-    this.elements[C2R0] = -vec.x
-    this.elements[C2R1] = -vec.y
-    this.elements[C2R2] = -vec.z
-    return this
-  }
-
-  /**
-   * Gets the backward direction as a new vector
-   */
-  public getBackward(): Vec3
-  /**
-   * Gets the backward direction into an existing vector
-   */
-  public getBackward<T>(out?: T): T & IVec3
-  public getBackward(out?: Vec3): Vec3 {
-    out = out || new Vec3()
-    out.x = this.elements[C2R0]
-    out.y = this.elements[C2R1]
-    out.z = this.elements[C2R2]
-    return out
-  }
-
-  /**
-   * Sets the backward vector
-   */
-  public setBackward(vec: IVec3): this {
-    this.elements[C2R0] = vec.x
-    this.elements[C2R1] = vec.y
-    this.elements[C2R2] = vec.z
-    return this
-  }
-
-  /**
-   * Gets the right direction as a new vector
-   */
-  public getRight(): Vec3
-  /**
-   * Gets the right direction into an existing vector
-   */
-  public getRight<T>(out?: T): T & IVec3
-  public getRight(out?: Vec3): Vec3 {
-    out = out || new Vec3()
-    out.x = this.elements[C0R0]
-    out.y = this.elements[C0R1]
-    out.z = this.elements[C0R2]
-    return out
-  }
-
-  /**
-   * Sets the right vector
-   */
-  public setRight(vec: IVec3): this {
-    this.elements[C0R0] = vec.x
-    this.elements[C0R1] = vec.y
-    this.elements[C0R2] = vec.z
-    return this
-  }
-
-  /**
-   * Gets the left direction as a new vector
-   */
-  public getLeft(): Vec3
-  /**
-   * Gets the left direction into an existing vector
-   */
-  public getLeft<T>(out?: T): T & IVec3
-  public getLeft(out?: Vec3): Vec3 {
-    out = out || new Vec3()
-    out.x = -this.elements[C0R0]
-    out.y = -this.elements[C0R1]
-    out.z = -this.elements[C0R2]
-    return out
-  }
-
-  /**
-   * Sets the left vector
-   */
-  public setLeft(vec: IVec3): this {
-    this.elements[C0R0] = -vec.x
-    this.elements[C0R1] = -vec.y
-    this.elements[C0R2] = -vec.z
-    return this
-  }
-
-  /**
-   * Gets the up direction as a new vector
-   */
-  public getUp(): Vec3
-  /**
-   * Gets the up direction into an existing vector
-   */
-  public getUp<T>(out?: T): T & IVec3
-  public getUp(out?: Vec3): Vec3 {
-    out = out || new Vec3()
-    out.x = this.elements[C1R0]
-    out.y = this.elements[C1R1]
-    out.z = this.elements[C1R2]
-    return out
-  }
-
-  /**
-   * Sets the up vector
-   * @param vec - The vector to take values from
-   */
-  public setUp(vec: IVec3): this {
-    this.elements[C1R0] = vec.x
-    this.elements[C1R1] = vec.y
-    this.elements[C1R2] = vec.z
-    return this
-  }
-
-  /**
-   * Gets the down direction as a new vector
-   */
-  public getDown(): Vec3
-  /**
-   * Gets the down direction into an existing vector
-   */
-  public getDown<T>(out?: T): T & IVec3
-  public getDown(out?: Vec3): Vec3 {
-    out = out || new Vec3()
-    out.x = -this.elements[C1R0]
-    out.y = -this.elements[C1R1]
-    out.z = -this.elements[C1R2]
-    return out
-  }
-
-  /**
-   * Sets the down vector
-   */
-  public setDown(vec: IVec3): this {
-    this.elements[C1R0] = -vec.x
-    this.elements[C1R1] = -vec.y
-    this.elements[C1R2] = -vec.z
-    return this
-  }
-
-  /**
-   * Gets the scale part as a new vector
-   */
-  public getScale(): Vec3
-  /**
-   * Gets the scale part into an existing vector
-   */
-  public getScale<T>(out?: T): T & IVec3
-  public getScale(out?: Vec3): Vec3 {
-    out = out || new Vec3()
-    out.x = this.elements[C0R0]
-    out.y = this.elements[C1R1]
-    out.z = this.elements[C2R2]
-    return out
-  }
-
-  /**
-   * Sets the scale part
-   */
-  public setScaleXYZ(x: number, y: number, z: number): this {
-    this.elements[C0R0] = x
-    this.elements[C1R1] = y
-    this.elements[C2R2] = z
-    return this
-  }
-
-  /**
-   * Sets the scale part
-   */
-  public setScale(vec: IVec3): this {
-    this.elements[C0R0] = vec.x
-    this.elements[C1R1] = vec.y
-    this.elements[C2R2] = vec.z
-    return this
-  }
-
-  /**
-   * Sets the x component of the scale part
-   */
-  public setScaleX(v: number): this {
-    this.elements[C0R0] = v
-    return this
-  }
-
-  /**
-   * Sets the y component of the scale part
-   */
-  public setScaleY(v: number): this {
-    this.elements[C1R1] = v
-    return this
-  }
-
-  /**
-   * Sets the z component of the scale part
-   */
-  public setScaleZ(v: number): this {
-    this.elements[C2R2] = v
-    return this
-  }
-
-  /**
-   * Creates a matrix by reading the arguments in column major order
-   */
-  public static create(
-    m00: number,
-    m01: number,
-    m02: number,
-    m10: number,
-    m11: number,
-    m12: number,
-    m20: number,
-    m21: number,
-    m22: number,
-  ): Mat3 {
-    const out = new Mat3()
-    const m = out.elements
-    m[C0R0] = m00
-    m[C0R1] = m01
-    m[C0R2] = m02
-
-    m[C1R0] = m10
-    m[C1R1] = m11
-    m[C1R2] = m12
-
-    m[C2R0] = m20
-    m[C2R1] = m21
-    m[C2R2] = m22
-    return out
-  }
-
-  /**
-   * Initializes the matrix by reading the arguments in column major order
-   */
-  public init(
-    m00: number,
-    m01: number,
-    m02: number,
-    m10: number,
-    m11: number,
-    m12: number,
-    m20: number,
-    m21: number,
-    m22: number,
-  ): this {
-    const m = this.elements
-    m[C0R0] = m00
-    m[C0R1] = m01
-    m[C0R2] = m02
-
-    m[C1R0] = m10
-    m[C1R1] = m11
-    m[C1R2] = m12
-
-    m[C2R0] = m20
-    m[C2R1] = m21
-    m[C2R2] = m22
-
-    return this
-  }
-
-  /**
-   * Creates a matrix by reading the arguments in row major order
-   *
-   * @remarks
-   * The storage layout of the matrix does not change and keeps being
-   * column major. Solely the given arguments are scanned in row major
-   * order
-   */
-  public static createRowMajor(
-    m00: number,
-    m10: number,
-    m20: number,
-    m01: number,
-    m11: number,
-    m21: number,
-    m02: number,
-    m12: number,
-    m22: number,
-  ): Mat3 {
-    const out = new Mat3()
-    const m = out.elements
-    m[C0R0] = m00
-    m[C0R1] = m01
-    m[C0R2] = m02
-
-    m[C1R0] = m10
-    m[C1R1] = m11
-    m[C1R2] = m12
-
-    m[C2R0] = m20
-    m[C2R1] = m21
-    m[C2R2] = m22
-
-    return out
-  }
-
-  /**
-   * Initializes the matrix by reading the arguments in row major order
-   *
-   * @remarks
-   * The storage layout of the matrix does not change and keeps being
-   * column major. Solely the given arguments are scanned in row major
-   * order
-   */
-  public initRowMajor(
-    m00: number,
-    m10: number,
-    m20: number,
-    m01: number,
-    m11: number,
-    m21: number,
-    m02: number,
-    m12: number,
-    m22: number,
-  ): this {
-    const m = this.elements
-    m[C0R0] = m00
-    m[C0R1] = m01
-    m[C0R2] = m02
-
-    m[C1R0] = m10
-    m[C1R1] = m11
-    m[C1R2] = m12
-
-    m[C2R0] = m20
-    m[C2R1] = m21
-    m[C2R2] = m22
-
-    return this
-  }
-
-  /**
-   * Crates a matrix with all components initialized to given value
-   *
-   * @param number - The number to set all matrix components to.
-   */
-  public static createFill(value: number): Mat3 {
-    return new Mat3().initFill(value)
-  }
-
-  /**
-   * Initializes all components with given value
-   *
-   * @param number - The number to set all matrix components to.
-   */
-  public initFill(value: number): this {
-    const m = this.elements
-    m[C0R0] = value
-    m[C1R0] = value
-    m[C2R0] = value
-    m[C0R1] = value
-    m[C1R1] = value
-    m[C2R1] = value
-    m[C0R2] = value
-    m[C1R2] = value
-    m[C2R2] = value
-    return this
-  }
-
-  /**
-   * Creates a new matrix that is initialized to identity
-   *
-   * @returns a new matrix
-   */
-  public static createIdentity(): Mat3 {
-    return new Mat3().initIdentity()
-  }
-
-  /**
-   * Initializes the components of this matrix to the identity.
-   */
-  public initIdentity(): this {
-    const m = this.elements
-    m[C0R0] = 1
-    m[C1R0] = 0
-    m[C2R0] = 0
-    m[C0R1] = 0
-    m[C1R1] = 1
-    m[C2R1] = 0
-    m[C0R2] = 0
-    m[C1R2] = 0
-    m[C2R2] = 1
-    return this
-  }
-
-  /**
-   * Creates a new matrix from another.
-   */
-  public static createFrom(other: Mat3): Mat3 {
-    return new Mat3().initFrom(other)
-  }
-
-  /**
-   * Initializes this matrix from another matrix.
-   */
-  public initFrom(other: Mat3): this {
-    const a = this.elements
-    const b = other.elements
-    a[0] = b[0]
-    a[1] = b[1]
-    a[2] = b[2]
-    a[3] = b[3]
-    a[4] = b[4]
-    a[5] = b[5]
-    a[6] = b[6]
-    a[7] = b[7]
-    a[8] = b[8]
-    return this
-  }
-
-  /**
-   * Reads a array starting at given offset and initializes the elements of this matrix.
-   */
-  public static createFromArray(array: ArrayLike<number>, offset?: number): Mat3 {
-    return new Mat3().initFromArray(array, offset)
-  }
-
-  /**
-   * Reads a array starting at given offset and creates a new matrix.
-   */
-  public initFromArray(array: ArrayLike<number>, offset?: number): this {
-    offset = offset || 0
-    const a = this.elements
-    a[0] = array[offset]
-    a[1] = array[offset + 1]
-    a[2] = array[offset + 2]
-    a[3] = array[offset + 3]
-    a[4] = array[offset + 4]
-    a[5] = array[offset + 5]
-    a[6] = array[offset + 6]
-    a[7] = array[offset + 7]
-    a[8] = array[offset + 8]
-    return this
-  }
-
-  /**
-   * Creates a rotation matrix from an axis and angle
-   *
-   * @param axis - normalized rotation axis vector
-   * @param angle - rotation angle in rad
-   */
-  public static createAxisAngle(axis: IVec3, angle: number): Mat3 {
-    return new Mat3().initAxisXYZAngle(axis.x, axis.y, axis.z, angle)
-  }
-
-  /**
-   * Initializes this matrix to a rotation matrix defined by given axis vector and angle.
-   *
-   * @param axis - normalized rotation axis vector
-   * @param angle - rotation angle in rad
-   */
-  public initAxisAngle(axis: IVec3, angle: number): this {
-    return this.initAxisXYZAngle(axis.x, axis.y, axis.z, angle)
-  }
-
-  /**
-   * Applies a rotation around the given axis and angle
-   *
-   * @remarks
-   * This affects only the 3x3 rotation part of the matrix.
-   * Meaning that the matrix changes its facing direction
-   * but keeps its position and shearing as is.
-   *
-   * @param axis - normalized rotation axis vector
-   * @param angle - rotation angle in rad
-   */
-  public rotateAxisAngle(axis: IVec3, angle: number): this {
-    return this.rotateAxisXYZAngle(axis.x, axis.y, axis.z, angle)
-  }
-
-  /**
-   * Applies a rotation around the given axis and angle
-   *
-   * @remarks
-   * This pre-multiplies the rotation so the rotation happens in global space.
-   *
-   * @param x - x component of the normalized rotation axis
-   * @param y - y component of the normalized rotation axis
-   * @param z - z component of the normalized rotation axis
-   * @param angle - rotation angle in rad
-   */
-  public preRotateAxisXYZAngle(x: number, y: number, z: number, angle: number): this {
-    // create quaternion
-    const halfAngle = angle * 0.5
-    const scale = Math.sin(halfAngle)
-    x *= scale
-    y *= scale
-    z *= scale
-    const w = Math.cos(halfAngle)
-    this.preRotateQuaternion(x, y, z, w)
-    return this
-  }
-
-  /**
-   * Creates a rotation matrix from axis angle parameters
-   *
-   * @param x - x component of the normalized rotation axis
-   * @param y - y component of the normalized rotation axis
-   * @param z - z component of the normalized rotation axis
-   * @param angle - rotation angle in rad
-   */
-  public static createAxisXYZAngle(x: number, y: number, z: number, angle: number): Mat3 {
-    return new Mat3().initAxisXYZAngle(x, y, z, angle)
-  }
-
-  /**
-   * Initializes this matrix to a rotation matrix defined by given axis and angle.
-   *
-   * @param x - x component of the normalized rotation axis
-   * @param y - y component of the normalized rotation axis
-   * @param z - z component of the normalized rotation axis
-   * @param angle - rotation angle in rad
-   */
-  public initAxisXYZAngle(x: number, y: number, z: number, angle: number): this {
-    // create quaternion
-    const halfAngle = angle * 0.5
-    const scale = Math.sin(halfAngle)
-    x *= scale
-    y *= scale
-    z *= scale
-    const w = Math.cos(halfAngle)
-
-    // matrix from quaternion
-    const xx = x * x
-    const xy = x * y
-    const xz = z * x
-    const xw = x * w
-
-    const yy = y * y
-    const yz = y * z
-    const yw = y * w
-
-    const zz = z * z
-    const zw = z * w
-
-    const m = this.elements
-    m[C0R0] = 1 - 2 * (yy + zz)
-    m[C0R1] = 2 * (xy + zw)
-    m[C0R2] = 2 * (xz - yw)
-
-    m[C1R0] = 2 * (xy - zw)
-    m[C1R1] = 1 - 2 * (zz + xx)
-    m[C1R2] = 2 * (yz + xw)
-
-    m[C2R0] = 2 * (xz + yw)
-    m[C2R1] = 2 * (yz - xw)
-    m[C2R2] = 1 - 2 * (yy + xx)
-
-    return this
-  }
-
-  /**
-   * Applies a rotation around the given axis and angle
-   *
-   * @remarks
-   * This affects only the 3x3 rotation part of the matrix.
-   * Meaning that the matrix changes its facing direction
-   * but keeps its position and shearing as is.
-   *
-   * @param x - x component of the normalized rotation axis
-   * @param y - y component of the normalized rotation axis
-   * @param z - z component of the normalized rotation axis
-   * @param angle - rotation angle in rad
-   */
-  public rotateAxisXYZAngle(x: number, y: number, z: number, angle: number): this {
-    // create quaternion
-    const halfAngle = angle * 0.5
-    const scale = Math.sin(halfAngle)
-    x *= scale
-    y *= scale
-    z *= scale
-    const w = Math.cos(halfAngle)
-
-    // matrix from quaternion
-    const xx = x * x
-    const yy = y * y
-    const zz = z * z
-    const xy = x * y
-    const zw = z * w
-    const zx = z * x
-    const yw = y * w
-    const yz = y * z
-    const xw = x * w
-
-    const r00 = 1 - 2 * (yy + zz)
-    const r01 = 2 * (xy + zw)
-    const r02 = 2 * (zx - yw)
-
-    const r10 = 2 * (xy - zw)
-    const r11 = 1 - 2 * (zz + xx)
-    const r12 = 2 * (yz + xw)
-
-    const r20 = 2 * (zx + yw)
-    const r21 = 2 * (yz - xw)
-    const r22 = 1 - 2 * (yy + xx)
-
-    const m = this.elements
-    const m00 = m[C0R0]
-    const m01 = m[C0R1]
-    const m02 = m[C0R2]
-    const m10 = m[C1R0]
-    const m11 = m[C1R1]
-    const m12 = m[C1R2]
-    const m20 = m[C2R0]
-    const m21 = m[C2R1]
-    const m22 = m[C2R2]
-
-    m[C0R0] = r00 * m00 + r01 * m10 + r02 * m20
-    m[C0R1] = r00 * m01 + r01 * m11 + r02 * m21
-    m[C0R2] = r00 * m02 + r01 * m12 + r02 * m22
-    m[C1R0] = r10 * m00 + r11 * m10 + r12 * m20
-    m[C1R1] = r10 * m01 + r11 * m11 + r12 * m21
-    m[C1R2] = r10 * m02 + r11 * m12 + r12 * m22
-    m[C2R0] = r20 * m00 + r21 * m10 + r22 * m20
-    m[C2R1] = r20 * m01 + r21 * m11 + r22 * m21
-    m[C2R2] = r20 * m02 + r21 * m12 + r22 * m22
-
-    return this
-  }
-
-  /**
-   * Creates a rotation matrix from yaw pitch roll angles
-   *
-   * @param yaw - angle in rad around the Y axis
-   * @param pitch - angle in rad around the X axis
-   * @param roll - angle in rad around the Z axis
-   */
-  public static createYawPitchRoll(yaw: number, pitch: number, roll: number): Mat3 {
-    return new Mat3().initYawPitchRoll(yaw, pitch, roll)
-  }
-
-  /**
-   * Initializes this to a rotation matrix from yaw pitch roll angles
-   *
-   * @param yaw - angle in rad around the Y axis
-   * @param pitch - angle in rad around the X axis
-   * @param roll - angle in rad around the Z axis
-   */
-  public initYawPitchRoll(yaw: number, pitch: number, roll: number): this {
-    // create quaternion
-    const zHalf = roll * 0.5
-    const zSin = Math.sin(zHalf)
-    const zCos = Math.cos(zHalf)
-
-    const xHalf = pitch * 0.5
-    const xSin = Math.sin(xHalf)
-    const xCos = Math.cos(xHalf)
-
-    const yHalf = yaw * 0.5
-    const ySin = Math.sin(yHalf)
-    const yCos = Math.cos(yHalf)
-
-    const x = yCos * xSin * zCos + ySin * xCos * zSin
-    const y = ySin * xCos * zCos - yCos * xSin * zSin
-    const z = yCos * xCos * zSin - ySin * xSin * zCos
-    const w = yCos * xCos * zCos + ySin * xSin * zSin
-
-    // matrix from quaternion
-    const xx = x * x
-    const xy = x * y
-    const xz = z * x
-    const xw = x * w
-
-    const yy = y * y
-    const yz = y * z
-    const yw = y * w
-
-    const zz = z * z
-    const zw = z * w
-
-    const m = this.elements
-    m[C0R0] = 1 - 2 * (yy + zz)
-    m[C0R1] = 2 * (xy + zw)
-    m[C0R2] = 2 * (xz - yw)
-
-    m[C1R0] = 2 * (xy - zw)
-    m[C1R1] = 1 - 2 * (zz + xx)
-    m[C1R2] = 2 * (yz + xw)
-
-    m[C2R0] = 2 * (xz + yw)
-    m[C2R1] = 2 * (yz - xw)
-    m[C2R2] = 1 - 2 * (yy + xx)
-
-    return this
-  }
-
-  /**
-   * Applies a yaw pitch roll rotation to this matrix
-   *
-   * @param yaw - angle in rad around the Y axis
-   * @param pitch - angle in rad around the X axis
-   * @param roll - angle in rad around the Z axis
-   */
-  public rotateYawPitchRoll(yaw: number, pitch: number, roll: number): Mat3 {
-    // create quaternion
-    const zHalf = roll * 0.5
-    const zSin = Math.sin(zHalf)
-    const zCos = Math.cos(zHalf)
-
-    const xHalf = pitch * 0.5
-    const xSin = Math.sin(xHalf)
-    const xCos = Math.cos(xHalf)
-
-    const yHalf = yaw * 0.5
-    const ySin = Math.sin(yHalf)
-    const yCos = Math.cos(yHalf)
-
-    const x = yCos * xSin * zCos + ySin * xCos * zSin
-    const y = ySin * xCos * zCos - yCos * xSin * zSin
-    const z = yCos * xCos * zSin - ySin * xSin * zCos
-    const w = yCos * xCos * zCos + ySin * xSin * zSin
-    return this.rotateQuaternion(x, y, z, w)
-  }
-
-  /**
-   * Applies a yaw pitch roll rotation to this matrix
-   *
-   * @remarks
-   * This pre-multiplies the rotation so the rotation happens in global space.
-   *
-   * @param yaw - angle in rad around the Y axis
-   * @param pitch - angle in rad around the X axis
-   * @param roll - angle in rad around the Z axis
-   */
-  public preRotateYawPitchRoll(yaw: number, pitch: number, roll: number): this {
-    // create quaternion
-    const zHalf = roll * 0.5
-    const zSin = Math.sin(zHalf)
-    const zCos = Math.cos(zHalf)
-
-    const xHalf = pitch * 0.5
-    const xSin = Math.sin(xHalf)
-    const xCos = Math.cos(xHalf)
-
-    const yHalf = yaw * 0.5
-    const ySin = Math.sin(yHalf)
-    const yCos = Math.cos(yHalf)
-
-    const x = yCos * xSin * zCos + ySin * xCos * zSin
-    const y = ySin * xCos * zCos - yCos * xSin * zSin
-    const z = yCos * xCos * zSin - ySin * xSin * zCos
-    const w = yCos * xCos * zCos + ySin * xSin * zSin
-
-    return this.preRotateQuaternion(x, y, z, w)
-  }
-
-  /**
-   * Creates a matrix from given quaternion.
-   *
-   * @param q - The quaternion
-   */
-  public static createFromQuat(q: IVec4): Mat3 {
-    return new Mat3().initFromQuaternion(q.x, q.y, q.z, q.w)
-  }
-
-  /**
-   * Initializes this matrix from given quaternion.
-   *
-   * @param q - The quaternion
-   */
-  public initFromQuat(q: IVec4): this {
-    return this.initFromQuaternion(q.x, q.y, q.z, q.w)
-  }
-
-  /**
-   * Rotates this matrix by a quaternion
-   *
-   * @param q - The rotation quaternion
-   */
-  public rotateQuat(q: IVec4): this {
-    return this.rotateQuaternion(q.x, q.y, q.z, q.w)
-  }
-
-  /**
-   * Creates a rotation matrix from quaternion and pre-multiplies it to `this`
-   *
-   * @remarks
-   * This pre-multiplies the rotation so the rotation happens in global space.
-   *
-   * @param q - The rotation quaternion
-   */
-  public preRotateQuat(q: IVec4): this {
-    return this.preRotateQuaternion(q.x, q.y, q.z, q.w)
-  }
-
-  /**
-   * Creates a matrix from given quaternion parameters
-   *
-   * @param x - x component of the quaternion
-   * @param y - y component of the quaternion
-   * @param z - z component of the quaternion
-   * @param w - w component of the quaternion
-   */
-  public static createFromQuaternion(x: number, y: number, z: number, w: number): Mat3 {
-    return new Mat3().initFromQuaternion(x, y, z, w)
-  }
-
-  /**
-   * Initializes this matrix from given quaternion parameters
-   *
-   * @param x - x component of the quaternion
-   * @param y - y component of the quaternion
-   * @param z - z component of the quaternion
-   * @param w - w component of the quaternion
-   */
-  public initFromQuaternion(x: number, y: number, z: number, w: number): this {
-    const xx = x * x
-    const xy = x * y
-    const xz = x * z
-    const xw = x * w
-
-    const yy = y * y
-    const yz = y * z
-    const yw = y * w
-
-    const zz = z * z
-    const zw = z * w
-
-    const m = this.elements
-    m[C0R0] = 1 - 2 * (yy + zz)
-    m[C0R1] = 2 * (xy + zw)
-    m[C0R2] = 2 * (xz - yw)
-
-    m[C1R0] = 2 * (xy - zw)
-    m[C1R1] = 1 - 2 * (zz + xx)
-    m[C1R2] = 2 * (yz + xw)
-
-    m[C2R0] = 2 * (xz + yw)
-    m[C2R1] = 2 * (yz - xw)
-    m[C2R2] = 1 - 2 * (yy + xx)
-
-    return this
-  }
-
-  /**
-   * Rotates this matrix by a quaternion
-   *
-   * @param x - x component of the quaternion
-   * @param y - y component of the quaternion
-   * @param z - z component of the quaternion
-   * @param w - w component of the quaternion
-   */
-  public rotateQuaternion(x: number, y: number, z: number, w: number): this {
-    // matrix from quaternion
-    const xx = x * x
-    const yy = y * y
-    const zz = z * z
-    const xy = x * y
-    const zw = z * w
-    const zx = z * x
-    const yw = y * w
-    const yz = y * z
-    const xw = x * w
-
-    const r00 = 1 - 2 * (yy + zz)
-    const r01 = 2 * (xy + zw)
-    const r02 = 2 * (zx - yw)
-
-    const r10 = 2 * (xy - zw)
-    const r11 = 1 - 2 * (zz + xx)
-    const r12 = 2 * (yz + xw)
-
-    const r20 = 2 * (zx + yw)
-    const r21 = 2 * (yz - xw)
-    const r22 = 1 - 2 * (yy + xx)
-
-    const m = this.elements
-    const m00 = m[C0R0]
-    const m01 = m[C0R1]
-    const m02 = m[C0R2]
-    const m10 = m[C1R0]
-    const m11 = m[C1R1]
-    const m12 = m[C1R2]
-    const m20 = m[C2R0]
-    const m21 = m[C2R1]
-    const m22 = m[C2R2]
-
-    m[C0R0] = r00 * m00 + r01 * m10 + r02 * m20
-    m[C0R1] = r00 * m01 + r01 * m11 + r02 * m21
-    m[C0R2] = r00 * m02 + r01 * m12 + r02 * m22
-    m[C1R0] = r10 * m00 + r11 * m10 + r12 * m20
-    m[C1R1] = r10 * m01 + r11 * m11 + r12 * m21
-    m[C1R2] = r10 * m02 + r11 * m12 + r12 * m22
-    m[C2R0] = r20 * m00 + r21 * m10 + r22 * m20
-    m[C2R1] = r20 * m01 + r21 * m11 + r22 * m21
-    m[C2R2] = r20 * m02 + r21 * m12 + r22 * m22
-
-    return this
-  }
-
-  /**
-   * Creates a rotation matrix from quaternion parameters and pre-multiplies it to `this`
-   *
-   * @remarks
-   * This pre-multiplies the rotation so the rotation happens in global space.
-   *
-   * @param x - x component of the quaternion
-   * @param y - y component of the quaternion
-   * @param z - z component of the quaternion
-   * @param w - w component of the quaternion
-   */
-  public preRotateQuaternion(x: number, y: number, z: number, w: number): this {
-    // matrix from quaternion
-    const xx = x * x
-    const yy = y * y
-    const zz = z * z
-    const xy = x * y
-    const zw = z * w
-    const zx = z * x
-    const yw = y * w
-    const yz = y * z
-    const xw = x * w
-
-    const r00 = 1 - 2 * (yy + zz)
-    const r01 = 2 * (xy + zw)
-    const r02 = 2 * (zx - yw)
-
-    const r10 = 2 * (xy - zw)
-    const r11 = 1 - 2 * (zz + xx)
-    const r12 = 2 * (yz + xw)
-
-    const r20 = 2 * (zx + yw)
-    const r21 = 2 * (yz - xw)
-    const r22 = 1 - 2 * (yy + xx)
-
-    const m = this.elements
-    const m00 = m[C0R0]
-    const m10 = m[C1R0]
-    const m20 = m[C2R0]
-    const m01 = m[C0R1]
-    const m11 = m[C1R1]
-    const m21 = m[C2R1]
-    const m02 = m[C0R2]
-    const m12 = m[C1R2]
-    const m22 = m[C2R2]
-
-    m[C0R0] = r00 * m00 + r01 * m01 + r02 * m02
-    m[C1R0] = r00 * m10 + r01 * m11 + r02 * m12
-    m[C2R0] = r00 * m20 + r01 * m21 + r02 * m22
-    m[C0R1] = r10 * m00 + r11 * m01 + r12 * m02
-    m[C1R1] = r10 * m10 + r11 * m11 + r12 * m12
-    m[C2R1] = r10 * m20 + r11 * m21 + r12 * m22
-    m[C0R2] = r20 * m00 + r21 * m01 + r22 * m02
-    m[C1R2] = r20 * m10 + r21 * m11 + r22 * m12
-    m[C2R2] = r20 * m20 + r21 * m21 + r22 * m22
-
-    return this
-  }
-
-  /**
-   * Creates a new rotation matrix
-   */
-  public static createRotationX(rad: number): Mat3 {
-    return new Mat3().initRotationX(rad)
-  }
-
-  /**
-   * Initializes this matrix with a rotation around the X axis.
-   *
-   * @param angle - angle in rad
-   */
-  public initRotationX(angle: number): this {
-    const cos = Math.cos(angle)
-    const sin = Math.sin(angle)
-    const m = this.elements
-    m[C0R0] = 1
-    m[C1R0] = 0
-    m[C2R0] = 0
-    m[C0R1] = 0
-    m[C1R1] = cos
-    m[C2R1] = -sin
-    m[C0R2] = 0
-    m[C1R2] = sin
-    m[C2R2] = cos
-    return this
-  }
-
-  /**
-   * Applies a post-rotation around X axis to this matrix
-   *
-   * @remarks
-   * This post-multiplies the rotation so the rotation happens in local space.
-   *
-   * @param angle - angle in rad
-   */
-  public rotateX(angle: number): this {
-    const m = this.elements
-    const m10 = m[C1R0]
-    const m11 = m[C1R1]
-    const m12 = m[C1R2]
-    const m20 = m[C2R0]
-    const m21 = m[C2R1]
-    const m22 = m[C2R2]
-    const c = Math.cos(angle)
-    const s = Math.sin(angle)
-
-    m[C1R0] = c * m10 + s * m20
-    m[C1R1] = c * m11 + s * m21
-    m[C1R2] = c * m12 + s * m22
-    m[C2R0] = c * m20 - s * m10
-    m[C2R1] = c * m21 - s * m11
-    m[C2R2] = c * m22 - s * m12
-
-    return this
-  }
-
-  /**
-   * Applies a pre-rotation around X axis to this matrix in world space
-   *
-   * @remarks
-   * This pre-multiplies the rotation so the rotation happens in global space.
-   *
-   * @param angle - angle in rad
-   */
-  public preRotateX(angle: number): this {
-    const m = this.elements
-    const m01 = m[C0R1]
-    const m11 = m[C1R1]
-    const m21 = m[C2R1]
-    const m02 = m[C0R2]
-    const m12 = m[C1R2]
-    const m22 = m[C2R2]
-    const c = Math.cos(angle)
-    const s = Math.sin(angle)
-
-    m[C0R1] = c * m01 - s * m02
-    m[C1R1] = c * m11 - s * m12
-    m[C2R1] = c * m21 - s * m22
-    m[C0R2] = c * m02 + s * m01
-    m[C1R2] = c * m12 + s * m11
-    m[C2R2] = c * m22 + s * m21
-
-    return this
-  }
-
-  /**
-   * Creates a new rotation matrix
-   */
-  public static createRotationY(rad: number): Mat3 {
-    return new Mat3().initRotationY(rad)
-  }
-
-  /**
-   * Initializes this matrix with a rotation around the Y axis.
-   *
-   * @param angle - angle in rad
-   */
-  public initRotationY(angle: number): this {
-    const cos = Math.cos(angle)
-    const sin = Math.sin(angle)
-    const m = this.elements
-    m[C0R0] = cos
-    m[C1R0] = 0
-    m[C2R0] = sin
-    m[C0R1] = 0
-    m[C1R1] = 1
-    m[C2R1] = 0
-    m[C0R2] = -sin
-    m[C1R2] = 0
-    m[C2R2] = cos
-    return this
-  }
-
-  /**
-   * Applies a rotation around Y axis to this matrix
-   *
-   * @remarks
-   * This post-multiplies the rotation so the rotation happens in local space.
-   *
-   * @param angle - angle in rad
-   */
-  public rotateY(angle: number): this {
-    const m = this.elements
-    const m00 = m[C0R0]
-    const m01 = m[C0R1]
-    const m02 = m[C0R2]
-    const m20 = m[C2R0]
-    const m21 = m[C2R1]
-    const m22 = m[C2R2]
-    const c = Math.cos(angle)
-    const s = Math.sin(angle)
-
-    m[C0R0] = c * m00 - s * m20
-    m[C0R1] = c * m01 - s * m21
-    m[C0R2] = c * m02 - s * m22
-    m[C2R0] = c * m20 + s * m00
-    m[C2R1] = c * m21 + s * m01
-    m[C2R2] = c * m22 + s * m02
-
-    return this
-  }
-
-  /**
-   * Applies a rotation around Y axis to this matrix
-   *
-   * @remarks
-   * This pre-multiplies the rotation so the rotation happens in global space.
-   *
-   * @param angle - angle in rad
-   */
-  public preRotateY(angle: number): this {
-    const m = this.elements
-    const m00 = m[C0R0]
-    const m10 = m[C1R0]
-    const m20 = m[C2R0]
-    const m02 = m[C0R2]
-    const m12 = m[C1R2]
-    const m22 = m[C2R2]
-    const c = Math.cos(angle)
-    const s = Math.sin(angle)
-
-    m[C0R0] = c * m00 + s * m02
-    m[C1R0] = c * m10 + s * m12
-    m[C2R0] = c * m20 + s * m22
-    m[C0R2] = c * m02 - s * m00
-    m[C1R2] = c * m12 - s * m10
-    m[C2R2] = c * m22 - s * m20
-
-    return this
-  }
-
-  /**
-   * Creates a new rotation matrix
-   */
-  public static createRotationZ(rad: number): Mat3 {
-    return new Mat3().initRotationZ(rad)
-  }
-
-  /**
-   * Initializes this matrix with a rotation around the Z axis.
-   *
-   * @param angle - angle in rad
-   */
-  public initRotationZ(angle: number): this {
-    const cos = Math.cos(angle)
-    const sin = Math.sin(angle)
-    const m = this.elements
-    m[C0R0] = cos
-    m[C1R0] = -sin
-    m[C2R0] = 0
-    m[C0R1] = sin
-    m[C1R1] = cos
-    m[C2R1] = 0
-    m[C0R2] = 0
-    m[C1R2] = 0
-    m[C2R2] = 1
-    return this
-  }
-
-  /**
-   * Applies a rotation around Z axis to this matrix
-   *
-   * @remarks
-   * This post-multiplies the rotation so the rotation happens in local space.
-   *
-   * @param angle - angle in rad
-   */
-  public rotateZ(angle: number): this {
-    const m = this.elements
-    const m00 = m[C0R0]
-    const m01 = m[C0R1]
-    const m02 = m[C0R2]
-    const m10 = m[C1R0]
-    const m11 = m[C1R1]
-    const m12 = m[C1R2]
-    const c = Math.cos(angle)
-    const s = Math.sin(angle)
-
-    m[C0R0] = c * m00 + s * m10
-    m[C0R1] = c * m01 + s * m11
-    m[C0R2] = c * m02 + s * m12
-    m[C1R0] = c * m10 - s * m00
-    m[C1R1] = c * m11 - s * m01
-    m[C1R2] = c * m12 - s * m02
-
-    return this
-  }
-
-  /**
-   * Applies a rotation around Z axis to this matrix
-   *
-   * @remarks
-   * This pre-multiplies the rotation so the rotation happens in global space.
-   *
-   * @param angle - angle in rad
-   */
-  public preRotateZ(angle: number): this {
-    const m = this.elements
-    const m00 = m[C0R0]
-    const m10 = m[C1R0]
-    const m20 = m[C2R0]
-    const m01 = m[C0R1]
-    const m11 = m[C1R1]
-    const m21 = m[C2R1]
-    const c = Math.cos(angle)
-    const s = Math.sin(angle)
-
-    m[C0R0] = c * m00 + s * m01
-    m[C1R0] = c * m10 + s * m11
-    m[C2R0] = c * m20 + s * m21
-    m[C0R1] = c * m01 - s * m00
-    m[C1R1] = c * m11 - s * m10
-    m[C2R1] = c * m21 - s * m20
-
-    return this
-  }
-  /**
-   * Creates a new matrix with a predefined scale
-   */
-  public static createScaleXYZ(x: number, y: number, z: number): Mat3 {
-    return new Mat3().initScaleXYZ(x, y, z)
-  }
-
-  /**
-   * Initializes a scale matrix
-   *
-   * @param x - x scale factor
-   * @param y - y scale factor
-   * @param z - z scale factor
-   */
-  public initScaleXYZ(x: number, y: number, z: number): this {
-    const m = this.elements
-    m[C0R0] = x
-    m[C1R0] = 0
-    m[C2R0] = 0
-    m[C0R1] = 0
-    m[C1R1] = y
-    m[C2R1] = 0
-    m[C0R2] = 0
-    m[C1R2] = 0
-    m[C2R2] = z
-    return this
-  }
-
-  /**
-   * Applies a scale to this matrix
-   *
-   * @param x - x scale factor
-   * @param y - y scale factor
-   * @param z - z scale factor
-   */
-  public scaleXYZ(x: number, y: number, z: number): this {
-    const m = this.elements
-    m[C0R0] *= x
-    m[C0R1] *= x
-    m[C0R2] *= x
-    m[C1R0] *= y
-    m[C1R1] *= y
-    m[C1R2] *= y
-    m[C2R0] *= z
-    m[C2R1] *= z
-    m[C2R2] *= z
-    return this
-  }
-
-  /**
-   * Pre-multiplies the scale so it happens in global space.
-   *
-   * @param x - x scale factor
-   * @param y - y scale factor
-   * @param z - z scale factor
-   */
-  public preScaleXYZ(x: number, y: number, z: number): this {
-    const m = this.elements
-    m[C0R0] *= x
-    m[C1R0] *= x
-    m[C2R0] *= x
-    m[C0R1] *= y
-    m[C1R1] *= y
-    m[C2R1] *= y
-    m[C0R2] *= z
-    m[C1R2] *= z
-    m[C2R2] *= z
-    return this
-  }
-
-  /**
-   * Creates a new matrix with a predefined scale
-   */
-  public static createScale(vec: IVec3): Mat3 {
-    return new Mat3().initScaleXYZ(vec.x, vec.y, vec.z)
-  }
-
-  /**
-   * Initializes a scale matrix
-   *
-   * @param vec - The scale vector
-   */
-  public initScale(vec: IVec3): this {
-    return this.initScaleXYZ(vec.x, vec.y, vec.z)
-  }
-
-  /**
-   * Applies a scale to this matrix
-   *
-   * @param scale - the scale vector
-   */
-  public scale(scale: IVec3): this {
-    const x = scale.x
-    const y = scale.y
-    const z = scale.z
-    const m = this.elements
-    m[C0R0] *= x
-    m[C0R1] *= x
-    m[C0R2] *= x
-    m[C1R0] *= y
-    m[C1R1] *= y
-    m[C1R2] *= y
-    m[C2R0] *= z
-    m[C2R1] *= z
-    m[C2R2] *= z
-    return this
-  }
-
-  /**
-   * Pre-multiplies the scale so it happens in global space.
-   *
-   * @param scale - the scale vector
-   */
-  public preScale(scale: IVec3): this {
-    const x = scale.x
-    const y = scale.y
-    const z = scale.z
-    const m = this.elements
-    m[C0R0] *= x
-    m[C1R0] *= x
-    m[C2R0] *= x
-    m[C0R1] *= y
-    m[C1R1] *= y
-    m[C2R1] *= y
-    m[C0R2] *= z
-    m[C1R2] *= z
-    m[C2R2] *= z
-    return this
-  }
-
-  /**
-   * Creates a new matrix with a predefined scale
-   */
-  public static createScaleUniform(scale: number): Mat3 {
-    return new Mat3().initScaleXYZ(scale, scale, scale)
-  }
-
-  /**
-   * Initializes a scale matrix
-   *
-   * @param scale - The uniform scale value
-   */
-  public initScaleUniform(scale: number): this {
-    return this.initScaleXYZ(scale, scale, scale)
-  }
-
-  /**
-   * Applies a uniform scale to this matrix
-   *
-   * @param scale - the uniform scale factor
-   */
-  public scaleUniform(scale: number): this {
-    const m = this.elements
-    m[0] *= scale
-    m[1] *= scale
-    m[2] *= scale
-    m[3] *= scale
-    m[4] *= scale
-    m[5] *= scale
-    m[6] *= scale
-    m[7] *= scale
-    m[8] *= scale
-    m[9] *= scale
-    m[10] *= scale
-    m[11] *= scale
-    return this
-  }
-
-  /**
-   * Applies a scale to this matrix
-   *
-   * @param x - scale factor on x axis
-   */
-  public scaleX(x: number): this {
-    const m = this.elements
-    m[C0R0] *= x
-    m[C0R1] *= x
-    m[C0R2] *= x
-    return this
-  }
-
-  /**
-   * Pre-multiplies the scale so it happens in global space
-   *
-   * @param x - scale factor on x axis
-   */
-  public preScaleX(x: number): this {
-    const m = this.elements
-    m[C0R0] *= x
-    m[C1R0] *= x
-    m[C2R0] *= x
-    return this
-  }
-
-  /**
-   * Applies a scale to this matrix
-   *
-   * @param y - scale factor on y axis
-   */
-  public scaleY(y: number): this {
-    const m = this.elements
-    m[C1R0] *= y
-    m[C1R1] *= y
-    m[C1R2] *= y
-    return this
-  }
-
-  /**
-   * Pre-multiplies the scale so it happens in global space
-   *
-   * @param y - scale factor on y axis
-   */
-  public preScaleY(y: number): this {
-    const m = this.elements
-    m[C0R1] *= y
-    m[C1R1] *= y
-    m[C2R1] *= y
-    return this
-  }
-
-  /**
-   * Applies a scale to this matrix
-   *
-   * @param z - scale factor on z axis
-   */
-  public scaleZ(z: number): this {
-    const m = this.elements
-    m[C2R0] *= z
-    m[C2R1] *= z
-    m[C2R2] *= z
-    return this
-  }
-
-  /**
-   * Pre-multiplies the scale so it happens in global space
-   *
-   * @param z - scale factor on z axis
-   */
-  public preScaleZ(z: number): this {
-    const m = this.elements
-    m[C0R2] *= z
-    m[C1R2] *= z
-    m[C2R2] *= z
-    return this
-  }
-
-  /**
-   * Creates a rotation matrix by using direction vector
-   */
-  public static createOrientation(forward: IVec3, up: IVec3): Mat3 {
-    return new Mat3().initOrientation(forward, up)
-  }
-
-  /**
-   * Initializes a rotation matrix by using direction vector
-   *
-   * @param forward - The forward vector
-   * @param up - The up vector of the viewer
-   */
-  public initOrientation(forward: IVec3, up: IVec3): Mat3 {
-    // backward = negate(normalize(forward))
-    let x = forward.x
-    let y = forward.y
-    let z = forward.z
-    let d = 1.0 / Math.sqrt(x * x + y * y + z * z)
-
-    const backX = -x * d
-    const backY = -y * d
-    const backZ = -z * d
-
-    // right = normalize(cross(up, back))
-    x = up.y * backZ - up.z * backY
-    y = up.z * backX - up.x * backZ
-    z = up.x * backY - up.y * backX
-    d = 1.0 / Math.sqrt(x * x + y * y + z * z)
-
-    const rightX = x * d
-    const rightY = y * d
-    const rightZ = z * d
-
-    // up = cross(back, right)
-    x = backY * rightZ - backZ * rightY
-    y = backZ * rightX - backX * rightZ
-    z = backX * rightY - backY * rightX
-
-    return this.initRowMajor(rightX, x, backX, rightY, y, backY, rightZ, z, backZ)
-  }
-
-  /**
-   * Calculates the determinant of this matrix
-   */
-  public determinant(): number {
-    const a = this.elements
-
-    const a11 = a[0]
-    const a12 = a[3]
-    const a13 = a[6]
-
-    const a21 = a[1]
-    const a22 = a[4]
-    const a23 = a[7]
-
-    const a31 = a[2]
-    const a32 = a[5]
-    const a33 = a[8]
-
-    const d1 = a22 * a33 - a32 * a23
-    const d2 = a21 * a33 - a31 * a23
-    const d3 = a21 * a32 - a31 * a22
-
-    return a11 * d1 - a12 * d2 + a13 * d3
-  }
-
-  /**
-   * Transpose the given matrix
-   * @param mat - The matrix to transpose
-   * @param out - The matrix to write to
-   * @returns The given `out` parameter or a new matrix
-   */
-  public static transpose(mat: Mat3, out?: Mat3): Mat3 {
-    const d = mat.elements
-    return (out || new Mat3()).init(d[0], d[3], d[6], d[1], d[4], d[7], d[2], d[5], d[8])
-  }
-
-  /**
-   * Transposes this matrix
-   * @returns Reference to `this` for chaining.
-   */
-  public transpose(): Mat3 {
-    const m = this.elements
-    let t
-
-    t = m[C0R1]
-    m[C0R1] = m[C1R0]
-    m[C1R0] = t
-
-    t = m[C0R2]
-    m[C0R2] = m[C2R0]
-    m[C2R0] = t
-
-    t = m[C1R2]
-    m[C1R2] = m[C2R1]
-    m[C2R1] = t
-
-    return this
-  }
-
-  /**
-   * Invert the given matrix
-   * @param mat - The matrix to transpose
-   * @param out - The matrix to write to
-   * @returns The given `out` parameter or a new matrix
-   */
-  public static invert(mat: Mat3, out?: Mat3): Mat3 {
-    out = out || new Mat3()
-    const a = mat.elements
-    const b = out.elements
-
-    const a11 = a[0]
-    const a12 = a[3]
-    const a13 = a[6]
-
-    const a21 = a[1]
-    const a22 = a[4]
-    const a23 = a[7]
-
-    const a31 = a[2]
-    const a32 = a[5]
-    const a33 = a[8]
-
-    const d1 = a22 * a33 - a32 * a23
-    const d2 = a21 * a33 - a31 * a23
-    const d3 = a21 * a32 - a31 * a22
-
-    const detInv = 1 / (a11 * d1 - a12 * d2 + a13 * d3)
-
-    b[0] = detInv * d1
-    b[1] = -detInv * d2
-    b[2] = detInv * d3
-    b[3] = detInv * (a13 * a32 - a12 * a33)
-    b[4] = detInv * (a11 * a33 - a13 * a31)
-    b[5] = detInv * (a12 * a31 - a11 * a32)
-    b[6] = detInv * (a12 * a23 - a13 * a22)
-    b[7] = detInv * (a13 * a21 - a11 * a23)
-    b[8] = detInv * (a11 * a22 - a12 * a21)
-
-    return out
-  }
-
-  /**
-   * Inverts this matrix
-   * @returns Reference to `this` for chaining.
-   */
-  public invert(): Mat3 {
-    const a = this.elements
-    const b = this.elements
-
-    const a11 = a[0]
-    const a12 = a[3]
-    const a13 = a[6]
-
-    const a21 = a[1]
-    const a22 = a[4]
-    const a23 = a[7]
-
-    const a31 = a[2]
-    const a32 = a[5]
-    const a33 = a[8]
-
-    const d1 = a22 * a33 - a32 * a23
-    const d2 = a21 * a33 - a31 * a23
-    const d3 = a21 * a32 - a31 * a22
-
-    const detInv = 1 / (a11 * d1 - a12 * d2 + a13 * d3)
-
-    b[0] = detInv * d1
-    b[1] = -detInv * d2
-    b[2] = detInv * d3
-    b[3] = detInv * (a13 * a32 - a12 * a33)
-    b[4] = detInv * (a11 * a33 - a13 * a31)
-    b[5] = detInv * (a12 * a31 - a11 * a32)
-    b[6] = detInv * (a12 * a23 - a13 * a22)
-    b[7] = detInv * (a13 * a21 - a11 * a23)
-    b[8] = detInv * (a11 * a22 - a12 * a21)
-
-    return this
-  }
-
-  /**
-   * Negate the components of the given matrix
-   * @param mat - The matrix to transpose
-   * @param out - The matrix to write to
-   * @returns The given `out` parameter or a new matrix
-   */
-  public static negate(mat: Mat3, out?: Mat3): Mat3 {
-    out = out || new Mat3()
-    const d = mat.elements
-    const o = out.elements
-    // tslint:disable
-    o[0] = -d[0]
-    o[1] = -d[1]
-    o[2] = -d[2]
-    o[3] = -d[3]
-    o[4] = -d[4]
-    o[5] = -d[5]
-    o[6] = -d[6]
-    o[7] = -d[7]
-    o[8] = -d[8]
-    // tslint:enable
-    return out
-  }
-
-  /**
-   * Negates all components of this matrix
-   * @returns Reference to `this` for chaining.
-   */
-  public negate(): Mat3 {
-    const a = this.elements
-    const b = this.elements
-    // tslint:disable
-    a[0] = -b[0]
-    a[1] = -b[1]
-    a[2] = -b[2]
-    a[3] = -b[3]
-    a[4] = -b[4]
-    a[5] = -b[5]
-    a[6] = -b[6]
-    a[7] = -b[7]
-    a[8] = -b[8]
-    // tslint:enable
-    return this
-  }
-
-  /**
-   * Adds a matrix to another
-   * @param matA - The first matrix
-   * @param matB - The second matrix
-   * @param out - The matrix to write to
-   * @returns The given `out` parameter or a new matrix
-   */
-  public static add(matA: Mat3, matB: Mat3, out?: Mat3): Mat3 {
-    out = out || new Mat3()
-    const a = matA.elements
-    const b = matB.elements
-    const c = out.elements
-    // tslint:disable
-    c[0] = a[0] + b[0]
-    c[1] = a[1] + b[1]
-    c[2] = a[2] + b[2]
-    c[3] = a[3] + b[3]
-    c[4] = a[4] + b[4]
-    c[5] = a[5] + b[5]
-    c[6] = a[6] + b[6]
-    c[7] = a[7] + b[7]
-    c[8] = a[8] + b[8]
-    // tslint:enable
-    return out
-  }
-
-  /**
-   * Adds the given matrix to `this`
-   * @param other - The matrix to add
-   * @returns Reference to `this` for chaining.
-   */
-  public add(other: Mat3): Mat3 {
-    const a = this.elements
-    const b = other.elements
-    // tslint:disable
-    a[0] += b[0]
-    a[1] += b[1]
-    a[2] += b[2]
-    a[3] += b[3]
-    a[4] += b[4]
-    a[5] += b[5]
-    a[6] += b[6]
-    a[7] += b[7]
-    a[8] += b[8]
-    // tslint:enable
-    return this
-  }
-
-  /**
-   * Adds a scalar to each component of a matrix
-   * @param mat - The matrix
-   * @param scalar - The scalar to add
-   * @param out - The matrix to write to
-   * @returns The given `out` parameter or a new matrix
-   */
-  public static addScalar(mat: Mat3, scalar: number, out?: Mat3): Mat3 {
-    out = out || new Mat3()
-    const a = mat.elements
-    const c = out.elements
-    // tslint:disable
-    c[0] = a[0] + scalar
-    c[1] = a[1] + scalar
-    c[2] = a[2] + scalar
-    c[3] = a[3] + scalar
-    c[4] = a[4] + scalar
-    c[5] = a[5] + scalar
-    c[6] = a[6] + scalar
-    c[7] = a[7] + scalar
-    c[8] = a[8] + scalar
-    // tslint:enable
-    return out
-  }
-
-  /**
-   * Adds the given scalar to each component of `this`
-   * @param scalar - The scalar to add
-   * @returns Reference to `this` for chaining.
-   */
-  public addScalar(s: number): Mat3 {
-    const a = this.elements
-    // tslint:disable
-    a[0] += s
-    a[1] += s
-    a[2] += s
-    a[3] += s
-    a[4] += s
-    a[5] += s
-    a[6] += s
-    a[7] += s
-    a[8] += s
-    // tslint:enable
-    return this
-  }
-
-  /**
-   * Subtracts the second matrix from the first
-   * @param matA - The first matrix
-   * @param matB - The second matrix
-   * @param out - The matrix to write to
-   * @returns The given `out` parameter or a new matrix
-   */
-  public static subtract(matA: Mat3, matB: Mat3, out?: Mat3): Mat3 {
-    out = out || new Mat3()
-    const a = matA.elements
-    const b = matB.elements
-    const c = out.elements
-    // tslint:disable
-    c[0] = a[0] - b[0]
-    c[1] = a[1] - b[1]
-    c[2] = a[2] - b[2]
-    c[3] = a[3] - b[3]
-    c[4] = a[4] - b[4]
-    c[5] = a[5] - b[5]
-    c[6] = a[6] - b[6]
-    c[7] = a[7] - b[7]
-    c[8] = a[8] - b[8]
-    // tslint:enable
-    return out
-  }
-
-  /**
-   * Subtracts the given matrix from `this`
-   * @param other - The matrix to subtract
-   * @returns Reference to `this` for chaining.
-   */
-  public subtract(other: Mat3): Mat3 {
-    const a = this.elements
-    const b = other.elements
-    // tslint:disable
-    a[0] -= b[0]
-    a[1] -= b[1]
-    a[2] -= b[2]
-    a[3] -= b[3]
-    a[4] -= b[4]
-    a[5] -= b[5]
-    a[6] -= b[6]
-    a[7] -= b[7]
-    a[8] -= b[8]
-    // tslint:enable
-    return this
-  }
-
-  /**
-   * Subtracts a scalar from each component of a matrix
-   * @param mat - The matrix to subtract from
-   * @param scalar - The scalar to subtract
-   * @param out - The matrix to write to
-   * @returns The given `out` parameter or a new matrix
-   */
-  public static subtractScalar(mat: Mat3, scalar: number, out?: Mat3): Mat3 {
-    out = out || new Mat3()
-    const a = mat.elements
-    const c = out.elements
-    // tslint:disable
-    c[0] = a[0] - scalar
-    c[1] = a[1] - scalar
-    c[2] = a[2] - scalar
-    c[3] = a[3] - scalar
-    c[4] = a[4] - scalar
-    c[5] = a[5] - scalar
-    c[6] = a[6] - scalar
-    c[7] = a[7] - scalar
-    c[8] = a[8] - scalar
-    // tslint:enable
-    return out
-  }
-
-  /**
-   * Subtracts the given scalar from each component of `this`
-   * @param scalar - The scalar to subtract
-   * @returns Reference to `this` for chaining.
-   */
-  public subtractScalar(s: number): Mat3 {
-    const a = this.elements
-    // tslint:disable
-    a[0] -= s
-    a[1] -= s
-    a[2] -= s
-    a[3] -= s
-    a[4] -= s
-    a[5] -= s
-    a[6] -= s
-    a[7] -= s
-    a[8] -= s
-    // tslint:enable
-    return this
-  }
-
-  /**
-   * Performs a matrix multiplication `matA * matB` meaning `matB` is post-multiplied on `matA`.
-   *
-   * @param matA - The main matrix
-   * @param matB - The matrix to post-multiply
-   * @param out - The matrix to write to
-   *
-   * @returns The given `out` parameter or a new matrix
-   */
-  public static multiply(matA: Mat3, matB: Mat3, out?: Mat3): Mat3 {
-    out = out || new Mat3()
-    const a = matA.elements
-    const b = matB.elements
-    const c = out.elements
-    // tslint:disable
-    const a_0 = a[0],
-      a_1 = a[1],
-      a_2 = a[2],
-      a_3 = a[3],
-      a_4 = a[4],
-      a_5 = a[5],
-      a_6 = a[6],
-      a_7 = a[7],
-      a_8 = a[8]
-    const b_0 = b[0],
-      b_1 = b[1],
-      b_2 = b[2],
-      b_3 = b[3],
-      b_4 = b[4],
-      b_5 = b[5],
-      b_6 = b[6],
-      b_7 = b[7],
-      b_8 = b[8]
-    // tslint:enable
-    c[0] = b_0 * a_0 + b_1 * a_3 + b_2 * a_6
-    c[1] = b_0 * a_1 + b_1 * a_4 + b_2 * a_7
-    c[2] = b_0 * a_2 + b_1 * a_5 + b_2 * a_8
-    c[3] = b_3 * a_0 + b_4 * a_3 + b_5 * a_6
-    c[4] = b_3 * a_1 + b_4 * a_4 + b_5 * a_7
-    c[5] = b_3 * a_2 + b_4 * a_5 + b_5 * a_8
-    c[6] = b_6 * a_0 + b_7 * a_3 + b_8 * a_6
-    c[7] = b_6 * a_1 + b_7 * a_4 + b_8 * a_7
-    c[8] = b_6 * a_2 + b_7 * a_5 + b_8 * a_8
-    return out
-  }
-
-  /**
-   * Performs a matrix multiplication `this = this * other` meaning `other` is post-multiplied t `this`.
-   *
-   * @param other - The matrix to post-multiply
-   */
-  public multiply(other: Mat3): Mat3 {
-    const a = this.elements
-    const b = other.elements
-    const c = this.elements
-    // tslint:disable
-    const a_0 = a[0],
-      a_1 = a[1],
-      a_2 = a[2],
-      a_3 = a[3],
-      a_4 = a[4],
-      a_5 = a[5],
-      a_6 = a[6],
-      a_7 = a[7],
-      a_8 = a[8]
-    const b_0 = b[0],
-      b_1 = b[1],
-      b_2 = b[2],
-      b_3 = b[3],
-      b_4 = b[4],
-      b_5 = b[5],
-      b_6 = b[6],
-      b_7 = b[7],
-      b_8 = b[8]
-    // tslint:enable
-    c[0] = b_0 * a_0 + b_1 * a_3 + b_2 * a_6
-    c[1] = b_0 * a_1 + b_1 * a_4 + b_2 * a_7
-    c[2] = b_0 * a_2 + b_1 * a_5 + b_2 * a_8
-    c[3] = b_3 * a_0 + b_4 * a_3 + b_5 * a_6
-    c[4] = b_3 * a_1 + b_4 * a_4 + b_5 * a_7
-    c[5] = b_3 * a_2 + b_4 * a_5 + b_5 * a_8
-    c[6] = b_6 * a_0 + b_7 * a_3 + b_8 * a_6
-    c[7] = b_6 * a_1 + b_7 * a_4 + b_8 * a_7
-    c[8] = b_6 * a_2 + b_7 * a_5 + b_8 * a_8
-    return this
-  }
-
-  /**
-   * Performs a matrix multiplication `matB * matA` meaning `matB` is pre-multiplied on `matA`.
-   *
-   * @param matA - The main matrix
-   * @param matB - The matrix to pre-multiply
-   * @param out - The matrix to write to
-   *
-   * @returns The given `out` parameter or a new matrix
-   */
-  public static premultiply(matA: Mat3, matB: Mat3, out?: Mat3): Mat3 {
-    out = out || new Mat3()
-    const a = matB.elements
-    const b = matA.elements
-    const c = out.elements
-    // tslint:disable
-    const a_0 = a[0],
-      a_1 = a[1],
-      a_2 = a[2],
-      a_3 = a[3],
-      a_4 = a[4],
-      a_5 = a[5],
-      a_6 = a[6],
-      a_7 = a[7],
-      a_8 = a[8]
-    const b_0 = b[0],
-      b_1 = b[1],
-      b_2 = b[2],
-      b_3 = b[3],
-      b_4 = b[4],
-      b_5 = b[5],
-      b_6 = b[6],
-      b_7 = b[7],
-      b_8 = b[8]
-    // tslint:enable
-    c[0] = b_0 * a_0 + b_1 * a_3 + b_2 * a_6
-    c[1] = b_0 * a_1 + b_1 * a_4 + b_2 * a_7
-    c[2] = b_0 * a_2 + b_1 * a_5 + b_2 * a_8
-    c[3] = b_3 * a_0 + b_4 * a_3 + b_5 * a_6
-    c[4] = b_3 * a_1 + b_4 * a_4 + b_5 * a_7
-    c[5] = b_3 * a_2 + b_4 * a_5 + b_5 * a_8
-    c[6] = b_6 * a_0 + b_7 * a_3 + b_8 * a_6
-    c[7] = b_6 * a_1 + b_7 * a_4 + b_8 * a_7
-    c[8] = b_6 * a_2 + b_7 * a_5 + b_8 * a_8
-    return out
-  }
-
-  /**
-   * Performs a matrix multiplication `this = other * this` meaning `other` is pre-multiplied on `this`.
-   *
-   * @param other - The matrix to pre-multiply
-   */
-  public premultiply(other: Mat3): Mat3 {
-    const a = other.elements
-    const b = this.elements
-    const c = this.elements
-    // tslint:disable
-    const a_0 = a[0],
-      a_1 = a[1],
-      a_2 = a[2],
-      a_3 = a[3],
-      a_4 = a[4],
-      a_5 = a[5],
-      a_6 = a[6],
-      a_7 = a[7],
-      a_8 = a[8]
-    const b_0 = b[0],
-      b_1 = b[1],
-      b_2 = b[2],
-      b_3 = b[3],
-      b_4 = b[4],
-      b_5 = b[5],
-      b_6 = b[6],
-      b_7 = b[7],
-      b_8 = b[8]
-    // tslint:enable
-    c[0] = b_0 * a_0 + b_1 * a_3 + b_2 * a_6
-    c[1] = b_0 * a_1 + b_1 * a_4 + b_2 * a_7
-    c[2] = b_0 * a_2 + b_1 * a_5 + b_2 * a_8
-    c[3] = b_3 * a_0 + b_4 * a_3 + b_5 * a_6
-    c[4] = b_3 * a_1 + b_4 * a_4 + b_5 * a_7
-    c[5] = b_3 * a_2 + b_4 * a_5 + b_5 * a_8
-    c[6] = b_6 * a_0 + b_7 * a_3 + b_8 * a_6
-    c[7] = b_6 * a_1 + b_7 * a_4 + b_8 * a_7
-    c[8] = b_6 * a_2 + b_7 * a_5 + b_8 * a_8
-    return this
-  }
-
-  /**
-   * Multiplies a matrix with a scalar value
-   * @param matA - The matrix
-   * @param scalar - The scalar to multiply
-   * @param out - The matrix to write to
-   * @returns The given `out` parameter or a new matrix
-   */
-  public static multiplyScalar(matA: Mat3, scalar: number, out?: Mat3): Mat3 {
-    out = out || new Mat3()
-    const a = matA.elements
-    const b = scalar
-    const c = out.elements
-    // tslint:disable
-    c[0] = a[0] * b
-    c[1] = a[1] * b
-    c[2] = a[2] * b
-    c[3] = a[3] * b
-    c[4] = a[4] * b
-    c[5] = a[5] * b
-    c[6] = a[6] * b
-    c[7] = a[7] * b
-    c[8] = a[8] * b
-    // tslint:enable
-    return out
-  }
-
-  /**
-   * Multiplies each component of `this` with given scalar
-   * @param scalar - The scalar to multiply
-   * @returns Reference to `this` for chaining.
-   */
-  public multiplyScalar(s: number): Mat3 {
-    const a = this.elements
-    // tslint:disable
-    a[0] *= s
-    a[1] *= s
-    a[2] *= s
-    a[3] *= s
-    a[4] *= s
-    a[5] *= s
-    a[6] *= s
-    a[7] *= s
-    a[8] *= s
-    // tslint:enable
-    return this
-  }
-
-  /**
-   * Divides the components of the first matrix by the components of the second matrix
-   * @param matA - The first matrix
-   * @param matB - The second matrix
-   * @param out - The matrix to write to
-   * @returns The given `out` parameter or a new matrix
-   */
-  public static divide(matA: Mat3, matB: Mat3, out?: Mat3): Mat3 {
-    out = out || new Mat3()
-    const a = matA.elements
-    const b = matB.elements
-    const c = out.elements
-    // tslint:disable
-    c[0] = a[0] / b[0]
-    c[1] = a[1] / b[1]
-    c[2] = a[2] / b[2]
-    c[3] = a[3] / b[3]
-    c[4] = a[4] / b[4]
-    c[5] = a[5] / b[5]
-    c[6] = a[6] / b[6]
-    c[7] = a[7] / b[7]
-    c[8] = a[8] / b[8]
-    // tslint:enable
-    return out
-  }
-
-  /**
-   * Divides each matching component pair
-   * @param other - The matrix by which to divide
-   * @returns Reference to `this` for chaining.
-   */
-  public divide(other: Mat3): Mat3 {
-    const a = this.elements
-    const b = other.elements
-    // tslint:disable
-    a[0] /= b[0]
-    a[1] /= b[1]
-    a[2] /= b[2]
-    a[3] /= b[3]
-    a[4] /= b[4]
-    a[5] /= b[5]
-    a[6] /= b[6]
-    a[7] /= b[7]
-    a[8] /= b[8]
-    // tslint:enable
-    return this
-  }
-
-  /**
-   * Divides the components of a matrix by a scalar
-   * @param matA - The matrix
-   * @param scalar - The scalar by which to divide
-   * @param out - The matrix to write to
-   * @returns The given `out` parameter or a new matrix
-   */
-  public static divideScalar(matA: Mat3, scalar: number, out?: Mat3): Mat3 {
-    out = out || new Mat3()
-    const a = matA.elements
-    const b = 1 / scalar
-    const c = out.elements
-    // tslint:disable
-    c[0] = a[0] * b
-    c[1] = a[1] * b
-    c[2] = a[2] * b
-    c[3] = a[3] * b
-    c[4] = a[4] * b
-    c[5] = a[5] * b
-    c[6] = a[6] * b
-    c[7] = a[7] * b
-    c[8] = a[8] * b
-    // tslint:enable
-    return out
-  }
-
-  /**
-   * Divides each component of `this` by given scalar
-   * @param scalar - The scalar by which to divide
-   * @returns Reference to `this` for chaining.
-   */
-  public divideScalar(s: number): Mat3 {
-    const a = this.elements
-    const b = 1.0 / s
-    // tslint:disable
-    a[0] *= b
-    a[1] *= b
-    a[2] *= b
-    a[3] *= b
-    a[4] *= b
-    a[5] *= b
-    a[6] *= b
-    a[7] *= b
-    a[8] *= b
-    // tslint:enable
-    return this
-  }
-
-  /**
-   * Transform the given vector with this matrix.
-   *
-   * @returns the given vector
-   */
-  public transform<T extends IVec2 | IVec3>(vec: T): T {
-    const x = vec.x || 0
-    const y = vec.y || 0
-    const z = (vec as IVec3).z || 0
-    const d = this.elements
-    vec.x = x * d[0] + y * d[3] + z * d[6]
-    vec.y = x * d[1] + y * d[4] + z * d[7]
-    if ((vec as IVec3).z != null) {
-      ;(vec as IVec3).z = x * d[2] + y * d[5] + z * d[8]
-    }
-    return vec
-  }
-
-  /**
-   * Transforms the given array with `this` matrix.
-   *
-   */
-  public transformV2Array(array: ArrayLike<number>, offset?: number, stride?: number, count?: number) {
-    let x
-    let y
-    const d = this.elements
-    offset = offset || 0
-    stride = stride == null ? 2 : stride
-    count = count == null ? array.length / stride : count
-
-    while (count > 0) {
-      count--
-      x = array[offset]
-      y = array[offset + 1]
-      array[offset] = x * d[0] + y * d[3] + d[6]
-      array[offset + 1] = x * d[1] + y * d[4] + d[7]
-      offset += stride
-    }
-  }
-
-  /**
-   * Transforms the given array with `this` matrix.
-   *
-   *
-   *
-   *
-   */
-  public transformV3Array(array: ArrayLike<number>, offset?: number, stride?: number, count?: number) {
-    let x
-    let y
-    let z
-    const d = this.elements
-    offset = offset || 0
-    stride = stride == null ? 3 : stride
-    count = count == null ? array.length / stride : count
-
-    while (count > 0) {
-      count--
-      x = array[offset]
-      y = array[offset + 1]
-      z = array[offset + 2]
-      array[offset] = x * d[0] + y * d[3] + z * d[6]
-      array[offset + 1] = x * d[1] + y * d[4] + z * d[7]
-      array[offset + 2] = x * d[2] + y * d[5] + z * d[8]
-      offset += stride
-    }
-  }
-
-  /**
-   * Performs a linear interpolation between two matrices
-   * @param matA - The first matrix
-   * @param matB - The second matrix
-   * @param t - The interpolation value. This is assumed to be in [0:1] range
-   * @param out - The matrix to write to
-   * @returns The given `out` parameter or a new matrix
-   */
-  public static lerp(matA: Mat3, matB: Mat3, t: number, out?: Mat3): Mat3 {
-    out = out || new Mat3()
-    const a = matA.elements
-    const b = matB.elements
-    const c = out.elements
-    c[0] = a[0] + (b[0] - a[0]) * t
-    c[1] = a[1] + (b[1] - a[1]) * t
-    c[2] = a[2] + (b[2] - a[2]) * t
-    c[3] = a[3] + (b[3] - a[3]) * t
-    c[4] = a[4] + (b[4] - a[4]) * t
-    c[5] = a[5] + (b[5] - a[5]) * t
-    c[6] = a[6] + (b[6] - a[6]) * t
-    c[7] = a[7] + (b[7] - a[7]) * t
-    c[8] = a[8] + (b[8] - a[8]) * t
-    return out
-  }
-
-  /**
-   * Performs a component wise smooth interpolation between the given two elements.
-   *
-   * @param a - The first matrix.
-   * @param b - The second matrix.
-   * @param t - The interpolation value. Assumed to be in range [0:1].
-   * @param out - The matrix to write to. Leave it out or pass null to create a new matrix.
-   * @returns The given `out` parameter or a new matrix.
-   */
-  public static smooth(matA: Mat3, matB: Mat3, t: number, out?: Mat3): Mat3 {
-    t = t > 1 ? 1 : t < 0 ? 0 : t
-    t = t * t * (3 - 2 * t)
-    return Mat3.lerp(matA, matB, t, out)
-  }
-
-  /**
-   * Creates a copy of this matrix
-   * @returns The cloned matrix.
-   */
-  public copy(out: Mat3 = new Mat3()): Mat3 {
-    const d = this.elements
-    const o = out.elements
-    o[0] = d[0]
-    o[1] = d[1]
-    o[2] = d[2]
-    o[3] = d[3]
-    o[4] = d[4]
-    o[5] = d[5]
-    o[6] = d[6]
-    o[7] = d[7]
-    o[8] = d[8]
-    return out
-  }
-
-  /**
-   * Creates a copy of this matrix
-   * @returns The cloned matrix.
-   */
-  public static copy(mat: Mat3, out: Mat3 = new Mat3()): Mat3 {
-    const d = mat.elements
-    const o = out.elements
-    o[0] = d[0]
-    o[1] = d[1]
-    o[2] = d[2]
-    o[3] = d[3]
-    o[4] = d[4]
-    o[5] = d[5]
-    o[6] = d[6]
-    o[7] = d[7]
-    o[8] = d[8]
-    return out
-  }
-
-  /**
-   * Checks for component wise equality with given matrix
-   *
-   * @param other - The matrix to compare with
-   */
-  public equals(other: Mat3): boolean {
-    const a = this.elements
-    const b = other.elements
-    return (
-      a[0] === b[0] &&
-      a[1] === b[1] &&
-      a[2] === b[2] &&
-      a[3] === b[3] &&
-      a[4] === b[4] &&
-      a[5] === b[5] &&
-      a[6] === b[6] &&
-      a[7] === b[7] &&
-      a[8] === b[8]
-    )
-  }
-
-  /**
-   * Checks for component wise equality with given matrix
-   *
-   * @param other - The matrix to compare with
-   */
-  public static equals(m1: Mat3, m2: Mat3): boolean {
-    const a = m1.elements
-    const b = m2.elements
-    return (
-      a[0] === b[0] &&
-      a[1] === b[1] &&
-      a[2] === b[2] &&
-      a[3] === b[3] &&
-      a[4] === b[4] &&
-      a[5] === b[5] &&
-      a[6] === b[6] &&
-      a[7] === b[7] &&
-      a[8] === b[8]
-    )
-  }
-
-  /**
-   * Formats this into a readable string
-   *
-   * @remarks
-   * Mainly meant for debugging. Do not use this for serialization.
-   *
-   * @param fractionDigits - Number of digits after decimal point
-   */
-  public format(fractionDigits: number = 5) {
-    return Mat3.format(this, fractionDigits)
-  }
-
-  /**
-   * Formats given matrix into a readable string
-   *
-   * @remarks
-   * Mainly meant for debugging. Do not use this for serialization.
-   *
-   * @param mat - The matrix to format
-   * @param fractionDigits - Number of digits after decimal point
-   */
-  public static format(mat: Mat3, fractionDigits: number = 5) {
-    const m = mat.elements
-    return [
-      [m[0].toFixed(fractionDigits), m[3].toFixed(fractionDigits), m[6].toFixed(fractionDigits)].join(','),
-      [m[1].toFixed(fractionDigits), m[4].toFixed(fractionDigits), m[7].toFixed(fractionDigits)].join(','),
-      [m[2].toFixed(fractionDigits), m[5].toFixed(fractionDigits), m[8].toFixed(fractionDigits)].join(','),
-    ].join('\n')
-  }
-
-  /**
-   * Returns a copy of this matrix as plain array
-   */
-  public toArray(): number[]
-  /**
-   * Copies this matrix into a given array starting at given offset
-   *
-   * @param array - The array to copy into
-   * @param offset - Zero based index where to start writing in the array
-   */
-  public toArray<T>(array?: T, offset?: number): T
-  public toArray(array?: number[], offset?: number): number[] {
-    return Mat3.toArray(this, array, offset)
-  }
-
-  /**
-   * Returns a copy of given matrix as plain array
-   */
-  public static toArray(mat: Mat3): number[]
-  /**
-   * Copies the given matrix into a given array starting at given offset
-   *
-   * @param array - The array to copy into
-   * @param offset - Zero based index where to start writing in the array
-   */
-  public static toArray<T>(mat: Mat3, array: T, offset?: number): T
-  public static toArray(mat: Mat3, array?: number[], offset?: number): number[] {
-    array = array || []
-    offset = offset || 0
-    const d = mat.elements
-    array[offset] = d[0]
-    array[offset + 1] = d[1]
-    array[offset + 2] = d[2]
-    array[offset + 3] = d[3]
-    array[offset + 4] = d[4]
-    array[offset + 5] = d[5]
-    array[offset + 6] = d[6]
-    array[offset + 7] = d[7]
-    array[offset + 8] = d[8]
-    return array
-  }
+export function mat3(): Mat3 {
+  return new Float32Array(9)
+}
+
+/**
+ * Sets the components of a matrix. The values are read in column major order.
+ *
+ * @param out The matrix to set
+ * @param m00 Column 0, row 0
+ * @param m01 Column 0, row 1
+ * @param m02 Column 0, row 2
+ * @param m10 Column 1, row 0
+ * @param m11 Column 1, row 1
+ * @param m12 Column 1, row 2
+ * @param m20 Column 2, row 0
+ * @param m21 Column 2, row 1
+ * @param m22 Column 2, row 2
+ */
+export function mat3$init(
+  out: Mat3,
+  m00: number,
+  m01: number,
+  m02: number,
+  m10: number,
+  m11: number,
+  m12: number,
+  m20: number,
+  m21: number,
+  m22: number,
+): Mat3 {
+  out[C0R0] = m00
+  out[C0R1] = m01
+  out[C0R2] = m02
+  out[C1R0] = m10
+  out[C1R1] = m11
+  out[C1R2] = m12
+  out[C2R0] = m20
+  out[C2R1] = m21
+  out[C2R2] = m22
+  return out
+}
+
+/**
+ * Creates a new matrix from the given components. The values are read in column major order.
+ *
+ * @param m00 Column 0, row 0
+ * @param m01 Column 0, row 1
+ * @param m02 Column 0, row 2
+ * @param m10 Column 1, row 0
+ * @param m11 Column 1, row 1
+ * @param m12 Column 1, row 2
+ * @param m20 Column 2, row 0
+ * @param m21 Column 2, row 1
+ * @param m22 Column 2, row 2
+ */
+export function mat3Create(
+  m00: number,
+  m01: number,
+  m02: number,
+  m10: number,
+  m11: number,
+  m12: number,
+  m20: number,
+  m21: number,
+  m22: number,
+): Mat3 {
+  return mat3$init(mat3(), m00, m01, m02, m10, m11, m12, m20, m21, m22)
+}
+
+/**
+ * Sets the components of a matrix. The values are read in row major order.
+ *
+ * @remarks
+ * Only the order of the arguments is row major. The matrix is still stored in column major order.
+ *
+ * @param out The matrix to set
+ * @param m00 Column 0, row 0
+ * @param m10 Column 1, row 0
+ * @param m20 Column 2, row 0
+ * @param m01 Column 0, row 1
+ * @param m11 Column 1, row 1
+ * @param m21 Column 2, row 1
+ * @param m02 Column 0, row 2
+ * @param m12 Column 1, row 2
+ * @param m22 Column 2, row 2
+ */
+export function mat3$initRowMajor(
+  out: Mat3,
+  m00: number,
+  m10: number,
+  m20: number,
+  m01: number,
+  m11: number,
+  m21: number,
+  m02: number,
+  m12: number,
+  m22: number,
+): Mat3 {
+  out[C0R0] = m00
+  out[C0R1] = m01
+  out[C0R2] = m02
+  out[C1R0] = m10
+  out[C1R1] = m11
+  out[C1R2] = m12
+  out[C2R0] = m20
+  out[C2R1] = m21
+  out[C2R2] = m22
+  return out
+}
+
+/**
+ * Creates a new matrix from the given components. The values are read in row major order.
+ *
+ * @remarks
+ * Only the order of the arguments is row major. The matrix is still stored in column major order.
+ *
+ * @param m00 Column 0, row 0
+ * @param m10 Column 1, row 0
+ * @param m20 Column 2, row 0
+ * @param m01 Column 0, row 1
+ * @param m11 Column 1, row 1
+ * @param m21 Column 2, row 1
+ * @param m02 Column 0, row 2
+ * @param m12 Column 1, row 2
+ * @param m22 Column 2, row 2
+ */
+export function mat3CreateRowMajor(
+  m00: number,
+  m10: number,
+  m20: number,
+  m01: number,
+  m11: number,
+  m21: number,
+  m02: number,
+  m12: number,
+  m22: number,
+): Mat3 {
+  return mat3$initRowMajor(mat3(), m00, m10, m20, m01, m11, m21, m02, m12, m22)
+}
+
+/**
+ * Sets all components of a matrix to the same value
+ *
+ * @param out The matrix to set
+ * @param value The value for all components
+ */
+export function mat3$initFill(out: Mat3, value: number): Mat3 {
+  out[0] = value
+  out[1] = value
+  out[2] = value
+  out[3] = value
+  out[4] = value
+  out[5] = value
+  out[6] = value
+  out[7] = value
+  out[8] = value
+  return out
+}
+
+/**
+ * Creates a new matrix with all components set to the same value
+ *
+ * @param value The value for all components
+ */
+export function mat3CreateFill(value: number): Mat3 {
+  return mat3$initFill(mat3(), value)
+}
+
+/**
+ * Sets a matrix to the identity matrix
+ *
+ * @param out The matrix to set
+ */
+export function mat3$initIdentity(out: Mat3): Mat3 {
+  out[0] = 1
+  out[1] = 0
+  out[2] = 0
+  out[3] = 0
+  out[4] = 1
+  out[5] = 0
+  out[6] = 0
+  out[7] = 0
+  out[8] = 1
+  return out
+}
+
+/**
+ * Creates a new identity matrix
+ */
+export function mat3CreateIdentity(): Mat3 {
+  return mat3$initIdentity(mat3())
+}
+
+/**
+ * Copies the components of another matrix into a matrix
+ *
+ * @param out The matrix to set
+ * @param other The matrix to copy from
+ */
+export function mat3$initFrom(out: Mat3, other: Mat3): Mat3 {
+  out[0] = other[0]
+  out[1] = other[1]
+  out[2] = other[2]
+  out[3] = other[3]
+  out[4] = other[4]
+  out[5] = other[5]
+  out[6] = other[6]
+  out[7] = other[7]
+  out[8] = other[8]
+  return out
+}
+
+/**
+ * Creates a new matrix as a copy of another matrix
+ *
+ * @param other The matrix to copy from
+ */
+export function mat3CreateFrom(other: Mat3): Mat3 {
+  return mat3$initFrom(mat3(), other)
+}
+
+/**
+ * Sets the components of a matrix from an array
+ *
+ * @param out The matrix to set
+ * @param array The array to read from
+ * @param offset The index of the first value in the array. Defaults to 0.
+ */
+export function mat3$initFromArray(out: Mat3, array: ArrayLike<number>, offset: number = 0): Mat3 {
+  out[0] = array[offset]
+  out[1] = array[offset + 1]
+  out[2] = array[offset + 2]
+  out[3] = array[offset + 3]
+  out[4] = array[offset + 4]
+  out[5] = array[offset + 5]
+  out[6] = array[offset + 6]
+  out[7] = array[offset + 7]
+  out[8] = array[offset + 8]
+  return out
+}
+
+/**
+ * Creates a new matrix from the values of an array
+ *
+ * @param array The array to read from
+ * @param offset The index of the first value in the array. Defaults to 0.
+ */
+export function mat3CreateFromArray(array: ArrayLike<number>, offset: number = 0): Mat3 {
+  return mat3$initFromArray(mat3(), array, offset)
+}
+
+/**
+ * Sets a matrix to the rotation of a quaternion
+ *
+ * @param out The matrix to set
+ * @param quat The rotation quaternion
+ */
+export function mat3$initFromQuat(out: Mat3, quat: IVec4): Mat3 {
+  return mat3$initFromQuatValues(out, quat.x, quat.y, quat.z, quat.w)
+}
+
+/**
+ * Creates a new rotation matrix from a quaternion
+ *
+ * @param quat The rotation quaternion
+ */
+export function mat3CreateFromQuat(quat: IVec4): Mat3 {
+  return mat3$initFromQuat(mat3(), quat)
+}
+
+/**
+ * Sets a matrix to the rotation of a quaternion
+ *
+ * @param out The matrix to set
+ * @param x The x component of the quaternion
+ * @param y The y component of the quaternion
+ * @param z The z component of the quaternion
+ * @param w The w component of the quaternion
+ */
+export function mat3$initFromQuatValues(out: Mat3, x: number, y: number, z: number, w: number): Mat3 {
+  const xx = x * x
+  const xy = x * y
+  const xz = x * z
+  const xw = x * w
+  const yy = y * y
+  const yz = y * z
+  const yw = y * w
+  const zz = z * z
+  const zw = z * w
+
+  // rotation matrix components, rCR = column C, row R
+  const r00 = 1 - 2 * (yy + zz)
+  const r01 = 2 * (xy + zw)
+  const r02 = 2 * (xz - yw)
+  const r10 = 2 * (xy - zw)
+  const r11 = 1 - 2 * (zz + xx)
+  const r12 = 2 * (yz + xw)
+  const r20 = 2 * (xz + yw)
+  const r21 = 2 * (yz - xw)
+  const r22 = 1 - 2 * (yy + xx)
+
+  out[C0R0] = r00
+  out[C0R1] = r01
+  out[C0R2] = r02
+  out[C1R0] = r10
+  out[C1R1] = r11
+  out[C1R2] = r12
+  out[C2R0] = r20
+  out[C2R1] = r21
+  out[C2R2] = r22
+  return out
+}
+
+/**
+ * Creates a new rotation matrix from a quaternion
+ *
+ * @param x The x component of the quaternion
+ * @param y The y component of the quaternion
+ * @param z The z component of the quaternion
+ * @param w The w component of the quaternion
+ */
+export function mat3CreateFromQuatValues(x: number, y: number, z: number, w: number): Mat3 {
+  return mat3$initFromQuatValues(mat3(), x, y, z, w)
+}
+
+/**
+ * Rotates a matrix by a quaternion
+ *
+ * @param out The matrix to rotate
+ * @param quat The rotation quaternion
+ */
+export function mat3$rotateByQuat(out: Mat3, quat: IVec4): Mat3 {
+  return mat3$rotateByQuatValues(out, quat.x, quat.y, quat.z, quat.w)
+}
+
+/**
+ * Rotates a matrix by a quaternion
+ *
+ * @param out The matrix to rotate
+ * @param x The x component of the quaternion
+ * @param y The y component of the quaternion
+ * @param z The z component of the quaternion
+ * @param w The w component of the quaternion
+ */
+export function mat3$rotateByQuatValues(out: Mat3, x: number, y: number, z: number, w: number): Mat3 {
+  const xx = x * x
+  const xy = x * y
+  const xz = x * z
+  const xw = x * w
+  const yy = y * y
+  const yz = y * z
+  const yw = y * w
+  const zz = z * z
+  const zw = z * w
+
+  // rotation matrix components, rCR = column C, row R
+  const r00 = 1 - 2 * (yy + zz)
+  const r01 = 2 * (xy + zw)
+  const r02 = 2 * (xz - yw)
+  const r10 = 2 * (xy - zw)
+  const r11 = 1 - 2 * (zz + xx)
+  const r12 = 2 * (yz + xw)
+  const r20 = 2 * (xz + yw)
+  const r21 = 2 * (yz - xw)
+  const r22 = 1 - 2 * (yy + xx)
+
+  const m00 = out[C0R0]
+  const m01 = out[C0R1]
+  const m02 = out[C0R2]
+  const m10 = out[C1R0]
+  const m11 = out[C1R1]
+  const m12 = out[C1R2]
+  const m20 = out[C2R0]
+  const m21 = out[C2R1]
+  const m22 = out[C2R2]
+
+  out[C0R0] = m00 * r00 + m10 * r01 + m20 * r02
+  out[C0R1] = m01 * r00 + m11 * r01 + m21 * r02
+  out[C0R2] = m02 * r00 + m12 * r01 + m22 * r02
+  out[C1R0] = m00 * r10 + m10 * r11 + m20 * r12
+  out[C1R1] = m01 * r10 + m11 * r11 + m21 * r12
+  out[C1R2] = m02 * r10 + m12 * r11 + m22 * r12
+  out[C2R0] = m00 * r20 + m10 * r21 + m20 * r22
+  out[C2R1] = m01 * r20 + m11 * r21 + m21 * r22
+  out[C2R2] = m02 * r20 + m12 * r21 + m22 * r22
+  return out
+}
+
+/**
+ * Rotates a matrix by a quaternion in world space
+ *
+ * @remarks
+ * The rotation is multiplied from the left, so it is applied in world space.
+ *
+ * @param out The matrix to rotate
+ * @param quat The rotation quaternion
+ */
+export function mat3$preRotateByQuat(out: Mat3, quat: IVec4): Mat3 {
+  return mat3$preRotateByQuatValues(out, quat.x, quat.y, quat.z, quat.w)
+}
+
+/**
+ * Rotates a matrix by a quaternion in world space
+ *
+ * @remarks
+ * The rotation is multiplied from the left, so it is applied in world space.
+ *
+ * @param out The matrix to rotate
+ * @param x The x component of the quaternion
+ * @param y The y component of the quaternion
+ * @param z The z component of the quaternion
+ * @param w The w component of the quaternion
+ */
+export function mat3$preRotateByQuatValues(out: Mat3, x: number, y: number, z: number, w: number): Mat3 {
+  const xx = x * x
+  const xy = x * y
+  const xz = x * z
+  const xw = x * w
+  const yy = y * y
+  const yz = y * z
+  const yw = y * w
+  const zz = z * z
+  const zw = z * w
+
+  // rotation matrix components, rCR = column C, row R
+  const r00 = 1 - 2 * (yy + zz)
+  const r01 = 2 * (xy + zw)
+  const r02 = 2 * (xz - yw)
+  const r10 = 2 * (xy - zw)
+  const r11 = 1 - 2 * (zz + xx)
+  const r12 = 2 * (yz + xw)
+  const r20 = 2 * (xz + yw)
+  const r21 = 2 * (yz - xw)
+  const r22 = 1 - 2 * (yy + xx)
+
+  const m00 = out[C0R0]
+  const m01 = out[C0R1]
+  const m02 = out[C0R2]
+  const m10 = out[C1R0]
+  const m11 = out[C1R1]
+  const m12 = out[C1R2]
+  const m20 = out[C2R0]
+  const m21 = out[C2R1]
+  const m22 = out[C2R2]
+
+  out[C0R0] = r00 * m00 + r10 * m01 + r20 * m02
+  out[C0R1] = r01 * m00 + r11 * m01 + r21 * m02
+  out[C0R2] = r02 * m00 + r12 * m01 + r22 * m02
+  out[C1R0] = r00 * m10 + r10 * m11 + r20 * m12
+  out[C1R1] = r01 * m10 + r11 * m11 + r21 * m12
+  out[C1R2] = r02 * m10 + r12 * m11 + r22 * m12
+  out[C2R0] = r00 * m20 + r10 * m21 + r20 * m22
+  out[C2R1] = r01 * m20 + r11 * m21 + r21 * m22
+  out[C2R2] = r02 * m20 + r12 * m21 + r22 * m22
+  return out
+}
+
+/**
+ * Sets a matrix to a rotation around an axis
+ *
+ * @param out The matrix to set
+ * @param axis The normalized rotation axis
+ * @param angle The rotation angle in radians
+ */
+export function mat3$initAxisAngle(out: Mat3, axis: IVec3, angle: number): Mat3 {
+  return mat3$initAxisAngleValues(out, axis.x, axis.y, axis.z, angle)
+}
+
+/**
+ * Creates a new rotation matrix around an axis
+ *
+ * @param axis The normalized rotation axis
+ * @param angle The rotation angle in radians
+ */
+export function mat3CreateAxisAngle(axis: IVec3, angle: number): Mat3 {
+  return mat3$initAxisAngle(mat3(), axis, angle)
+}
+
+/**
+ * Sets a matrix to a rotation around an axis
+ *
+ * @param out The matrix to set
+ * @param x The x component of the normalized rotation axis
+ * @param y The y component of the normalized rotation axis
+ * @param z The z component of the normalized rotation axis
+ * @param angle The rotation angle in radians
+ */
+export function mat3$initAxisAngleValues(out: Mat3, x: number, y: number, z: number, angle: number): Mat3 {
+  const halfAngle = angle * 0.5
+  const scale = Math.sin(halfAngle)
+  return mat3$initFromQuatValues(out, x * scale, y * scale, z * scale, Math.cos(halfAngle))
+}
+
+/**
+ * Creates a new rotation matrix around an axis
+ *
+ * @param x The x component of the normalized rotation axis
+ * @param y The y component of the normalized rotation axis
+ * @param z The z component of the normalized rotation axis
+ * @param angle The rotation angle in radians
+ */
+export function mat3CreateAxisAngleValues(x: number, y: number, z: number, angle: number): Mat3 {
+  return mat3$initAxisAngleValues(mat3(), x, y, z, angle)
+}
+
+/**
+ * Rotates a matrix around an axis
+ *
+ * @param out The matrix to rotate
+ * @param axis The normalized rotation axis
+ * @param angle The rotation angle in radians
+ */
+export function mat3$rotateByAxisAngle(out: Mat3, axis: IVec3, angle: number): Mat3 {
+  return mat3$rotateByAxisAngleValues(out, axis.x, axis.y, axis.z, angle)
+}
+
+/**
+ * Rotates a matrix around an axis
+ *
+ * @param out The matrix to rotate
+ * @param x The x component of the normalized rotation axis
+ * @param y The y component of the normalized rotation axis
+ * @param z The z component of the normalized rotation axis
+ * @param angle The rotation angle in radians
+ */
+export function mat3$rotateByAxisAngleValues(out: Mat3, x: number, y: number, z: number, angle: number): Mat3 {
+  const halfAngle = angle * 0.5
+  const scale = Math.sin(halfAngle)
+  return mat3$rotateByQuatValues(out, x * scale, y * scale, z * scale, Math.cos(halfAngle))
+}
+
+/**
+ * Rotates a matrix around an axis in world space
+ *
+ * @remarks
+ * The rotation is multiplied from the left, so it is applied in world space.
+ *
+ * @param out The matrix to rotate
+ * @param axis The normalized rotation axis
+ * @param angle The rotation angle in radians
+ */
+export function mat3$preRotateByAxisAngle(out: Mat3, axis: IVec3, angle: number): Mat3 {
+  return mat3$preRotateByAxisAngleValues(out, axis.x, axis.y, axis.z, angle)
+}
+
+/**
+ * Rotates a matrix around an axis in world space
+ *
+ * @remarks
+ * The rotation is multiplied from the left, so it is applied in world space.
+ *
+ * @param out The matrix to rotate
+ * @param x The x component of the normalized rotation axis
+ * @param y The y component of the normalized rotation axis
+ * @param z The z component of the normalized rotation axis
+ * @param angle The rotation angle in radians
+ */
+export function mat3$preRotateByAxisAngleValues(out: Mat3, x: number, y: number, z: number, angle: number): Mat3 {
+  const halfAngle = angle * 0.5
+  const scale = Math.sin(halfAngle)
+  return mat3$preRotateByQuatValues(out, x * scale, y * scale, z * scale, Math.cos(halfAngle))
+}
+
+/**
+ * Sets a matrix to a rotation from yaw, pitch and roll angles
+ *
+ * @param out The matrix to set
+ * @param yaw The rotation angle in radians around the Y axis
+ * @param pitch The rotation angle in radians around the X axis
+ * @param roll The rotation angle in radians around the Z axis
+ */
+export function mat3$initYawPitchRoll(out: Mat3, yaw: number, pitch: number, roll: number): Mat3 {
+  const zHalf = roll * 0.5
+  const zSin = Math.sin(zHalf)
+  const zCos = Math.cos(zHalf)
+  const xHalf = pitch * 0.5
+  const xSin = Math.sin(xHalf)
+  const xCos = Math.cos(xHalf)
+  const yHalf = yaw * 0.5
+  const ySin = Math.sin(yHalf)
+  const yCos = Math.cos(yHalf)
+
+  const x = yCos * xSin * zCos + ySin * xCos * zSin
+  const y = ySin * xCos * zCos - yCos * xSin * zSin
+  const z = yCos * xCos * zSin - ySin * xSin * zCos
+  const w = yCos * xCos * zCos + ySin * xSin * zSin
+  return mat3$initFromQuatValues(out, x, y, z, w)
+}
+
+/**
+ * Creates a new rotation matrix from yaw, pitch and roll angles
+ *
+ * @param yaw The rotation angle in radians around the Y axis
+ * @param pitch The rotation angle in radians around the X axis
+ * @param roll The rotation angle in radians around the Z axis
+ */
+export function mat3CreateYawPitchRoll(yaw: number, pitch: number, roll: number): Mat3 {
+  return mat3$initYawPitchRoll(mat3(), yaw, pitch, roll)
+}
+
+/**
+ * Rotates a matrix by yaw, pitch and roll angles
+ *
+ * @param out The matrix to rotate
+ * @param yaw The rotation angle in radians around the Y axis
+ * @param pitch The rotation angle in radians around the X axis
+ * @param roll The rotation angle in radians around the Z axis
+ */
+export function mat3$rotateYawPitchRoll(out: Mat3, yaw: number, pitch: number, roll: number): Mat3 {
+  const zHalf = roll * 0.5
+  const zSin = Math.sin(zHalf)
+  const zCos = Math.cos(zHalf)
+  const xHalf = pitch * 0.5
+  const xSin = Math.sin(xHalf)
+  const xCos = Math.cos(xHalf)
+  const yHalf = yaw * 0.5
+  const ySin = Math.sin(yHalf)
+  const yCos = Math.cos(yHalf)
+
+  const x = yCos * xSin * zCos + ySin * xCos * zSin
+  const y = ySin * xCos * zCos - yCos * xSin * zSin
+  const z = yCos * xCos * zSin - ySin * xSin * zCos
+  const w = yCos * xCos * zCos + ySin * xSin * zSin
+  return mat3$rotateByQuatValues(out, x, y, z, w)
+}
+
+/**
+ * Rotates a matrix by yaw, pitch and roll angles in world space
+ *
+ * @remarks
+ * The rotation is multiplied from the left, so it is applied in world space.
+ *
+ * @param out The matrix to rotate
+ * @param yaw The rotation angle in radians around the Y axis
+ * @param pitch The rotation angle in radians around the X axis
+ * @param roll The rotation angle in radians around the Z axis
+ */
+export function mat3$preRotateYawPitchRoll(out: Mat3, yaw: number, pitch: number, roll: number): Mat3 {
+  const zHalf = roll * 0.5
+  const zSin = Math.sin(zHalf)
+  const zCos = Math.cos(zHalf)
+  const xHalf = pitch * 0.5
+  const xSin = Math.sin(xHalf)
+  const xCos = Math.cos(xHalf)
+  const yHalf = yaw * 0.5
+  const ySin = Math.sin(yHalf)
+  const yCos = Math.cos(yHalf)
+
+  const x = yCos * xSin * zCos + ySin * xCos * zSin
+  const y = ySin * xCos * zCos - yCos * xSin * zSin
+  const z = yCos * xCos * zSin - ySin * xSin * zCos
+  const w = yCos * xCos * zCos + ySin * xSin * zSin
+  return mat3$preRotateByQuatValues(out, x, y, z, w)
+}
+
+/**
+ * Sets a matrix to a rotation around the X axis
+ *
+ * @param out The matrix to set
+ * @param angle The rotation angle in radians
+ */
+export function mat3$initRotationX(out: Mat3, angle: number): Mat3 {
+  const c = Math.cos(angle)
+  const s = Math.sin(angle)
+  return mat3$initRowMajor(out, 1, 0, 0, 0, c, -s, 0, s, c)
+}
+
+/**
+ * Creates a new rotation matrix around the X axis
+ *
+ * @param angle The rotation angle in radians
+ */
+export function mat3CreateRotationX(angle: number): Mat3 {
+  return mat3$initRotationX(mat3(), angle)
+}
+
+/**
+ * Rotates a matrix around the X axis
+ *
+ * @param out The matrix to rotate
+ * @param angle The rotation angle in radians
+ */
+export function mat3$rotateX(out: Mat3, angle: number): Mat3 {
+  const c = Math.cos(angle)
+  const s = Math.sin(angle)
+  const m10 = out[C1R0]
+  const m11 = out[C1R1]
+  const m12 = out[C1R2]
+  const m20 = out[C2R0]
+  const m21 = out[C2R1]
+  const m22 = out[C2R2]
+
+  out[C1R0] = c * m10 + s * m20
+  out[C1R1] = c * m11 + s * m21
+  out[C1R2] = c * m12 + s * m22
+  out[C2R0] = c * m20 - s * m10
+  out[C2R1] = c * m21 - s * m11
+  out[C2R2] = c * m22 - s * m12
+  return out
+}
+
+/**
+ * Rotates a matrix around the X axis in world space
+ *
+ * @remarks
+ * The rotation is multiplied from the left, so it is applied in world space.
+ *
+ * @param out The matrix to rotate
+ * @param angle The rotation angle in radians
+ */
+export function mat3$preRotateX(out: Mat3, angle: number): Mat3 {
+  const c = Math.cos(angle)
+  const s = Math.sin(angle)
+  const m01 = out[C0R1]
+  const m11 = out[C1R1]
+  const m21 = out[C2R1]
+  const m02 = out[C0R2]
+  const m12 = out[C1R2]
+  const m22 = out[C2R2]
+
+  out[C0R1] = c * m01 - s * m02
+  out[C1R1] = c * m11 - s * m12
+  out[C2R1] = c * m21 - s * m22
+  out[C0R2] = c * m02 + s * m01
+  out[C1R2] = c * m12 + s * m11
+  out[C2R2] = c * m22 + s * m21
+  return out
+}
+
+/**
+ * Sets a matrix to a rotation around the Y axis
+ *
+ * @param out The matrix to set
+ * @param angle The rotation angle in radians
+ */
+export function mat3$initRotationY(out: Mat3, angle: number): Mat3 {
+  const c = Math.cos(angle)
+  const s = Math.sin(angle)
+  return mat3$initRowMajor(out, c, 0, s, 0, 1, 0, -s, 0, c)
+}
+
+/**
+ * Creates a new rotation matrix around the Y axis
+ *
+ * @param angle The rotation angle in radians
+ */
+export function mat3CreateRotationY(angle: number): Mat3 {
+  return mat3$initRotationY(mat3(), angle)
+}
+
+/**
+ * Rotates a matrix around the Y axis
+ *
+ * @param out The matrix to rotate
+ * @param angle The rotation angle in radians
+ */
+export function mat3$rotateY(out: Mat3, angle: number): Mat3 {
+  const c = Math.cos(angle)
+  const s = Math.sin(angle)
+  const m00 = out[C0R0]
+  const m01 = out[C0R1]
+  const m02 = out[C0R2]
+  const m20 = out[C2R0]
+  const m21 = out[C2R1]
+  const m22 = out[C2R2]
+
+  out[C0R0] = c * m00 - s * m20
+  out[C0R1] = c * m01 - s * m21
+  out[C0R2] = c * m02 - s * m22
+  out[C2R0] = c * m20 + s * m00
+  out[C2R1] = c * m21 + s * m01
+  out[C2R2] = c * m22 + s * m02
+  return out
+}
+
+/**
+ * Rotates a matrix around the Y axis in world space
+ *
+ * @remarks
+ * The rotation is multiplied from the left, so it is applied in world space.
+ *
+ * @param out The matrix to rotate
+ * @param angle The rotation angle in radians
+ */
+export function mat3$preRotateY(out: Mat3, angle: number): Mat3 {
+  const c = Math.cos(angle)
+  const s = Math.sin(angle)
+  const m00 = out[C0R0]
+  const m10 = out[C1R0]
+  const m20 = out[C2R0]
+  const m02 = out[C0R2]
+  const m12 = out[C1R2]
+  const m22 = out[C2R2]
+
+  out[C0R0] = c * m00 + s * m02
+  out[C1R0] = c * m10 + s * m12
+  out[C2R0] = c * m20 + s * m22
+  out[C0R2] = c * m02 - s * m00
+  out[C1R2] = c * m12 - s * m10
+  out[C2R2] = c * m22 - s * m20
+  return out
+}
+
+/**
+ * Sets a matrix to a rotation around the Z axis
+ *
+ * @param out The matrix to set
+ * @param angle The rotation angle in radians
+ */
+export function mat3$initRotationZ(out: Mat3, angle: number): Mat3 {
+  const c = Math.cos(angle)
+  const s = Math.sin(angle)
+  return mat3$initRowMajor(out, c, -s, 0, s, c, 0, 0, 0, 1)
+}
+
+/**
+ * Creates a new rotation matrix around the Z axis
+ *
+ * @param angle The rotation angle in radians
+ */
+export function mat3CreateRotationZ(angle: number): Mat3 {
+  return mat3$initRotationZ(mat3(), angle)
+}
+
+/**
+ * Rotates a matrix around the Z axis
+ *
+ * @param out The matrix to rotate
+ * @param angle The rotation angle in radians
+ */
+export function mat3$rotateZ(out: Mat3, angle: number): Mat3 {
+  const c = Math.cos(angle)
+  const s = Math.sin(angle)
+  const m00 = out[C0R0]
+  const m01 = out[C0R1]
+  const m02 = out[C0R2]
+  const m10 = out[C1R0]
+  const m11 = out[C1R1]
+  const m12 = out[C1R2]
+
+  out[C0R0] = c * m00 + s * m10
+  out[C0R1] = c * m01 + s * m11
+  out[C0R2] = c * m02 + s * m12
+  out[C1R0] = c * m10 - s * m00
+  out[C1R1] = c * m11 - s * m01
+  out[C1R2] = c * m12 - s * m02
+  return out
+}
+
+/**
+ * Rotates a matrix around the Z axis in world space
+ *
+ * @remarks
+ * The rotation is multiplied from the left, so it is applied in world space.
+ *
+ * @param out The matrix to rotate
+ * @param angle The rotation angle in radians
+ */
+export function mat3$preRotateZ(out: Mat3, angle: number): Mat3 {
+  const c = Math.cos(angle)
+  const s = Math.sin(angle)
+  const m00 = out[C0R0]
+  const m10 = out[C1R0]
+  const m20 = out[C2R0]
+  const m01 = out[C0R1]
+  const m11 = out[C1R1]
+  const m21 = out[C2R1]
+
+  out[C0R0] = c * m00 - s * m01
+  out[C1R0] = c * m10 - s * m11
+  out[C2R0] = c * m20 - s * m21
+  out[C0R1] = c * m01 + s * m00
+  out[C1R1] = c * m11 + s * m10
+  out[C2R1] = c * m21 + s * m20
+  return out
+}
+
+/**
+ * Sets a matrix to a rotation that looks in the given direction
+ *
+ * @param out The matrix to set
+ * @param forward The forward direction
+ * @param up The up direction of the viewer
+ */
+export function mat3$initOrientation(out: Mat3, forward: IVec3, up: IVec3): Mat3 {
+  // backward = negate(normalize(forward))
+  let x = forward.x
+  let y = forward.y
+  let z = forward.z
+  let d = 1.0 / Math.sqrt(x * x + y * y + z * z)
+  const backX = -x * d
+  const backY = -y * d
+  const backZ = -z * d
+
+  // right = normalize(cross(up, back))
+  x = up.y * backZ - up.z * backY
+  y = up.z * backX - up.x * backZ
+  z = up.x * backY - up.y * backX
+  d = 1.0 / Math.sqrt(x * x + y * y + z * z)
+  const rightX = x * d
+  const rightY = y * d
+  const rightZ = z * d
+
+  // up = cross(back, right)
+  x = backY * rightZ - backZ * rightY
+  y = backZ * rightX - backX * rightZ
+  z = backX * rightY - backY * rightX
+
+  return mat3$initRowMajor(out, rightX, x, backX, rightY, y, backY, rightZ, z, backZ)
+}
+
+/**
+ * Creates a new rotation matrix that looks in the given direction
+ *
+ * @param forward The forward direction
+ * @param up The up direction of the viewer
+ */
+export function mat3CreateOrientation(forward: IVec3, up: IVec3): Mat3 {
+  return mat3$initOrientation(mat3(), forward, up)
+}
+
+/**
+ * Gets the forward direction of a matrix
+ *
+ * @param mat The matrix to read from
+ * @param out The vector to write to.
+ */
+export function mat3GetForward(mat: Mat3, out?: IVec3): IVec3 {
+  out ||= vec3()
+  out.x = -mat[C2R0]
+  out.y = -mat[C2R1]
+  out.z = -mat[C2R2]
+  return out
+}
+
+/**
+ * Sets the forward direction of a matrix
+ *
+ * @param out The matrix to change
+ * @param vec The forward direction
+ */
+export function mat3$setForward(out: Mat3, vec: IVec3): Mat3 {
+  out[C2R0] = -vec.x
+  out[C2R1] = -vec.y
+  out[C2R2] = -vec.z
+  return out
+}
+
+/**
+ * Gets the backward direction of a matrix
+ *
+ * @param mat The matrix to read from
+ * @param out The vector to write to.
+ */
+export function mat3GetBackward(mat: Mat3, out?: IVec3): IVec3 {
+  out ||= vec3()
+  out.x = mat[C2R0]
+  out.y = mat[C2R1]
+  out.z = mat[C2R2]
+  return out
+}
+
+/**
+ * Sets the backward direction of a matrix
+ *
+ * @param out The matrix to change
+ * @param vec The backward direction
+ */
+export function mat3$setBackward(out: Mat3, vec: IVec3): Mat3 {
+  out[C2R0] = vec.x
+  out[C2R1] = vec.y
+  out[C2R2] = vec.z
+  return out
+}
+
+/**
+ * Gets the right direction of a matrix
+ *
+ * @param mat The matrix to read from
+ * @param out The vector to write to.
+ */
+export function mat3GetRight(mat: Mat3, out?: IVec3): IVec3 {
+  out ||= vec3()
+  out.x = mat[C0R0]
+  out.y = mat[C0R1]
+  out.z = mat[C0R2]
+  return out
+}
+
+/**
+ * Sets the right direction of a matrix
+ *
+ * @param out The matrix to change
+ * @param vec The right direction
+ */
+export function mat3$setRight(out: Mat3, vec: IVec3): Mat3 {
+  out[C0R0] = vec.x
+  out[C0R1] = vec.y
+  out[C0R2] = vec.z
+  return out
+}
+
+/**
+ * Gets the left direction of a matrix
+ *
+ * @param mat The matrix to read from
+ * @param out The vector to write to.
+ */
+export function mat3GetLeft(mat: Mat3, out?: IVec3): IVec3 {
+  out ||= vec3()
+  out.x = -mat[C0R0]
+  out.y = -mat[C0R1]
+  out.z = -mat[C0R2]
+  return out
+}
+
+/**
+ * Sets the left direction of a matrix
+ *
+ * @param out The matrix to change
+ * @param vec The left direction
+ */
+export function mat3$setLeft(out: Mat3, vec: IVec3): Mat3 {
+  out[C0R0] = -vec.x
+  out[C0R1] = -vec.y
+  out[C0R2] = -vec.z
+  return out
+}
+
+/**
+ * Gets the up direction of a matrix
+ *
+ * @param mat The matrix to read from
+ * @param out The vector to write to.
+ */
+export function mat3GetUp(mat: Mat3, out?: IVec3): IVec3 {
+  out ||= vec3()
+  out.x = mat[C1R0]
+  out.y = mat[C1R1]
+  out.z = mat[C1R2]
+  return out
+}
+
+/**
+ * Sets the up direction of a matrix
+ *
+ * @param out The matrix to change
+ * @param vec The up direction
+ */
+export function mat3$setUp(out: Mat3, vec: IVec3): Mat3 {
+  out[C1R0] = vec.x
+  out[C1R1] = vec.y
+  out[C1R2] = vec.z
+  return out
+}
+
+/**
+ * Gets the down direction of a matrix
+ *
+ * @param mat The matrix to read from
+ * @param out The vector to write to.
+ */
+export function mat3GetDown(mat: Mat3, out?: IVec3): IVec3 {
+  out ||= vec3()
+  out.x = -mat[C1R0]
+  out.y = -mat[C1R1]
+  out.z = -mat[C1R2]
+  return out
+}
+
+/**
+ * Sets the down direction of a matrix
+ *
+ * @param out The matrix to change
+ * @param vec The down direction
+ */
+export function mat3$setDown(out: Mat3, vec: IVec3): Mat3 {
+  out[C1R0] = -vec.x
+  out[C1R1] = -vec.y
+  out[C1R2] = -vec.z
+  return out
+}
+
+/**
+ * Gets the scale part of a matrix
+ *
+ * @param mat The matrix to read from
+ * @param out The vector to write to.
+ */
+export function mat3GetScale(mat: Mat3, out?: IVec3): IVec3 {
+  out ||= vec3()
+  out.x = mat[C0R0]
+  out.y = mat[C1R1]
+  out.z = mat[C2R2]
+  return out
+}
+
+/**
+ * Sets the scale part of a matrix
+ *
+ * @param out The matrix to change
+ * @param vec The scale vector
+ */
+export function mat3$setScale(out: Mat3, vec: IVec3): Mat3 {
+  return mat3$setScaleXYZ(out, vec.x, vec.y, vec.z)
+}
+
+/**
+ * Sets the scale part of a matrix
+ *
+ * @param out The matrix to change
+ * @param x The scale on the x axis
+ * @param y The scale on the y axis
+ * @param z The scale on the z axis
+ */
+export function mat3$setScaleXYZ(out: Mat3, x: number, y: number, z: number): Mat3 {
+  out[C0R0] = x
+  out[C1R1] = y
+  out[C2R2] = z
+  return out
+}
+
+/**
+ * Sets the x component of the scale part of a matrix
+ *
+ * @param out The matrix to change
+ * @param value The scale on the x axis
+ */
+export function mat3$setScaleX(out: Mat3, value: number): Mat3 {
+  out[C0R0] = value
+  return out
+}
+
+/**
+ * Sets the y component of the scale part of a matrix
+ *
+ * @param out The matrix to change
+ * @param value The scale on the y axis
+ */
+export function mat3$setScaleY(out: Mat3, value: number): Mat3 {
+  out[C1R1] = value
+  return out
+}
+
+/**
+ * Sets the z component of the scale part of a matrix
+ *
+ * @param out The matrix to change
+ * @param value The scale on the z axis
+ */
+export function mat3$setScaleZ(out: Mat3, value: number): Mat3 {
+  out[C2R2] = value
+  return out
+}
+
+/**
+ * Sets a matrix to a scale matrix
+ *
+ * @param out The matrix to set
+ * @param vec The scale vector
+ */
+export function mat3$initScale(out: Mat3, vec: IVec3): Mat3 {
+  return mat3$initScaleXYZ(out, vec.x, vec.y, vec.z)
+}
+
+/**
+ * Creates a new scale matrix
+ *
+ * @param vec The scale vector
+ */
+export function mat3CreateScale(vec: IVec3): Mat3 {
+  return mat3$initScale(mat3(), vec)
+}
+
+/**
+ * Sets a matrix to a scale matrix
+ *
+ * @param out The matrix to set
+ * @param x The scale on the x axis
+ * @param y The scale on the y axis
+ * @param z The scale on the z axis
+ */
+export function mat3$initScaleXYZ(out: Mat3, x: number, y: number, z: number): Mat3 {
+  return mat3$initRowMajor(out, x, 0, 0, 0, y, 0, 0, 0, z)
+}
+
+/**
+ * Creates a new scale matrix
+ *
+ * @param x The scale on the x axis
+ * @param y The scale on the y axis
+ * @param z The scale on the z axis
+ */
+export function mat3CreateScaleXYZ(x: number, y: number, z: number): Mat3 {
+  return mat3$initScaleXYZ(mat3(), x, y, z)
+}
+
+/**
+ * Sets a matrix to a uniform scale matrix
+ *
+ * @param out The matrix to set
+ * @param scale The scale on all axes
+ */
+export function mat3$initScaleUniform(out: Mat3, scale: number): Mat3 {
+  return mat3$initScaleXYZ(out, scale, scale, scale)
+}
+
+/**
+ * Creates a new uniform scale matrix
+ *
+ * @param scale The scale on all axes
+ */
+export function mat3CreateScaleUniform(scale: number): Mat3 {
+  return mat3$initScaleUniform(mat3(), scale)
+}
+
+/**
+ * Scales a matrix
+ *
+ * @param out The matrix to scale
+ * @param scale The scale vector
+ */
+export function mat3$scale(out: Mat3, scale: IVec3): Mat3 {
+  return mat3$scaleXYZ(out, scale.x, scale.y, scale.z)
+}
+
+/**
+ * Scales a matrix
+ *
+ * @param out The matrix to scale
+ * @param x The scale on the x axis
+ * @param y The scale on the y axis
+ * @param z The scale on the z axis
+ */
+export function mat3$scaleXYZ(out: Mat3, x: number, y: number, z: number): Mat3 {
+  out[C0R0] *= x
+  out[C0R1] *= x
+  out[C0R2] *= x
+  out[C1R0] *= y
+  out[C1R1] *= y
+  out[C1R2] *= y
+  out[C2R0] *= z
+  out[C2R1] *= z
+  out[C2R2] *= z
+  return out
+}
+
+/**
+ * Scales a matrix on the x axis
+ *
+ * @param out The matrix to scale
+ * @param x The scale on the x axis
+ */
+export function mat3$scaleX(out: Mat3, x: number): Mat3 {
+  out[C0R0] *= x
+  out[C0R1] *= x
+  out[C0R2] *= x
+  return out
+}
+
+/**
+ * Scales a matrix on the y axis
+ *
+ * @param out The matrix to scale
+ * @param y The scale on the y axis
+ */
+export function mat3$scaleY(out: Mat3, y: number): Mat3 {
+  out[C1R0] *= y
+  out[C1R1] *= y
+  out[C1R2] *= y
+  return out
+}
+
+/**
+ * Scales a matrix on the z axis
+ *
+ * @param out The matrix to scale
+ * @param z The scale on the z axis
+ */
+export function mat3$scaleZ(out: Mat3, z: number): Mat3 {
+  out[C2R0] *= z
+  out[C2R1] *= z
+  out[C2R2] *= z
+  return out
+}
+
+/**
+ * Scales a matrix by the same value on all axes
+ *
+ * @param out The matrix to scale
+ * @param scale The scale on all axes
+ */
+export function mat3$scaleUniform(out: Mat3, scale: number): Mat3 {
+  out[0] *= scale
+  out[1] *= scale
+  out[2] *= scale
+  out[3] *= scale
+  out[4] *= scale
+  out[5] *= scale
+  out[6] *= scale
+  out[7] *= scale
+  out[8] *= scale
+  return out
+}
+
+/**
+ * Scales a matrix in world space
+ *
+ * @remarks
+ * The scale is multiplied from the left, so it is applied in world space.
+ *
+ * @param out The matrix to scale
+ * @param scale The scale vector
+ */
+export function mat3$preScale(out: Mat3, scale: IVec3): Mat3 {
+  return mat3$preScaleXYZ(out, scale.x, scale.y, scale.z)
+}
+
+/**
+ * Scales a matrix in world space
+ *
+ * @remarks
+ * The scale is multiplied from the left, so it is applied in world space.
+ *
+ * @param out The matrix to scale
+ * @param x The scale on the x axis
+ * @param y The scale on the y axis
+ * @param z The scale on the z axis
+ */
+export function mat3$preScaleXYZ(out: Mat3, x: number, y: number, z: number): Mat3 {
+  out[C0R0] *= x
+  out[C1R0] *= x
+  out[C2R0] *= x
+  out[C0R1] *= y
+  out[C1R1] *= y
+  out[C2R1] *= y
+  out[C0R2] *= z
+  out[C1R2] *= z
+  out[C2R2] *= z
+  return out
+}
+
+/**
+ * Scales a matrix on the x axis in world space
+ *
+ * @remarks
+ * The scale is multiplied from the left, so it is applied in world space.
+ *
+ * @param out The matrix to scale
+ * @param x The scale on the x axis
+ */
+export function mat3$preScaleX(out: Mat3, x: number): Mat3 {
+  out[C0R0] *= x
+  out[C1R0] *= x
+  out[C2R0] *= x
+  return out
+}
+
+/**
+ * Scales a matrix on the y axis in world space
+ *
+ * @remarks
+ * The scale is multiplied from the left, so it is applied in world space.
+ *
+ * @param out The matrix to scale
+ * @param y The scale on the y axis
+ */
+export function mat3$preScaleY(out: Mat3, y: number): Mat3 {
+  out[C0R1] *= y
+  out[C1R1] *= y
+  out[C2R1] *= y
+  return out
+}
+
+/**
+ * Scales a matrix on the z axis in world space
+ *
+ * @remarks
+ * The scale is multiplied from the left, so it is applied in world space.
+ *
+ * @param out The matrix to scale
+ * @param z The scale on the z axis
+ */
+export function mat3$preScaleZ(out: Mat3, z: number): Mat3 {
+  out[C0R2] *= z
+  out[C1R2] *= z
+  out[C2R2] *= z
+  return out
+}
+
+/**
+ * Copies a matrix
+ *
+ * @param mat The matrix to copy
+ * @param out The matrix to write to.
+ */
+export function mat3Copy(mat: Mat3, out?: Mat3): Mat3 {
+  out ||= mat3()
+  out[0] = mat[0]
+  out[1] = mat[1]
+  out[2] = mat[2]
+  out[3] = mat[3]
+  out[4] = mat[4]
+  out[5] = mat[5]
+  out[6] = mat[6]
+  out[7] = mat[7]
+  out[8] = mat[8]
+  return out
+}
+
+/**
+ * Calculates the determinant of a matrix
+ *
+ * @param mat The matrix
+ */
+export function mat3Determinant(mat: Mat3): number {
+  const a11 = mat[0]
+  const a12 = mat[3]
+  const a13 = mat[6]
+  const a21 = mat[1]
+  const a22 = mat[4]
+  const a23 = mat[7]
+  const a31 = mat[2]
+  const a32 = mat[5]
+  const a33 = mat[8]
+
+  const d1 = a22 * a33 - a32 * a23
+  const d2 = a21 * a33 - a31 * a23
+  const d3 = a21 * a32 - a31 * a22
+
+  return a11 * d1 - a12 * d2 + a13 * d3
+}
+
+/**
+ * Transposes a matrix
+ *
+ * @param out The matrix to transpose
+ */
+export function mat3$transpose(out: Mat3): Mat3 {
+  let t = out[C0R1]
+  out[C0R1] = out[C1R0]
+  out[C1R0] = t
+
+  t = out[C0R2]
+  out[C0R2] = out[C2R0]
+  out[C2R0] = t
+
+  t = out[C1R2]
+  out[C1R2] = out[C2R1]
+  out[C2R1] = t
+  return out
+}
+
+/**
+ * Transposes a matrix
+ *
+ * @param mat The matrix to transpose
+ * @param out The matrix to write to.
+ */
+export function mat3Transpose(mat: Mat3, out?: Mat3): Mat3 {
+  const m = mat
+  return mat3$init(out || mat3(), m[0], m[3], m[6], m[1], m[4], m[7], m[2], m[5], m[8])
+}
+
+/**
+ * Inverts a matrix
+ *
+ * @param out The matrix to invert
+ */
+export function mat3$invert(out: Mat3): Mat3 {
+  return mat3Invert(out, out)
+}
+
+/**
+ * Inverts a matrix
+ *
+ * @param mat The matrix to invert
+ * @param out The matrix to write to.
+ */
+export function mat3Invert(mat: Mat3, out?: Mat3): Mat3 {
+  out ||= mat3()
+
+  const a11 = mat[0]
+  const a12 = mat[3]
+  const a13 = mat[6]
+  const a21 = mat[1]
+  const a22 = mat[4]
+  const a23 = mat[7]
+  const a31 = mat[2]
+  const a32 = mat[5]
+  const a33 = mat[8]
+
+  const d1 = a22 * a33 - a32 * a23
+  const d2 = a21 * a33 - a31 * a23
+  const d3 = a21 * a32 - a31 * a22
+
+  const detInv = 1 / (a11 * d1 - a12 * d2 + a13 * d3)
+
+  out[0] = detInv * d1
+  out[1] = -detInv * d2
+  out[2] = detInv * d3
+  out[3] = detInv * (a13 * a32 - a12 * a33)
+  out[4] = detInv * (a11 * a33 - a13 * a31)
+  out[5] = detInv * (a12 * a31 - a11 * a32)
+  out[6] = detInv * (a12 * a23 - a13 * a22)
+  out[7] = detInv * (a13 * a21 - a11 * a23)
+  out[8] = detInv * (a11 * a22 - a12 * a21)
+
+  return out
+}
+
+/**
+ * Negates all components of a matrix
+ *
+ * @param out The matrix to negate
+ */
+export function mat3$negate(out: Mat3): Mat3 {
+  out[0] = -out[0]
+  out[1] = -out[1]
+  out[2] = -out[2]
+  out[3] = -out[3]
+  out[4] = -out[4]
+  out[5] = -out[5]
+  out[6] = -out[6]
+  out[7] = -out[7]
+  out[8] = -out[8]
+  return out
+}
+
+/**
+ * Negates all components of a matrix
+ *
+ * @param mat The matrix to negate
+ * @param out The matrix to write to.
+ */
+export function mat3Negate(mat: Mat3, out?: Mat3): Mat3 {
+  out ||= mat3()
+  out[0] = -mat[0]
+  out[1] = -mat[1]
+  out[2] = -mat[2]
+  out[3] = -mat[3]
+  out[4] = -mat[4]
+  out[5] = -mat[5]
+  out[6] = -mat[6]
+  out[7] = -mat[7]
+  out[8] = -mat[8]
+  return out
+}
+
+/**
+ * Adds a matrix to another matrix
+ *
+ * @param out The matrix to add to
+ * @param other The matrix to add
+ */
+export function mat3$add(out: Mat3, other: Mat3): Mat3 {
+  out[0] += other[0]
+  out[1] += other[1]
+  out[2] += other[2]
+  out[3] += other[3]
+  out[4] += other[4]
+  out[5] += other[5]
+  out[6] += other[6]
+  out[7] += other[7]
+  out[8] += other[8]
+  return out
+}
+
+/**
+ * Adds two matrices
+ *
+ * @param a The first matrix
+ * @param b The second matrix
+ * @param out The matrix to write to.
+ */
+export function mat3Add(a: Mat3, b: Mat3, out?: Mat3): Mat3 {
+  out ||= mat3()
+  out[0] = a[0] + b[0]
+  out[1] = a[1] + b[1]
+  out[2] = a[2] + b[2]
+  out[3] = a[3] + b[3]
+  out[4] = a[4] + b[4]
+  out[5] = a[5] + b[5]
+  out[6] = a[6] + b[6]
+  out[7] = a[7] + b[7]
+  out[8] = a[8] + b[8]
+  return out
+}
+
+/**
+ * Subtracts a matrix from another matrix
+ *
+ * @param out The matrix to subtract from
+ * @param other The matrix to subtract
+ */
+export function mat3$subtract(out: Mat3, other: Mat3): Mat3 {
+  out[0] -= other[0]
+  out[1] -= other[1]
+  out[2] -= other[2]
+  out[3] -= other[3]
+  out[4] -= other[4]
+  out[5] -= other[5]
+  out[6] -= other[6]
+  out[7] -= other[7]
+  out[8] -= other[8]
+  return out
+}
+
+/**
+ * Subtracts the second matrix from the first matrix
+ *
+ * @param a The first matrix
+ * @param b The second matrix
+ * @param out The matrix to write to.
+ */
+export function mat3Subtract(a: Mat3, b: Mat3, out?: Mat3): Mat3 {
+  out ||= mat3()
+  out[0] = a[0] - b[0]
+  out[1] = a[1] - b[1]
+  out[2] = a[2] - b[2]
+  out[3] = a[3] - b[3]
+  out[4] = a[4] - b[4]
+  out[5] = a[5] - b[5]
+  out[6] = a[6] - b[6]
+  out[7] = a[7] - b[7]
+  out[8] = a[8] - b[8]
+  return out
+}
+
+/**
+ * Divides each component of a matrix by the matching component of another matrix
+ *
+ * @param out The matrix to divide
+ * @param other The matrix to divide by
+ */
+export function mat3$divide(out: Mat3, other: Mat3): Mat3 {
+  out[0] /= other[0]
+  out[1] /= other[1]
+  out[2] /= other[2]
+  out[3] /= other[3]
+  out[4] /= other[4]
+  out[5] /= other[5]
+  out[6] /= other[6]
+  out[7] /= other[7]
+  out[8] /= other[8]
+  return out
+}
+
+/**
+ * Divides each component of the first matrix by the matching component of the second matrix
+ *
+ * @param a The first matrix
+ * @param b The second matrix
+ * @param out The matrix to write to.
+ */
+export function mat3Divide(a: Mat3, b: Mat3, out?: Mat3): Mat3 {
+  out ||= mat3()
+  out[0] = a[0] / b[0]
+  out[1] = a[1] / b[1]
+  out[2] = a[2] / b[2]
+  out[3] = a[3] / b[3]
+  out[4] = a[4] / b[4]
+  out[5] = a[5] / b[5]
+  out[6] = a[6] / b[6]
+  out[7] = a[7] / b[7]
+  out[8] = a[8] / b[8]
+  return out
+}
+
+/**
+ * Adds a number to each component of a matrix
+ *
+ * @param out The matrix to add to
+ * @param scalar The number to add
+ */
+export function mat3$addScalar(out: Mat3, scalar: number): Mat3 {
+  out[0] += scalar
+  out[1] += scalar
+  out[2] += scalar
+  out[3] += scalar
+  out[4] += scalar
+  out[5] += scalar
+  out[6] += scalar
+  out[7] += scalar
+  out[8] += scalar
+  return out
+}
+
+/**
+ * Adds a number to each component of a matrix
+ *
+ * @param mat The matrix
+ * @param scalar The number to add
+ * @param out The matrix to write to.
+ */
+export function mat3AddScalar(mat: Mat3, scalar: number, out?: Mat3): Mat3 {
+  out ||= mat3()
+  out[0] = mat[0] + scalar
+  out[1] = mat[1] + scalar
+  out[2] = mat[2] + scalar
+  out[3] = mat[3] + scalar
+  out[4] = mat[4] + scalar
+  out[5] = mat[5] + scalar
+  out[6] = mat[6] + scalar
+  out[7] = mat[7] + scalar
+  out[8] = mat[8] + scalar
+  return out
+}
+
+/**
+ * Subtracts a number from each component of a matrix
+ *
+ * @param out The matrix to subtract from
+ * @param scalar The number to subtract
+ */
+export function mat3$subtractScalar(out: Mat3, scalar: number): Mat3 {
+  out[0] -= scalar
+  out[1] -= scalar
+  out[2] -= scalar
+  out[3] -= scalar
+  out[4] -= scalar
+  out[5] -= scalar
+  out[6] -= scalar
+  out[7] -= scalar
+  out[8] -= scalar
+  return out
+}
+
+/**
+ * Subtracts a number from each component of a matrix
+ *
+ * @param mat The matrix
+ * @param scalar The number to subtract
+ * @param out The matrix to write to.
+ */
+export function mat3SubtractScalar(mat: Mat3, scalar: number, out?: Mat3): Mat3 {
+  out ||= mat3()
+  out[0] = mat[0] - scalar
+  out[1] = mat[1] - scalar
+  out[2] = mat[2] - scalar
+  out[3] = mat[3] - scalar
+  out[4] = mat[4] - scalar
+  out[5] = mat[5] - scalar
+  out[6] = mat[6] - scalar
+  out[7] = mat[7] - scalar
+  out[8] = mat[8] - scalar
+  return out
+}
+
+/**
+ * Multiplies each component of a matrix by a number
+ *
+ * @param out The matrix to multiply
+ * @param scalar The number to multiply by
+ */
+export function mat3$multiplyScalar(out: Mat3, scalar: number): Mat3 {
+  out[0] *= scalar
+  out[1] *= scalar
+  out[2] *= scalar
+  out[3] *= scalar
+  out[4] *= scalar
+  out[5] *= scalar
+  out[6] *= scalar
+  out[7] *= scalar
+  out[8] *= scalar
+  return out
+}
+
+/**
+ * Multiplies each component of a matrix by a number
+ *
+ * @param mat The matrix
+ * @param scalar The number to multiply by
+ * @param out The matrix to write to.
+ */
+export function mat3MultiplyScalar(mat: Mat3, scalar: number, out?: Mat3): Mat3 {
+  out ||= mat3()
+  out[0] = mat[0] * scalar
+  out[1] = mat[1] * scalar
+  out[2] = mat[2] * scalar
+  out[3] = mat[3] * scalar
+  out[4] = mat[4] * scalar
+  out[5] = mat[5] * scalar
+  out[6] = mat[6] * scalar
+  out[7] = mat[7] * scalar
+  out[8] = mat[8] * scalar
+  return out
+}
+
+/**
+ * Divides each component of a matrix by a number
+ *
+ * @param out The matrix to divide
+ * @param scalar The number to divide by
+ */
+export function mat3$divideScalar(out: Mat3, scalar: number): Mat3 {
+  return mat3$multiplyScalar(out, 1 / scalar)
+}
+
+/**
+ * Divides each component of a matrix by a number
+ *
+ * @param mat The matrix
+ * @param scalar The number to divide by
+ * @param out The matrix to write to.
+ */
+export function mat3DivideScalar(mat: Mat3, scalar: number, out?: Mat3): Mat3 {
+  return mat3MultiplyScalar(mat, 1 / scalar, out)
+}
+
+/**
+ * Multiplies a matrix with another matrix: `out = out * other`
+ *
+ * @param out The left matrix
+ * @param other The right matrix
+ */
+export function mat3$multiply(out: Mat3, other: Mat3): Mat3 {
+  return mat3Multiply(out, other, out)
+}
+
+/**
+ * Multiplies two matrices: `out = a * b`
+ *
+ * @param a The left matrix
+ * @param b The right matrix
+ * @param out The matrix to write to.
+ */
+export function mat3Multiply(a: Mat3, b: Mat3, out?: Mat3): Mat3 {
+  out ||= mat3()
+  // prettier-ignore
+  const
+    a0 = a[0], a1 = a[1], a2 = a[2],
+    a3 = a[3], a4 = a[4], a5 = a[5],
+    a6 = a[6], a7 = a[7], a8 = a[8],
+    b0 = b[0], b1 = b[1], b2 = b[2],
+    b3 = b[3], b4 = b[4], b5 = b[5],
+    b6 = b[6], b7 = b[7], b8 = b[8]
+  out[0] = b0 * a0 + b1 * a3 + b2 * a6
+  out[1] = b0 * a1 + b1 * a4 + b2 * a7
+  out[2] = b0 * a2 + b1 * a5 + b2 * a8
+  out[3] = b3 * a0 + b4 * a3 + b5 * a6
+  out[4] = b3 * a1 + b4 * a4 + b5 * a7
+  out[5] = b3 * a2 + b4 * a5 + b5 * a8
+  out[6] = b6 * a0 + b7 * a3 + b8 * a6
+  out[7] = b6 * a1 + b7 * a4 + b8 * a7
+  out[8] = b6 * a2 + b7 * a5 + b8 * a8
+  return out
+}
+
+/**
+ * Multiplies another matrix with a matrix: `out = other * out`
+ *
+ * @param out The right matrix
+ * @param other The left matrix
+ */
+export function mat3$premultiply(out: Mat3, other: Mat3): Mat3 {
+  return mat3Multiply(other, out, out)
+}
+
+/**
+ * Multiplies two matrices in reverse order: `out = b * a`
+ *
+ * @param a The right matrix
+ * @param b The left matrix
+ * @param out The matrix to write to.
+ */
+export function mat3Premultiply(a: Mat3, b: Mat3, out?: Mat3): Mat3 {
+  return mat3Multiply(b, a, out)
+}
+
+/**
+ * Transforms 2D points stored in an array with a matrix. The array is changed in place.
+ *
+ * @remarks
+ * The vectors are treated as points with z = 1, so the third column is applied as translation.
+ *
+ * @param mat The transformation matrix
+ * @param array The array with the vector components
+ * @param offset The index of the first vector in the array. Defaults to 0.
+ * @param stride The number of array elements between two vectors. Defaults to 2.
+ * @param count The number of vectors to transform. Defaults to all vectors in the array.
+ */
+export function mat3TransformVec2Array<T extends ArrayLike<number>>(
+  mat: Mat3,
+  array: T,
+  offset: number = 0,
+  stride: number = 2,
+  count: number = array.length / stride,
+): T {
+  const d = mat
+  while (count > 0) {
+    count--
+    const x = array[offset]
+    const y = array[offset + 1]
+    array[offset] = x * d[0] + y * d[3] + d[6]
+    array[offset + 1] = x * d[1] + y * d[4] + d[7]
+    offset += stride
+  }
+  return array
+}
+
+/**
+ * Transforms 3D vectors stored in an array with a matrix. The array is changed in place.
+ *
+ * @param mat The transformation matrix
+ * @param array The array with the vector components
+ * @param offset The index of the first vector in the array. Defaults to 0.
+ * @param stride The number of array elements between two vectors. Defaults to 3.
+ * @param count The number of vectors to transform. Defaults to all vectors in the array.
+ */
+export function mat3TransformVec3Array<T extends ArrayLike<number>>(
+  mat: Mat3,
+  array: T,
+  offset: number = 0,
+  stride: number = 3,
+  count: number = array.length / stride,
+): T {
+  const d = mat
+  while (count > 0) {
+    count--
+    const x = array[offset]
+    const y = array[offset + 1]
+    const z = array[offset + 2]
+    array[offset] = x * d[0] + y * d[3] + z * d[6]
+    array[offset + 1] = x * d[1] + y * d[4] + z * d[7]
+    array[offset + 2] = x * d[2] + y * d[5] + z * d[8]
+    offset += stride
+  }
+  return array
+}
+
+/**
+ * Linearly interpolates between two matrices, component by component
+ *
+ * @param a The start matrix
+ * @param b The end matrix
+ * @param t The interpolation value, expected in range [0, 1]
+ * @param out The matrix to write to.
+ */
+export function mat3Lerp(a: Mat3, b: Mat3, t: number, out?: Mat3): Mat3 {
+  out ||= mat3()
+  out[0] = a[0] + (b[0] - a[0]) * t
+  out[1] = a[1] + (b[1] - a[1]) * t
+  out[2] = a[2] + (b[2] - a[2]) * t
+  out[3] = a[3] + (b[3] - a[3]) * t
+  out[4] = a[4] + (b[4] - a[4]) * t
+  out[5] = a[5] + (b[5] - a[5]) * t
+  out[6] = a[6] + (b[6] - a[6]) * t
+  out[7] = a[7] + (b[7] - a[7]) * t
+  out[8] = a[8] + (b[8] - a[8]) * t
+  return out
+}
+
+/**
+ * Smoothly interpolates between two matrices, component by component
+ *
+ * @param a The start matrix
+ * @param b The end matrix
+ * @param t The interpolation value. It is clamped to range [0, 1].
+ * @param out The matrix to write to.
+ */
+export function mat3Smooth(a: Mat3, b: Mat3, t: number, out?: Mat3): Mat3 {
+  t = t > 1 ? 1 : t < 0 ? 0 : t
+  t = t * t * (3 - 2 * t)
+  return mat3Lerp(a, b, t, out)
+}
+
+/**
+ * Checks if two matrices have equal components
+ *
+ * @param a The first matrix
+ * @param b The second matrix
+ */
+export function mat3Equals(a: Mat3, b: Mat3): boolean {
+  return (
+    a[0] === b[0] &&
+    a[1] === b[1] &&
+    a[2] === b[2] &&
+    a[3] === b[3] &&
+    a[4] === b[4] &&
+    a[5] === b[5] &&
+    a[6] === b[6] &&
+    a[7] === b[7] &&
+    a[8] === b[8]
+  )
+}
+
+/**
+ * Formats a matrix as a readable string
+ *
+ * @remarks
+ * Use this for debugging only, not for serialization.
+ *
+ * @param mat The matrix to format
+ * @param fractionDigits The number of digits after the decimal point. Defaults to 5.
+ */
+export function mat3Format(mat: Mat3, fractionDigits: number = 5): string {
+  const m = mat
+  return [
+    [m[0].toFixed(fractionDigits), m[3].toFixed(fractionDigits), m[6].toFixed(fractionDigits)].join(','),
+    [m[1].toFixed(fractionDigits), m[4].toFixed(fractionDigits), m[7].toFixed(fractionDigits)].join(','),
+    [m[2].toFixed(fractionDigits), m[5].toFixed(fractionDigits), m[8].toFixed(fractionDigits)].join(','),
+  ].join('\n')
+}
+
+/**
+ * Copies the components of a matrix into an array
+ *
+ * @param mat The matrix to copy
+ * @param array The array to write to. A new array is created if not given.
+ * @param offset The index in the array to start writing at. Defaults to 0.
+ */
+export function mat3ToArray(mat: Mat3): number[]
+export function mat3ToArray<T extends ArrayLike<number>>(mat: Mat3, array: T, offset?: number): T
+export function mat3ToArray(mat: Mat3, array: ArrayLike<number> = [], offset: number = 0): ArrayLike<number> {
+  array[offset] = mat[0]
+  array[offset + 1] = mat[1]
+  array[offset + 2] = mat[2]
+  array[offset + 3] = mat[3]
+  array[offset + 4] = mat[4]
+  array[offset + 5] = mat[5]
+  array[offset + 6] = mat[6]
+  array[offset + 7] = mat[7]
+  array[offset + 8] = mat[8]
+  return array
 }

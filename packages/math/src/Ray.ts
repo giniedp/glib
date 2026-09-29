@@ -11,222 +11,77 @@ import {
   rayTriangleIntersectsAt,
 } from './Collision'
 import type { IVec3, IVec4 } from './Types'
-import { vec3, Vec3 } from './Vec3'
+import { vec3, vec3Equals } from './Vec3'
 
-/**
- * A ray with a starting position and a pointing direction.
- *
- * @public
- */
-export class Ray {
-  /**
-   * The ray origin
-   */
-  public position: IVec3
-  /**
-   * The ray direction
-   */
-  public direction: IVec3
+export interface IRay {
+  position: IVec3
+  direction: IVec3
+}
 
-  /**
-   * Constructs a new instance of {@link Ray}
-   */
-  constructor(pX?: number, pY?: number, pZ?: number, dX?: number, dY?: number, dZ?: number) {
-    this.position = vec3(pX, pY, pZ)
-    this.direction = vec3(dX, dY, dZ)
-  }
+export function rayCreate(pos?: IVec3, dir?: IVec3): IRay {
+  return { position: vec3(pos), direction: vec3(dir) }
+}
 
-  /**
-   * Initializes the ray to given components
-   *
-   * @param pX - x component of ray origin
-   * @param pY - y component of ray origin
-   * @param pZ - z component of ray origin
-   * @param dX - x component of ray direction
-   * @param dY - y component of ray direction
-   * @param dZ - z component of ray direction
-   */
-  public init(pX?: number, pY?: number, pZ?: number, dX?: number, dY?: number, dZ?: number): Ray {
-    this.position.x = pX ?? 0
-    this.position.y = pY ?? 0
-    this.position.z = pZ ?? 0
-    this.direction.x = dX ?? 0
-    this.direction.y = dY ?? 0
-    this.direction.z = dZ ?? 0
-    return this
-  }
+export function ray$init(r: IRay, pos: IVec3, dir: IVec3): IRay {
+  r.position.x = pos.x
+  r.position.y = pos.y
+  r.position.z = pos.z
+  r.direction.x = dir.x
+  r.direction.y = dir.y
+  r.direction.z = dir.z
+  return r
+}
 
-  /**
-   * Creates a new ray from given components
-   *
-   * @param pX - x component of ray origin
-   * @param pY - y component of ray origin
-   * @param pZ - z component of ray origin
-   * @param dX - x component of ray direction
-   * @param dY - y component of ray direction
-   * @param dZ - z component of ray direction
-   */
-  public static create(pX?: number, pY?: number, pZ?: number, dX?: number, dY?: number, dZ?: number): Ray {
-    return new Ray(pX, pY, pZ, dX, dY, dZ)
-  }
+export function ray$initFrom(out: IRay, other: IRay): IRay {
+  out.position.x = other.position.x
+  out.position.y = other.position.y
+  out.position.z = other.position.z
+  out.direction.x = other.direction.x
+  out.direction.y = other.direction.y
+  out.direction.z = other.direction.z
+  return out
+}
 
-  /**
-   * Initializes the ray by copying the given vectors
-   *
-   * @param position - the ray position to copy
-   * @param direction - the ray direction to copy
-   */
-  public initV(position: IVec3, direction: IVec3): Ray {
-    this.position.x = position.x
-    this.position.y = position.y
-    this.position.z = position.z
-    this.direction.x = direction.x
-    this.direction.y = direction.y
-    this.direction.z = direction.z
-    return this
-  }
+export function rayCopy(r: IRay, out?: IRay) {
+  out ||= { position: vec3(), direction: vec3() }
+  ray$initFrom(out, r)
+  return out
+}
 
-  /**
-   * Creates a new ray by copying the given vectors
-   *
-   * @param position - the ray position to copy
-   * @param direction - the ray direction to copy
-   */
-  public static createV(position: IVec3, direction: IVec3): Ray {
-    return new Ray(position.x, position.y, position.z, direction.x, direction.y, direction.z)
-  }
+export function rayEquals(a: IRay, b: IRay) {
+  return vec3Equals(a.position, b.position) && vec3Equals(a.direction, b.direction)
+}
 
-  /**
-   * Initializes the ray by copying the given ray
-   *
-   * @param ray - the ray to copy
-   */
-  public initFrom(ray: Ray): Ray {
-    return this.initV(ray.position, ray.direction)
-  }
+export function rayPositionAt(ray: IRay, distance: number, out?: IVec3) {
+  out = out || vec3()
+  out.x = ray.direction.x * distance + ray.position.x
+  out.y = ray.direction.y * distance + ray.position.y
+  out.z = ray.direction.z * distance + ray.position.z
+  return out
+}
 
-  /**
-   * Creates a new ray by copying the given ray
-   *
-   * @param ray - the ray to copy
-   */
-  public static createFrom(ray: Ray): Ray {
-    return this.createV(ray.position, ray.direction)
-  }
+export function rayIntersectsSphere(ray: IRay, sphere: BoundingSphere): boolean {
+  return raySphereIntersects(ray.position, ray.direction, sphere.center, sphere.radius)
+}
+export function rayIntersectsBox(ray: IRay, box: BoundingBox): boolean {
+  return rayBoxIntersects(ray.position, ray.direction, box.min, box.max)
+}
+export function rayIntersectsPlane(ray: IRay, plane: IVec4): boolean {
+  return rayPlaneIntersects(ray.position, ray.direction, plane)
+}
+export function rayIntersectsTriangle(ray: IRay, a: IVec3, b: IVec3, c: IVec3): boolean {
+  return rayTriangleIntersects(ray.position, ray.direction, a, b, c)
+}
 
-  /**
-   * Clones this ray
-   *
-   * @param out - where the result should be written to
-   * @returns - the given `out` parameter or a new vector
-   */
-  public copy(out?: Ray): Ray {
-    out = out || new Ray()
-    return out.initFrom(this)
-  }
-
-  /**
-   * Clones the given ray
-   *
-   * @param ray - the ray to clone
-   * @param out - where the result should be written to
-   * @returns - the given `out` parameter or a new ray
-   */
-  public static copy(ray: Ray, out?: Ray): Ray {
-    out = out || new Ray()
-    return out.initFrom(ray)
-  }
-
-  /**
-   * Compares this to another ray for component wise equality
-   *
-   * @param other - the ray to compare with
-   */
-  public equals(other: Ray): boolean {
-    return Vec3.equals(this.position, other.position) && Vec3.equals(this.direction, other.direction)
-  }
-
-  /**
-   * Compares two rays for component wise equality
-   *
-   * @param a - the first ray to compare
-   * @param b - the second ray to compare
-   */
-  public static equals(a: Ray, b: Ray): boolean {
-    return Vec3.equals(a.position, b.position) && Vec3.equals(a.direction, b.direction)
-  }
-
-  /**
-   * Calculates the position at given distance from ray origin along ray direction
-   *
-   * @param distance - the distance from ray origin
-   * @returns - a new Vector
-   */
-  public positionAt(distance: number): Vec3
-  /**
-   * Calculates the position at given distance from ray origin along ray direction
-   *
-   * @param distance - the distance from ray origin
-   * @param out - where the result should be written to
-   * @returns - the given `out` parameter or a new vector
-   */
-  public positionAt<T>(distance: number, out?: T): T & IVec3
-  public positionAt(distance: number, out?: IVec3): IVec3 {
-    out = out || (new Vec3() as any)
-    out.x = this.direction.x * distance + this.position.x
-    out.y = this.direction.y * distance + this.position.y
-    out.z = this.direction.z * distance + this.position.z
-    return out
-  }
-
-  /**
-   * Calculates the position at given distance from ray origin along ray direction
-   *
-   * @param ray - the ray in question
-   * @param distance - the distance from ray origin
-   * @returns - a new Vector
-   */
-  public static positionAt(ray: Ray, distance: number): Vec3
-  /**
-   * Calculates the position at given distance from ray origin along ray direction
-   *
-   * @param ray - the ray in question
-   * @param distance - the distance from ray origin
-   * @param out - where the result should be written to
-   * @returns - the given `out` parameter or a new vector
-   */
-  public static positionAt<T>(ray: Ray, distance: number, out?: T): T & IVec3
-  public static positionAt(ray: Ray, distance: number, out?: IVec3): IVec3 {
-    out = out || (new Vec3() as any)
-    out.x = ray.direction.x * distance + ray.position.x
-    out.y = ray.direction.y * distance + ray.position.y
-    out.z = ray.direction.z * distance + ray.position.z
-    return out
-  }
-
-  public intersectsSphere(sphere: BoundingSphere): boolean {
-    return raySphereIntersects(this.position, this.direction, sphere.center, sphere.radius)
-  }
-  public intersectsBox(box: BoundingBox): boolean {
-    return rayBoxIntersects(this.position, this.direction, box.min, box.max)
-  }
-  public intersectsPlane(plane: IVec4): boolean {
-    return rayPlaneIntersects(this.position, this.direction, plane)
-  }
-  public intersectsTriangle(a: IVec3, b: IVec3, c: IVec3): boolean {
-    return rayTriangleIntersects(this.position, this.direction, a, b, c)
-  }
-
-  public intersectsSphereAt(sphere: BoundingSphere): number {
-    return raySphereIntersectsAt(this.position, this.direction, sphere.center, sphere.radius)
-  }
-  public intersectsBoxAt(box: BoundingBox): number {
-    return rayBoxIntersectsAt(this.position, this.direction, box.min, box.max)
-  }
-  public intersectsPlaneAt(plane: IVec4): number {
-    return rayPlaneIntersectsAt(this.position, this.direction, plane)
-  }
-  public intersectsTriangleAt(a: IVec3, b: IVec3, c: IVec3): number {
-    return rayTriangleIntersectsAt(this.position, this.direction, a, b, c)
-  }
+export function rayIntersectsSphereAt(ray: IRay, sphere: BoundingSphere): number {
+  return raySphereIntersectsAt(ray.position, ray.direction, sphere.center, sphere.radius)
+}
+export function rayIntersectsBoxAt(ray: IRay, box: BoundingBox): number {
+  return rayBoxIntersectsAt(ray.position, ray.direction, box.min, box.max)
+}
+export function rayIntersectsPlaneAt(ray: IRay, plane: IVec4): number {
+  return rayPlaneIntersectsAt(ray.position, ray.direction, plane)
+}
+export function rayIntersectsTriangleAt(ray: IRay, a: IVec3, b: IVec3, c: IVec3): number {
+  return rayTriangleIntersectsAt(ray.position, ray.direction, a, b, c)
 }

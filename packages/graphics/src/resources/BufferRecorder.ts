@@ -467,9 +467,9 @@ export class BufferRecorder {
    * Writes a Mat4 (16 floats) at the current cursor.
    */
   public writeMat4(value: Mat4): this {
-    this.assertCursorSpace(value.elements.length)
-    for (let i = 0; i < value.elements.length; i++) {
-      this.dataFloat32[this.writeEnd++] = value.elements[i]
+    this.assertCursorSpace(value.length)
+    for (let i = 0; i < value.length; i++) {
+      this.dataFloat32[this.writeEnd++] = value[i]
     }
     return this
   }

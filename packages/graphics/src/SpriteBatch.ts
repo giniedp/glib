@@ -1,4 +1,4 @@
-import { Mat4, type IRect } from '@gglib/math'
+import { Mat4, mat4$initFrom, mat4$initOrthographicOffCenter, mat4Identity, type IRect } from '@gglib/math'
 import { PooledList } from '@gglib/utils'
 import { Device } from './Device'
 import type { RenderEncoder } from './RenderEncoder'
@@ -20,11 +20,11 @@ export enum SpriteMode {
 }
 
 function compareBackToFront(a: SpriteBuilder, b: SpriteBuilder): number {
-  return b.transform.elements[14] - a.transform.elements[14]
+  return b.transform[14] - a.transform[14]
 }
 
 function compareFrontToBack(a: SpriteBuilder, b: SpriteBuilder): number {
-  return a.transform.elements[14] - b.transform.elements[14]
+  return a.transform[14] - b.transform[14]
 }
 
 function compareTexture(a: SpriteBuilder, b: SpriteBuilder): number {
@@ -122,7 +122,7 @@ export class SpriteBatch implements Renderable {
       },
     ])
 
-    this.matrix = Mat4.createIdentity()
+    this.matrix = mat4Identity()
     this.shader = options.program || device.createShaderModule(spriteBatchShader())
   }
 
@@ -136,9 +136,10 @@ export class SpriteBatch implements Renderable {
   public begin(mode?: SpriteMode, matrix?: Mat4) {
     this.mode = mode ?? SpriteMode.Deferred
     if (matrix) {
-      this.matrix.initFrom(matrix)
+      mat4$initFrom(this.matrix, matrix)
     } else {
-      this.matrix.initOrthographicOffCenter(
+      mat4$initOrthographicOffCenter(
+        this.matrix,
         0,
         this.device.output.width,
         this.device.output.height,
@@ -235,7 +236,7 @@ export class SpriteBatch implements Renderable {
     }
 
     this.shader.program.get('textureMap').setTexture(texture)
-    this.shader.program.get('uniforms.viewProjection').setMat4x4(this.matrix.elements)
+    this.shader.program.get('uniforms.viewProjection').setMat4x4(this.matrix)
     this.shader.program.get('uniforms.toSrgb').setScalar(this.linearToSrgb ? 1 : 0)
     this.shader.program.get('uniforms.tonemap').setScalar(this.tonemap ? 1 : 0)
     this.shader.program.get('uniforms.exposure').setScalar(this.exposure)

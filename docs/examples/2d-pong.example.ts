@@ -10,7 +10,7 @@ import {
 import { GameComponent, GameEntity, InitializableComponent } from '@gglib/ecs'
 import { GamepadAxes, KeyboardKeys } from '@gglib/game'
 import { Color, PlatformId, Texture } from '@gglib/graphics'
-import { Mat4, Vec4 } from '@gglib/math'
+import { IVec4, mat4$initOrthographicOffCenter, mat4Identity, vec4 } from '@gglib/math'
 import { BloomPass, GeometryPass, LayerMask, PixelatePass, Renderer } from '@gglib/render'
 import { mountUi } from 'tweak-ui'
 export default (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
@@ -80,9 +80,9 @@ class PongGame extends EcsGame {
     })
     this.scene.getView(0).camera = {
       visibilityMask: LayerMask.All,
-      projection: Mat4.createIdentity(),
-      view: Mat4.createIdentity(),
-      world: Mat4.createIdentity(),
+      projection: mat4Identity(),
+      view: mat4Identity(),
+      world: mat4Identity(),
       reversedZ: false,
       near: 0,
       far: 1,
@@ -93,7 +93,8 @@ class PongGame extends EcsGame {
 
   public override onUpdate(t: number, dt: number) {
     const view = this.scene.getView(0)
-    view.camera.projection.initOrthographicOffCenter(
+    mat4$initOrthographicOffCenter(
+      view.camera.projection,
       0,
       this.width,
       0,
@@ -207,7 +208,7 @@ class PaddleComponent implements GameComponent, InitializableComponent, Behavior
   public h = 5
   public speed = 20
   private isLeft!: boolean
-  private color: Vec4 = Vec4.create(1, 1, 1, 1)
+  private color: IVec4 = vec4(1, 1, 1, 1)
 
   public get cy() {
     return this.y - this.h / 2

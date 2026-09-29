@@ -1,5 +1,5 @@
 import type { GameComponent, GameEntity } from '@gglib/ecs'
-import { Mat4, Vec4, type IVec3, type IVec4 } from '@gglib/math'
+import { type Mat4, mat4CreateFromRTS, vec4, type IVec3, type IVec4 } from '@gglib/math'
 
 export type DebugShapeType = 'bounds-box' | 'bounds-sphere' | 'box' | 'sphere' | 'plane' | 'cylinder' | 'cone' | 'disc'
 
@@ -72,11 +72,11 @@ export class DebugShapeComponent implements GameComponent {
     //   const translation = options?.translation ?? { x: 0, y: 0, z: 0 }
     //   const rotation = options?.rotation ?? { x: 0, y: 0, z: 0, w: 1 }
     //   const scale = options?.scale ?? { x: 1, y: 1, z: 1 }
-    //   this.localTransforms = [Mat4.createFromRTS(rotation, translation, scale)]
+    //   this.localTransforms = [mat4CreateFromRTS(rotation, translation, scale)]
     // }
 
     // const color = options?.color ?? { x: 1, y: 1, z: 1 }
-    // this.color = Vec4.create(color.x, color.y, color.z, options?.alpha ?? 1)
+    // this.color = vec4(color.x, color.y, color.z, options?.alpha ?? 1)
     // this.solid = options?.solid ?? false
     // this.layer = options?.layer ?? DebugLayer.Selection
 
@@ -90,7 +90,7 @@ export class DebugShapeComponent implements GameComponent {
   public add(options: DebugShapeOptions): DebugShapeEntry {
     const color = options?.color ?? { x: 1, y: 1, z: 1 }
     const entry: DebugShapeEntry = {
-      color: Vec4.create(color.x, color.y, color.z, options?.alpha ?? 1),
+      color: vec4(color.x, color.y, color.z, options?.alpha ?? 1),
       solid: options?.solid ?? false,
       layer: options?.layer ?? DebugLayer.Selection,
       visibleIf: options?.visibleIf,
@@ -104,7 +104,7 @@ export class DebugShapeComponent implements GameComponent {
       const translation = options?.translation ?? { x: 0, y: 0, z: 0 }
       const rotation = options?.rotation ?? { x: 0, y: 0, z: 0, w: 1 }
       const scale = options?.scale ?? { x: 1, y: 1, z: 1 }
-      entry.transforms = [Mat4.createFromRTS(rotation, translation, scale)]
+      entry.transforms = [mat4CreateFromRTS(rotation, translation, scale)]
     }
     this.entries.push(entry)
     return entry

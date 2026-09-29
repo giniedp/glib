@@ -38,7 +38,7 @@ export class GeometryBuilderChannel {
   public readonly elementOffset: number
 
   /**
-   * Number of elements in a single attribute. e.g. a Vec3 has 3 elements
+   * Number of elements in a single attribute. e.g. a vec3 has 3 elements
    */
   public readonly elementCount: number
 

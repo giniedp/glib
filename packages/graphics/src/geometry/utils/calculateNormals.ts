@@ -1,4 +1,4 @@
-import { ArrayLike, Vec3 } from '@gglib/math'
+import { ArrayLike, vec3, vec3$init, vec3Cross, vec3LengthSquared, vec3Normalize, vec3Subtract } from '@gglib/math'
 import { FrontFace } from '../../enums'
 import { GeometryBuilderChannelMap } from '../GeometryBuilderChannel'
 
@@ -27,12 +27,12 @@ export function calculateNormals(
   const normals = channels.normal
   const positions = channels.position
 
-  const v0 = Vec3.create()
-  const v1 = Vec3.create()
-  const v2 = Vec3.create()
-  const t0 = Vec3.create()
-  const t1 = Vec3.create()
-  const normal = Vec3.create()
+  const v0 = vec3()
+  const v1 = vec3()
+  const v2 = vec3()
+  const t0 = vec3()
+  const t1 = vec3()
+  const normal = vec3()
 
   // clear previous normals
   for (let i = 0; i < vCount; i++) {
@@ -62,9 +62,9 @@ export function calculateNormals(
     v2.y = positions.read(i2, 1)
     v2.z = positions.read(i2, 2)
 
-    Vec3.subtract(v2, v0, t0)
-    Vec3.subtract(v1, v0, t1)
-    Vec3.cross(t0, t1, normal)
+    vec3Subtract(v2, v0, t0)
+    vec3Subtract(v1, v0, t1)
+    vec3Cross(t0, t1, normal)
 
     normals.write(i0, 0, normals.read(i0, 0) + normal.x)
     normals.write(i0, 1, normals.read(i0, 1) + normal.y)
@@ -85,10 +85,10 @@ export function calculateNormals(
     normal.y = normals.read(i, 1)
     normal.z = normals.read(i, 2)
 
-    if (normal.lengthSquared() > epsilon) {
-      normal.normalize()
+    if (vec3LengthSquared(normal) > epsilon) {
+      vec3Normalize(normal)
     } else {
-      normal.init(0, 0, 0)
+      vec3$init(normal, 0, 0, 0)
     }
 
     normals.write(i, 0, normal.x)

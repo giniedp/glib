@@ -1,10 +1,10 @@
 import type { MaterialProperties } from '@gglib/graphics'
-import { Vec3, vec4, Vec4, type IVec3, type IVec4 } from '@gglib/math'
+import { vec3, vec4, vec4$init, type IVec3, type IVec4 } from '@gglib/math'
 import { lfmt } from '@gglib/utils'
 import type { NwMaterialProps } from './GltfExtension'
 import { getShaderFlags } from './common'
 
-export function paramVec4(value: number[] | string, fallback: IVec4 = Vec4.Zero): IVec4 {
+export function paramVec4(value: number[] | string, fallback: IVec4 = vec4.Zero): IVec4 {
   if (typeof value === 'string') {
     value = value.split(',').map(Number)
   }
@@ -16,7 +16,7 @@ export function paramVec4(value: number[] | string, fallback: IVec4 = Vec4.Zero)
   }
 }
 
-export function paramVec3(value: number[] | string, fallback: IVec3 = Vec3.Zero): IVec3 {
+export function paramVec3(value: number[] | string, fallback: IVec3 = vec3.Zero): IVec3 {
   if (typeof value === 'string') {
     value = value.split(',').map(Number)
   }
@@ -100,8 +100,8 @@ export class MtlUtil {
       const wave = deform?.WaveX
       // deformWave0 : vec4f, // .x = Frequency .y = Phase .z = Amplitude .w = Level
       // deformWave1 : vec4f, // .x = 1.0 / DividerX
-      Vec4.init(deformWave0, wave.Freq, wave.Phase, wave.Amp, wave.Level)
-      Vec4.init(deformWave1, 1 / deform.DividerX, 1 / deform.DividerY, deform.Type, wave.Type)
+      vec4$init(deformWave0, wave.Freq, wave.Phase, wave.Amp, wave.Level)
+      vec4$init(deformWave1, 1 / deform.DividerX, 1 / deform.DividerY, deform.Type, wave.Type)
     }
 
     for (const mapName in texMaps) {

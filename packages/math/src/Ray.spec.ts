@@ -1,301 +1,249 @@
-import { BoundingBox, BoundingSphere, IVec3, Ray, Vec3, Vec4 } from './index'
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
+import {
+  BoundingBox,
+  BoundingSphere,
+  IRay,
+  IVec3,
+  ray$init,
+  ray$initFrom,
+  rayCopy,
+  rayCreate,
+  rayEquals,
+  rayIntersectsBox,
+  rayIntersectsBoxAt,
+  rayIntersectsPlane,
+  rayIntersectsPlaneAt,
+  rayIntersectsSphere,
+  rayIntersectsSphereAt,
+  rayIntersectsTriangle,
+  rayIntersectsTriangleAt,
+  rayPositionAt,
+  vec3,
+  vec4,
+} from './index'
 
-describe('Ray', () => {
-  function expectVec3Components(v: IVec3, parts: number[]) {
-    expect(v.x, 'x component').toBeCloseTo(parts[0], 10)
-    expect(v.y, 'y component').toBeCloseTo(parts[1], 10)
-    expect(v.z, 'z component').toBeCloseTo(parts[2], 10)
+describe('ray', () => {
+  function expectVec3(v: IVec3, x: number, y: number, z: number) {
+    expect(v.x, 'x component').toBeCloseTo(x, 10)
+    expect(v.y, 'y component').toBeCloseTo(y, 10)
+    expect(v.z, 'z component').toBeCloseTo(z, 10)
   }
 
-  describe('new', () => {
-    it('initializes with components', () => {
-      expectVec3Components(new Ray().position, [0, 0, 0])
-      expectVec3Components(new Ray().direction, [0, 0, 0])
+  function ray(px: number, py: number, pz: number, dx: number, dy: number, dz: number): IRay {
+    return rayCreate(vec3(px, py, pz), vec3(dx, dy, dz))
+  }
 
-      expectVec3Components(new Ray(1, 2, 3).position, [1, 2, 3])
-      expectVec3Components(new Ray(1, 2, 3).direction, [0, 0, 0])
-
-      expectVec3Components(new Ray(1, 2, 3, 4, 5, 6).position, [1, 2, 3])
-      expectVec3Components(new Ray(1, 2, 3, 4, 5, 6).direction, [4, 5, 6])
+  describe('rayCreate', () => {
+    it('creates zero ray', () => {
+      const r = rayCreate()
+      expectVec3(r.position, 0, 0, 0)
+      expectVec3(r.direction, 0, 0, 0)
+    })
+    it('copies position and direction', () => {
+      const position = vec3(1, 2, 3)
+      const direction = vec3(4, 5, 6)
+      const r = rayCreate(position, direction)
+      expectVec3(r.position, 1, 2, 3)
+      expectVec3(r.direction, 4, 5, 6)
+      expect(r.position).not.toBe(position)
+      expect(r.direction).not.toBe(direction)
     })
   })
 
-  describe('#init', () => {
-    it('initializes the components', () => {
-      expectVec3Components(new Ray().init(1, 2, 3, 4, 5, 6).position, [1, 2, 3])
-      expectVec3Components(new Ray().init(1, 2, 3, 4, 5, 6).direction, [4, 5, 6])
-      expectVec3Components(new Ray(1, 2, 3, 4, 5, 6).init().position, [0, 0, 0])
-      expectVec3Components(new Ray(1, 2, 3, 4, 5, 6).init().direction, [0, 0, 0])
+  describe('ray$init', () => {
+    it('sets position and direction', () => {
+      const r = ray$init(rayCreate(), vec3(1, 2, 3), vec3(4, 5, 6))
+      expectVec3(r.position, 1, 2, 3)
+      expectVec3(r.direction, 4, 5, 6)
+    })
+    it('copies the vectors', () => {
+      const position = vec3(1, 2, 3)
+      const r = ray$init(rayCreate(), position, vec3(4, 5, 6))
+      expect(r.position).not.toBe(position)
+    })
+    it('returns out', () => {
+      const out = rayCreate()
+      expect(ray$init(out, vec3(1, 2, 3), vec3(4, 5, 6))).toBe(out)
     })
   })
 
-  describe('.create', () => {
-    it('initializes the components', () => {
-      expectVec3Components(Ray.create().position, [0, 0, 0])
-      expectVec3Components(Ray.create().direction, [0, 0, 0])
-
-      expectVec3Components(Ray.create(1, 2, 3, 4, 5, 6).position, [1, 2, 3])
-      expectVec3Components(Ray.create(1, 2, 3, 4, 5, 6).direction, [4, 5, 6])
+  describe('ray$initFrom', () => {
+    it('copies components', () => {
+      const r = ray$initFrom(rayCreate(), ray(1, 2, 3, 4, 5, 6))
+      expectVec3(r.position, 1, 2, 3)
+      expectVec3(r.direction, 4, 5, 6)
+    })
+    it('returns out', () => {
+      const out = rayCreate()
+      expect(ray$initFrom(out, ray(1, 2, 3, 4, 5, 6))).toBe(out)
     })
   })
 
-  describe('#initFrom', () => {
-    it('takes components from other ray', () => {
-      expectVec3Components(new Ray().initFrom(new Ray(1, 2, 3, 4, 5, 6)).position, [1, 2, 3])
-      expectVec3Components(new Ray().initFrom(new Ray(1, 2, 3, 4, 5, 6)).direction, [4, 5, 6])
+  describe('rayCopy', () => {
+    it('creates copy', () => {
+      const r = ray(1, 2, 3, 4, 5, 6)
+      const result = rayCopy(r)
+      expect(result).not.toBe(r)
+      expect(result.position).not.toBe(r.position)
+      expect(result.direction).not.toBe(r.direction)
+      expectVec3(result.position, 1, 2, 3)
+      expectVec3(result.direction, 4, 5, 6)
+    })
+    it('writes to out', () => {
+      const out = rayCreate()
+      expect(rayCopy(ray(1, 2, 3, 4, 5, 6), out)).toBe(out)
+      expectVec3(out.position, 1, 2, 3)
+      expectVec3(out.direction, 4, 5, 6)
     })
   })
 
-  describe('.createFrom', () => {
-    it('takes components from other ray', () => {
-      expectVec3Components(Ray.createFrom(new Ray(1, 2, 3, 4, 5, 6)).position, [1, 2, 3])
-      expectVec3Components(Ray.createFrom(new Ray(1, 2, 3, 4, 5, 6)).direction, [4, 5, 6])
-    })
-  })
-
-  describe('#initFromVectors', () => {
-    it('takes components from other ray', () => {
-      expectVec3Components(new Ray().initV(Vec3.create(1, 2, 3), Vec3.create(4, 5, 6)).position, [1, 2, 3])
-      expectVec3Components(new Ray().initV(Vec3.create(1, 2, 3), Vec3.create(4, 5, 6)).direction, [4, 5, 6])
-    })
-  })
-
-  describe('.createFromVectors', () => {
-    it('takes components from other ray', () => {
-      expectVec3Components(Ray.createV(Vec3.create(1, 2, 3), Vec3.create(4, 5, 6)).position, [1, 2, 3])
-      expectVec3Components(Ray.createV(Vec3.create(1, 2, 3), Vec3.create(4, 5, 6)).direction, [4, 5, 6])
-    })
-  })
-
-  describe('#equals', () => {
+  describe('rayEquals', () => {
     it('compares all components', () => {
-      expect(Ray.create(0, 0, 0, 0, 0, 0).equals(Ray.create(0, 0, 0, 0, 0, 0))).toBe(true)
-      expect(Ray.create(1, 0, 0, 0, 0, 0).equals(Ray.create(1, 0, 0, 0, 0, 0))).toBe(true)
-      expect(Ray.create(0, 1, 0, 0, 0, 0).equals(Ray.create(0, 1, 0, 0, 0, 0))).toBe(true)
-      expect(Ray.create(0, 0, 1, 0, 0, 0).equals(Ray.create(0, 0, 1, 0, 0, 0))).toBe(true)
-      expect(Ray.create(0, 0, 0, 1, 0, 0).equals(Ray.create(0, 0, 0, 1, 0, 0))).toBe(true)
-      expect(Ray.create(0, 0, 0, 0, 1, 0).equals(Ray.create(0, 0, 0, 0, 1, 0))).toBe(true)
-      expect(Ray.create(0, 0, 0, 0, 0, 1).equals(Ray.create(0, 0, 0, 0, 0, 1))).toBe(true)
-
-      expect(Ray.create(1, 0, 0, 0, 0, 0).equals(Ray.create(0, 0, 0, 0, 0, 0))).toBe(false)
-      expect(Ray.create(0, 1, 0, 0, 0, 0).equals(Ray.create(0, 0, 0, 0, 0, 0))).toBe(false)
-      expect(Ray.create(0, 0, 1, 0, 0, 0).equals(Ray.create(0, 0, 0, 0, 0, 0))).toBe(false)
-      expect(Ray.create(0, 0, 0, 1, 0, 0).equals(Ray.create(0, 0, 0, 0, 0, 0))).toBe(false)
-      expect(Ray.create(0, 0, 0, 0, 1, 0).equals(Ray.create(0, 0, 0, 0, 0, 0))).toBe(false)
-      expect(Ray.create(0, 0, 0, 0, 0, 1).equals(Ray.create(0, 0, 0, 0, 0, 0))).toBe(false)
+      expect(rayEquals(ray(1, 2, 3, 4, 5, 6), ray(1, 2, 3, 4, 5, 6))).toBe(true)
+      const parts = [1, 2, 3, 4, 5, 6]
+      for (let i = 0; i < parts.length; i++) {
+        const other = [...parts]
+        other[i] = 100
+        const [px, py, pz, dx, dy, dz] = other
+        expect(rayEquals(ray(1, 2, 3, 4, 5, 6), ray(px, py, pz, dx, dy, dz)), `component ${i}`).toBe(false)
+      }
     })
   })
 
-  describe('.equals', () => {
-    it('compares all components', () => {
-      expect(Ray.equals(Ray.create(0, 0, 0, 0, 0, 0), Ray.create(0, 0, 0, 0, 0, 0))).toBe(true)
-      expect(Ray.equals(Ray.create(1, 0, 0, 0, 0, 0), Ray.create(1, 0, 0, 0, 0, 0))).toBe(true)
-      expect(Ray.equals(Ray.create(0, 1, 0, 0, 0, 0), Ray.create(0, 1, 0, 0, 0, 0))).toBe(true)
-      expect(Ray.equals(Ray.create(0, 0, 1, 0, 0, 0), Ray.create(0, 0, 1, 0, 0, 0))).toBe(true)
-      expect(Ray.equals(Ray.create(0, 0, 0, 1, 0, 0), Ray.create(0, 0, 0, 1, 0, 0))).toBe(true)
-      expect(Ray.equals(Ray.create(0, 0, 0, 0, 1, 0), Ray.create(0, 0, 0, 0, 1, 0))).toBe(true)
-      expect(Ray.equals(Ray.create(0, 0, 0, 0, 0, 1), Ray.create(0, 0, 0, 0, 0, 1))).toBe(true)
-
-      expect(Ray.equals(Ray.create(1, 0, 0, 0, 0, 0), Ray.create(0, 0, 0, 0, 0, 0))).toBe(false)
-      expect(Ray.equals(Ray.create(0, 1, 0, 0, 0, 0), Ray.create(0, 0, 0, 0, 0, 0))).toBe(false)
-      expect(Ray.equals(Ray.create(0, 0, 1, 0, 0, 0), Ray.create(0, 0, 0, 0, 0, 0))).toBe(false)
-      expect(Ray.equals(Ray.create(0, 0, 0, 1, 0, 0), Ray.create(0, 0, 0, 0, 0, 0))).toBe(false)
-      expect(Ray.equals(Ray.create(0, 0, 0, 0, 1, 0), Ray.create(0, 0, 0, 0, 0, 0))).toBe(false)
-      expect(Ray.equals(Ray.create(0, 0, 0, 0, 0, 1), Ray.create(0, 0, 0, 0, 0, 0))).toBe(false)
+  describe('rayPositionAt', () => {
+    it('gets position at distance', () => {
+      expectVec3(rayPositionAt(ray(1, 2, 3, 1, 1, 1), 10), 11, 12, 13)
+    })
+    it('writes to out', () => {
+      const out = vec3()
+      expect(rayPositionAt(ray(1, 2, 3, 1, 1, 1), 10, out)).toBe(out)
+      expectVec3(out, 11, 12, 13)
     })
   })
 
-  describe('#clone', () => {
-    it('clones', () => {
-      const R = new Ray(1, 2, 3, 4, 5, 6)
-      expect(R.copy()).not.toBe(R)
-      expect(R.copy().position).not.toBe(R.position)
-      expect(R.copy().direction).not.toBe(R.direction)
-      expectVec3Components(R.copy().position, [1, 2, 3])
-      expectVec3Components(R.copy().direction, [4, 5, 6])
+  // rays that start outside a unit volume at the origin
+  // [description, ray, hits]
+  const outsideCases: Array<[string, IRay, boolean]> = [
+    ['from -x towards the volume', ray(-2, 0, 0, 1, 0, 0), true],
+    ['from +x towards the volume', ray(2, 0, 0, -1, 0, 0), true],
+    ['from -y towards the volume', ray(0, -2, 0, 0, 1, 0), true],
+    ['from +y towards the volume', ray(0, 2, 0, 0, -1, 0), true],
+    ['from -z towards the volume', ray(0, 0, -2, 0, 0, 1), true],
+    ['from +z towards the volume', ray(0, 0, 2, 0, 0, -1), true],
+    ['from -x away from the volume', ray(-2, 0, 0, -1, 0, 0), false],
+    ['from +x away from the volume', ray(2, 0, 0, 1, 0, 0), false],
+    ['from -y away from the volume', ray(0, -2, 0, 0, -1, 0), false],
+    ['from +y away from the volume', ray(0, 2, 0, 0, 1, 0), false],
+    ['from -z away from the volume', ray(0, 0, -2, 0, 0, -1), false],
+    ['from +z away from the volume', ray(0, 0, 2, 0, 0, 1), false],
+    ['along x, passing by', ray(-2, 1, 1, 1, 0, 0), false],
+    ['along y, passing by', ray(1, -2, 1, 0, 1, 0), false],
+    ['along z, passing by', ray(1, 1, -2, 0, 0, 1), false],
+  ]
+
+  describe('rayIntersectsSphere', () => {
+    const sphere = new BoundingSphere(0, 0, 0, 1)
+    it('hits from inside', () => {
+      expect(rayIntersectsSphere(ray(0, 0, 0, 1, 0, 0), sphere)).toBe(true)
+    })
+    for (const [name, r, hits] of outsideCases) {
+      it(`${hits ? 'hits' : 'misses'} ${name}`, () => {
+        expect(rayIntersectsSphere(r, sphere)).toBe(hits)
+      })
+    }
+  })
+
+  describe('rayIntersectsSphereAt', () => {
+    const sphere = new BoundingSphere(0, 0, 0, 1)
+    it('gets distance to exit point from inside', () => {
+      expect(rayIntersectsSphereAt(ray(0, 0, 0, 1, 0, 0), sphere)).toBe(1)
+      expect(rayIntersectsSphereAt(ray(0.5, 0, 0, 1, 0, 0), sphere)).toBe(0.5)
+    })
+    for (const [name, r, hits] of outsideCases) {
+      it(`${hits ? 'gets distance' : 'returns NaN'} ${name}`, () => {
+        expect(rayIntersectsSphereAt(r, sphere)).toEqual(hits ? 1 : Number.NaN)
+      })
+    }
+  })
+
+  describe('rayIntersectsBox', () => {
+    const box = new BoundingBox(-0.9, -0.9, -0.9, 0.9, 0.9, 0.9)
+    it('hits from inside', () => {
+      expect(rayIntersectsBox(ray(0, 0, 0, 1, 0, 0), box)).toBe(true)
+    })
+    for (const [name, r, hits] of outsideCases) {
+      it(`${hits ? 'hits' : 'misses'} ${name}`, () => {
+        expect(rayIntersectsBox(r, box)).toBe(hits)
+      })
+    }
+  })
+
+  describe('rayIntersectsBoxAt', () => {
+    const box = new BoundingBox(-0.9, -0.9, -0.9, 0.9, 0.9, 0.9)
+    it('gets 0 from inside', () => {
+      expect(rayIntersectsBoxAt(ray(0, 0, 0, 1, 0, 0), box)).toBeCloseTo(0)
+    })
+    for (const [name, r, hits] of outsideCases) {
+      it(`${hits ? 'gets distance' : 'returns NaN'} ${name}`, () => {
+        if (hits) {
+          expect(rayIntersectsBoxAt(r, box)).toBeCloseTo(1.1)
+        } else {
+          expect(rayIntersectsBoxAt(r, box)).toEqual(Number.NaN)
+        }
+      })
+    }
+  })
+
+  describe('rayIntersectsPlane', () => {
+    // plane with normal +y at distance 1 from the origin
+    const plane = vec4(0, 1, 0, 1)
+    it('hits plane in front', () => {
+      expect(rayIntersectsPlane(ray(0, 0, 0, 0, 1, 0), plane)).toBe(true)
+    })
+    it('misses plane behind', () => {
+      expect(rayIntersectsPlane(ray(0, 0, 0, 0, -1, 0), plane)).toBe(false)
     })
   })
 
-  describe('.clone', () => {
-    it('clones', () => {
-      const R = new Ray(1, 2, 3, 4, 5, 6)
-      expect(Ray.copy(R)).not.toBe(R)
-      expect(Ray.copy(R).position).not.toBe(R.position)
-      expect(Ray.copy(R).direction).not.toBe(R.direction)
-      expectVec3Components(Ray.copy(R).position, [1, 2, 3])
-      expectVec3Components(Ray.copy(R).direction, [4, 5, 6])
+  describe('rayIntersectsPlaneAt', () => {
+    const plane = vec4(0, 1, 0, 1)
+    it('gets distance to plane', () => {
+      expect(rayIntersectsPlaneAt(ray(0, 0, 0, 0, 1, 0), plane)).toBeCloseTo(1)
+      expect(rayIntersectsPlaneAt(ray(0, -1, 0, 0, 1, 0), plane)).toBeCloseTo(2)
+    })
+    it('returns NaN for parallel ray', () => {
+      expect(rayIntersectsPlaneAt(ray(0, 0, 0, 1, 0, 0), plane)).toEqual(Number.NaN)
     })
   })
 
-  describe('#positionAt', () => {
-    it('returns position at distance', () => {
-      expectVec3Components(new Ray(1, 2, 3, 1, 1, 1).positionAt(10), [11, 12, 13])
-    })
-  })
+  describe('triangle', () => {
+    // triangle in the xy plane, counter clockwise when looking along -z, front face points to +z
+    const a = vec3(0, 0, 0)
+    const b = vec3(1, 0, 0)
+    const c = vec3(0, 1, 0)
 
-  describe('.positionAt', () => {
-    it('returns position at distance', () => {
-      expectVec3Components(Ray.positionAt(new Ray(1, 2, 3, 1, 1, 1), 10), [11, 12, 13])
-    })
-  })
-
-  describe('intersection', () => {
-    it('#intersectsSphere', () => {
-      const sphere = new BoundingSphere(0, 0, 0, 1)
-
-      expect(Ray.create(0, 0, 0, 1, 0, 0).intersectsSphere(sphere), 'inside').toBe(true)
-
-      expect(Ray.create(-2, 0, 0, 1, 0, 0).intersectsSphere(sphere), 'left to right').toBe(true)
-      expect(Ray.create(2, 0, 0, -1, 0, 0).intersectsSphere(sphere), 'right to left').toBe(true)
-
-      expect(Ray.create(0, -2, 0, 0, 1, 0).intersectsSphere(sphere), 'top to bottom').toBe(true)
-      expect(Ray.create(0, 2, 0, 0, -1, 0).intersectsSphere(sphere), 'bottom to top').toBe(true)
-
-      expect(Ray.create(0, 0, -2, 0, 0, 1).intersectsSphere(sphere), 'back to front').toBe(true)
-      expect(Ray.create(0, 0, 2, 0, 0, -1).intersectsSphere(sphere), 'front to back').toBe(true)
-
-      // away from sphere
-      expect(Ray.create(-2, 0, 0, -1, 0, 0).intersectsSphere(sphere)).toEqual(false)
-      expect(Ray.create(2, 0, 0, 1, 0, 0).intersectsSphere(sphere)).toEqual(false)
-
-      expect(Ray.create(0, -2, 0, 0, -1, 0).intersectsSphere(sphere)).toEqual(false)
-      expect(Ray.create(0, 2, 0, 0, 1, 0).intersectsSphere(sphere)).toEqual(false)
-
-      expect(Ray.create(0, 0, -2, 0, 0, -1).intersectsSphere(sphere)).toEqual(false)
-      expect(Ray.create(0, 0, 2, 0, 0, 1).intersectsSphere(sphere)).toEqual(false)
-
-      // along the spherer
-      expect(Ray.create(-2, 1, 1, 1, 0, 0).intersectsSphere(sphere)).toEqual(false)
-      expect(Ray.create(2, 1, 1, -1, 0, 0).intersectsSphere(sphere)).toEqual(false)
-
-      expect(Ray.create(1, -2, 1, 0, 1, 0).intersectsSphere(sphere)).toEqual(false)
-      expect(Ray.create(1, 2, 1, 0, -1, 0).intersectsSphere(sphere)).toEqual(false)
-
-      expect(Ray.create(1, 1, -2, 0, 0, 1).intersectsSphere(sphere)).toEqual(false)
-      expect(Ray.create(1, 1, 2, 0, 0, -1).intersectsSphere(sphere)).toEqual(false)
+    describe('rayIntersectsTriangle', () => {
+      it('hits from the front', () => {
+        expect(rayIntersectsTriangle(ray(0.2, 0.2, 1, 0, 0, -1), a, b, c)).toBe(true)
+      })
+      it('misses when pointing away', () => {
+        expect(rayIntersectsTriangle(ray(0.2, 0.2, 1, 0, 0, 1), a, b, c)).toBe(false)
+      })
+      it('misses outside the triangle', () => {
+        expect(rayIntersectsTriangle(ray(0.8, 0.8, 1, 0, 0, -1), a, b, c)).toBe(false)
+      })
     })
 
-    it('#intersectsSphereAt', () => {
-      const sphere = new BoundingSphere(0, 0, 0, 1)
-
-      expect(Ray.create(0, 0, 0, 1, 0, 0).intersectsSphereAt(sphere), 'inside').toBe(1)
-      expect(Ray.create(0.5, 0, 0, 1, 0, 0).intersectsSphereAt(sphere), 'inside').toBe(0.5)
-
-      expect(Ray.create(-2, 0, 0, 1, 0, 0).intersectsSphereAt(sphere), 'left to right').toBe(1)
-      expect(Ray.create(2, 0, 0, -1, 0, 0).intersectsSphereAt(sphere), 'right to left').toBe(1)
-
-      expect(Ray.create(0, -2, 0, 0, 1, 0).intersectsSphereAt(sphere), 'top to bottom').toBe(1)
-      expect(Ray.create(0, 2, 0, 0, -1, 0).intersectsSphereAt(sphere), 'bottom to top').toBe(1)
-
-      expect(Ray.create(0, 0, -2, 0, 0, 1).intersectsSphereAt(sphere), 'back to front').toBe(1)
-      expect(Ray.create(0, 0, 2, 0, 0, -1).intersectsSphereAt(sphere), 'front to back').toBe(1)
-
-      // away from sphere
-      expect(Ray.create(-2, 0, 0, -1, 0, 0).intersectsSphereAt(sphere)).toEqual(Number.NaN)
-      expect(Ray.create(2, 0, 0, 1, 0, 0).intersectsSphereAt(sphere)).toEqual(Number.NaN)
-
-      expect(Ray.create(0, -2, 0, 0, -1, 0).intersectsSphereAt(sphere)).toEqual(Number.NaN)
-      expect(Ray.create(0, 2, 0, 0, 1, 0).intersectsSphereAt(sphere)).toEqual(Number.NaN)
-
-      expect(Ray.create(0, 0, -2, 0, 0, -1).intersectsSphereAt(sphere)).toEqual(Number.NaN)
-      expect(Ray.create(0, 0, 2, 0, 0, 1).intersectsSphereAt(sphere)).toEqual(Number.NaN)
-
-      // along the spherer
-      expect(Ray.create(-2, 1, 1, 1, 0, 0).intersectsSphereAt(sphere)).toEqual(Number.NaN)
-      expect(Ray.create(2, 1, 1, -1, 0, 0).intersectsSphereAt(sphere)).toEqual(Number.NaN)
-
-      expect(Ray.create(1, -2, 1, 0, 1, 0).intersectsSphereAt(sphere)).toEqual(Number.NaN)
-      expect(Ray.create(1, 2, 1, 0, -1, 0).intersectsSphereAt(sphere)).toEqual(Number.NaN)
-
-      expect(Ray.create(1, 1, -2, 0, 0, 1).intersectsSphereAt(sphere)).toEqual(Number.NaN)
-      expect(Ray.create(1, 1, 2, 0, 0, -1).intersectsSphereAt(sphere)).toEqual(Number.NaN)
+    describe('rayIntersectsTriangleAt', () => {
+      it('gets distance from the front', () => {
+        expect(rayIntersectsTriangleAt(ray(0.2, 0.2, 2, 0, 0, -1), a, b, c)).toBeCloseTo(2)
+      })
+      it('returns NaN when pointing away', () => {
+        expect(rayIntersectsTriangleAt(ray(0.2, 0.2, 2, 0, 0, 1), a, b, c)).toEqual(Number.NaN)
+      })
+      it('returns NaN outside the triangle', () => {
+        expect(rayIntersectsTriangleAt(ray(0.8, 0.8, 2, 0, 0, -1), a, b, c)).toEqual(Number.NaN)
+      })
     })
-
-    it('#intersectsBox', () => {
-      const box = new BoundingBox(-0.9, -0.9, -0.9, 0.9, 0.9, 0.9)
-
-      expect(Ray.create(0, 0, 0, 1, 0, 0).intersectsBox(box)).toBe(true)
-
-      expect(Ray.create(-2, 0, 0, 1, 0, 0).intersectsBox(box), 'left to right').toBe(true)
-      expect(Ray.create(2, 0, 0, -1, 0, 0).intersectsBox(box), 'right to left').toBe(true)
-
-      expect(Ray.create(0, -2, 0, 0, 1, 0).intersectsBox(box), 'top to bottom').toBe(true)
-      expect(Ray.create(0, 2, 0, 0, -1, 0).intersectsBox(box), 'bottom to top').toBe(true)
-
-      expect(Ray.create(0, 0, -2, 0, 0, 1).intersectsBox(box), 'back to front').toBe(true)
-      expect(Ray.create(0, 0, 2, 0, 0, -1).intersectsBox(box), 'front to back').toBe(true)
-
-      // away from sphere
-      expect(Ray.create(-2, 0, 0, -1, 0, 0).intersectsBox(box)).toEqual(false)
-      expect(Ray.create(2, 0, 0, 1, 0, 0).intersectsBox(box)).toEqual(false)
-
-      expect(Ray.create(0, -2, 0, 0, -1, 0).intersectsBox(box)).toEqual(false)
-      expect(Ray.create(0, 2, 0, 0, 1, 0).intersectsBox(box)).toEqual(false)
-
-      expect(Ray.create(0, 0, -2, 0, 0, -1).intersectsBox(box)).toEqual(false)
-      expect(Ray.create(0, 0, 2, 0, 0, 1).intersectsBox(box)).toEqual(false)
-
-      // along the spherer
-      expect(Ray.create(-2, 1, 1, 1, 0, 0).intersectsBox(box)).toEqual(false)
-      expect(Ray.create(2, 1, 1, -1, 0, 0).intersectsBox(box)).toEqual(false)
-
-      expect(Ray.create(1, -2, 1, 0, 1, 0).intersectsBox(box)).toEqual(false)
-      expect(Ray.create(1, 2, 1, 0, -1, 0).intersectsBox(box)).toEqual(false)
-
-      expect(Ray.create(1, 1, -2, 0, 0, 1).intersectsBox(box)).toEqual(false)
-      expect(Ray.create(1, 1, 2, 0, 0, -1).intersectsBox(box)).toEqual(false)
-    })
-
-    it('#intersectsBoxAt', () => {
-      const box = new BoundingBox(-0.9, -0.9, -0.9, 0.9, 0.9, 0.9)
-
-      expect(Ray.create(0, 0, 0, 1, 0, 0).intersectsBoxAt(box)).toBeCloseTo(0)
-
-      expect(Ray.create(-2, 0, 0, 1, 0, 0).intersectsBoxAt(box), 'left to right').toBe(1.1)
-      expect(Ray.create(2, 0, 0, -1, 0, 0).intersectsBoxAt(box), 'right to left').toBe(1.1)
-
-      expect(Ray.create(0, -2, 0, 0, 1, 0).intersectsBoxAt(box), 'top to bottom').toBe(1.1)
-      expect(Ray.create(0, 2, 0, 0, -1, 0).intersectsBoxAt(box), 'bottom to top').toBe(1.1)
-
-      expect(Ray.create(0, 0, -2, 0, 0, 1).intersectsBoxAt(box), 'back to front').toBe(1.1)
-      expect(Ray.create(0, 0, 2, 0, 0, -1).intersectsBoxAt(box), 'front to back').toBe(1.1)
-
-      // away from sphere
-      expect(Ray.create(-2, 0, 0, -1, 0, 0).intersectsBoxAt(box)).toEqual(Number.NaN)
-      expect(Ray.create(2, 0, 0, 1, 0, 0).intersectsBoxAt(box)).toEqual(Number.NaN)
-
-      expect(Ray.create(0, -2, 0, 0, -1, 0).intersectsBoxAt(box)).toEqual(Number.NaN)
-      expect(Ray.create(0, 2, 0, 0, 1, 0).intersectsBoxAt(box)).toEqual(Number.NaN)
-
-      expect(Ray.create(0, 0, -2, 0, 0, -1).intersectsBoxAt(box)).toEqual(Number.NaN)
-      expect(Ray.create(0, 0, 2, 0, 0, 1).intersectsBoxAt(box)).toEqual(Number.NaN)
-
-      // along the spherer
-      expect(Ray.create(-2, 1, 1, 1, 0, 0).intersectsBoxAt(box)).toEqual(Number.NaN)
-      expect(Ray.create(2, 1, 1, -1, 0, 0).intersectsBoxAt(box)).toEqual(Number.NaN)
-
-      expect(Ray.create(1, -2, 1, 0, 1, 0).intersectsBoxAt(box)).toEqual(Number.NaN)
-      expect(Ray.create(1, 2, 1, 0, -1, 0).intersectsBoxAt(box)).toEqual(Number.NaN)
-
-      expect(Ray.create(1, 1, -2, 0, 0, 1).intersectsBoxAt(box)).toEqual(Number.NaN)
-      expect(Ray.create(1, 1, 2, 0, 0, -1).intersectsBoxAt(box)).toEqual(Number.NaN)
-    })
-
-    it('#intersectsPlane', () => {
-      const ray1 = new Ray(0, 0, 0, 0, 1, 0)
-      const plane = Vec4.create(0, 1, 0, 1)
-      expect(ray1.intersectsPlane(plane)).toBe(true)
-      expect(ray1.intersectsPlaneAt(plane)).toBeCloseTo(1)
-    })
-
-    // it('#intersectsTriangle', () => {
-    //   const R = Ray.createFromVectors(Vec3.Zero, Vec3.NegativeUnitZ)
-    //   const T1 = Vec3.create(-1, -1, -1)
-    //   const T2 = Vec3.create( 0,  1, -1)
-    //   const T3 = Vec3.create( 1, -1, -1)
-    //   expect(R.intersectsTriangle(T1, T2, T3)).toBe(true)
-    //   expect(R.intersectsTriangleAt(T1, T2, T3)).toBeCloseTo(-1)
-    // })
   })
 })

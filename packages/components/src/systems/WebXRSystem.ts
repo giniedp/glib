@@ -1,7 +1,7 @@
 import { GameSystem, GameWorld } from '@gglib/ecs'
 import { GameLoop } from '@gglib/game'
 import { Device, WebglDevice } from '@gglib/graphics'
-import { type IRect, Mat4 } from '@gglib/math'
+import { type IRect, mat4$initFromArray, mat4Identity } from '@gglib/math'
 import { RenderView } from '@gglib/render'
 import { eventSource } from '@gglib/utils'
 
@@ -98,18 +98,18 @@ export class WebXRSystem extends GameSystem {
 
       if (!view.camera) {
         view.camera = {
-          world: Mat4.createIdentity(),
-          view: Mat4.createIdentity(),
-          projection: Mat4.createIdentity(),
+          world: mat4Identity(),
+          view: mat4Identity(),
+          projection: mat4Identity(),
           reversedZ: false,
           near: 0.1,
           far: 1000,
         }
       }
 
-      view.camera.projection.initFromArray(poseView.projectionMatrix)
-      view.camera.world.initFromArray(poseView.transform.matrix)
-      view.camera.view.initFromArray(poseView.transform.inverse.matrix)
+      mat4$initFromArray(view.camera.projection, poseView.projectionMatrix)
+      mat4$initFromArray(view.camera.world, poseView.transform.matrix)
+      mat4$initFromArray(view.camera.view, poseView.transform.inverse.matrix)
     }
   }
 

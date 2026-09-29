@@ -1,7 +1,15 @@
-import { AssetType, ContentLoader } from '@gglib/content'
+import { ContentLoader } from '@gglib/content'
 import { CommonMaterial } from '@gglib/effects'
 import { Color, createDevice, CullState, DepthState, FrameContext, PlatformId } from '@gglib/graphics'
-import { DEGREE_TO_RAD, Mat4 } from '@gglib/math'
+import {
+  DEGREE_TO_RAD,
+  mat4$initPerspectiveFieldOfView,
+  mat4$initRotationY,
+  mat4$initTranslationXYZ,
+  mat4GetTranslation,
+  mat4Identity,
+  mat4Invert,
+} from '@gglib/math'
 import { Model } from '@gglib/model'
 import { mountUi } from 'tweak-ui'
 import { PixelsLoader } from './pixels-loader'
@@ -44,10 +52,10 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   })
 
   // everything else is just common scene rendering procedure
-  const world = Mat4.createIdentity()
-  const view = Mat4.createIdentity()
-  const proj = Mat4.createIdentity()
-  const cam = Mat4.createIdentity()
+  const world = mat4Identity()
+  const view = mat4Identity()
+  const proj = mat4Identity()
+  const cam = mat4Identity()
 
   const msaaDepth = device.createDepthTarget({
     width: device.output.width,
@@ -69,19 +77,19 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
 
     let t = ctx.time
 
-    cam.initTranslationXYZ(0, 0, 30)
-    view.initFrom(cam).invert()
-    proj.initPerspectiveFieldOfView(60 * DEGREE_TO_RAD, device.output.aspectRatio, 0.1, 100, device.ndcMinZ)
+    mat4$initTranslationXYZ(cam, 0, 0, 30)
+    mat4Invert(cam, view)
+    mat4$initPerspectiveFieldOfView(proj, 60 * DEGREE_TO_RAD, device.output.aspectRatio, 0.1, 100, device.ndcMinZ)
 
     if (scene.model) {
-      world.initRotationY(t * DEGREE_TO_RAD * 25)
+      mat4$initRotationY(world, t * DEGREE_TO_RAD * 25)
       for (const mesh of scene.model.meshes) {
         for (const material of mesh.materials) {
           const mtl = material as CommonMaterial
           mtl.World = world
           mtl.View = view
           mtl.Projection = proj
-          mtl.CameraPosition = cam.getTranslation()
+          mat4GetTranslation(cam, mtl.CameraPosition)
         }
       }
     }

@@ -7,7 +7,7 @@ import {
   MaterialWithSchema,
   Texture,
 } from '@gglib/graphics'
-import { Mat4 } from '@gglib/math'
+import { Mat4, mat4Identity } from '@gglib/math'
 import { SKYBOX_GLSL_FS, SKYBOX_GLSL_VS } from './SkyboxMaterial.glsl'
 import { SKYBOX_WGSL } from './SkyboxMaterial.wgsl'
 
@@ -50,8 +50,8 @@ export class SkyboxMaterial extends MaterialWithSchema(SkyboxMaterialSchema) {
     })
 
     const params = options?.properties as SkyboxMaterialParams
-    this.ViewProjection = Mat4.createIdentity()
-    this.ObjectModel = Mat4.createIdentity()
+    this.ViewProjection = mat4Identity()
+    this.ObjectModel = mat4Identity()
     this.Intensity = params.intensity ?? 1
     this.Blur = params.blur ?? 0
     this.MipCount = params.cubemap?.mipLevelCount ?? 4

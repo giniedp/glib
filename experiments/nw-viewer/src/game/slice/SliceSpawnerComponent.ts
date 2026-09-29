@@ -7,7 +7,25 @@ import {
   type GameEntity,
 } from '@gglib/ecs'
 import { Color } from '@gglib/graphics'
-import { BoundingBox, BoundingSphere, DEGREE_TO_RAD, Mat4, vec3, Vec3, type IVec3 } from '@gglib/math'
+import {
+  BoundingBox,
+  BoundingSphere,
+  DEGREE_TO_RAD,
+  mat4$invert,
+  mat4$premultiply,
+  mat4$rotateY,
+  mat4$rotateZ,
+  mat4$scaleUniform,
+  mat4CreateFromArray,
+  mat4CreatePerspectiveFieldOfView,
+  mat4CreateScaleUniform,
+  mat4CreateScaleXYZ,
+  mat4GetTranslation,
+  vec3,
+  vec3Copy,
+  vec3DistanceSquared,
+  type IVec3,
+} from '@gglib/math'
 import {
   isTimeOfDayComponent,
   isViewerLightComponent,
@@ -36,7 +54,7 @@ export function capitalSliceEntityOPtions(parent: GameEntity, data: CapitalRunti
     parent,
     transform: new TransformComponent({
       keepWorld: true,
-      world: Mat4.createFromArray(data.transform),
+      world: mat4CreateFromArray(data.transform),
       lifeCycle: LifeCycleFlags.Propagate, // is controlled by SliceSystem
     }),
     components: [
@@ -61,7 +79,7 @@ export function chunkSliceEntityOptions(parent: GameEntity, data: ChunkRuntimeDa
     parent,
     transform: new TransformComponent({
       keepWorld: true,
-      world: Mat4.createFromArray(data.transform),
+      world: mat4CreateFromArray(data.transform),
       lifeCycle: LifeCycleFlags.Propagate, // is controlled by SliceSystem
     }),
     components: [
@@ -170,7 +188,7 @@ export class SliceSpawnerComponent implements GameComponent, ActivatableComponen
         if (isViewerPrefabSpawnerComponent(comp)) {
           debug.add({
             type: 'bounds-sphere',
-            color: Vec3.copy(Color.Yellow),
+            color: vec3Copy(Color.Yellow),
             layer: DebugLayer.Slice,
           })
 
@@ -185,7 +203,7 @@ export class SliceSpawnerComponent implements GameComponent, ActivatableComponen
         if (isViewerPointSpawnerComponent(comp)) {
           debug.add({
             type: 'bounds-sphere',
-            color: Vec3.copy(Color.Azure),
+            color: vec3Copy(Color.Azure),
             layer: DebugLayer.Slice,
           })
           components.push(
@@ -207,15 +225,15 @@ export class SliceSpawnerComponent implements GameComponent, ActivatableComponen
           })
           if (comp.shape === 'box') {
             shape.type = 'box'
-            shape.transforms = [Mat4.createScaleXYZ(comp.width, comp.depth, comp.height)]
+            shape.transforms = [mat4CreateScaleXYZ(comp.width, comp.depth, comp.height)]
             components.push(new TimeOfDayComponent(comp))
           } else if (comp.shape === 'sphere') {
             shape.type = 'sphere'
-            shape.transforms = [Mat4.createScaleUniform(comp.radius)]
+            shape.transforms = [mat4CreateScaleUniform(comp.radius)]
             components.push(new TimeOfDayComponent(comp))
           } else if (comp.shape === 'cylinder') {
             shape.type = 'cylinder'
-            shape.transforms = [Mat4.createScaleXYZ(comp.radius, comp.radius, comp.height)]
+            shape.transforms = [mat4CreateScaleXYZ(comp.radius, comp.radius, comp.height)]
             components.push(new TimeOfDayComponent(comp))
           } else {
             console.warn('Unknown TimeOfDay shape', comp.shape)
@@ -235,7 +253,7 @@ export class SliceSpawnerComponent implements GameComponent, ActivatableComponen
                 alpha: 0.125,
                 solid: true,
                 layer: DebugLayer.LightPoint,
-                instances: [Mat4.createScaleUniform(light.range)],
+                instances: [mat4CreateScaleUniform(light.range)],
               })
               components.push(new LightComponent(light))
               break
@@ -250,7 +268,7 @@ export class SliceSpawnerComponent implements GameComponent, ActivatableComponen
                 alpha: 0.125,
                 solid: true,
                 layer: DebugLayer.LightArea,
-                instances: [Mat4.createScaleXYZ(light.areaWidth * 0.5, light.areaHeight * 0.5, light.range * 0.5)],
+                instances: [mat4CreateScaleXYZ(light.areaWidth * 0.5, light.areaHeight * 0.5, light.range * 0.5)],
               })
               components.push(new LightComponent(light))
               break
@@ -260,17 +278,17 @@ export class SliceSpawnerComponent implements GameComponent, ActivatableComponen
                 range = Math.max(range, light.maxViewDistance * light.viewDistanceMultiplier)
               }
 
-              const proj = Mat4.createPerspectiveFieldOfView(
+              const proj = mat4CreatePerspectiveFieldOfView(
                 light.projectorFOV * DEGREE_TO_RAD,
                 1,
                 Math.max(0.001, light.projectorNearPlane),
                 light.range,
                 0,
               )
-                .rotateZ(90 * DEGREE_TO_RAD)
-                .rotateY(90 * DEGREE_TO_RAD)
-                .invert()
-                .scaleUniform(2.0)
+              mat4$rotateZ(proj, 90 * DEGREE_TO_RAD)
+              mat4$rotateY(proj, 90 * DEGREE_TO_RAD)
+              mat4$invert(proj)
+              mat4$scaleUniform(proj, 2.0)
 
               debug.add({
                 type: 'box',
@@ -293,7 +311,6 @@ export class SliceSpawnerComponent implements GameComponent, ActivatableComponen
                 alpha: 0.125,
                 solid: true,
                 layer: DebugLayer.LightProbe,
-                // instances: [Mat4.createScaleXYZ(light.boxWidth, light.boxHeight, light.boxDepth)]
               })
               components.push(
                 new BoundsComponent({
@@ -321,7 +338,7 @@ export class SliceSpawnerComponent implements GameComponent, ActivatableComponen
         components,
         transform: new TransformComponent({
           keepWorld: true,
-          world: Mat4.createFromArray(item.transform).premultiply(parentWorld),
+          world: mat4$premultiply(mat4CreateFromArray(item.transform), parentWorld),
           lifeCycle: range ? LifeCycleFlags.Propagate : LifeCycleFlags.Full,
         }),
       })
@@ -354,7 +371,8 @@ export class SliceSpawnerComponent implements GameComponent, ActivatableComponen
 
     for (let i = start; i < end; i++) {
       const item = this.rangeActivatable[i]
-      const isInRange = Vec3.distanceSquared(item.transform.world.translation, camera) <= item.rangeSq
+      mat4GetTranslation(item.transform.world, vec3.$0)
+      const isInRange = vec3DistanceSquared(vec3.$0, camera) <= item.rangeSq
 
       if (isInRange && !item.entity.isActive) {
         if (item.entity.canInitialize) {

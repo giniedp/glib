@@ -1,14 +1,14 @@
 import {
+  Buffer,
   bufferField,
   bufferLayout,
-  Buffer,
   BufferRecorder,
+  BufferUsage,
   Device,
   Mesh,
   patchGeometry,
-  BufferUsage,
 } from '@gglib/graphics'
-import { DEGREE_TO_RAD, Mat4, Vec3, type IVec4 } from '@gglib/math'
+import { DEGREE_TO_RAD, type Mat4, mat4CreateAxisAngle, vec3, type IVec4 } from '@gglib/math'
 import { TerrainPatchMaterial, WaterPatchMaterial } from '../../material'
 
 export interface TerrainMeshOptions {
@@ -120,7 +120,7 @@ interface QuadGeomOptions {
 
 function createQuadGeometry(device: Device, { size, offset = 0, lines = false }: QuadGeomOptions) {
   return patchGeometry(device, {
-    vertexTransform: Mat4.createAxisAngle(Vec3.UnitX, -90 * DEGREE_TO_RAD),
+    vertexTransform: mat4CreateAxisAngle(vec3.UnitX, -90 * DEGREE_TO_RAD),
     width: size,
     depth: size,
     widthSegments: size,

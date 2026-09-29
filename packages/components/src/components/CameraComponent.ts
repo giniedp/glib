@@ -1,6 +1,23 @@
 import { GameComponent, GameEntity } from '@gglib/ecs'
 import { Device } from '@gglib/graphics'
-import { DEGREE_TO_RAD, Mat4, Ray, SpaceBasis, Vec3, Vec4 } from '@gglib/math'
+import {
+  DEGREE_TO_RAD,
+  IRay,
+  mat4,
+  Mat4,
+  mat4$initFrom,
+  mat4$initOrthographic,
+  mat4$initPerspectiveFieldOfView,
+  mat4Identity,
+  mat4Invert,
+  mat4Premultiply,
+  rayCreate,
+  SpaceBasis,
+  vec3,
+  vec3$normalize,
+  vec3$projectMat4,
+  vec3Subtract,
+} from '@gglib/math'
 import { LayerMask, type CameraData } from '@gglib/render'
 import { BehaviorComponent } from '../systems/BehaviorSystem'
 import { TransformComponent } from './TransformComponent'
@@ -75,17 +92,17 @@ export class CameraComponent implements CameraData, GameComponent, BehaviorCompo
   /**
    * The view matrix that is the inverse of the world transform
    */
-  public view: Mat4 = Mat4.createIdentity()
+  public view: Mat4 = mat4Identity()
 
   /**
    * The projection matrix
    */
-  public projection: Mat4 = Mat4.createIdentity()
+  public projection: Mat4 = mat4Identity()
 
   /**
    * The premultiplied view and projection matrix
    */
-  public viewProjection: Mat4 = Mat4.createIdentity()
+  public viewProjection: Mat4 = mat4Identity()
 
   /**
    * The camera type
@@ -166,7 +183,7 @@ export class CameraComponent implements CameraData, GameComponent, BehaviorCompo
     this.reversedZ = options?.reversedZ ?? this.reversedZ
 
     if (this.type === 'custom' && options.customProjection) {
-      this.projection.initFrom(options.customProjection)
+      mat4$initFrom(this.projection, options.customProjection)
     }
   }
 
@@ -190,7 +207,8 @@ export class CameraComponent implements CameraData, GameComponent, BehaviorCompo
         break
       }
       case 'perspective': {
-        this.projection.initPerspectiveFieldOfView(
+        mat4$initPerspectiveFieldOfView(
+          this.projection,
           this.perspectiveFov,
           this.aspect,
           this.near,
@@ -201,7 +219,8 @@ export class CameraComponent implements CameraData, GameComponent, BehaviorCompo
         break
       }
       case 'orthographic': {
-        this.projection.initOrthographic(
+        mat4$initOrthographic(
+          this.projection,
           this.orthographicScale,
           this.orthographicScale / this.aspect,
           this.near,
@@ -212,20 +231,21 @@ export class CameraComponent implements CameraData, GameComponent, BehaviorCompo
         break
       }
     }
-    Mat4.invert(this.world, this.view)
-    Mat4.premultiply(this.view, this.space.toViewSpace, this.view)
-    Mat4.premultiply(this.view, this.projection, this.viewProjection)
+    mat4Invert(this.world, this.view)
+    mat4Premultiply(this.view, this.space.toViewSpace, this.view)
+    mat4Premultiply(this.view, this.projection, this.viewProjection)
   }
 
-  public createRay(xNormalized: number, yNormalized: number): Ray {
+  public createRay(xNormalized: number, yNormalized: number): IRay {
     const ndcX = xNormalized * 2.0 - 1.0
     const ndcY = 1.0 - yNormalized * 2.0
-    const invViewProj = Mat4.invert(this.viewProjection, Mat4.$0)
+    const invViewProj = mat4Invert(this.viewProjection, mat4.$0)
     const nearZ = this.reversedZ ? 1.0 : this.device.ndcMinZ
     const farZ = this.reversedZ ? 0.0 : 1.0
-    const near = invViewProj.transformP3(Vec4.create(ndcX, ndcY, nearZ, 1))
-    const far = invViewProj.transformP3(Vec4.create(ndcX, ndcY, farZ, 1))
-
-    return Ray.createV(near, Vec3.subtract(far, near).normalize())
+    const near = vec3$projectMat4(vec3(ndcX, ndcY, nearZ), invViewProj)
+    const far = vec3$projectMat4(vec3(ndcX, ndcY, farZ), invViewProj)
+    const dir = vec3Subtract(far, near)
+    vec3$normalize(dir)
+    return rayCreate(near, dir)
   }
 }

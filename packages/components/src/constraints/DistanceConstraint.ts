@@ -1,10 +1,19 @@
 import { type GameComponent, GameEntity } from '@gglib/ecs'
-import { Vec3 } from '@gglib/math'
+import {
+  IVec3,
+  vec3,
+  vec3$initFrom,
+  vec3$normalize,
+  vec3$subtract,
+  vec3$applyMat4,
+  vec3Distance,
+  vec3Equals,
+} from '@gglib/math'
 import { TransformComponent } from '../components/TransformComponent'
 import type { BehaviorComponent } from '../systems/BehaviorSystem'
 
-let v0: Vec3
-let v1: Vec3
+let v0: IVec3
+let v1: IVec3
 
 /**
  * Options for the {@link DistanceConstraint}
@@ -109,21 +118,21 @@ export class DistanceConstraint implements GameComponent, BehaviorComponent {
       return
     }
 
-    let s = (v0 = v0 || Vec3.create())
-    let t = (v1 = v1 || Vec3.create())
+    let s = (v0 = v0 || vec3())
+    let t = (v1 = v1 || vec3())
 
-    s.initFrom(this.source.translation)
+    vec3$initFrom(s, this.source.translation)
     if (this.source.parent && this.sourceSpace === 'world') {
-      s.transformByMat4(this.source.parent.worldInverse)
+      vec3$applyMat4(s, this.source.parent.worldInverse)
     }
 
-    t.initFrom(this.target.translation)
+    vec3$initFrom(t, this.target.translation)
     if (this.target.parent && this.targetSpace === 'world') {
-      t.transformByMat4(this.target.parent.worldInverse)
+      vec3$applyMat4(t, this.target.parent.worldInverse)
     }
 
     // calculate distance between objects
-    let d = Vec3.distance(t, s)
+    let d = vec3Distance(t, s)
 
     if (d < this.minDistance) {
       d = d + (this.minDistance - d) * this.weight
@@ -132,16 +141,20 @@ export class DistanceConstraint implements GameComponent, BehaviorComponent {
       d = d + (this.maxDistance - d) * this.weight
     }
     if (Math.abs(d) >= Number.EPSILON) {
-      t.subtract(s).normalize().multiplyScalar(d).add(s)
+      vec3$subtract(t, s)
+      vec3$normalize(t)
+      t.x = t.x * d + s.x
+      t.y = t.y * d + s.y
+      t.z = t.z * d + s.z
     } else {
-      t.initFrom(s)
+      vec3$initFrom(t, s)
     }
 
     if (this.target.parent && this.targetSpace === 'world') {
-      t.transformByMat4(this.target.parent.world)
+      vec3$applyMat4(t, this.target.parent.world)
     }
 
-    if (!t.equals(this.target.translation)) {
+    if (!vec3Equals(t, this.target.translation)) {
       this.target.setPositionV(t)
       if (this.commit) {
         this.target.updateIfNeeded()

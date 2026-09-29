@@ -9,7 +9,7 @@ import {
   type ShaderModuleOptions,
   TRUE,
 } from '@gglib/graphics'
-import { Mat4, Vec4 } from '@gglib/math'
+import { mat4Identity, vec4 } from '@gglib/math'
 import { type FeatureFlag, getShaderConstants, InputBlocks, MaterialLayerMasks } from './common'
 import SCHEMA from './GlassMaterial.meta'
 import WGSL from './GlassMaterial.wgsl'
@@ -126,31 +126,31 @@ export class GlassMaterial extends MaterialWithSchema(SCHEMA) {
   }
 
   private setDefaults() {
-    this.DiffuseColor = Vec4.create(1, 1, 1, 1)
-    this.SpecularColor = Vec4.create(1, 1, 1, 1)
-    this.EmissiveColor = Vec4.create()
+    this.DiffuseColor = vec4(1, 1, 1, 1)
+    this.SpecularColor = vec4(1, 1, 1, 1)
+    this.EmissiveColor = vec4()
 
     this.BumpMapTile = 1.0
     this.BumpScale = 0.1
-    this.TintColor = Vec4.create(1.0, 1.0, 1.0, 1.0)
+    this.TintColor = vec4(1.0, 1.0, 1.0, 1.0)
     this.BackLightScale = 0.5
     this.TintCloudiness = 0.0
-    this.IndirectColor = Vec4.create(0.25, 0.25, 0.25, 0.25)
+    this.IndirectColor = vec4(0.25, 0.25, 0.25, 0.25)
     this.CloudinessReducesGloss = 0.5
     this.RoughnessBoost = 2.0
     this.BlurAmount = 0.5
     this.RoughnessMaxFootprint = 0.3
     this.FogDensity = 1.0
     this.FogCutoffEnd = 20.0
-    this.FogColor = Vec4.create(1.0, 1.0, 1.0, 1.0)
+    this.FogColor = vec4(1.0, 1.0, 1.0, 1.0)
     this.DepthFixupThreshold = 0.05
     this.CloudinessMasksBlur = 0.0
 
-    this.UvModDiffuse = Mat4.createIdentity()
-    this.UvModCustom = Mat4.createIdentity()
-    this.UvModDetail = Mat4.createIdentity()
-    this.UvModEmittance = Mat4.createIdentity()
-    this.UvModDecalEmissive = Mat4.createIdentity()
+    this.UvModDiffuse = mat4Identity()
+    this.UvModCustom = mat4Identity()
+    this.UvModDetail = mat4Identity()
+    this.UvModEmittance = mat4Identity()
+    this.UvModDecalEmissive = mat4Identity()
 
     this.SamplerLinear = SamplerState.LinearWrap
     this.SamplerPoint = SamplerState.PointWrap
@@ -290,8 +290,8 @@ export class GlassMaterial extends MaterialWithSchema(SCHEMA) {
   }
 
   private setAttributes(attrs: NwMaterialProps['attrs'], flags: Set<FeatureFlag>) {
-    this.DiffuseColor = paramVec4(attrs.Diffuse, Vec4.One)
-    this.SpecularColor = paramVec4(attrs.Specular, Vec4.One)
+    this.DiffuseColor = paramVec4(attrs.Diffuse, vec4.One)
+    this.SpecularColor = paramVec4(attrs.Specular, vec4.One)
     this.EmissiveColor = paramVec4(attrs.Emissive)
     this.EmissiveColor = paramVec4(attrs.Emittance)
 

@@ -1,6 +1,6 @@
 import { BehaviorComponent, TransformComponent } from '@gglib/components'
 import { GameComponent, GameEntity } from '@gglib/ecs'
-import { IVec3, IVec4, vec3, Vec3, Vec4 } from '@gglib/math'
+import { IVec3, IVec4, mat4Decompose, vec3, vec3$init, vec4, vec4$init } from '@gglib/math'
 import { brand, Brand } from '@gglib/utils'
 import Ammo from 'ammojs-typed'
 import { PhysicsWorld } from './physics-world'
@@ -89,19 +89,20 @@ export class PhysicsProxy implements GameComponent, BehaviorComponent {
       const rotation = this.body.getWorldTransform().getRotation()
 
       this.transform?.updateIfNeeded()
-      this.transform!.world.decompose(
-        Vec3.$0, // scale
-        Vec4.$0, // rotation
-        Vec3.$1, // position
+      mat4Decompose(
+        this.transform!.world,
+        vec3.$0, // scale
+        vec4.$0, // rotation
+        vec3.$1, // position
       )
-      origin.setX(Vec3.$1.x)
-      origin.setY(Vec3.$1.y)
-      origin.setZ(Vec3.$1.z)
+      origin.setX(vec3.$1.x)
+      origin.setY(vec3.$1.y)
+      origin.setZ(vec3.$1.z)
 
-      rotation.setX(Vec4.$0.x)
-      rotation.setY(Vec4.$0.y)
-      rotation.setZ(Vec4.$0.z)
-      rotation.setW(Vec4.$0.w)
+      rotation.setX(vec4.$0.x)
+      rotation.setY(vec4.$0.y)
+      rotation.setZ(vec4.$0.z)
+      rotation.setW(vec4.$0.w)
 
       this.body.activate()
     }
@@ -110,8 +111,8 @@ export class PhysicsProxy implements GameComponent, BehaviorComponent {
       const t = this.body.getWorldTransform()
       const o = t.getOrigin()
       const r = t.getRotation()
-      this.transform.rotation.init(r.x(), r.y(), r.z(), r.w())
-      this.transform.translation.init(o.x(), o.y(), o.z())
+      vec4$init(this.transform.rotation, r.x(), r.y(), r.z(), r.w())
+      vec3$init(this.transform.translation, o.x(), o.y(), o.z())
       this.transform.markAsChanged()
     }
   }

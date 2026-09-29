@@ -1,6 +1,5 @@
 import { BoundingBox } from './BoundingBox'
 import { BoundingFrustum } from './BoundingFrustum'
-import type { BoundingVolume } from './BoundingVolume'
 import {
   boxSphereIntersects,
   frustumSphereIntersects,
@@ -13,17 +12,28 @@ import {
   sphereSphereIntersection,
   sphereSphereIntersects,
 } from './Collision'
-import { Mat4 } from './Mat4'
-import { Ray } from './Ray'
+import { Mat4, mat4ApplyToVec3 } from './Mat4'
+import { IRay } from './Ray'
 import type { ArrayLike, IVec3, IVec4 } from './Types'
-import { vec3, Vec3 } from './Vec3'
+import {
+  vec3,
+  vec3AddScaled,
+  vec3Copy,
+  vec3Distance,
+  vec3DistanceSquared,
+  vec3Equals,
+  vec3LengthSquared,
+  vec3Lerp,
+  vec3Subtract,
+  vec3ToArray,
+} from './Vec3'
 
 /**
  * Defines sphere volume.
  *
  * @public
  */
-export class BoundingSphere implements BoundingVolume {
+export class BoundingSphere {
   /**
    * The sphere center
    */
@@ -147,8 +157,8 @@ export class BoundingSphere implements BoundingVolume {
    */
   public static createFromBox(box: BoundingBox): BoundingSphere {
     const out = new BoundingSphere()
-    out.radius = Vec3.distance(box.min, box.max) * 0.5
-    Vec3.lerp(box.min, box.max, 0.5, out.center)
+    out.radius = vec3Distance(box.min, box.max) * 0.5
+    vec3Lerp(box.min, box.max, 0.5, out.center)
     return out
   }
 
@@ -158,8 +168,8 @@ export class BoundingSphere implements BoundingVolume {
    * @param box - the box volume to containe
    */
   public initFromBox(box: BoundingBox): this {
-    this.radius = Vec3.distance(box.min, box.max) * 0.5
-    Vec3.lerp(box.min, box.max, 0.5, this.center)
+    this.radius = vec3Distance(box.min, box.max) * 0.5
+    vec3Lerp(box.min, box.max, 0.5, this.center)
     return this
   }
 
@@ -225,8 +235,8 @@ export class BoundingSphere implements BoundingVolume {
     if (zero) {
       this.init(0, 0, 0, 0)
     } else {
-      this.radius = Vec3.distance(min, max) * 0.5
-      Vec3.lerp(min, max, 0.5, this.center)
+      this.radius = vec3Distance(min, max) * 0.5
+      vec3Lerp(min, max, 0.5, this.center)
     }
     return this
   }
@@ -294,12 +304,12 @@ export class BoundingSphere implements BoundingVolume {
     }
 
     // select the largest extent as an initial diameter for the  ball
-    let dPx = Vec3.subtract(P[Pxmax], P[Pxmin], {}) // diff of Px max and min
-    let dPy = Vec3.subtract(P[Pymax], P[Pymin], {}) // diff of Py max and min
-    let dPz = Vec3.subtract(P[Pzmax], P[Pzmin], {}) // diff of Pz max and min
-    let dx2 = Vec3.lengthSquared(dPx) // Px diff squared
-    let dy2 = Vec3.lengthSquared(dPy) // Py diff squared
-    let dz2 = Vec3.lengthSquared(dPz) // Pz diff squared
+    let dPx = vec3Subtract(P[Pxmax], P[Pxmin]) // diff of Px max and min
+    let dPy = vec3Subtract(P[Pymax], P[Pymin]) // diff of Py max and min
+    let dPz = vec3Subtract(P[Pzmax], P[Pzmin]) // diff of Pz max and min
+    let dx2 = vec3LengthSquared(dPx) // Px diff squared
+    let dy2 = vec3LengthSquared(dPy) // Py diff squared
+    let dz2 = vec3LengthSquared(dPz) // Pz diff squared
 
     let d = dx2
     let dP = dPx
@@ -318,9 +328,9 @@ export class BoundingSphere implements BoundingVolume {
     }
 
     // Center = midpoint of extremes
-    let C = Vec3.addScaled(P[iMin], dP, 0.5, {})
+    let C = vec3AddScaled(P[iMin], dP, 0.5)
     // radius squared
-    let rad2 = Vec3.distanceSquared(P[iMax], C)
+    let rad2 = vec3DistanceSquared(P[iMax], C)
     let rad = Math.sqrt(rad2)
 
     // now check that all points P[i] are in the ball
@@ -328,8 +338,8 @@ export class BoundingSphere implements BoundingVolume {
     let dist
     let dist2
     for (let i = 0; i < P.length; i++) {
-      Vec3.subtract(P[i], C, dP)
-      dist2 = Vec3.lengthSquared(dP)
+      vec3Subtract(P[i], C, dP)
+      dist2 = vec3LengthSquared(dP)
       if (dist2 <= rad2) {
         // P[i] is inside the ball already
         continue
@@ -340,7 +350,7 @@ export class BoundingSphere implements BoundingVolume {
       rad = (rad + dist) / 2.0
       rad2 = rad * rad
       // shift Center toward P[i]
-      Vec3.addScaled(C, dP, (dist - rad) / dist, C)
+      vec3AddScaled(C, dP, (dist - rad) / dist, C)
     }
 
     this.initFromCenterRadius(C, rad)
@@ -368,7 +378,7 @@ export class BoundingSphere implements BoundingVolume {
    */
   public copy(out?: BoundingSphere): BoundingSphere {
     out = out || new BoundingSphere()
-    Vec3.copy(this.center, out.center)
+    vec3Copy(this.center, out.center)
     out.radius = this.radius
     return out
   }
@@ -387,12 +397,12 @@ export class BoundingSphere implements BoundingVolume {
       sphere.radius *
       Math.sqrt(
         Math.max(
-          m.m00 * m.m00 + m.m01 * m.m01 + m.m02 * m.m02,
-          m.m10 * m.m10 + m.m11 * m.m11 + m.m12 * m.m12,
-          m.m20 * m.m20 + m.m21 * m.m21 + m.m22 * m.m22,
+          m[0] * m[0] + m[1] * m[1] + m[2] * m[2],
+          m[4] * m[4] + m[5] * m[5] + m[6] * m[6],
+          m[8] * m[8] + m[9] * m[9] + m[10] * m[10],
         ),
       )
-    m.transformV3(sphere.center, out.center)
+    mat4ApplyToVec3(m, sphere.center, out.center)
     return out
   }
 
@@ -406,12 +416,12 @@ export class BoundingSphere implements BoundingVolume {
       this.radius *
       Math.sqrt(
         Math.max(
-          m.m00 * m.m00 + m.m01 * m.m01 + m.m02 * m.m02,
-          m.m10 * m.m10 + m.m11 * m.m11 + m.m12 * m.m12,
-          m.m20 * m.m20 + m.m21 * m.m21 + m.m22 * m.m22,
+          m[0] * m[0] + m[1] * m[1] + m[2] * m[2],
+          m[4] * m[4] + m[5] * m[5] + m[6] * m[6],
+          m[8] * m[8] + m[9] * m[9] + m[10] * m[10],
         ),
       )
-    m.transformV3(this.center, this.center)
+    mat4ApplyToVec3(m, this.center, this.center)
     return this
   }
 
@@ -424,7 +434,7 @@ export class BoundingSphere implements BoundingVolume {
    */
   public toArray<T extends ArrayLike<number>>(array: T, offset?: number): T
   public toArray(array: number[] = [], offset: number = 0): number[] {
-    Vec3.toArray(this.center, array, offset)
+    vec3ToArray(this.center, array, offset)
     array[offset + 3] = this.radius
     return array
   }
@@ -438,7 +448,7 @@ export class BoundingSphere implements BoundingVolume {
    */
   public static toArray<T>(sphere: BoundingSphere, array: T, offset?: number): T
   public static toArray(sphere: BoundingSphere, array: number[] = [], offset: number = 0): number[] {
-    Vec3.toArray(sphere.center, array, offset)
+    vec3ToArray(sphere.center, array, offset)
     array[offset + 3] = sphere.radius
     return array
   }
@@ -447,14 +457,14 @@ export class BoundingSphere implements BoundingVolume {
    * Checks whether two instances are equal
    */
   public static equals(a: BoundingSphere, b: BoundingSphere): boolean {
-    return Vec3.equals(a.center, b.center) && a.radius === b.radius
+    return vec3Equals(a.center, b.center) && a.radius === b.radius
   }
 
   /**
    * Checks for equality with another instance
    */
   public equals(other: BoundingSphere): boolean {
-    return Vec3.equals(this.center, other.center) && this.radius === other.radius
+    return vec3Equals(this.center, other.center) && this.radius === other.radius
   }
 
   /**
@@ -482,7 +492,7 @@ export class BoundingSphere implements BoundingVolume {
       this.initFromCenterRadius(point, 0)
       return this
     }
-    const distance = Vec3.distance(this.center, point)
+    const distance = vec3Distance(this.center, point)
     if (this.radius < distance) {
       this.radius = distance
     }
@@ -596,7 +606,7 @@ export class BoundingSphere implements BoundingVolume {
   /**
    * Checks whether the given ray intersects this volume
    */
-  public intersectsRay(ray: Ray): boolean {
+  public intersectsRay(ray: IRay): boolean {
     return raySphereIntersects(ray.position, ray.direction, this.center, this.radius)
   }
   /**

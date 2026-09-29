@@ -1,6 +1,6 @@
 import { VignetteShader } from '@gglib/effects'
 import { Device } from '@gglib/graphics'
-import { Vec3 } from '@gglib/math'
+import { IVec3, vec3, vec3$initFrom } from '@gglib/math'
 import { FrameGraph, FrameResource } from '../FrameGraph'
 import { RenderChannel } from '../RenderChannel'
 import { RenderContext, RenderPass } from '../Types'
@@ -15,7 +15,7 @@ export interface VignettePassOptions {
   inner?: number
   strength?: number
   power?: number
-  color?: Vec3
+  color?: IVec3
 }
 
 export class VignettePass implements RenderPass {
@@ -29,7 +29,7 @@ export class VignettePass implements RenderPass {
   public inner = 0.5
   public strength = 0.25
   public power = 2.0
-  public color = Vec3.create(0, 0, 0)
+  public color = vec3(0, 0, 0)
   public enabled = true
 
   private device: Device
@@ -53,7 +53,7 @@ export class VignettePass implements RenderPass {
     this.strength = options.strength ?? this.strength
     this.power = options.power ?? this.power
     if (options.color) {
-      this.color.initFrom(options.color)
+      vec3$initFrom(this.color, options.color)
     }
   }
 
@@ -83,7 +83,7 @@ export class VignettePass implements RenderPass {
     shader.inner = this.inner
     shader.strength = this.strength
     shader.power = this.power
-    shader.color.initFrom(this.color)
+    vec3$initFrom(shader.color, this.color)
     shader.textureInput = this.source.texture
     shader.textureOuput = this.target.texture
 

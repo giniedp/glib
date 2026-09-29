@@ -2,7 +2,7 @@ import type { BoundingBox } from './BoundingBox'
 import type { BoundingSphere } from './BoundingSphere'
 import { Intersects, planeCapsuleIntersection, PlaneIntersectionType } from './Collision'
 import type { IVec3, IVec4 } from './Types'
-import { vec3, Vec3 } from './Vec3'
+import { vec3, vec3Equals, vec3ToArray } from './Vec3'
 
 /**
  * @public
@@ -257,8 +257,8 @@ export class BoundingCapsule {
    */
   public toArray<T extends ArrayLike<number>>(array: T, offset?: number): T
   public toArray(array: number[] = [], offset: number = 0): number[] {
-    Vec3.toArray(this.start, array, offset)
-    Vec3.toArray(this.end, array, offset + 3)
+    vec3ToArray(this.start, array, offset)
+    vec3ToArray(this.end, array, offset + 3)
     array[offset + 6] = this.radius
     return array
   }
@@ -272,8 +272,8 @@ export class BoundingCapsule {
    */
   public static toArray<T>(capsule: BoundingCapsule, array: T, offset?: number): T
   public static toArray(capsule: BoundingCapsule, array: number[] = [], offset: number = 0): number[] {
-    Vec3.toArray(capsule.start, array, offset)
-    Vec3.toArray(capsule.end, array, offset + 3)
+    vec3ToArray(capsule.start, array, offset)
+    vec3ToArray(capsule.end, array, offset + 3)
     array[offset + 6] = capsule.radius
     return array
   }
@@ -282,14 +282,14 @@ export class BoundingCapsule {
    * Checks whether two instances are equal
    */
   public static equals(a: BoundingCapsule, b: BoundingCapsule): boolean {
-    return Vec3.equals(a.start, b.start) && Vec3.equals(a.end, b.end) && a.radius === b.radius
+    return vec3Equals(a.start, b.start) && vec3Equals(a.end, b.end) && a.radius === b.radius
   }
 
   /**
    * Checks for equality with another instance
    */
   public equals(other: BoundingCapsule): boolean {
-    return Vec3.equals(this.start, other.start) && Vec3.equals(this.end, other.end) && this.radius === other.radius
+    return vec3Equals(this.start, other.start) && vec3Equals(this.end, other.end) && this.radius === other.radius
   }
 
   /**
@@ -321,7 +321,7 @@ export class BoundingCapsule {
   // /**
   //  * Checks whether the given ray intersects this volume
   //  */
-  // public intersectsRay(ray: Ray): boolean {
+  // public intersectsRay(ray: IRay): boolean {
   //   // TODO:
   //   throw new Error('not implemented')
   // }

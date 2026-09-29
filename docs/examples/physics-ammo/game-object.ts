@@ -60,7 +60,7 @@ export class GameComponent implements GameComponent {
         break
       }
     }
-    const material = new BasicMaterial(device)
+    const material = new BasicMaterial(device, { properties: {} })
     material.BaseColor = vec3(Math.random(), Math.random(), Math.random())
 
     const mesh = new Mesh(device, {

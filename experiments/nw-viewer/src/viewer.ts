@@ -14,16 +14,22 @@ import { type GameEntity } from '@gglib/ecs'
 import { TonemapOperator } from '@gglib/effects'
 import { Color, CommonInputs, type DeviceStats } from '@gglib/graphics'
 import { DDS, GLTF, HDR } from '@gglib/loaders'
-import { DEGREE_TO_RAD, Mat4, RAD_TO_DEGREE, SpaceBasis, Vec3, Vec4 } from '@gglib/math'
 import {
-  BloomPass,
-  FxaaPass,
-  GeometryPass,
-  RenderChannel,
-  Renderer,
-  TonemapPass,
-  type RendererStats,
-} from '@gglib/render'
+  DEGREE_TO_RAD,
+  mat4,
+  mat4$initScaleUniform,
+  mat4$premultiply,
+  mat4CreateFromRTS,
+  mat4GetTranslation,
+  RAD_TO_DEGREE,
+  SpaceBasis,
+  vec3,
+  vec3Add,
+  vec3MultiplyScalar,
+  vec3Subtract,
+  vec4,
+} from '@gglib/math'
+import { BloomPass, GeometryPass, RenderChannel, Renderer, TonemapPass, type RendererStats } from '@gglib/render'
 import { brand, lfmt, type EventType } from '@gglib/utils'
 import { redrawUi } from 'tweak-ui'
 import { getLevelListUrl } from './api'
@@ -240,14 +246,16 @@ export class NwViewer extends EcsGame {
       return
     }
 
-    const boxScale = Vec3.subtract(selection.box.max, selection.box.min)
-    const boxCenter = Vec3.add(selection.box.min, selection.box.max).multiplyScalar(0.5)
-    const boxTransform = Mat4.createFromRTS(Vec4.create(0, 0, 0, 1), boxCenter, boxScale)
+    const boxScale = vec3Subtract(selection.box.max, selection.box.min)
+    const boxCenter = vec3MultiplyScalar(vec3Add(selection.box.min, selection.box.max), 0.5)
+    const boxTransform = mat4CreateFromRTS(vec4(0, 0, 0, 1), boxCenter, boxScale)
     const nodeTransform = selection.node.world
 
     shape.type = 'box'
-    shape.transforms[0] ||= new Mat4()
-    shape.transforms[0].initScaleUniform(1.001).premultiply(boxTransform).premultiply(nodeTransform)
+    shape.transforms[0] ||= mat4()
+    mat4$initScaleUniform(shape.transforms[0], 1.001)
+    mat4$premultiply(shape.transforms[0], boxTransform)
+    mat4$premultiply(shape.transforms[0], nodeTransform)
     shape.transforms.length = 1
 
     console.log(...this.logTag, 'Selected entity', selection)
@@ -350,7 +358,7 @@ export class NwViewer extends EcsGame {
     )
 
     setInterval(() => {
-      const t = camera.world.getTranslation(Vec3.$0)
+      const t = mat4GetTranslation(camera.world, vec3.$0)
       const r = camera.entity.component(WASDComponent).getRotationHorizontal()
       const params = new URLSearchParams(window.location.search)
       params.set('x', t.x.toFixed(1))

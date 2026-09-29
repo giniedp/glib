@@ -1,7 +1,7 @@
 import { ContentLoader } from '@gglib/content'
-import { Game, MouseInput, MouseListener, TouchPane } from '@gglib/game'
+import { Game, MouseInput, MouseListener } from '@gglib/game'
 import { BlendState, Color, PlatformId, SpriteBatch, SpriteMode, Texture } from '@gglib/graphics'
-import { clamp, IRect, Mat4, Rect } from '@gglib/math'
+import { clamp, IRect, Mat4, mat4CreateOrthographicOffCenter, rectGetX, rectGetY } from '@gglib/math'
 import { mountUi } from 'tweak-ui'
 import { getCircleRectHit, HitAxis } from './collision'
 
@@ -56,7 +56,7 @@ class BreakoutGame extends Game {
 
   public override onInitialize() {
     this.spriteBatch = new SpriteBatch(this.device)
-    this.projection = Mat4.createOrthographicOffCenter(0, this.width, 0, this.height, 0, 100, this.device.ndcMinZ)
+    this.projection = mat4CreateOrthographicOffCenter(0, this.width, 0, this.height, 0, 100, this.device.ndcMinZ)
     this.ball = gameBlock({
       type: 'block',
       width: 1,
@@ -217,7 +217,7 @@ class BreakoutGame extends Game {
     }
 
     // check walls collision
-    if (Rect.endY(ball) >= this.height && ball.dy > 0) {
+    if (rectGetY(ball, 1.0) >= this.height && ball.dy > 0) {
       ball.dy = -Math.abs(ball.dy)
       this.playCollisionSound()
       return
@@ -227,7 +227,7 @@ class BreakoutGame extends Game {
       this.playCollisionSound()
       return
     }
-    if (Rect.endX(ball) >= this.width && ball.dx > 0) {
+    if (rectGetX(ball, 1.0) >= this.width && ball.dx > 0) {
       ball.dx = -Math.abs(ball.dx)
       this.playCollisionSound()
       return
@@ -239,7 +239,7 @@ class BreakoutGame extends Game {
       const oldDy = ball.dy
 
       ball.dy = Math.abs(ball.dy)
-      ball.dx = paddle.speed - (Rect.centerX(paddle) - Rect.centerX(ball)) / paddle.width
+      ball.dx = paddle.speed - (rectGetX(paddle, 0.5) - rectGetX(ball, 0.5)) / paddle.width
       ball.dx = clamp(ball.dx, -3, 3)
 
       if (Math.sign(oldDx) !== Math.sign(ball.dx) || Math.sign(oldDy) !== Math.sign(ball.dy)) {
@@ -295,7 +295,7 @@ class BreakoutGame extends Game {
     }
     if (isCleared) {
       this.state = 'win'
-    } else if (Rect.endY(this.ball) < 0) {
+    } else if (rectGetY(this.ball, 1) < 0) {
       this.state = 'loose'
     }
   }

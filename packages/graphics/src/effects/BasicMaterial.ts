@@ -1,4 +1,4 @@
-import { Mat4, vec3 } from '@gglib/math'
+import { mat4CreateIdentity, vec3 } from '@gglib/math'
 
 import { inputSlot, type ShaderModuleOptions } from '../resources'
 import { CullState, SamplerState } from '../states'
@@ -80,7 +80,7 @@ export class BasicMaterial extends MaterialWithSchema(BasicMaterialSchema) {
   public setDefaults() {
     this.BaseColor = vec3(1)
 
-    this.TextureMod = Mat4.createIdentity()
+    this.TextureMod = mat4CreateIdentity()
     this.BaseMapSampler = SamplerState.LinearWrap
 
     this.Alpha = 1

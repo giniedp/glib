@@ -1,4 +1,4 @@
-import { IVec3, Vec3 } from '@gglib/math'
+import { IVec3, vec3 } from '@gglib/math'
 import type { Device } from '../../Device'
 import { Geometry } from '../Geometry'
 import { buildGeometry, BuildGeometryOptions, GeometryBuilder } from '../GeometryBuilder'
@@ -151,8 +151,8 @@ export function buildPatch(builder: GeometryBuilder, options?: BuildPatchOptions
       const pos = positionFn ? positionFn(wx, oy, wz) : { x: wx, y: oy, z: wz }
 
       builder.addVertex({
-        position: Vec3.convert(pos),
-        normal: Vec3.convert(invert ? { x: 0, y: -1, z: 0 } : { x: 0, y: 1, z: 0 }),
+        position: vec3(pos),
+        normal: vec3(invert ? { x: 0, y: -1, z: 0 } : { x: 0, y: 1, z: 0 }),
         texture: [s, t],
       })
     }

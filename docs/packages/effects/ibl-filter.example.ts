@@ -17,7 +17,7 @@ import {
   TextureUsage,
 } from '@gglib/graphics'
 import { HDR } from '@gglib/loaders'
-import { DEGREE_TO_RAD, Mat4 } from '@gglib/math'
+import { DEGREE_TO_RAD, mat4$initPerspectiveFieldOfView, mat4$rotateY, mat4Identity } from '@gglib/math'
 import { mountUi } from 'tweak-ui'
 
 const files = {
@@ -162,16 +162,17 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     usage: TextureUsage.TextureBinding,
   })
 
-  const world = Mat4.createIdentity()
-  const proj = Mat4.createIdentity()
+  const world = mat4Identity()
+  const proj = mat4Identity()
 
   function frame(ctx: FrameContext) {
     params.frameTime = ctx.delta
     pass.setClearColor(0, Color.TransparentBlack)
     pass.clear()
 
-    world.rotateY(-10 * DEGREE_TO_RAD * ctx.delta)
-    proj.initPerspectiveFieldOfView(
+    mat4$rotateY(world, -10 * DEGREE_TO_RAD * ctx.delta)
+    mat4$initPerspectiveFieldOfView(
+      proj,
       params.fieldOfView * DEGREE_TO_RAD,
       rtScene.width / rtScene.height,
       0.1,

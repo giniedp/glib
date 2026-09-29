@@ -1,4 +1,15 @@
-import { IVec2, IVec3, vec2, vec2subtract, Vec3 } from '@gglib/math'
+import {
+  IVec2,
+  IVec3,
+  vec2,
+  vec2Subtract,
+  vec3,
+  vec3$add,
+  vec3$init,
+  vec3$normalize,
+  vec3Cross,
+  vec3Subtract,
+} from '@gglib/math'
 import { Color } from '../../Color'
 import { PrimitiveType } from '../../enums'
 import type { GeometryBuilder } from '../GeometryBuilder'
@@ -157,11 +168,11 @@ export function buildParametricSurface(builder: GeometryBuilder, options: BuildP
   }
 
   const vertices: Array<{
-    position: Vec3
-    normal: Vec3
+    position: IVec3
+    normal: IVec3
     texture: IVec2
-    tangent: Vec3
-    bitangent: Vec3
+    tangent: IVec3
+    bitangent: IVec3
   }> = []
 
   // calculate surface
@@ -173,21 +184,21 @@ export function buildParametricSurface(builder: GeometryBuilder, options: BuildP
       const u = u0 + (u1 - u0) * s
 
       vertices.push({
-        position: Vec3.convert(position(u, v, s, t)),
-        normal: normal ? Vec3.convert(normal(u, v, s, t)) : Vec3.create(),
+        position: position(u, v, s, t),
+        normal: normal ? normal(u, v, s, t) : vec3(),
         texture: texture ? texture(s, t, s, t) : vec2(s, t),
-        tangent: Vec3.create(),
-        bitangent: Vec3.create(),
+        tangent: vec3(),
+        bitangent: vec3(),
       })
     }
   }
 
   // calculate normals
-  const nrm = Vec3.create()
-  const edge0 = Vec3.create()
-  const edge1 = Vec3.create()
-  const uv0 = Vec3.create()
-  const uv1 = Vec3.create()
+  const nrm = vec3()
+  const edge0 = vec3()
+  const edge1 = vec3()
+  const uv0 = vec3()
+  const uv1 = vec3()
   for (let i = 0; i < indices.length - 2; i += 3) {
     const i0 = indices[i + 0]
     const i1 = indices[i + 1]
@@ -197,34 +208,35 @@ export function buildParametricSurface(builder: GeometryBuilder, options: BuildP
     const p1 = vertices[i1].position
     const p2 = vertices[i2].position
 
-    Vec3.subtract(p1, p0, edge0)
-    Vec3.subtract(p2, p0, edge1)
+    vec3Subtract(p1, p0, edge0)
+    vec3Subtract(p2, p0, edge1)
 
     if (!normal) {
       // calculate normal only if normal function is not given
-      Vec3.cross(edge0, edge1, nrm)
+      vec3Cross(edge0, edge1, nrm)
 
-      vertices[i0].normal.add(nrm)
-      vertices[i1].normal.add(nrm)
-      vertices[i2].normal.add(nrm)
+      vec3$add(vertices[i0].normal, nrm)
+      vec3$add(vertices[i1].normal, nrm)
+      vec3$add(vertices[i2].normal, nrm)
     }
 
     const t0 = vertices[i0].texture
     const t1 = vertices[i1].texture
     const t2 = vertices[i2].texture
 
-    vec2subtract(t1, t0, uv0)
-    vec2subtract(t2, t0, uv1)
+    vec2Subtract(t1, t0, uv0)
+    vec2Subtract(t2, t0, uv1)
     const r = 1.0 / (uv0.x * uv1.y - uv0.y * uv1.x)
 
-    nrm.init(
+    vec3$init(
+      nrm,
       (edge0.x * uv1.y - edge1.x * uv0.y) * r,
       (edge0.y * uv1.y - edge1.y * uv0.y) * r,
       (edge0.z * uv1.y - edge1.z * uv0.y) * r,
     )
-    vertices[i0].tangent.add(nrm)
-    vertices[i1].tangent.add(nrm)
-    vertices[i2].tangent.add(nrm)
+    vec3$add(vertices[i0].tangent, nrm)
+    vec3$add(vertices[i1].tangent, nrm)
+    vec3$add(vertices[i2].tangent, nrm)
   }
 
   // add indices
@@ -234,10 +246,10 @@ export function buildParametricSurface(builder: GeometryBuilder, options: BuildP
   }
   // add surface vertices
   for (const vertex of vertices) {
-    vertex.normal.normalize()
-    vertex.tangent.normalize()
-    Vec3.cross(vertex.tangent, vertex.normal, vertex.bitangent)
-    vertex.bitangent.normalize()
+    vec3$normalize(vertex.normal)
+    vec3$normalize(vertex.tangent)
+    vec3Cross(vertex.tangent, vertex.normal, vertex.bitangent)
+    vec3$normalize(vertex.bitangent)
     builder.addVertex(vertex)
   }
 }
@@ -287,12 +299,12 @@ export function buildParametricLines(builder: GeometryBuilder, options: BuildPar
   }
 
   const vertices: Array<{
-    position: Vec3
-    normal: Vec3
+    position: IVec3
+    normal: IVec3
     color: number
     texture: IVec2
-    tangent: Vec3
-    bitangent: Vec3
+    tangent: IVec3
+    bitangent: IVec3
   }> = []
 
   // calculate surface
@@ -304,22 +316,22 @@ export function buildParametricLines(builder: GeometryBuilder, options: BuildPar
       const u = u0 + (u1 - u0) * s
 
       vertices.push({
-        position: Vec3.convert(position(u, v, s, t)),
-        normal: normal ? Vec3.convert(normal(u, v, s, t)) : Vec3.create(),
+        position: position(u, v, s, t),
+        normal: normal ? normal(u, v, s, t) : vec3(),
         color: color ? color(u, v, s, t) : Color.packToRGBA(Color.White),
         texture: texture ? texture(s, t, s, t) : vec2(s, t),
-        tangent: Vec3.create(),
-        bitangent: Vec3.create(),
+        tangent: vec3(),
+        bitangent: vec3(),
       })
     }
   }
 
   // calculate normals
-  const nrm = Vec3.create()
-  const edge0 = Vec3.create()
-  const edge1 = Vec3.create()
-  const uv0 = Vec3.create()
-  const uv1 = Vec3.create()
+  const nrm = vec3()
+  const edge0 = vec3()
+  const edge1 = vec3()
+  const uv0 = vec3()
+  const uv1 = vec3()
   for (let i = 0; i < indices.length - 2; i += 3) {
     const i0 = indices[i + 0]
     const i1 = indices[i + 1]
@@ -329,34 +341,35 @@ export function buildParametricLines(builder: GeometryBuilder, options: BuildPar
     const p1 = vertices[i1].position
     const p2 = vertices[i2].position
 
-    Vec3.subtract(p1, p0, edge0)
-    Vec3.subtract(p2, p0, edge1)
+    vec3Subtract(p1, p0, edge0)
+    vec3Subtract(p2, p0, edge1)
 
     if (!normal) {
       // calculate normal only if normal function is not given
-      Vec3.cross(edge0, edge1, nrm)
+      vec3Cross(edge0, edge1, nrm)
 
-      vertices[i0].normal.add(nrm)
-      vertices[i1].normal.add(nrm)
-      vertices[i2].normal.add(nrm)
+      vec3$add(vertices[i0].normal, nrm)
+      vec3$add(vertices[i1].normal, nrm)
+      vec3$add(vertices[i2].normal, nrm)
     }
 
     const t0 = vertices[i0].texture
     const t1 = vertices[i1].texture
     const t2 = vertices[i2].texture
 
-    vec2subtract(t1, t0, uv0)
-    vec2subtract(t2, t0, uv1)
+    vec2Subtract(t1, t0, uv0)
+    vec2Subtract(t2, t0, uv1)
     const r = 1.0 / (uv0.x * uv1.y - uv0.y * uv1.x)
 
-    nrm.init(
+    vec3$init(
+      nrm,
       (edge0.x * uv1.y - edge1.x * uv0.y) * r,
       (edge0.y * uv1.y - edge1.y * uv0.y) * r,
       (edge0.z * uv1.y - edge1.z * uv0.y) * r,
     )
-    vertices[i0].tangent.add(nrm)
-    vertices[i1].tangent.add(nrm)
-    vertices[i2].tangent.add(nrm)
+    vec3$add(vertices[i0].tangent, nrm)
+    vec3$add(vertices[i1].tangent, nrm)
+    vec3$add(vertices[i2].tangent, nrm)
   }
 
   // add indices
@@ -366,10 +379,10 @@ export function buildParametricLines(builder: GeometryBuilder, options: BuildPar
   }
   // add surface vertices
   for (const vertex of vertices) {
-    vertex.normal.normalize()
-    vertex.tangent.normalize()
-    Vec3.cross(vertex.tangent, vertex.normal, vertex.bitangent)
-    vertex.bitangent.normalize()
+    vec3$normalize(vertex.normal)
+    vec3$normalize(vertex.tangent)
+    vec3Cross(vertex.tangent, vertex.normal, vertex.bitangent)
+    vec3$normalize(vertex.bitangent)
     builder.addVertex(vertex)
   }
 }

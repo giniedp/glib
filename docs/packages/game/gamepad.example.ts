@@ -1,7 +1,7 @@
 import { ContentLoader } from '@gglib/content'
 import { Game, Gamepad, GamepadButton } from '@gglib/game'
 import { BlendState, Color, PlatformId, SpriteBatch, SpriteMode, Texture } from '@gglib/graphics'
-import { IRect, Mat4 } from '@gglib/math'
+import { IRect, mat4$initOrthographicOffCenter, mat4Identity } from '@gglib/math'
 
 export default (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
   const game = new DemoGame({ canvas, platform, autosize: true })
@@ -53,7 +53,7 @@ class DemoGame extends Game {
   public gamepad!: Gamepad
 
   public spriteBatch!: SpriteBatch
-  public projection = Mat4.createIdentity()
+  public projection = mat4Identity()
 
   private texture!: Texture
   private sprites: Record<string, IRect> = {}
@@ -79,7 +79,8 @@ class DemoGame extends Game {
 
   public override onUpdate(time: number, dt: number) {
     // create a projection with top left origin, so it matches mouse coordinates
-    this.projection.initOrthographicOffCenter(
+    mat4$initOrthographicOffCenter(
+      this.projection,
       0, // left
       this.device.output.width, // right
       this.device.output.height, // bottom

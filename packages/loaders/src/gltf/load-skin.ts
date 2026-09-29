@@ -1,5 +1,5 @@
 import { ResourceNode } from '@gglib/content'
-import { Mat4 } from '@gglib/math'
+import { mat4Cast, mat4Identity } from '@gglib/math'
 import { SkinData } from '@gglib/model'
 import { GltfAssetContainer } from './asset'
 
@@ -23,7 +23,7 @@ export function loadSkin(asset: GltfAssetContainer, index: number): ResourceNode
 
   if (gltf.inverseBindMatrices == null) {
     for (let i = 0; i < node.data.joints.length; i++) {
-      node.data.inverseBindMatrices[i] = Mat4.createIdentity()
+      node.data.inverseBindMatrices[i] = mat4Identity()
     }
     return node
   }
@@ -34,7 +34,7 @@ export function loadSkin(asset: GltfAssetContainer, index: number): ResourceNode
     const accessor = get(accessorKey)
     const data = accessor.getDataWithoutOffset().slice() as Float32Array
     for (let i = 0; i < joints.length; i++) {
-      node.data.inverseBindMatrices[i] = new Mat4(data.subarray(i * 16, (i + 1) * 16))
+      node.data.inverseBindMatrices[i] = mat4Cast(data.subarray(i * 16, (i + 1) * 16))
     }
     return node.data
   }

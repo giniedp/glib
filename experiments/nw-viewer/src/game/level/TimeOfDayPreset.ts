@@ -1,4 +1,4 @@
-import { lerp, Vec3, vec3, type IVec3 } from '@gglib/math'
+import { lerp, vec3, vec3$init, type IVec3 } from '@gglib/math'
 import type { TimeOfDay } from '../../api'
 import { getTodParamByName, parseTodSpline, TodParams, type TodParam, type TodSplineKey } from './TimeOfDayParams'
 
@@ -71,7 +71,7 @@ export class TimeOfDayPreset {
       }
 
       if (v.type === 'color') {
-        Vec3.init(v.value, tmp[0], tmp[1], tmp[2])
+        vec3$init(v.value, tmp[0], tmp[1], tmp[2])
       } else {
         v.value = tmp[0]
       }

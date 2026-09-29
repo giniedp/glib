@@ -13,7 +13,7 @@ import {
   uvInfoToMat4,
   type ShaderModuleOptions,
 } from '@gglib/graphics'
-import { Mat3, Mat4, vec3 } from '@gglib/math'
+import { mat3CreateIdentity, Mat4, mat4Identity, vec3 } from '@gglib/math'
 import { COMMON_EFFECT_GLSL_FS, COMMON_EFFECT_GLSL_VS } from './CommonMaterial.glsl'
 import { COMMON_EFFECT_WGSL } from './CommonMaterial.wgsl'
 
@@ -131,8 +131,8 @@ export class CommonMaterial extends MaterialWithSchema(CommonMaterialSchema) {
     this.EmissiveStrength = 1
     this.SpecularColor = vec3(1)
     this.SpecularWeight = 1
-    this.TextureMod = Mat4.createIdentity()
-    this.IblRotation = Mat3.createIdentity()
+    this.TextureMod = mat4Identity()
+    this.IblRotation = mat3CreateIdentity()
     this.BaseMapSampler = SamplerState.LinearWrap
     this.IblEnvironmentMap = this.device.defaultTextureCube
     this.IblLambertianMap = this.device.defaultTextureCube

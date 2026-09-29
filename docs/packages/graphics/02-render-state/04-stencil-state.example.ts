@@ -1,5 +1,5 @@
 import { Color, createDevice, Device, PlatformId, StencilState, Texture, vertexLayout } from '@gglib/graphics'
-import { DEGREE_TO_RAD, Mat4, vec3 } from '@gglib/math'
+import { DEGREE_TO_RAD, mat4$rotateZ, mat4$scale, mat4CreateScaleUniform, mat4Identity, vec3 } from '@gglib/math'
 import { mountUi } from 'tweak-ui'
 
 // Writes a `1` into the stencil buffer everywhere this draw call's pixels
@@ -75,10 +75,10 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   // A diamond (a unit quad rotated 45 degrees) used as the mask shape, and
   // a second quad scaled up to cover the whole screen for the actual
   // content.
-  const maskWorld = Mat4.createIdentity()
-    .rotateZ(45 * DEGREE_TO_RAD)
-    .scale(vec3(0.7, 0.7, 1))
-  const contentWorld = Mat4.createScaleUniform(2)
+  const maskWorld = mat4Identity()
+  mat4$rotateZ(maskWorld, 45 * DEGREE_TO_RAD)
+  mat4$scale(maskWorld, vec3(0.7, 0.7, 1))
+  const contentWorld = mat4CreateScaleUniform(2)
 
   const settings = {
     masked: true,

@@ -18,7 +18,16 @@ import {
   WebglDevice,
 } from '@gglib/graphics'
 
-import { Mat4, vec2, vec3 } from '@gglib/math'
+import {
+  Mat4,
+  mat4GetForward,
+  mat4GetTranslation,
+  mat4Identity,
+  mat4Invert,
+  mat4Multiply,
+  vec2,
+  vec3,
+} from '@gglib/math'
 import { eventSource } from '@gglib/utils'
 import { GeometryPass } from './passes'
 import { createRenderChannelSchema, RenderChannel } from './RenderChannel'
@@ -429,31 +438,31 @@ export class Renderer {
       ctx.renderInputs.set(CommonInputs.View.ProjectionMatrix, ctx.view.camera.projection)
 
       const inverseViewKey = CommonInputs.View.InverseViewMatrix
-      const inverseViewMatrix: Mat4 = (ctx.renderInputs.get(inverseViewKey) || Mat4.createIdentity()) as Mat4
-      Mat4.invert(ctx.view.camera.view, inverseViewMatrix)
+      const inverseViewMatrix: Mat4 = (ctx.renderInputs.get(inverseViewKey) || mat4Identity()) as Mat4
+      mat4Invert(ctx.view.camera.view, inverseViewMatrix)
       ctx.renderInputs.set(inverseViewKey, inverseViewMatrix)
 
       const inverseProjectionKey = CommonInputs.View.InverseProjectionMatrix
-      const inverseProjectionMatrix: Mat4 = (ctx.renderInputs.get(inverseViewKey) || Mat4.createIdentity()) as Mat4
-      Mat4.invert(ctx.view.camera.projection, inverseProjectionMatrix)
+      const inverseProjectionMatrix: Mat4 = (ctx.renderInputs.get(inverseViewKey) || mat4Identity()) as Mat4
+      mat4Invert(ctx.view.camera.projection, inverseProjectionMatrix)
       ctx.renderInputs.set(inverseProjectionKey, inverseProjectionMatrix)
 
       const viewProjKey = CommonInputs.View.ViewProjectionMatrix
-      const viewProj: Mat4 = (ctx.renderInputs.get(viewProjKey) || Mat4.createIdentity()) as Mat4
-      Mat4.multiply(ctx.view.camera.projection, ctx.view.camera.view, viewProj)
+      const viewProj: Mat4 = (ctx.renderInputs.get(viewProjKey) || mat4Identity()) as Mat4
+      mat4Multiply(ctx.view.camera.projection, ctx.view.camera.view, viewProj)
       ctx.renderInputs.set(viewProjKey, viewProj)
 
       const invViewProjKey = CommonInputs.View.InverseViewProjectionMatrix
-      const invViewProj: Mat4 = (ctx.renderInputs.get(invViewProjKey) || Mat4.createIdentity()) as Mat4
-      Mat4.invert(viewProj, invViewProj)
+      const invViewProj: Mat4 = (ctx.renderInputs.get(invViewProjKey) || mat4Identity()) as Mat4
+      mat4Invert(viewProj, invViewProj)
       ctx.renderInputs.set(invViewProjKey, invViewProj)
 
       const cameraPosition = ctx.renderInputs.get(CommonInputs.View.CameraPosition) || vec3()
-      ctx.view.camera.world.getTranslation(cameraPosition)
+      mat4GetTranslation(ctx.view.camera.world, cameraPosition)
       ctx.renderInputs.set(CommonInputs.View.CameraPosition, cameraPosition)
 
       const cameraDirection = ctx.renderInputs.get(CommonInputs.View.CameraDirection) || vec3()
-      ctx.view.camera.world.getForward(cameraDirection)
+      mat4GetForward(ctx.view.camera.world, cameraDirection)
       ctx.renderInputs.set(CommonInputs.View.CameraDirection, cameraDirection)
 
       const viewSize = ctx.renderInputs.get(CommonInputs.View.ViewportSize) || vec2(0)

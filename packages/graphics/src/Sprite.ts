@@ -1,4 +1,20 @@
-import { IRect, type IVec4, Mat4, Quat, vec4, Vec4 } from '@gglib/math'
+import {
+  IRect,
+  type IVec4,
+  Mat4,
+  mat4$initIdentity,
+  mat4$initScaleXYZ,
+  mat4$premultiply,
+  mat4$rotateX,
+  mat4$rotateY,
+  mat4$rotateZ,
+  mat4$setTranslationXYZ,
+  mat4$translateXYZ,
+  mat4Identity,
+  vec4,
+  vec4$init,
+  vec4$initFrom,
+} from '@gglib/math'
 import { type Texture } from './resources'
 
 export interface Sprite {
@@ -24,23 +40,23 @@ export interface Sprite {
 export class SpriteBuilder {
   public texture: Texture
   public readonly color: IVec4 = vec4(1)
-  public readonly transform = Mat4.createIdentity()
+  public readonly transform = mat4Identity()
   public readonly uv: IVec4 = vec4(0, 0, 1, 1)
 
   public reset(texture: Texture): this {
     this.texture = texture
-    Vec4.init(this.color, 1, 1, 1, 1)
-    Vec4.init(this.uv, 0, 0, 1, 1)
-    this.transform.initIdentity()
+    vec4$init(this.color, 1, 1, 1, 1)
+    vec4$init(this.uv, 0, 0, 1, 1)
+    mat4$initIdentity(this.transform)
     return this
   }
 
   public set(data: Sprite): this {
     this.texture = data.texture
     if (data.color) {
-      Vec4.initFrom(this.color, data.color)
+      vec4$initFrom(this.color, data.color)
     } else {
-      Vec4.init(this.color, 1, 1, 1, 1)
+      vec4$init(this.color, 1, 1, 1, 1)
     }
     this.source(data.source.x, data.source.y, data.source.width, data.source.height, data.flipX, data.flipY)
     this.destination(
@@ -61,7 +77,7 @@ export class SpriteBuilder {
    * This will override any previously set alpha value
    */
   public tint(color: IVec4): this {
-    Vec4.initFrom(this.color, color)
+    vec4$initFrom(this.color, color)
     return this
   }
 
@@ -167,8 +183,8 @@ export class SpriteBuilder {
       depth = 0
     }
 
-    this.transform.initScaleXYZ(width, height, 1)
-    this.transform.setTranslationXYZ(x + width * 0.5, y + height * 0.5, -depth)
+    mat4$initScaleXYZ(this.transform, width, height, 1)
+    mat4$setTranslationXYZ(this.transform, x + width * 0.5, y + height * 0.5, -depth)
 
     if (angle) {
       this.rotate(angle, pivotX, pivotY)
@@ -179,37 +195,32 @@ export class SpriteBuilder {
   public rotate(angle: number, pivotX?: number, pivotY?: number): this {
     pivotX = (pivotX ?? 0.5) - 0.5
     pivotY = (pivotY ?? 0.5) - 0.5
-    this.transform.translateXYZ(pivotX || 0, pivotY || 0, 0)
-    this.transform.rotateZ(angle || 0)
-    this.transform.translateXYZ(-pivotX || 0, -pivotY || 0, 0)
+    mat4$translateXYZ(this.transform, pivotX || 0, pivotY || 0, 0)
+    mat4$rotateZ(this.transform, angle || 0)
+    mat4$translateXYZ(this.transform, -pivotX || 0, -pivotY || 0, 0)
     return this
   }
 
   public transformMat4(m: Mat4): this {
-    this.transform.premultiply(m)
-    return this
-  }
-
-  public transformQuat(q: Quat): this {
-    this.transform.rotateQuaternion(q.x, q.y, q.z, q.w)
+    mat4$premultiply(this.transform, m)
     return this
   }
 
   public rotateX(angle: number, pivotX?: number, pivotY?: number): this {
     pivotX = (pivotX ?? 0.5) - 0.5
     pivotY = (pivotY ?? 0.5) - 0.5
-    this.transform.translateXYZ(pivotX || 0, pivotY || 0, 0)
-    this.transform.rotateX(angle)
-    this.transform.translateXYZ(-pivotX || 0, -pivotY || 0, 0)
+    mat4$translateXYZ(this.transform, pivotX || 0, pivotY || 0, 0)
+    mat4$rotateX(this.transform, angle)
+    mat4$translateXYZ(this.transform, -pivotX || 0, -pivotY || 0, 0)
     return this
   }
 
   public rotateY(angle: number, pivotX?: number, pivotY?: number): this {
     pivotX = (pivotX ?? 0.5) - 0.5
     pivotY = (pivotY ?? 0.5) - 0.5
-    this.transform.translateXYZ(pivotX || 0, pivotY || 0, 0)
-    this.transform.rotateY(angle)
-    this.transform.translateXYZ(-pivotX || 0, -pivotY || 0, 0)
+    mat4$translateXYZ(this.transform, pivotX || 0, pivotY || 0, 0)
+    mat4$rotateY(this.transform, angle)
+    mat4$translateXYZ(this.transform, -pivotX || 0, -pivotY || 0, 0)
     return this
   }
 }

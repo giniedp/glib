@@ -11,7 +11,7 @@ import {
   type ShaderModuleOptions,
   TRUE,
 } from '@gglib/graphics'
-import { Vec4 } from '@gglib/math'
+import { vec4 } from '@gglib/math'
 import type { NwMaterialProps } from './GltfExtension'
 import { TextureModifier } from './TexMod'
 import SCHEMA from './VegetationMaterial.meta'
@@ -119,11 +119,11 @@ export class VegetationMaterial extends MaterialWithSchema(SCHEMA) {
     this.SamplerLinear = SamplerState.LinearWrap
     this.SamplerPoint = SamplerState.PointWrap
 
-    this.DiffuseColor = Vec4.create(1, 1, 1, 1)
-    this.SpecularColor = Vec4.create(0, 0, 0, 1)
-    this.EmissiveColor = Vec4.create(0, 0, 0, 1)
+    this.DiffuseColor = vec4(1, 1, 1, 1)
+    this.SpecularColor = vec4(0, 0, 0, 1)
+    this.EmissiveColor = vec4(0, 0, 0, 1)
 
-    this.TransmittanceColor = Vec4.create(1.0, 1.0, 0.6, 1.0)
+    this.TransmittanceColor = vec4(1.0, 1.0, 0.6, 1.0)
     this.CapOpacityFalloff = 1.0
     this.NormalViewDependency = 0.5
     this.BackDiffuseMultiplier = 1.0
@@ -133,7 +133,7 @@ export class VegetationMaterial extends MaterialWithSchema(SCHEMA) {
     this.DetailDiffuseScale = 0.5
     this.DetailGlossScale = 0.5
     this.EmittanceMapGamma = 1.0
-    this.BlendTerrainColInfo = Vec4.create(0, 0, 0, 0) // .xy = terrain UV offset, .z = UV scale, .w = blend distance
+    this.BlendTerrainColInfo = vec4(0, 0, 0, 0) // .xy = terrain UV offset, .z = UV scale, .w = blend distance
   }
 
   private setTextures(maps: NwMaterialProps['textures']) {
@@ -273,8 +273,8 @@ export class VegetationMaterial extends MaterialWithSchema(SCHEMA) {
   }
 
   private setAttributes(attrs: NwMaterialProps['attrs'], flags: Set<FeatureFlag>) {
-    this.DiffuseColor = paramVec4(attrs.Diffuse, Vec4.One)
-    this.SpecularColor = paramVec4(attrs.Specular, Vec4.One)
+    this.DiffuseColor = paramVec4(attrs.Diffuse, vec4(1))
+    this.SpecularColor = paramVec4(attrs.Specular, vec4(1))
     this.EmissiveColor = paramVec4(attrs.Emissive)
     this.EmissiveColor = paramVec4(attrs.Emittance)
     if (attrs.AlphaTest < 1) {

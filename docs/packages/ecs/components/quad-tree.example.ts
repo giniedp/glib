@@ -18,10 +18,9 @@ import {
 
 import { ContentLoader } from '@gglib/content'
 import { GameComponent, GameEntity, InitializableComponent } from '@gglib/ecs'
-import { BasicMaterial, CommonInputs, DeviceStats, PlatformId } from '@gglib/graphics'
+import { CommonInputs, DeviceStats, PlatformId } from '@gglib/graphics'
 import { GLTF } from '@gglib/loaders'
-import { vec3, Vec3 } from '@gglib/math'
-import { Model } from '@gglib/model'
+import { vec3, vec3Format, vec3Normalize } from '@gglib/math'
 import { RenderChannel, Renderer } from '@gglib/render'
 import { mountUi } from 'tweak-ui'
 
@@ -94,7 +93,7 @@ class Game extends EcsGame {
     const renderer = this.world.getSystem(Renderer)
     renderer.linearToSrgb = true
     renderer.inputs.set(CommonInputs.Global.AmbientColor, vec3(0.5))
-    renderer.inputs.set(CommonInputs.Global.AmbientDirection, Vec3.normalize(vec3(1)))
+    renderer.inputs.set(CommonInputs.Global.AmbientDirection, vec3Normalize(vec3(1)))
     this.scene.views[0] = renderer.createView({
       name: 'Main View',
       present: RenderChannel.Color,
@@ -140,7 +139,7 @@ class Game extends EcsGame {
             worldMin + ((z + 0.5) * (worldMax - worldMin)) / perSide,
           )
           this.createEntity({
-            name: Vec3.format(position),
+            name: vec3Format(position),
             parent: this.scene.entity,
             components: [
               // the component that provides the model to the renderer

@@ -1,10 +1,10 @@
 import { type GameComponent, GameEntity } from '@gglib/ecs'
-import { Vec3 } from '@gglib/math'
+import { IVec3, vec3, vec3$initFrom, vec3$applyMat4, vec3Equals, vec3Lerp } from '@gglib/math'
 import { TransformComponent } from '../components/TransformComponent'
 import type { BehaviorComponent } from '../systems/BehaviorSystem'
 
-let p0: Vec3
-let p1: Vec3
+let p0: IVec3
+let p1: IVec3
 
 /**
  * Options for the {@link CopyPositionConstraint}
@@ -121,21 +121,23 @@ export class CopyPositionConstraint implements GameComponent, BehaviorComponent 
       return
     }
 
-    const source = (p0 = p0 || Vec3.create()).initFrom(this.source.translation)
-    const target = (p1 = p1 || Vec3.create()).initFrom(this.target.translation)
+    const source = (p0 ||= vec3())
+    const target = (p1 ||= vec3())
+    vec3$initFrom(source, this.source.translation)
+    vec3$initFrom(target, this.target.translation)
 
     if (this.sourceSpace === 'world' && this.source.parent) {
-      source.transformByMat4(this.source.parent.world)
+      vec3$applyMat4(source, this.source.parent.world)
     }
 
     if (this.targetSpace === 'world' && this.target.parent) {
-      target.transformByMat4(this.target.parent.world)
+      vec3$applyMat4(target, this.target.parent.world)
     }
 
-    Vec3.lerp(target, source, this.weight, source)
+    vec3Lerp(target, source, this.weight, source)
 
     if (this.targetSpace === 'world' && this.target.parent) {
-      source.transformByMat4(this.target.parent.worldInverse)
+      vec3$applyMat4(source, this.target.parent.worldInverse)
     }
 
     if (!this.copyX) {
@@ -148,7 +150,7 @@ export class CopyPositionConstraint implements GameComponent, BehaviorComponent 
     if (!this.copyZ) {
       source.z = this.target.translation.z
     }
-    if (!source.equals(this.target.translation)) {
+    if (!vec3Equals(source, this.target.translation)) {
       this.target.setPositionV(source)
       if (this.commit) {
         this.target.updateIfNeeded()

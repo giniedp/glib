@@ -8,7 +8,7 @@ import {
   typedInputAccessor,
   TypedInputAccessor,
 } from '@gglib/graphics'
-import { IVec2, vec2, vec2$init, Vec3 } from '@gglib/math'
+import { IVec2, IVec3, vec2, vec2$init, vec3 } from '@gglib/math'
 import { VIGNETTE_GLSL_FRAGMENT, VIGNETTE_GLSL_VERTEX } from './vignette.glsl'
 import { VIGNETTE_WGSL } from './vignette.wgsl'
 
@@ -30,7 +30,7 @@ export type VignetteShaderParams = {
   'params.strength': number
   'params.power': number
   'params.aspect': number
-  'params.color': Vec3
+  'params.color': IVec3
   texture: Texture
 }
 
@@ -42,7 +42,7 @@ export function vignetteShaderParams(): VignetteShaderParams {
     'params.strength': 0.5,
     'params.power': 1,
     'params.aspect': 1,
-    'params.color': Vec3.create(0, 0, 0),
+    'params.color': vec3(0, 0, 0),
 
     texture: null,
   }
@@ -63,7 +63,7 @@ export class VignetteShader implements Renderable {
   public strength: number = 0.5
   public power: number = 1
   public aspect: number = 1
-  public color: Vec3 = Vec3.create(0, 0, 0)
+  public color: IVec3 = vec3(0, 0, 0)
   public texture: Texture
 
   private program: Program

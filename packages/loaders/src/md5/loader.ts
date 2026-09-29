@@ -1,6 +1,6 @@
 import { AssetContainer, AssetLoader, AssetType, ContentLoader, LoadContext, ResourceGraph } from '@gglib/content'
 import { GeometryBuilder, MeshPartImport } from '@gglib/graphics'
-import { Quat, Vec4 } from '@gglib/math'
+import { quatConjugate, quatMultiply, vec4 } from '@gglib/math'
 import { ModelOptions } from '@gglib/model'
 import { Document, parse } from './format'
 
@@ -72,11 +72,11 @@ function buildMeshParts(data: Document): MeshPartImport[] {
           const weight = mesh.weight[vert.weightIndex + j]
           const joint = data.joints[weight.jointIndex]
 
-          const jOrient = Quat.convert(joint.rotation)
-          const jConjugate = Quat.conjugate(joint.rotation)
-          const jPos = Vec4.convert(joint.position)
-          const wPos = Vec4.convert(weight.position)
-          const rPos = Quat.multiply(Quat.multiply(jOrient, wPos), jConjugate)
+          const jOrient = vec4(joint.rotation)
+          const jConjugate = quatConjugate(joint.rotation)
+          const jPos = vec4(joint.position)
+          const wPos = vec4(weight.position)
+          const rPos = quatMultiply(quatMultiply(jOrient, wPos), jConjugate)
           pos[0] += (rPos.x + jPos.x) * weight.value
           pos[1] += (rPos.y + jPos.y) * weight.value
           pos[2] += (rPos.z + jPos.z) * weight.value

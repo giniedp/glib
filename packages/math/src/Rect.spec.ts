@@ -1,272 +1,259 @@
-import { Rect } from './Rect'
 import { describe, expect, it } from 'vitest'
+import {
+  rect,
+  rect$ceil,
+  rect$floor,
+  rect$inflate,
+  rect$init,
+  rect$initFrom,
+  rect$round,
+  rect$setCenter,
+  rectCeil,
+  rectContains,
+  rectContainsRect,
+  rectContainsXY,
+  rectCopy,
+  rectEquals,
+  rectFloor,
+  rectGetPoint,
+  rectGetX,
+  rectGetY,
+  rectInflate,
+  rectIntersection,
+  rectIntersects,
+  rectRound,
+  rectUnion,
+} from './Rect'
+import { IRect } from './Types'
+import { vec2 } from './Vec2'
 
-function printEdges(rect: Rect) {
-  return [rect.y, rect.xEnd, rect.yEnd, rect.x].map((it) => it.toFixed(2)).join(' ')
-}
-
-describe('Rect', () => {
-  function expectComponents(r: Rect, x: number, y: number, width: number, height: number) {
+describe('rect', () => {
+  function expectComponents(r: IRect, x: number, y: number, width: number, height: number) {
     expect(r.x, 'x component').toBeCloseTo(x, 5)
     expect(r.y, 'y component').toBeCloseTo(y, 5)
     expect(r.width, 'width component').toBeCloseTo(width, 5)
     expect(r.height, 'height component').toBeCloseTo(height, 5)
   }
 
-  describe('#new', () => {
-    it ('initializes components to 0', () => {
-      expectComponents(new Rect(), 0, 0, 0, 0)
+  describe('rect', () => {
+    it('creates zero rectangle', () => {
+      expectComponents(rect(), 0, 0, 0, 0)
     })
-
-    it ('initializes components', () => {
-      expectComponents(new Rect(1, 2, 3, 4), 1, 2, 3, 4)
-    })
-  })
-
-  describe('#right', () => {
-    it ('gets x + width', () => {
-      const r = new Rect(1, 2, 30, 40)
-      expect(r.width).toBe(30)
-      expect(r.xEnd).toBe(31)
-    })
-    it ('sets width', () => {
-      const r = new Rect(1, 2, 30, 40)
-      r.xEnd = 11
-      expect(r.width).toBe(30)
-      expect(r.xEnd).toBe(11)
-      expect(r.x).toBe(-19)
+    it('creates rectangle', () => {
+      expectComponents(rect(1, 2, 3, 4), 1, 2, 3, 4)
     })
   })
 
-  describe('#bottom', () => {
-    it ('gets y + height', () => {
-      const r = new Rect(1, 2, 30, 40)
-      expect(r.y).toBe(2)
-      expect(r.height).toBe(40)
-      expect(r.yEnd).toBe(42)
+  describe('rect$init', () => {
+    it('sets components', () => {
+      expectComponents(rect$init(rect(), 1, 2, 3, 4), 1, 2, 3, 4)
     })
-    it ('sets height', () => {
-      const r = new Rect(1, 2, 30, 40)
-      r.yEnd = 12
-      expect(r.yEnd).toBe(12)
-      expect(r.height).toBe(40)
-      expect(r.y).toBe(-28)
+    it('returns out', () => {
+      const out = rect()
+      expect(rect$init(out, 1, 2, 3, 4)).toBe(out)
     })
   })
 
-  describe('#floor', () => {
-    it ('floors x component', () => {
-      expect(new Rect(1.49, 0, 0, 0).floor().x).toBe(1)
-      expect(new Rect(1.5, 0, 0, 0).floor().x).toBe(1)
+  describe('rect$initFrom', () => {
+    it('copies components', () => {
+      expectComponents(rect$initFrom(rect(), { x: 1, y: 2, width: 3, height: 4 }), 1, 2, 3, 4)
     })
-    it ('floors y component', () => {
-      expect(new Rect(0, 1.49, 0, 0).floor().y).toBe(1)
-      expect(new Rect(0, 1.5, 0, 0).floor().y).toBe(1)
-    })
-    it ('floors width component', () => {
-      expect(new Rect(0, 0, 1.49, 0).floor().width).toBe(1)
-      expect(new Rect(0, 0, 1.5, 0).floor().width).toBe(1)
-    })
-    it ('floors height component', () => {
-      expect(new Rect(0, 0, 0, 1.49).floor().height).toBe(1)
-      expect(new Rect(0, 0, 0, 1.5).floor().height).toBe(1)
+    it('returns out', () => {
+      const out = rect()
+      expect(rect$initFrom(out, rect(1, 2, 3, 4))).toBe(out)
     })
   })
 
-  describe('#ceil', () => {
-    it ('ceils x component', () => {
-      expect(new Rect(1.49, 0, 0, 0).ceil().x).toBe(2)
-      expect(new Rect(1.5, 0, 0, 0).ceil().x).toBe(2)
+  describe('rectCopy', () => {
+    it('creates copy', () => {
+      const r = rect(1, 2, 3, 4)
+      const result = rectCopy(r)
+      expectComponents(result, 1, 2, 3, 4)
+      expect(result).not.toBe(r)
     })
-    it ('ceils y component', () => {
-      expect(new Rect(0, 1.49, 0, 0).ceil().y).toBe(2)
-      expect(new Rect(0, 1.5, 0, 0).ceil().y).toBe(2)
-    })
-    it ('ceils width component', () => {
-      expect(new Rect(0, 0, 1.49, 0).ceil().width).toBe(2)
-      expect(new Rect(0, 0, 1.5, 0).ceil().width).toBe(2)
-    })
-    it ('ceils height component', () => {
-      expect(new Rect(0, 0, 0, 1.49).ceil().height).toBe(2)
-      expect(new Rect(0, 0, 0, 1.5).ceil().height).toBe(2)
+    it('writes to out', () => {
+      const out = rect()
+      expect(rectCopy(rect(1, 2, 3, 4), out)).toBe(out)
+      expectComponents(out, 1, 2, 3, 4)
     })
   })
 
-  describe('#round', () => {
-    it ('rounds x component', () => {
-      expect(new Rect(1.49, 0, 0, 0).round().x).toBe(1)
-      expect(new Rect(1.5, 0, 0, 0).round().x).toBe(2)
-    })
-    it ('rounds y component', () => {
-      expect(new Rect(0, 1.49, 0, 0).round().y).toBe(1)
-      expect(new Rect(0, 1.5, 0, 0).round().y).toBe(2)
-    })
-    it ('rounds width component', () => {
-      expect(new Rect(0, 0, 1.49, 0).round().width).toBe(1)
-      expect(new Rect(0, 0, 1.5, 0).round().width).toBe(2)
-    })
-    it ('rounds height component', () => {
-      expect(new Rect(0, 0, 0, 1.49).round().height).toBe(1)
-      expect(new Rect(0, 0, 0, 1.5).round().height).toBe(2)
+  describe('rectEquals', () => {
+    it('compares components', () => {
+      expect(rectEquals(rect(1, 2, 3, 4), rect(1, 2, 3, 4))).toBe(true)
+      expect(rectEquals(rect(1, 2, 3, 4), rect(0, 2, 3, 4))).toBe(false)
+      expect(rectEquals(rect(1, 2, 3, 4), rect(1, 0, 3, 4))).toBe(false)
+      expect(rectEquals(rect(1, 2, 3, 4), rect(1, 2, 0, 4))).toBe(false)
+      expect(rectEquals(rect(1, 2, 3, 4), rect(1, 2, 3, 0))).toBe(false)
     })
   })
 
-  describe('#getTopLeft', () => {
-    it ('gets point', () => {
-      expect(new Rect(1, 2, 30, 40).getTopLeft().x).toBe(1)
-      expect(new Rect(1, 2, 30, 40).getTopLeft().y).toBe(2)
+  describe('rectGetX', () => {
+    it('gets x at relative position', () => {
+      const r = rect(10, 20, 100, 200)
+      expect(rectGetX(r, 0)).toBe(10)
+      expect(rectGetX(r, 0.5)).toBe(60)
+      expect(rectGetX(r, 1)).toBe(110)
     })
   })
 
-  describe('#getTopRight', () => {
-    it ('gets point', () => {
-      expect(new Rect(1, 2, 30, 40).getTopRight().x).toBe(31)
-      expect(new Rect(1, 2, 30, 40).getTopRight().y).toBe(2)
+  describe('rectGetY', () => {
+    it('gets y at relative position', () => {
+      const r = rect(10, 20, 100, 200)
+      expect(rectGetY(r, 0)).toBe(20)
+      expect(rectGetY(r, 0.5)).toBe(120)
+      expect(rectGetY(r, 1)).toBe(220)
     })
   })
 
-  describe('#getBottomLeft', () => {
-    it ('gets point', () => {
-      expect(new Rect(1, 2, 30, 40).getBottomLeft().x).toBe(1)
-      expect(new Rect(1, 2, 30, 40).getBottomLeft().y).toBe(42)
+  describe('rectGetPoint', () => {
+    it('gets point at relative position', () => {
+      const r = rect(10, 20, 100, 200)
+      expect(rectGetPoint(r, 0, 0)).toEqual({ x: 10, y: 20 })
+      expect(rectGetPoint(r, 1, 1)).toEqual({ x: 110, y: 220 })
+      expect(rectGetPoint(r, 0.5, 0.5)).toEqual({ x: 60, y: 120 })
+    })
+    it('writes to out', () => {
+      const out = vec2()
+      expect(rectGetPoint(rect(10, 20, 100, 200), 1, 0, out)).toBe(out)
+      expect(out).toEqual({ x: 110, y: 20 })
     })
   })
 
-  describe('#getBottomRight', () => {
-    it ('gets point', () => {
-      expect(new Rect(1, 2, 30, 40).getBottomRight().x).toBe(31)
-      expect(new Rect(1, 2, 30, 40).getBottomRight().y).toBe(42)
+  describe('rect$setCenter', () => {
+    it('moves center to point', () => {
+      expectComponents(rect$setCenter(rect(0, 0, 10, 20), vec2(5, 5)), 0, -5, 10, 20)
+    })
+    it('returns out', () => {
+      const out = rect()
+      expect(rect$setCenter(out, vec2(5, 5))).toBe(out)
     })
   })
 
-  describe('#getCenter', () => {
-    it ('gets point', () => {
-      expect(new Rect(1, 2, 30, 40).getCenter().x).toBe(16)
-      expect(new Rect(1, 2, 30, 40).getCenter().y).toBe(22)
-    })
-  })
+  // [name, mutable function, pure function, expected result for rect(1.5, -1.5, 2.2, 3.7)]
+  const roundings: Array<[string, (r: IRect) => IRect, (r: IRect, out?: IRect) => IRect, number[]]> = [
+    ['Floor', rect$floor, rectFloor, [1, -2, 2, 3]],
+    ['Ceil', rect$ceil, rectCeil, [2, -1, 3, 4]],
+    ['Round', rect$round, rectRound, [2, -1, 2, 4]],
+  ]
+  for (const [name, mutable, pure, [x, y, width, height]] of roundings) {
+    const input = () => rect(1.5, -1.5, 2.2, 3.7)
 
-  describe('#setCenter', () => {
-    it ('gets point', () => {
-      expectComponents(new Rect(1, 2, 30, 40).setCenter({ x: 20, y: 21 }), 5, 1, 30, 40)
-    })
-  })
-
-  describe('#contains*', () => {
-    it ('checks if coordinate is inside rect', () => {
-      [
-        { x: 1, y: 1 },
-        { x: 2.9, y: 1 },
-        { x: 1, y: 2.9 },
-        { x: 2.9, y: 2.9 },
-      ].forEach((it) => {
-        expect(new Rect(1, 1, 2, 2).contains(it), `contains x:${it.x} y:${it.y}`).toBe(true)
-        expect(new Rect(1, 1, 2, 2).containsXY(it.x, it.y), `containsXY x:${it.x} y:${it.y}`).toBe(true)
-      });
-
-      [
-        { x: 0.9, y: 1 },
-        { x: 1, y: 0.9 },
-        { x: 3, y: 1 },
-        { x: 2.9, y: 0.9 },
-        { x: 1, y: 3 },
-      ].forEach((it) => {
-        expect(new Rect(1, 1, 2, 2).contains(it), `contains x:${it.x} y:${it.y}`).toBe(false)
-        expect(new Rect(1, 1, 2, 2).containsXY(it.x, it.y), `containsXY x:${it.x} y:${it.y}`).toBe(false)
+    describe(`rect$${name.toLowerCase()}`, () => {
+      it('changes each component', () => {
+        expectComponents(mutable(input()), x, y, width, height)
+      })
+      it('returns out', () => {
+        const out = input()
+        expect(mutable(out)).toBe(out)
       })
     })
 
-    it ('checks if rect is contained', () => {
-      [
-        new Rect(1, 1, 2, 2),
-        new Rect(1, 1, 1, 1),
-        new Rect(2, 2, 1, 1),
-      ].forEach((it) => {
-        expect(new Rect(1, 1, 2, 2).containsRect(it), `contains x:${it.x} y:${it.y} width:${it.width} height:${it.height}`).toBe(true)
-      });
-
-      [
-        new Rect(0.9, 1, 1, 1),
-        new Rect(1, 0.9, 1, 1),
-        new Rect(2.1, 1, 1, 1),
-        new Rect(1, 2.1, 1, 1),
-      ].forEach((it) => {
-        expect(new Rect(1, 1, 2, 2).containsRect(it), `contains x:${it.x} y:${it.y} width:${it.width} height:${it.height}`).toBe(false)
+    describe(`rect${name}`, () => {
+      it('changes each component', () => {
+        const r = input()
+        expectComponents(pure(r), x, y, width, height)
+        expectComponents(r, 1.5, -1.5, 2.2, 3.7)
+      })
+      it('writes to out', () => {
+        const out = rect()
+        expect(pure(input(), out)).toBe(out)
       })
     })
-  })
+  }
 
-  describe('#intersects', () => {
-    it ('checks for rectangle intersection', () => {
-      [
-        new Rect(1, 1, 2, 2),
-        new Rect(1, 1, 1, 1),
-        new Rect(2, 2, 1, 1),
-        new Rect(0.9, 1, 1, 1),
-        new Rect(1, 0.9, 1, 1),
-        new Rect(2.9, 1, 1, 1),
-        new Rect(1, 2.9, 1, 1),
-      ].forEach((it) => {
-        const rect = new Rect(1, 1, 2, 2)
-        expect(rect.intersects(it), `${printEdges(rect)} intersects ${printEdges(it)}`).toBe(true)
-        expect(Rect.intersects(it, rect), `${printEdges(rect)} intersects ${printEdges(it)}`).toBe(true)
-      });
-
-      [
-        new Rect(0, 0, 1, 1),
-      ].forEach((it) => {
-        expect(new Rect(1, 1, 2, 2).intersects(it), `intersects x:${it.x} y:${it.y} width:${it.width} height:${it.height}`).toBe(false)
-        expect(Rect.intersects(it, new Rect(1, 1, 2, 2)), `intersects x:${it.x} y:${it.y} width:${it.width} height:${it.height}`).toBe(false)
-      })
+  describe('rect$inflate', () => {
+    it('grows on each side', () => {
+      expectComponents(rect$inflate(rect(10, 20, 100, 200), 1, 2), 9, 18, 102, 204)
+    })
+    it('returns out', () => {
+      const out = rect()
+      expect(rect$inflate(out, 1, 2)).toBe(out)
     })
   })
 
-  describe('#inflate', () => {
-    it ('inflates in all directions', () => {
-      expectComponents(new Rect(1, 2, 3, 4).inflate(10, 20), -9, -18, 23, 44)
+  describe('rectInflate', () => {
+    it('grows on each side', () => {
+      const r = rect(10, 20, 100, 200)
+      expectComponents(rectInflate(r, 1, 2), 9, 18, 102, 204)
+      expectComponents(r, 10, 20, 100, 200)
+    })
+    it('writes to out', () => {
+      const out = rect()
+      expect(rectInflate(rect(), 1, 2, out)).toBe(out)
     })
   })
 
-  describe('#move*', () => {
-    it ('moves by XY', () => {
-      expectComponents(new Rect(1, 2, 3, 4).moveXY(5, 6), 6, 8, 3, 4)
+  describe('rectContains', () => {
+    const r = rect(0, 0, 10, 10)
+    it('contains point inside', () => {
+      expect(rectContains(r, vec2(5, 5))).toBe(true)
     })
-
-    it ('moves by Vec', () => {
-      expectComponents(new Rect(1, 2, 3, 4).move({ x: 5, y: 6 }), 6, 8, 3, 4)
+    it('contains left and top edge', () => {
+      expect(rectContains(r, vec2(0, 0))).toBe(true)
     })
-  })
-
-  describe('#equals', () => {
-    it ('compares all components', () => {
-      expect(new Rect(1, 0, 0, 0).equals(new Rect(1, 0, 0, 0))).toBe(true)
-      expect(new Rect(0, 1, 0, 0).equals(new Rect(0, 1, 0, 0))).toBe(true)
-      expect(new Rect(0, 0, 1, 0).equals(new Rect(0, 0, 1, 0))).toBe(true)
-      expect(new Rect(0, 0, 0, 1).equals(new Rect(0, 0, 0, 1))).toBe(true)
-
-      expect(new Rect(1, 0, 0, 0).equals(new Rect(2, 0, 0, 0))).toBe(false)
-      expect(new Rect(0, 1, 0, 0).equals(new Rect(0, 2, 0, 0))).toBe(false)
-      expect(new Rect(0, 0, 1, 0).equals(new Rect(0, 0, 2, 0))).toBe(false)
-      expect(new Rect(0, 0, 0, 1).equals(new Rect(0, 0, 0, 2))).toBe(false)
+    it('does not contain right and bottom edge', () => {
+      expect(rectContains(r, vec2(10, 5))).toBe(false)
+      expect(rectContains(r, vec2(5, 10))).toBe(false)
+    })
+    it('does not contain point outside', () => {
+      expect(rectContains(r, vec2(-1, 5))).toBe(false)
+      expect(rectContains(r, vec2(5, -1))).toBe(false)
     })
   })
 
-  describe('#union', () => {
-    it ('unites rectangles', () => {
-      expectComponents(Rect.union(new Rect(1, 2, 3, 4), new Rect(1, 2, 3, 4)), 1, 2, 3, 4)
-      expectComponents(Rect.union(new Rect(1, 1, 1, 1), new Rect(3, 3, 1, 1)), 1, 1, 3, 3)
-      expectComponents(Rect.union(new Rect(1, 1, 1, 1), new Rect(-3, -3, 1, 1)), -3, -3, 5, 5)
+  describe('rectContainsXY', () => {
+    it('checks coordinates', () => {
+      expect(rectContainsXY(rect(0, 0, 10, 10), 5, 5)).toBe(true)
+      expect(rectContainsXY(rect(0, 0, 10, 10), 10, 5)).toBe(false)
     })
   })
 
-  describe('#intersection', () => {
-    it ('unites rectangles', () => {
-      expectComponents(Rect.intersection(new Rect(1, 2, 3, 4), new Rect(1, 2, 3, 4)), 1, 2, 3, 4)
-      expectComponents(Rect.intersection(new Rect(1, 1, 1, 1), new Rect(3, 3, 1, 1)), 0, 0, 0, 0)
-      expectComponents(Rect.intersection(new Rect(1, 1, 1, 1), new Rect(-3, -3, 1, 1)), 0, 0, 0, 0)
-      expectComponents(Rect.intersection(new Rect(-2, -2, 5, 5), new Rect(0, 0, 10, 10)), 0, 0, 3, 3)
-      expectComponents(Rect.intersection(new Rect(-2, -2, 5, 5), new Rect(0, -3, 10, 10)), 0, -2, 3, 5)
-      expectComponents(Rect.intersection(new Rect(-2, -2, 5, 5), new Rect(-3, -3, 10, 10)), -2, -2, 5, 5)
+  describe('rectContainsRect', () => {
+    const r = rect(0, 0, 10, 10)
+    it('contains rectangle inside', () => {
+      expect(rectContainsRect(r, rect(2, 2, 5, 5))).toBe(true)
+      expect(rectContainsRect(r, rect(0, 0, 10, 10))).toBe(true)
+    })
+    it('does not contain overlapping rectangle', () => {
+      expect(rectContainsRect(r, rect(5, 5, 10, 10))).toBe(false)
+    })
+  })
+
+  describe('rectIntersects', () => {
+    const r = rect(0, 0, 10, 10)
+    it('detects overlap', () => {
+      expect(rectIntersects(r, rect(5, 5, 10, 10))).toBe(true)
+      expect(rectIntersects(r, rect(2, 2, 5, 5))).toBe(true)
+    })
+    it('ignores touching edges', () => {
+      expect(rectIntersects(r, rect(10, 0, 10, 10))).toBe(false)
+    })
+    it('detects no overlap', () => {
+      expect(rectIntersects(r, rect(20, 20, 5, 5))).toBe(false)
+    })
+  })
+
+  describe('rectIntersection', () => {
+    it('gets overlapping area', () => {
+      expectComponents(rectIntersection(rect(0, 0, 10, 10), rect(5, 2, 10, 10)), 5, 2, 5, 8)
+    })
+    it('gets empty rectangle without overlap', () => {
+      expectComponents(rectIntersection(rect(0, 0, 10, 10), rect(20, 20, 5, 5)), 0, 0, 0, 0)
+    })
+    it('writes to out', () => {
+      const out = rect()
+      expect(rectIntersection(rect(0, 0, 10, 10), rect(5, 2, 10, 10), out)).toBe(out)
+    })
+  })
+
+  describe('rectUnion', () => {
+    it('gets bounding rectangle', () => {
+      expectComponents(rectUnion(rect(0, 0, 10, 10), rect(5, -2, 10, 10)), 0, -2, 15, 12)
+    })
+    it('writes to out', () => {
+      const out = rect()
+      expect(rectUnion(rect(0, 0, 10, 10), rect(5, -2, 10, 10), out)).toBe(out)
     })
   })
 })

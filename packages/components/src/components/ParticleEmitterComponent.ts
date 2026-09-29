@@ -1,5 +1,5 @@
 import { GameComponent, GameEntity, InitializableComponent } from '@gglib/ecs'
-import { Vec3 } from '@gglib/math'
+import { IVec3, vec3, vec3$initFrom } from '@gglib/math'
 import { BehaviorComponent } from '../systems/BehaviorSystem'
 import { TransformComponent } from './TransformComponent'
 
@@ -17,7 +17,7 @@ export class ParticleEmitterComponent implements GameComponent, InitializableCom
   /**
    * The last position of last emitted particle
    */
-  private lastPosition: Vec3 = Vec3.create()
+  private lastPosition: IVec3 = vec3()
 
   /**
    * Time that has been left over from previous emit cycle
@@ -36,7 +36,7 @@ export class ParticleEmitterComponent implements GameComponent, InitializableCom
   }
 
   public activate(): void {
-    this.lastPosition.initFrom(this.transform.translation)
+    vec3$initFrom(this.lastPosition, this.transform.translation)
   }
 
   public deactivate(): void {
@@ -49,7 +49,7 @@ export class ParticleEmitterComponent implements GameComponent, InitializableCom
 
   public updateBehavior(time: number, dt: number): void {
     const newPosition = this.transform.translation
-    const velocity = Vec3.subtract(newPosition, this.lastPosition).multiplyScalar(1.0 / dt)
+    // const velocity =
     const timeStep = 1.0 / this.frequency
     let timeAmount = this.timeFraction + dt
     let timePoint = -this.timeFraction
@@ -58,10 +58,10 @@ export class ParticleEmitterComponent implements GameComponent, InitializableCom
       timeAmount -= timeStep
       timePoint += timeStep
 
-      const position = Vec3.lerp(this.lastPosition, newPosition, timePoint / dt)
+      // const position =
       // this.particleSystem.emit(position, velocity, this.channel)
     }
 
-    this.lastPosition.initFrom(this.transform.translation)
+    vec3$initFrom(this.lastPosition, this.transform.translation)
   }
 }

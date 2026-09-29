@@ -32,7 +32,18 @@
 // Amplitude - Defines the maximum value of an oscillation/wave.
 // CenterU and CenterV - Centers the texture on the model in U and V direction separately.
 
-import { Mat4 } from '@gglib/math'
+import {
+  mat4,
+  type Mat4,
+  mat4$initIdentity,
+  mat4$initRotationX,
+  mat4$initRotationY,
+  mat4$initRotationZ,
+  mat4$initTranslationXYZ,
+  mat4$premultiply,
+  mat4$transpose,
+  mat4Identity,
+} from '@gglib/math'
 import { brand, type Brand } from '@gglib/utils'
 
 export type RotateType = Brand<number, 'RotateType'>
@@ -93,7 +104,7 @@ export type TexMod = {
   TileV?: number
 }
 
-const _m2 = new Mat4()
+const _m2 = mat4()
 
 function hasMods(mod: TexMod): boolean {
   return !!mod.TexMod_UOscillatorType || !!mod.TexMod_VOscillatorType || !!mod.TexMod_RotateType
@@ -114,7 +125,7 @@ export class TextureModifier {
   private jitterTimeV: number = 0
 
   private time = null
-  private mat: Mat4 = Mat4.createIdentity()
+  private mat: Mat4 = mat4Identity()
   private mod: TexMod
 
   public isAnimated: boolean
@@ -152,8 +163,8 @@ export class TextureModifier {
       return
     }
 
-    const m = this.mat.initIdentity()
-    const tmp = _m2.initIdentity()
+    const m = mat4$initIdentity(this.mat)
+    const tmp = mat4$initIdentity(_m2)
     const seconds = time
 
     this.applyRotation(m, tmp, time)
@@ -162,21 +173,21 @@ export class TextureModifier {
 
     if (hasValues) {
       if (mod.RotateU) {
-        m.premultiply(tmp.initRotationX(mod.RotateU))
+        mat4$premultiply(m, mat4$initRotationX(tmp, mod.RotateU))
       }
       if (mod.RotateV) {
-        m.premultiply(tmp.initRotationY(mod.RotateV))
+        mat4$premultiply(m, mat4$initRotationY(tmp, mod.RotateV))
       }
       if (mod.RotateW) {
-        m.premultiply(tmp.initRotationZ(mod.RotateW))
+        mat4$premultiply(m, mat4$initRotationZ(tmp, mod.RotateW))
       }
 
-      tmp.initIdentity()
-      tmp.elements[0] = mod.TileU ?? 1
-      tmp.elements[5] = mod.TileV ?? 1
-      tmp.elements[12] = mod.OffsetU || 0
-      tmp.elements[13] = mod.OffsetV || 0
-      m.premultiply(tmp)
+      mat4$initIdentity(tmp)
+      tmp[0] = mod.TileU ?? 1
+      tmp[5] = mod.TileV ?? 1
+      tmp[12] = mod.OffsetU || 0
+      tmp[13] = mod.OffsetV || 0
+      mat4$premultiply(m, tmp)
     }
   }
 
@@ -190,38 +201,38 @@ export class TextureModifier {
         break
 
       case RotateType.Fixed:
-        m.initTranslationXYZ(-centerU, -centerV, 0)
+        mat4$initTranslationXYZ(m, -centerU, -centerV, 0)
         if (mod.TexMod_URotateAmplitude) {
-          m.premultiply(tmp.initRotationX(mod.TexMod_URotateAmplitude))
+          mat4$premultiply(m, mat4$initRotationX(tmp, mod.TexMod_URotateAmplitude))
         }
         if (mod.TexMod_VRotateAmplitude) {
-          m.premultiply(tmp.initRotationY(mod.TexMod_VRotateAmplitude))
+          mat4$premultiply(m, mat4$initRotationY(tmp, mod.TexMod_VRotateAmplitude))
         }
         if (mod.TexMod_WRotateAmplitude) {
-          m.premultiply(tmp.initRotationZ(mod.TexMod_WRotateAmplitude))
+          mat4$premultiply(m, mat4$initRotationZ(tmp, mod.TexMod_WRotateAmplitude))
         }
-        m.premultiply(tmp.initTranslationXYZ(centerU, centerV, 0))
+        mat4$premultiply(m, mat4$initTranslationXYZ(tmp, centerU, centerV, 0))
         break
 
       case RotateType.Constant:
         const fxAmp = ((mod.TexMod_URotateAmplitude || 0) * time * Math.PI) / 180 + (mod.TexMod_URotatePhase || 0)
         const fyAmp = ((mod.TexMod_VRotateAmplitude || 0) * time * Math.PI) / 180 + (mod.TexMod_VRotatePhase || 0)
         const fzAmp = ((mod.TexMod_WRotateAmplitude || 0) * time * Math.PI) / 180 + (mod.TexMod_WRotatePhase || 0)
-        m.initTranslationXYZ(-centerU, -centerV, 0)
+        mat4$initTranslationXYZ(m, -centerU, -centerV, 0)
         if (fxAmp) {
-          m.premultiply(tmp.initRotationX(fxAmp).transpose())
+          mat4$premultiply(m, mat4$transpose(mat4$initRotationX(tmp, fxAmp)))
         }
         if (fyAmp) {
-          m.premultiply(tmp.initRotationY(fyAmp).transpose())
+          mat4$premultiply(m, mat4$transpose(mat4$initRotationY(tmp, fyAmp)))
         }
         if (fzAmp) {
-          m.premultiply(tmp.initRotationZ(fzAmp).transpose())
+          mat4$premultiply(m, mat4$transpose(mat4$initRotationZ(tmp, fzAmp)))
         }
-        m.premultiply(tmp.initTranslationXYZ(centerU, centerV, 0))
+        mat4$premultiply(m, mat4$initTranslationXYZ(tmp, centerU, centerV, 0))
         break
 
       case RotateType.Oscilated:
-        m.initTranslationXYZ(-centerU, -centerV, 0)
+        mat4$initTranslationXYZ(m, -centerU, -centerV, 0)
         const sx = time * (mod.TexMod_UOscillatorRate || 0)
         const sy = time * (mod.TexMod_VOscillatorRate || 0)
         const dx =
@@ -232,15 +243,15 @@ export class TextureModifier {
           (mod.TexMod_VRotatePhase || 0)
         const dz = mod.TexMod_WRotateAmplitude || 0 // sz was always 0
         if (dx) {
-          m.premultiply(tmp.initRotationX(dx))
+          mat4$premultiply(m, mat4$initRotationX(tmp, dx))
         }
         if (dy) {
-          m.premultiply(tmp.initRotationY(dy))
+          mat4$premultiply(m, mat4$initRotationY(tmp, dy))
         }
         if (dz) {
-          m.premultiply(tmp.initRotationZ(dz))
+          mat4$premultiply(m, mat4$initRotationZ(tmp, dz))
         }
-        m.premultiply(tmp.initTranslationXYZ(centerU, centerV, 0))
+        mat4$premultiply(m, mat4$initTranslationXYZ(tmp, centerU, centerV, 0))
         break
     }
   }
@@ -252,7 +263,7 @@ export class TextureModifier {
     const amp = mod.TexMod_UOscillatorAmplitude || 0
     const phase = mod.TexMod_UOscillatorPhase || 0
 
-    let value = m.elements[12]
+    let value = m[12]
 
     switch (mod.TexMod_UOscillatorType) {
       case OscillatorType.Disabled:
@@ -284,7 +295,7 @@ export class TextureModifier {
         break
     }
 
-    m.elements[12] = value
+    m[12] = value
   }
 
   private applyOscillatorV(m: Mat4, seconds: number): void {
@@ -294,7 +305,7 @@ export class TextureModifier {
     const amp = mod.TexMod_VOscillatorAmplitude || 0
     const phase = mod.TexMod_VOscillatorPhase || 0
 
-    let value = m.elements[13]
+    let value = m[13]
 
     switch (mod.TexMod_VOscillatorType) {
       case OscillatorType.Disabled:
@@ -326,6 +337,6 @@ export class TextureModifier {
         break
     }
 
-    m.elements[13] = value
+    m[13] = value
   }
 }

@@ -1,6 +1,6 @@
 import type { TransformComponent } from '@gglib/components'
 import type { FactoryComponent } from 'mithril'
-import { uiBoolWidget, uiMatrixWidget, uiScalarWidget, uiStringWidget } from 'tweak-ui'
+import { uiBoolWidget, uiMatrixWidget, uiScalarWidget } from 'tweak-ui'
 import icon from '../icons/cube.svg?raw'
 import { type UiAnnotation } from './types'
 
@@ -28,7 +28,6 @@ export const TransformComponentProps: FactoryComponent<{ data: TransformComponen
         uiMatrixWidget({
           label: 'Transform',
           value: data.matrix,
-          field: 'elements',
           rows: 4,
           cols: 4,
           readonly: true,

@@ -1,9 +1,18 @@
 import { ContentLoader } from '@gglib/content'
 import { TonemapOperator } from '@gglib/effects'
-import { boxGeometry, CommonInputs, createDevice, PlatformId, sphereGeometry, FrameContext } from '@gglib/graphics'
-import { DEGREE_TO_RAD, Mat4, Vec3, vec3 } from '@gglib/math'
+import { CommonInputs, createDevice, FrameContext, PlatformId, sphereGeometry } from '@gglib/graphics'
+import {
+  DEGREE_TO_RAD,
+  mat4$initLookAt,
+  mat4$initPerspectiveFieldOfView,
+  mat4$setTranslationY,
+  mat4GetTranslationX,
+  mat4GetTranslationZ,
+  mat4Invert,
+  vec3,
+} from '@gglib/math'
 
-import { BloomPass, GeometryPass, PixelatePass, Renderer, TonemapPass, VignettePass } from '@gglib/render'
+import { BloomPass, GeometryPass, PixelatePass, Renderer, TonemapPass } from '@gglib/render'
 import { mountUi } from 'tweak-ui'
 import { createCamera, createObject, createScene } from './basics-scene'
 
@@ -28,7 +37,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
 
   const scene = createScene()
   const camera = createCamera()
-  camera.world.initLookAt(vec3(SIZE), vec3(SIZE / 2, 0, SIZE / 2), Vec3.UnitY)
+  mat4$initLookAt(camera.world, vec3(SIZE), vec3(SIZE / 2, 0, SIZE / 2), vec3.UnitY)
 
   const textures = await Promise.all(
     [
@@ -59,8 +68,9 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   function frame(ctx: FrameContext) {
     device.resize()
 
-    Mat4.invert(view.camera.world, view.camera.view)
-    view.camera.projection.initPerspectiveFieldOfView(
+    mat4Invert(view.camera.world, view.camera.view)
+    mat4$initPerspectiveFieldOfView(
+      view.camera.projection,
       45 * DEGREE_TO_RAD,
       device.output.aspectRatio,
       camera.near,
@@ -71,11 +81,11 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
 
     for (const item of scene.items) {
       const w = item.transform
-      const x = w.translationX - SIZE / 2
-      const z = w.translationZ - SIZE / 2
+      const x = mat4GetTranslationX(w) - SIZE / 2
+      const z = mat4GetTranslationZ(w) - SIZE / 2
       const r = Math.sqrt(x * x + z * z)
       const y = Math.sin(r - ctx.time) * 0.5
-      w.setTranslationY(y)
+      mat4$setTranslationY(w, y)
     }
 
     renderer.update(ctx.time)

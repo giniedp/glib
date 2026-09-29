@@ -1,5 +1,5 @@
 import { Color, createDevice, Device, FrameContext, PlatformId, vertexLayout } from '@gglib/graphics'
-import { Mat4 } from '@gglib/math'
+import { mat4$initRotationZ, mat4Identity } from '@gglib/math'
 import { mountUi } from 'tweak-ui'
 
 export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
@@ -37,7 +37,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     ui.bool(settings, 'scissor', { label: 'Scissor (inset clip rect)' })
   })
 
-  const world = Mat4.createIdentity()
+  const world = mat4Identity()
   const pass = device.renderPass
   function frame(ctx: FrameContext) {
     // Clear the whole canvas once, before restricting the viewport to any
@@ -51,7 +51,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
       return
     }
 
-    world.initRotationZ(ctx.time)
+    mat4$initRotationZ(world, ctx.time)
     const program = shader.program
     program.set('uWorld', world)
     program.commit()

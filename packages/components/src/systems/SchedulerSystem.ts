@@ -1,5 +1,13 @@
 import { GameEntity, GameSystem } from '@gglib/ecs'
-import { Vec3 } from '@gglib/math'
+import {
+  mat4GetForward,
+  mat4GetTranslation,
+  vec3,
+  vec3$normalize,
+  vec3Distance,
+  vec3Dot,
+  vec3Subtract,
+} from '@gglib/math'
 import { CameraData } from '@gglib/render'
 import { AsyncScheduler, PriorityLane, ScheduledTask, SchedulerConfig } from './Scheduler'
 
@@ -74,9 +82,9 @@ export class SchedulerSystem extends GameSystem {
     return task
   }
 
-  private _v1 = Vec3.create()
-  private _v2 = Vec3.create()
-  private _v3 = Vec3.create()
+  private _v1 = vec3()
+  private _v2 = vec3()
+  private _v3 = vec3()
   public updatePriority(task: ScheduledTask, camera: CameraData, frame: number): void {
     if (!task.entity) {
       return
@@ -86,13 +94,14 @@ export class SchedulerSystem extends GameSystem {
       return
     }
 
-    const objPos = transform.world.getTranslation(this._v1)
-    const camPos = camera.world.getTranslation(this._v2)
-    const toObj = this._v3.initFrom(objPos).subtract(camPos)
+    const objPos = mat4GetTranslation(transform.world, this._v1)
+    const camPos = mat4GetTranslation(camera.world, this._v2)
+    const toObj = vec3Subtract(objPos, camPos, this._v3)
+    vec3$normalize(toObj)
 
-    const distSq = Vec3.distanceSquared(objPos, camPos)
+    const distSq = vec3Distance(objPos, camPos)
     const dist = Math.sqrt(distSq)
-    const alignment = toObj.normalize().dot(camera.world.getForward(camPos)) // [-1, 1]
+    const alignment = vec3Dot(toObj, mat4GetForward(camera.world, camPos)) // [-1, 1]
 
     // TODO: add visibility test
     const visible = false // intersectsFrustum(spatial.position, spatial.boundingRadius, camera.frustumPlanes)

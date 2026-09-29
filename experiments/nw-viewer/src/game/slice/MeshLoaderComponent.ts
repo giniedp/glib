@@ -9,7 +9,17 @@ import {
 } from '@gglib/components'
 import type { GameComponent, GameEntity } from '@gglib/ecs'
 import { Color } from '@gglib/graphics'
-import { Mat4, Vec3, Vec4 } from '@gglib/math'
+import {
+  type Mat4,
+  mat4CreateFromArray,
+  mat4CreateFromRTS,
+  mat4Identity,
+  mat4Premultiply,
+  vec3Add,
+  vec3MultiplyScalar,
+  vec3Subtract,
+  vec4,
+} from '@gglib/math'
 import { Model } from '@gglib/model'
 import { brand, type EventType } from '@gglib/utils'
 import type { ViewerMeshComponent } from '../../api'
@@ -64,7 +74,7 @@ export class MeshLoaderComponent implements GameComponent {
             this.entity.world.createEntity({
               parent: this.entity,
               transform: new TransformComponent({
-                local: Mat4.createFromArray(inst),
+                local: mat4CreateFromArray(inst),
               }),
               components: [
                 new BoundsComponent(),
@@ -100,16 +110,16 @@ export class MeshLoaderComponent implements GameComponent {
               continue
             }
             const box = mesh.boundingBox
-            const boxScale = Vec3.subtract(box.max, box.min)
-            const boxCenter = Vec3.add(box.min, box.max).multiplyScalar(0.5)
-            const boxTransform = Mat4.createFromRTS(Vec4.create(0, 0, 0, 1), boxCenter, boxScale)
-            boxTransforms.push(node.world.copy().premultiply(boxTransform))
+            const boxScale = vec3Subtract(box.max, box.min)
+            const boxCenter = vec3MultiplyScalar(vec3Add(box.min, box.max), 0.5)
+            const boxTransform = mat4CreateFromRTS(vec4(0, 0, 0, 1), boxCenter, boxScale)
+            boxTransforms.push(mat4Premultiply(node.world, boxTransform))
           }
 
           this.entity.world.createEntity({
             parent: this.entity,
             transform: new TransformComponent({
-              local: Mat4.createIdentity(),
+              local: mat4Identity(),
             }),
             components: [
               new BoundsComponent(),

@@ -1,5 +1,27 @@
 import type { Texture } from '@gglib/graphics'
-import { clamp, lerp, Mat4, Vec2, vec3, Vec3, vec4, Vec4, type IVec3 } from '@gglib/math'
+import {
+  clamp,
+  lerp,
+  mat4,
+  mat4$initIdentity,
+  mat4$rotateX,
+  mat4$rotateY,
+  mat4$rotateZ,
+  mat4GetTranslationZ,
+  vec2,
+  vec3,
+  vec3$applyMat4Rotation,
+  vec3$init,
+  vec3$initFrom,
+  vec3$multiplyScalar,
+  vec3$negate,
+  vec3Copy,
+  vec3Lerp,
+  vec3MultiplyScalar,
+  vec3Normalize,
+  vec4,
+  type IVec3,
+} from '@gglib/math'
 import type { CameraData } from '@gglib/render'
 import { removeItemUnordered } from '@gglib/utils'
 import type { Lighting, TimeOfDay as TimeOfDayData } from '../../api'
@@ -17,7 +39,7 @@ const MAX_TIME = (24 * 60 - 1) / 60.0
 
 export class TimeOfDay {
   public sunColor = vec3(1, 0.71085715, 0.5335781)
-  public sunDirection = Vec3.normalize(vec3(-1, -1, -10))
+  public sunDirection = vec3Normalize(vec3(-1, -1, -10))
   public sunMultiplier = 1.0
   public sunSpecularMultiplier = 1.0
   public sunIsMoon = false
@@ -35,13 +57,13 @@ export class TimeOfDay {
 
   public nightSkyHorizonColor = vec3()
   public nightSkyZenithColor = vec3()
-  public nightSkyZenithColorShift = new Vec2()
+  public nightSkyZenithColorShift = vec2()
   public nightSkyColorDelta = vec3()
 
   public nightSkyMoonColor = vec3()
-  public nightSkyMoonInnerCorona = new Vec4()
-  public nightSkyMoonOuterCorona = new Vec4()
-  public moonDirection = Vec3.normalize(vec3(-1, -1, -10))
+  public nightSkyMoonInnerCorona = vec4()
+  public nightSkyMoonOuterCorona = vec4()
+  public moonDirection = vec3Normalize(vec3(-1, -1, -10))
 
   public fogColor = vec3(0.21678638, 0.41612425, 0.79515541)
   public fogMultiplier = 0.97500086
@@ -315,17 +337,22 @@ export class TimeOfDay {
     let sunRot = (PI * -this.sunRotationLatitude) / 180.0
     let longitude = 0.5 * PI - (PI * this.sunRotationLongitude) / 180.0
 
-    const sunPos = this.sunDirection.init(0, 1, 0)
-    Mat4.$0.initIdentity().rotateY(sunRot).rotateX(longitude).rotateZ(timeAng).transformV3Normal(sunPos, sunPos)
+    vec3$init(this.sunDirection, 0, 1, 0)
+    const sunPos = this.sunDirection
+    mat4$initIdentity(mat4.$0)
+    mat4$rotateY(mat4.$0, sunRot)
+    mat4$rotateX(mat4.$0, longitude)
+    mat4$rotateZ(mat4.$0, timeAng)
+    vec3$applyMat4Rotation(sunPos, mat4.$0)
 
     const h = sunPos.z
     sunPos.z = sunPos.y
     sunPos.y = -h
-    sunPos.negate()
+    vec3$negate(sunPos)
 
     if (this.sunIsMoon) {
-      Vec3.copy(this.moonDirection, this.sunDirection)
-      this.sunDirection.negate()
+      vec3Copy(this.moonDirection, this.sunDirection)
+      vec3$negate(sunPos)
     }
   }
 
@@ -338,10 +365,10 @@ export class TimeOfDay {
     const sinLat = Math.sin(moonLati)
     const cosLat = Math.cos(moonLati)
 
-    this.moonDirection.init(sinLon * cosLat, sinLon * sinLat, cosLon)
+    vec3$init(this.moonDirection, sinLon * cosLat, sinLon * sinLat, cosLon)
     if (this.sunIsMoon) {
-      Vec3.copy(this.moonDirection, this.sunDirection)
-      this.sunDirection.negate()
+      vec3$initFrom(this.sunDirection, this.moonDirection)
+      vec3$negate(this.sunDirection)
     }
   }
 
@@ -384,11 +411,7 @@ export class TimeOfDay {
     this.nightSkyZenithColorShift.y = -nightSkyZenithGradient / (nightSkyZenithColorShift - nightSkyZenithGradient)
 
     this.getParamColor(TodParams.NIGHSKY_MOON_COLOR, this.nightSkyMoonColor)
-    Vec3.multiplyScalar(
-      this.nightSkyMoonColor,
-      this.getParamValue(TodParams.NIGHSKY_MOON_COLOR_MULTIPLIER),
-      this.nightSkyMoonColor,
-    )
+    vec3$multiplyScalar(this.nightSkyMoonColor, this.getParamValue(TodParams.NIGHSKY_MOON_COLOR_MULTIPLIER))
 
     this.getParamColor(TodParams.NIGHSKY_MOON_INNERCORONA_COLOR, this.nightSkyMoonInnerCorona)
     this.nightSkyMoonInnerCorona.w = 1.0 + 1000.0 * this.getParamValue(TodParams.NIGHSKY_MOON_INNERCORONA_SCALE)
@@ -398,13 +421,13 @@ export class TimeOfDay {
 
     this.getParamColor(TodParams.CLOUDSHADING_SUNLIGHT_CUSTOM_COLOR, this.cloudshadingCustomColor)
     const csCustomSunColorMult = this.getParamValue(TodParams.CLOUDSHADING_SUNLIGHT_CUSTOM_COLOR_MULTIPLIER)
-    Vec3.multiplyScalar(this.cloudshadingCustomColor, csCustomSunColorMult, this.cloudshadingCustomColor)
+    vec3$multiplyScalar(this.cloudshadingCustomColor, csCustomSunColorMult)
 
     const csSunlightMultiplier = this.getParamValue(TodParams.CLOUDSHADING_SUNLIGHT_MULTIPLIER)
-    Vec3.multiplyScalar(this.sunColor, csSunlightMultiplier, this.cloudshadingCustomSunColor)
+    vec3MultiplyScalar(this.sunColor, csSunlightMultiplier, this.cloudshadingCustomSunColor)
 
     const csCustomSunColorInfluence = this.getParamValue(TodParams.CLOUDSHADING_SUNLIGHT_CUSTOM_COLOR_INFLUENCE)
-    Vec3.lerp(
+    vec3Lerp(
       this.cloudshadingCustomSunColor,
       this.cloudshadingCustomColor,
       csCustomSunColorInfluence,
@@ -441,7 +464,7 @@ export class TimeOfDay {
     const c = (gb - ga) / (hb - ha)
     const o = ga - c * ha
 
-    const viewHeight = view.world.translationZ
+    const viewHeight = mat4GetTranslationZ(view.world)
     const co = clamp(c * viewHeight + o, -50.0, 50.0) // Avoiding FPEs at extreme ranges
 
     globalDensity *= 0.01 // multiply by 1/100 to scale value editor value back to a reasonable range
@@ -529,6 +552,6 @@ function convertIlluminanceToLightColor(colorRGB: IVec3, illuminance: number) {
 
   const lum = colorRGB.x * 0.212671 + colorRGB.y * 0.71516 + colorRGB.z * 0.072169
   const scale = lum > 0 ? illuminance / lum : 1
-  Vec3.multiplyScalar(colorRGB, scale, colorRGB)
-  Vec3.multiplyScalar(colorRGB, 1 / Math.PI, colorRGB)
+  vec3$multiplyScalar(colorRGB, scale)
+  vec3$multiplyScalar(colorRGB, 1 / Math.PI)
 }

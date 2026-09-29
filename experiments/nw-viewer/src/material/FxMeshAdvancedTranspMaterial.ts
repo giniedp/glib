@@ -12,7 +12,7 @@ import {
   type MaterialOptions,
   type ShaderModuleOptions,
 } from '@gglib/graphics'
-import { vec4, Vec4 } from '@gglib/math'
+import { vec4 } from '@gglib/math'
 import { getShaderConstants, InputBlocks, MaterialLayerMasks, type FeatureFlag } from './common'
 import SCHEMA from './FxMeshAdvancedTranspMaterial.meta'
 import WGSL from './FxMeshAdvancedTranspMaterial.wgsl'
@@ -351,8 +351,8 @@ export class FxMeshAdvancedTranspMaterial extends MaterialWithSchema(SCHEMA) {
   }
 
   private setAttributes(attrs: NwMaterialProps['attrs'], flags: Set<FeatureFlag>) {
-    this.DiffuseColor = paramVec4(attrs.Diffuse, Vec4.One)
-    // this.SpecularColor = paramColor(attrs.Specular, Vec4.One)
+    this.DiffuseColor = paramVec4(attrs.Diffuse, vec4.One)
+    // this.SpecularColor = paramColor(attrs.Specular, vec4.One)
 
     this.EmissiveColor = paramVec4(attrs.Emissive)
     this.EmissiveColor = paramVec4(attrs.Emittance)

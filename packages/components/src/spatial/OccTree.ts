@@ -1,4 +1,4 @@
-import { BoundingBox, Intersection, IntersectionType, type IVec3, Vec3 } from '@gglib/math'
+import { BoundingBox, Intersection, IntersectionType, type IVec3, vec3 } from '@gglib/math'
 import type { SpatialIndex, SpatialNode } from './SpatialIndex'
 
 export interface OccTreeOptions {
@@ -122,21 +122,21 @@ export class OccTreeNode<T extends object = {}> implements SpatialIndex<T>, Spat
     const halfSize = (max.x - min.x) / 2
     const children: OccTreeNode<T>[] = this.children as any
     for (let i = 0; i < 4; i++) {
-      const min = Vec3.create(
+      const min = vec3(
         this.bounds.min.x + (i & 1 ? halfSize : 0),
         this.bounds.min.y + 0,
         this.bounds.min.z + (i & 2 ? halfSize : 0),
       )
-      const max = Vec3.create(min.x + halfSize, min.y + halfSize, min.z + halfSize)
+      const max = vec3(min.x + halfSize, min.y + halfSize, min.z + halfSize)
       children.push(new OccTreeNode(this.root, this, min, max, this.level + 1))
     }
     for (let i = 0; i < 4; i++) {
-      const min = Vec3.create(
+      const min = vec3(
         this.bounds.min.x + (i & 1 ? halfSize : 0),
         this.bounds.min.y + halfSize,
         this.bounds.min.z + (i & 2 ? halfSize : 0),
       )
-      const max = Vec3.create(min.x + halfSize, min.y + halfSize, min.z + halfSize)
+      const max = vec3(min.x + halfSize, min.y + halfSize, min.z + halfSize)
       children.push(new OccTreeNode(this.root, this, min, max, this.level + 1))
     }
 

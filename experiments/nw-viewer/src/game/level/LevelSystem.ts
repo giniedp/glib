@@ -9,7 +9,8 @@ import {
   TransformComponent,
   WASDComponent,
 } from '@gglib/components'
-import { GameEntity, GameQuery, GameSystem, GameWorld, GetComponent, type CreateEntityOptions } from '@gglib/ecs'
+import { AssetType } from '@gglib/content'
+import { GameEntity, GameSystem, GameWorld, GetComponent, type CreateEntityOptions } from '@gglib/ecs'
 import {
   boxGeometry,
   Color,
@@ -20,21 +21,31 @@ import {
   planeGeometry,
   sphereGeometry,
   type Device,
+  type MaterialOptions,
   type MeshOptions,
 } from '@gglib/graphics'
-import { BoundingSphere, DEGREE_TO_RAD, Mat4, vec3, Vec3 } from '@gglib/math'
+import {
+  BoundingSphere,
+  DEGREE_TO_RAD,
+  mat4$preTranslateX,
+  mat4$preTranslateZ,
+  mat4CreateFromArray,
+  mat4CreateRotationX,
+  mat4Identity,
+  vec3,
+  vec3Copy,
+} from '@gglib/math'
 import { Model } from '@gglib/model'
-import { Renderer, type RenderContext } from '@gglib/render'
+import { Renderer } from '@gglib/render'
 import { lfmt } from '@gglib/utils'
 import { fetchTypedRequest, getLevelInfoUrl } from '../../api'
 import { ContentService } from '../../content'
-import { InputSlots, SkyMaterial } from '../../material'
+import { SkyMaterial } from '../../material'
 import { ShapeMaterial } from '../../material/ShapeMaterial'
 import { MeshLoaderComponent } from '../slice/MeshLoaderComponent'
 import { TerrainSystem } from '../terrain/TerrainSystem'
 import { levelEntityOptions } from './LevelComponent'
 import { SkyLightSystem } from './SkyLightSystem'
-import { TimeOfDayComponent } from './TimeOfDayComponent'
 
 export class LevelSystem extends GameSystem {
   private content: ContentService
@@ -148,8 +159,8 @@ export class LevelSystem extends GameSystem {
       components: [
         new SpatialComponent({
           index: OccTree.create({
-            min: Vec3.create(-2048, -2048, -2048),
-            max: Vec3.create(2048, 2048, 2048),
+            min: vec3(-2048, -2048, -2048),
+            max: vec3(2048, 2048, 2048),
             leafLevel: 5,
             looseFactor: 2,
           }),
@@ -164,7 +175,7 @@ export class LevelSystem extends GameSystem {
       parent: this.game.scene.entity,
       transform: new TransformComponent({
         keepWorld: true,
-        world: transform ? Mat4.createFromArray(transform) : Mat4.createIdentity(),
+        world: transform ? mat4CreateFromArray(transform) : mat4Identity(),
       }),
     })
     this.entity.events.on(MeshLoaderComponent.onLoad, (e) => {
@@ -196,8 +207,8 @@ export class LevelSystem extends GameSystem {
     const content = this.content
     const asset = await content.loadAsset(assetUrl)
     const materials: Material[] = []
-    for (let i = 0; i < asset.materialCount; i++) {
-      const options = await asset.loadMaterial(i, {
+    for (let i = 0; i < asset.count(AssetType.Material); i++) {
+      const options = await asset.load<MaterialOptions>(AssetType.Material, i, {
         content: content.loader,
         baseUrl: content.nwbtFileUrl,
       })
@@ -212,9 +223,9 @@ export class LevelSystem extends GameSystem {
     }
     for (let z = 0; z < shapes.length; z++) {
       for (let x = 0; x < materials.length; x++) {
-        const transform = Mat4.createRotationX(Math.PI / 2)
-          .preTranslateX((x - Math.max(0, materials.length - 1) / 2) * 2)
-          .preTranslateZ((z + 0.5) * 2)
+        const transform = mat4CreateRotationX(Math.PI / 2)
+        mat4$preTranslateX(transform, (x - Math.max(0, materials.length - 1) / 2) * 2)
+        mat4$preTranslateZ(transform, (z + 0.5) * 2)
 
         let geometry: Geometry
         switch (shapes[z]) {
@@ -272,7 +283,7 @@ export class LevelSystem extends GameSystem {
       parent: this.game.scene.entity,
       transform: new TransformComponent({
         keepWorld: true,
-        world: Mat4.createIdentity(),
+        world: mat4Identity(),
       }),
     })
 
@@ -300,7 +311,7 @@ export class LevelSystem extends GameSystem {
       }
     }
     if (!sphere.isEmpty) {
-      Vec3.copy(sphere.center, wasd.orbitCenter)
+      vec3Copy(sphere.center, wasd.orbitCenter)
       wasd.targetRadius = sphere.radius * 2
     }
   }
@@ -313,11 +324,11 @@ function createGizmoGrid(parent: GameEntity, device: Device): CreateEntityOption
     depth: 128,
     widthSegments: 128,
     depthSegments: 128,
-    vertexTransform: Mat4.createRotationX(-Math.PI / 2),
+    vertexTransform: mat4CreateRotationX(-Math.PI / 2),
   })
-  const material = new ShapeMaterial(device)
+  const material = new ShapeMaterial(device, { properties: {} })
   material.Color = Color.DimGray.toVec4()
-  material.Transform = Mat4.createIdentity()
+  material.Transform = mat4Identity()
 
   return {
     parent,
@@ -362,9 +373,9 @@ function skyEntity(parent: GameEntity): CreateEntityOptions {
 function createSkySphere(parent: GameEntity, device: Device): CreateEntityOptions {
   const geometry = sphereGeometry(device, {
     radius: 128,
-    vertexTransform: Mat4.createRotationX(-Math.PI / 2),
+    vertexTransform: mat4CreateRotationX(-Math.PI / 2),
   })
-  const material = new SkyMaterial(device)
+  const material = new SkyMaterial(device, { properties: {} })
   return {
     name: `Sky`,
     parent: parent,

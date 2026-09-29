@@ -1,7 +1,7 @@
 import { EcsGame, PriorityLane, SchedulerSystem } from '@gglib/components'
 import { GameQuery, GameSystem, GameWorld } from '@gglib/ecs'
 import { Device } from '@gglib/graphics'
-import { Mat4, Vec3, Vec4, type IVec4 } from '@gglib/math'
+import { mat4CreateTranslation, vec3, vec3$initFrom, vec4, vec4$init, type IVec4 } from '@gglib/math'
 import { removeItemUnordered } from '@gglib/utils'
 
 import { LOD_RANGE_FACTOR, QUAD_LEAF_SIZE } from '../../constants'
@@ -262,8 +262,8 @@ export class TerrainSystem extends GameSystem {
 
       // TODO: optimize this
 
-      const position = Vec3.$1.initFrom(renderNode.bounds.min)
-      const mat = Mat4.createTranslation(position)
+      vec3$initFrom(vec3.$1, renderNode.bounds.min)
+      const mat = mat4CreateTranslation(vec3.$1)
       mat.setScale({
         x: renderNode.size / p.region.leafSize,
         y: renderNode.size / p.region.leafSize,
@@ -293,17 +293,17 @@ export class TerrainSystem extends GameSystem {
         w: terrain.getNeighbourLayer(p.region, 1, 1), // +X+Y corner,
       })
 
-      computeUvTransform(renderNode, fineNode, Vec4.$0)
-      mesh.writeColorUvTransform(Vec4.$0)
+      computeUvTransform(renderNode, fineNode, vec4.$0)
+      mesh.writeColorUvTransform(vec4.$0)
 
-      computeUvTransform(renderNode, coarseNode, Vec4.$0)
-      mesh.writeColorUvTransformCoarse(Vec4.$0)
+      computeUvTransform(renderNode, coarseNode, vec4.$0)
+      mesh.writeColorUvTransformCoarse(vec4.$0)
 
-      computeUvTransform(renderNode, renderNode.root, Vec4.$0)
-      mesh.writeHeightUvTransform(Vec4.$0)
+      computeUvTransform(renderNode, renderNode.root, vec4.$0)
+      mesh.writeHeightUvTransform(vec4.$0)
 
-      computeUvTransform(coarseNode, renderNode.root, Vec4.$0)
-      mesh.writeHeightUvTransformCoarse(Vec4.$0)
+      computeUvTransform(coarseNode, renderNode.root, vec4.$0)
+      mesh.writeHeightUvTransformCoarse(vec4.$0)
 
       instanceCount++
     }
@@ -420,7 +420,7 @@ export class TerrainSystem extends GameSystem {
 
         const macroScale = node.size / node.getRoot().size
         // prettier-ignore
-        tile.macroUvTransform.init(
+        vec4$init(tile.macroUvTransform,
           macroScale,
           -macroScale,
           node.rootGridX * macroScale,
@@ -429,7 +429,8 @@ export class TerrainSystem extends GameSystem {
 
         const textureWorldSize = 1.0
         const colorScale = node.size / textureWorldSize
-        tile.colorUvTransform.init(
+        vec4$init(
+          tile.colorUvTransform,
           colorScale, // scale UV down as patch grows
           colorScale,
           (node.bounds.min.x / node.size) * colorScale, // offset follows same scale

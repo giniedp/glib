@@ -1,12 +1,12 @@
 import { QuadTree, QuadTreeNode, type ScheduledTask } from '@gglib/components'
 import type { GameComponent, GameEntity } from '@gglib/ecs'
-import { BoundingFrustum, Vec3, type IVec2 } from '@gglib/math'
+import { BoundingFrustum, mat4GetTranslation, vec3, type IVec2 } from '@gglib/math'
 import type { CameraData } from '@gglib/render'
 import { brand, lfmt, type Brand } from '@gglib/utils'
+import type { RegionMaterial } from '../../api'
+import { QUAD_LEAF_SIZE } from '../../constants'
 import type { TerrainCompositeMaterial } from '../../material'
 import type { TerrainTile } from './TerrainTileManager'
-import { QUAD_LEAF_SIZE } from '../../constants'
-import type { RegionMaterial } from '../../api'
 
 export type TerraPayload = {
   state: TerraQuadState
@@ -106,8 +106,8 @@ export class TerrainRegionComponent implements GameComponent {
     console.assert(this.size % this.leafSize === 0, 'RegionComponent: size must be a multiple of leafSize')
 
     this.tree = QuadTree.create({
-      min: new Vec3(this.origin.x, this.origin.y, 0),
-      max: new Vec3(this.origin.x + this.size, this.origin.y + this.size, this.size),
+      min: vec3(this.origin.x, this.origin.y, 0),
+      max: vec3(this.origin.x + this.size, this.origin.y + this.size, this.size),
       verticalAxis: 'z',
     })
 
@@ -142,7 +142,7 @@ export class TerrainRegionComponent implements GameComponent {
 
     // list of non overlapping quads
 
-    const cam = camera.world.getTranslation({})
+    const cam = mat4GetTranslation(camera.world)
     this.frustum.updateFromViewProjection(camera.view, camera.projection)
     this.tree.traverseLOD(cam, baseFactor, (it) => {
       if (!this.frustum.intersectsBox(it.bounds)) {

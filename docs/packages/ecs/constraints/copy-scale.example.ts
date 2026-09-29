@@ -8,9 +8,9 @@ import {
 } from '@gglib/components'
 import { ContentLoader } from '@gglib/content'
 import { GameComponent, GameEntity, InitializableComponent } from '@gglib/ecs'
-import { BasicMaterial, PlatformId } from '@gglib/graphics'
+import { PlatformId } from '@gglib/graphics'
 import { GLTF } from '@gglib/loaders'
-import { DEGREE_TO_RAD, Quat, vec3, Vec3 } from '@gglib/math'
+import { DEGREE_TO_RAD, quatCreateAxisAngle, vec3 } from '@gglib/math'
 import { Renderer } from '@gglib/render'
 
 export default (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
@@ -37,7 +37,7 @@ class Game extends EcsGame {
       parent: this.scene.entity,
       components: [new LightComponent()],
       transform: new TransformComponent({
-        rotation: Quat.create().initAxisAngle(Vec3.UnitX, 45 * DEGREE_TO_RAD),
+        rotation: quatCreateAxisAngle(vec3.UnitX, 45 * DEGREE_TO_RAD),
       }),
     })
   }

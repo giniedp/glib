@@ -12,7 +12,7 @@ import {
   type ShaderModuleOptions,
   TRUE,
 } from '@gglib/graphics'
-import { Mat4, vec2, Vec4 } from '@gglib/math'
+import { mat4Identity, vec2, vec4 } from '@gglib/math'
 import { type NwMaterialProps } from './GltfExtension'
 import SCHEMA from './IllumMaterial.meta'
 import WGSL from './IllumMaterial.wgsl'
@@ -274,9 +274,9 @@ export class IllumMaterial extends MaterialWithSchema(SCHEMA) {
   }
 
   private setDefaults() {
-    this.DiffuseColor = Vec4.create(1, 1, 1, 1)
-    this.SpecularColor = Vec4.create(1, 1, 1, 1)
-    this.EmissiveColor = Vec4.create()
+    this.DiffuseColor = vec4(1, 1, 1, 1)
+    this.SpecularColor = vec4(1, 1, 1, 1)
+    this.EmissiveColor = vec4()
     this.DetailTiling = vec2(1, 1)
 
     this.EmittanceMapGamma = 1.0
@@ -300,34 +300,34 @@ export class IllumMaterial extends MaterialWithSchema(SCHEMA) {
     this.SssSpecularCutoff = 1.0
     this.NormalViewDependency = 0.0
 
-    this.TransmittanceColor = Vec4.create(1, 1, 0.6, 1.0)
+    this.TransmittanceColor = vec4(1, 1, 0.6, 1.0)
     this.RoughnessBoost = 2.0
     this.RoughnessMaxFootprint = 0.3
     this.DissolvePercentage = 0
     this.DissolveEdgeThickness = 0
-    this.DissolveColor = Vec4.create(1, 1, 1, 1)
+    this.DissolveColor = vec4(1, 1, 1, 1)
 
     this.BlendMaskTiling = 1.0
     this.BlendFactor = 8.0
     this.BlendLayer2Tiling = 1.0
     this.BlendFalloff = 32
     this.BlendLayer2Smoothness = 10
-    this.BlendLayer2Specular = Vec4.create(0.23, 0.23, 0.23, 0)
-    this.BlendLayer2Diffuse = Vec4.create(1, 1, 1, 1)
+    this.BlendLayer2Specular = vec4(0.23, 0.23, 0.23, 0)
+    this.BlendLayer2Diffuse = vec4(1, 1, 1, 1)
 
-    this.RimMajorColor = Vec4.create(1, 1, 1, 1)
+    this.RimMajorColor = vec4(1, 1, 1, 1)
     this.RimMajorIntensity = 1
     this.RimMajorWidth = 1
     this.RimFillIntensity = 0.4
     this.RimFillWidth = 1
-    this.RimFillColor = Vec4.create(1, 1, 1, 1)
+    this.RimFillColor = vec4(1, 1, 1, 1)
     this.RimSmoothness = 1
 
-    this.UvModDiffuse = Mat4.createIdentity()
-    this.UvModCustom = Mat4.createIdentity()
-    this.UvModDetail = Mat4.createIdentity()
-    this.UvModEmittance = Mat4.createIdentity()
-    this.UvModDecalEmissive = Mat4.createIdentity()
+    this.UvModDiffuse = mat4Identity()
+    this.UvModCustom = mat4Identity()
+    this.UvModDetail = mat4Identity()
+    this.UvModEmittance = mat4Identity()
+    this.UvModDecalEmissive = mat4Identity()
 
     this.SamplerLinear = SamplerState.LinearWrap
     this.SamplerPoint = SamplerState.PointWrap

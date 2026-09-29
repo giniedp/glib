@@ -1,4 +1,12 @@
-import { BoundingBox, Intersection, IntersectionType, type IVec3, Vec3 } from '@gglib/math'
+import {
+  BoundingBox,
+  Intersection,
+  IntersectionType,
+  type IVec3,
+  vec3,
+  vec3$addScalar,
+  vec3$subtractScalar,
+} from '@gglib/math'
 import type { SpatialIndex, SpatialNode } from './SpatialIndex'
 
 /**
@@ -121,8 +129,8 @@ export class QuadTreeNode<T extends object = {}> implements SpatialIndex<T>, Spa
 
   protected updateLooseBounds(factor: number) {
     this.looseBounds.initFrom(this.bounds)
-    Vec3.subtractScalar(this.looseBounds.min, (this.size * factor) / 2)
-    Vec3.addScalar(this.looseBounds.max, (this.size * factor) / 2)
+    vec3$subtractScalar(this.looseBounds.min, (this.size * factor) / 2)
+    vec3$addScalar(this.looseBounds.max, (this.size * factor) / 2)
   }
 
   /**
@@ -150,20 +158,20 @@ export class QuadTreeNode<T extends object = {}> implements SpatialIndex<T>, Spa
 
     for (let i = 0; i < 4; i++) {
       const min = this.root.yUp
-        ? Vec3.create(
+        ? vec3(
             this.bounds.min.x + (i & 1 ? halfSize : 0),
             this.bounds.min.y,
             this.bounds.min.z + (i & 2 ? halfSize : 0),
           )
-        : Vec3.create(
+        : vec3(
             this.bounds.min.x + (i & 1 ? halfSize : 0),
             this.bounds.min.y + (i & 2 ? halfSize : 0),
             this.bounds.min.z,
           )
 
       const max = this.root.yUp
-        ? Vec3.create(min.x + halfSize, this.bounds.max.y, min.z + halfSize)
-        : Vec3.create(min.x + halfSize, min.y + halfSize, this.bounds.max.z)
+        ? vec3(min.x + halfSize, this.bounds.max.y, min.z + halfSize)
+        : vec3(min.x + halfSize, min.y + halfSize, this.bounds.max.z)
 
       children.push(new QuadTreeNode(this.root, this, min, max, this.level + 1))
     }

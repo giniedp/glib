@@ -1,5 +1,5 @@
 import { type CreateEntityOptions, type GameComponent, type GameEntity } from '@gglib/ecs'
-import { Vec3 } from '@gglib/math'
+import { vec3 } from '@gglib/math'
 
 import { TransformComponent } from '@gglib/components'
 import type { LevelInfo, RegionLocation } from '../../api'
@@ -79,7 +79,7 @@ export class LevelComponent implements GameComponent {
       regionName: region.name,
       regionSize,
       cellSize,
-      origin: new Vec3(location[0] * regionSize, location[1] * regionSize, 0),
+      origin: vec3(location[0] * regionSize, location[1] * regionSize, 0),
       mountainHeight: this.data.mountainHeight,
       oceanLevel: this.data.oceanLevel,
     })

@@ -6,7 +6,7 @@ import {
   type EffectOptions,
   type ShaderModuleOptions,
 } from '@gglib/graphics'
-import { Vec3 } from '@gglib/math'
+import { vec3 } from '@gglib/math'
 import { InputBlocks } from './common'
 import SCHEMA from './WaterPatchMaterial.meta'
 import WGSL from './WaterPatchMaterial.wgsl'
@@ -41,8 +41,8 @@ export class WaterPatchMaterial extends MaterialWithSchema(SCHEMA) {
     })
     this.HeightMapSampler = SamplerState.LinearClamp
 
-    this.ShallowColor = Vec3.create(0.05, 0.45, 0.4)
-    this.DeepColor = Vec3.create(0.01, 0.08, 0.25)
+    this.ShallowColor = vec3(0.05, 0.45, 0.4)
+    this.DeepColor = vec3(0.01, 0.08, 0.25)
     this.WaterLevel = 40.0
     this.DepthScale = 15.0 // 15 m for full deep blen
     this.Roughness = 0.15

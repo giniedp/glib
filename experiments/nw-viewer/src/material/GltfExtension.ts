@@ -15,7 +15,6 @@ import { TerrainCompositeMaterial } from './TerrainCompositeMaterial'
 import type { TexMod } from './TexMod'
 import { UnknownMaterial } from './UnknownMaterial'
 import { VegetationMaterial } from './VegetationMaterial'
-import { Vec4, type IVec4 } from '@gglib/math'
 
 export interface NwMaterialExtensionData {
   attrs: NwMaterialAttrs
@@ -91,7 +90,7 @@ export const NwMaterialExtension: GLTF.GltfMaterialExtension = {
         console.warn('Invalid texture index', tex.index, tex)
         return
       }
-      const texNode = container.textureNode(tex.index)
+      const texNode = container.textureNode(tex.index, 'linear')
       const texData = tex.extensions[EXT_nw_tex] as NwTextureExtensionData
       container.graph.assign(node, texNode, (material, texture) => {
         const params = material.properties as NwMaterialProps
@@ -158,7 +157,7 @@ export const NwMaterialExtension: GLTF.GltfMaterialExtension = {
       }
       default: {
         console.warn('Unknown shader', data.attrs.Shader, data.attrs.StringGenMask)
-        node.data.factory = (device, asset) => new UnknownMaterial(device)
+        node.data.factory = (device, asset) => new UnknownMaterial(device, { properties: {} })
       }
     }
 

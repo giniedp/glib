@@ -1,6 +1,24 @@
 import { type GameComponent, GameEntity, InitializableComponent } from '@gglib/ecs'
 import { KeyboardKeys } from '@gglib/game'
-import { lerp, Quat, SpaceBasis, vec3, Vec3 } from '@gglib/math'
+import {
+  IVec3,
+  lerp,
+  quat$initAxisAngle,
+  quat$initIdentity,
+  quat$multiply,
+  SpaceBasis,
+  vec3,
+  vec3$add,
+  vec3$addScalars,
+  vec3$applyMat4,
+  vec3$applyMat4Rotation,
+  vec3$init,
+  vec3$initFrom,
+  vec3Copy,
+  vec3LengthSquared,
+  vec3Lerp,
+  vec4,
+} from '@gglib/math'
 import { BehaviorComponent } from '../systems/BehaviorSystem'
 import { KeyboardInputSystem } from '../systems/KeyboardInputSystem'
 import { MouseInputSystem } from '../systems/MouseInputSystem'
@@ -49,7 +67,7 @@ export class WASDComponent implements GameComponent, InitializableComponent, Beh
   public radiusMin: number = 0.001
   public radiusMax: number = Number.POSITIVE_INFINITY
   public orbitMode: boolean = false
-  public orbitCenter: Vec3 = new Vec3(0, 0, 0)
+  public orbitCenter: IVec3 = vec3(0, 0, 0)
 
   private horizontal: number = 0
   private vertical: number = 0
@@ -66,7 +84,7 @@ export class WASDComponent implements GameComponent, InitializableComponent, Beh
 
   private currentSpeed: number = 0
   private direction = vec3(0)
-  private translation = new Vec3(0, 0, 0)
+  private translation = vec3(0, 0, 0)
 
   private keyForwad = KeyboardKeys.KeyW
   private keyBackward = KeyboardKeys.KeyS
@@ -164,34 +182,35 @@ export class WASDComponent implements GameComponent, InitializableComponent, Beh
 
     let isMoving = false
 
-    Vec3.$0.init(0, 0, 0)
+    vec3$init(vec3.$0, 0, 0, 0)
     if (keyboard.isPressed(this.keyForwad)) {
-      Vec3.$0.add(this.space.forward)
+      vec3$add(vec3.$0, this.space.forward)
       isMoving = true
     }
     if (keyboard.isPressed(this.keyBackward)) {
-      Vec3.$0.add(this.space.backward)
+      vec3$add(vec3.$0, this.space.backward)
       isMoving = true
     }
     if (keyboard.isPressed(this.keyRight)) {
-      Vec3.$0.add(this.space.right)
+      vec3$add(vec3.$0, this.space.right)
       isMoving = true
     }
     if (keyboard.isPressed(this.keyLeft)) {
-      Vec3.$0.add(this.space.left)
+      vec3$add(vec3.$0, this.space.left)
       isMoving = true
     }
     if (keyboard.isPressed(this.keyUp)) {
-      Vec3.$0.add(this.space.up)
+      vec3$add(vec3.$0, this.space.up)
       isMoving = true
     }
     if (keyboard.isPressed(this.keyDown)) {
-      Vec3.$0.add(this.space.down)
+      vec3$add(vec3.$0, this.space.down)
       isMoving = true
     }
-    if (Vec3.$0.lengthSquared() > 0) {
-      Vec3.lerp(this.translation, Vec3.$0, this.moveDamping, this.translation)
-      node.world.transformV3Normal(this.translation, this.direction)
+    if (vec3LengthSquared(vec3.$0) > 0) {
+      vec3Lerp(this.translation, vec3.$0, this.moveDamping, this.translation)
+      vec3Copy(this.translation, this.direction)
+      vec3$applyMat4Rotation(this.direction, node.world)
     }
 
     const boost = keyboard.isPressed(this.keyBoost) ? this.moveSpeedMultiplier : 1
@@ -217,17 +236,17 @@ export class WASDComponent implements GameComponent, InitializableComponent, Beh
       this.currentSpeed = 0
     }
 
-    node.rotation
-      .initIdentity()
-      .multiply(Quat.$1.initAxisAngle(this.space.up, this.horizontal))
-      .multiply(Quat.$1.initAxisAngle(this.space.right, this.vertical))
+    quat$initIdentity(node.rotation)
+    quat$multiply(node.rotation, quat$initAxisAngle(vec4.$1, this.space.up, this.horizontal))
+    quat$multiply(node.rotation, quat$initAxisAngle(vec4.$1, this.space.right, this.vertical))
 
     node.markAsChanged()
     node.updateIfNeeded()
   }
 
   private updateOrbit(dt: number) {
-    this.orbitCenter.addXYZ(
+    vec3$addScalars(
+      this.orbitCenter,
       this.direction.x * this.currentSpeed * dt,
       this.direction.y * this.currentSpeed * dt,
       this.direction.z * this.currentSpeed * dt,
@@ -246,20 +265,18 @@ export class WASDComponent implements GameComponent, InitializableComponent, Beh
     const lookY = ry * cosV + this.space.up.y * sinV
     const lookZ = rz * cosV + this.space.up.z * sinV
 
-    Vec3.$0.init(
-      this.orbitCenter.x - lookX * this.radius,
-      this.orbitCenter.y - lookY * this.radius,
-      this.orbitCenter.z - lookZ * this.radius,
-    )
+    const position = vec3.$0
+    position.x = this.orbitCenter.x - lookX * this.radius
+    position.y = this.orbitCenter.y - lookY * this.radius
+    position.z = this.orbitCenter.z - lookZ * this.radius
 
     const node = this.entity.getTransform<TransformComponent>()
-    node.parent.worldInverse.transformV3(Vec3.$0)
-    node.setPositionV(Vec3.$0)
+    vec3$applyMat4(position, node.parent.worldInverse)
+    vec3$initFrom(node.translation, position)
 
-    node.rotation
-      .initIdentity()
-      .multiply(Quat.$1.initAxisAngle(this.space.up, this.horizontal))
-      .multiply(Quat.$1.initAxisAngle(this.space.right, this.vertical))
+    quat$initIdentity(node.rotation)
+    quat$multiply(node.rotation, quat$initAxisAngle(vec4.$1, this.space.up, this.horizontal))
+    quat$multiply(node.rotation, quat$initAxisAngle(vec4.$1, this.space.right, this.vertical))
 
     node.markAsChanged()
     node.updateIfNeeded()
@@ -274,10 +291,9 @@ export class WASDComponent implements GameComponent, InitializableComponent, Beh
 
     const node = this.entity.getTransform<TransformComponent>()
 
-    node.rotation
-      .initIdentity()
-      .multiply(Quat.$1.initAxisAngle(this.space.up, this.horizontal))
-      .multiply(Quat.$1.initAxisAngle(this.space.right, this.vertical))
+    quat$initIdentity(node.rotation)
+    quat$multiply(node.rotation, quat$initAxisAngle(vec4.$1, this.space.up, this.horizontal))
+    quat$multiply(node.rotation, quat$initAxisAngle(vec4.$1, this.space.right, this.vertical))
 
     node.markAsChanged()
     node.updateIfNeeded()

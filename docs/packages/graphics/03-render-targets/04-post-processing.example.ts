@@ -4,13 +4,22 @@ import {
   createDevice,
   CullState,
   Device,
+  FrameContext,
   planeGeometry,
   PlatformId,
-  FrameContext,
   Texture,
   TextureUsage,
 } from '@gglib/graphics'
-import { DEGREE_TO_RAD, Mat4, Vec3 } from '@gglib/math'
+import {
+  DEGREE_TO_RAD,
+  mat4$initLookAt,
+  mat4$initPerspectiveFieldOfView,
+  mat4$initRotationY,
+  mat4$invert,
+  mat4CreateRotationX,
+  mat4Identity,
+  vec3,
+} from '@gglib/math'
 import { mountUi } from 'tweak-ui'
 
 const EFFECTS = { None: 0, Grayscale: 1, Invert: 2, Vignette: 3 }
@@ -32,7 +41,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   })
   const quad = planeGeometry(device, {
     // rotate from XZ plane to XY
-    vertexTransform: Mat4.createRotationX(90 * DEGREE_TO_RAD),
+    vertexTransform: mat4CreateRotationX(90 * DEGREE_TO_RAD),
     size: 2,
   })
 
@@ -50,10 +59,10 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     usage: TextureUsage.TextureBinding,
   })
 
-  const world = Mat4.createIdentity()
-  const view = Mat4.createIdentity()
-  const projection = Mat4.createIdentity()
-  const cameraPosition = Vec3.create(0, 0.6, 4)
+  const world = mat4Identity()
+  const view = mat4Identity()
+  const projection = mat4Identity()
+  const cameraPosition = vec3(0, 0.6, 4)
 
   const pass = device.renderPass
   function frame(ctx: FrameContext) {
@@ -63,9 +72,10 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
       return
     }
 
-    world.initIdentity().rotateY(ctx.time * 25 * DEGREE_TO_RAD)
-    view.initLookAt(cameraPosition, Vec3.Zero, Vec3.UnitY).invert()
-    projection.initPerspectiveFieldOfView(60 * DEGREE_TO_RAD, device.output.aspectRatio, 0.1, 100, device.ndcMinZ)
+    mat4$initRotationY(world, ctx.time * 25 * DEGREE_TO_RAD)
+    mat4$initLookAt(view, cameraPosition, vec3.Zero, vec3.UnitY)
+    mat4$invert(view)
+    mat4$initPerspectiveFieldOfView(projection, 60 * DEGREE_TO_RAD, device.output.aspectRatio, 0.1, 100, device.ndcMinZ)
 
     const sceneProgram = sceneShader.program
     sceneProgram.set('uWorld', world)

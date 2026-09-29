@@ -1,5 +1,5 @@
 import { BasicMaterial, CommonInputs, Device, Geometry, Mesh, Texture, TRUE } from '@gglib/graphics'
-import { IVec3, Mat4 } from '@gglib/math'
+import { IVec3, mat4CreateTranslation, mat4Identity } from '@gglib/math'
 import {
   CameraData,
   isRenderItem,
@@ -36,9 +36,9 @@ export function createScene(): Scene {
 export function createCamera(data?: Partial<CameraData>): CameraData {
   return {
     visibilityMask: LayerMask.All,
-    world: Mat4.createIdentity(),
-    view: Mat4.createIdentity(),
-    projection: Mat4.createIdentity(),
+    world: mat4Identity(),
+    view: mat4Identity(),
+    projection: mat4Identity(),
     reversedZ: false,
     near: 0.1,
     far: 100,
@@ -47,14 +47,14 @@ export function createCamera(data?: Partial<CameraData>): CameraData {
 }
 
 export function createObject(device: Device, texture: Texture, geometry: Geometry, position: IVec3): RenderItem {
-  const material = new BasicMaterial(device)
+  const material = new BasicMaterial(device, { properties: {} })
   material.BaseMap = texture
   material.UseBaseMap = TRUE
   return {
     type: RenderItemType.Mesh,
     layer: LayerMask.All,
     flags: RenderItemFlags.Opaque,
-    transform: Mat4.createTranslation(position),
+    transform: mat4CreateTranslation(position),
     data: new Mesh(device, {
       materials: [material],
       geometries: [geometry],

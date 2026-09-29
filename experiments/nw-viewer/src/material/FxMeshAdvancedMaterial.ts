@@ -12,7 +12,7 @@ import {
   type MaterialOptions,
   type ShaderModuleOptions,
 } from '@gglib/graphics'
-import { Vec4, vec4 } from '@gglib/math'
+import { vec4 } from '@gglib/math'
 import SCHEMA from './FxMeshAdvancedMaterial.meta'
 import WGSL from './FxMeshAdvancedMaterial.wgsl'
 import type { NwMaterialProps } from './GltfExtension'
@@ -345,7 +345,7 @@ export class FxMeshAdvancedMaterial extends MaterialWithSchema(SCHEMA) {
   }
 
   private setAttributes(attrs: NwMaterialProps['attrs'], flags: Set<FeatureFlag>) {
-    this.DiffuseColor = paramVec4(attrs.Diffuse, Vec4.One)
+    this.DiffuseColor = paramVec4(attrs.Diffuse, vec4.One)
 
     if (attrs.Specular) {
       // this.SpecularColor = parseColorParam(attr.Specular)

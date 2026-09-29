@@ -1,4 +1,4 @@
-import { IVec3, Vec3 } from '@gglib/math'
+import { IVec3, vec3, vec3Negate } from '@gglib/math'
 import type { Device } from '../../Device'
 import type { Geometry } from '../Geometry'
 import { buildGeometry, GeometryBuilder } from '../GeometryBuilder'
@@ -211,7 +211,7 @@ export function buildPolyhedron(builder: GeometryBuilder, options?: BuildPolyhed
 
   const indices: number[] = []
   const baseVertex = builder.vertexCount
-  function onVertex(v: Vec3) {
+  function onVertex(v: IVec3) {
     // Equirectangular (longitude/latitude) UV projection.
     // Note: triangles straddling the 180° meridian seam may exhibit
     // texture stretching.
@@ -226,12 +226,12 @@ export function buildPolyhedron(builder: GeometryBuilder, options?: BuildPolyhed
     }
 
     builder.addVertex({
-      position: Vec3.createFrom({
+      position: {
         x: v.x * radius + ox,
         y: v.y * radius + oy,
         z: v.z * radius + oz,
-      }),
-      normal: invert ? Vec3.createFrom(v).negate() : v,
+      },
+      normal: invert ? vec3Negate(v) : v,
       texture: [u, t],
     })
   }
@@ -262,11 +262,11 @@ function normalize(v: number[]): number[] {
   return v
 }
 
-function subdivide(a: number[], b: number[], c: number[], depth: number, block: (v: Vec3) => void) {
+function subdivide(a: number[], b: number[], c: number[], depth: number, block: (v: IVec3) => void) {
   if (depth <= 0) {
-    block(Vec3.convert(a))
-    block(Vec3.convert(c))
-    block(Vec3.convert(b))
+    block(vec3(a))
+    block(vec3(c))
+    block(vec3(b))
     return
   }
   let a1 = []

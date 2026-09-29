@@ -1,4 +1,15 @@
-import { type ITransformBase, type IVec3, type IVec4, Quat, Vec3, Vec4 } from '@gglib/math'
+import {
+  type ITransformBase,
+  type IVec3,
+  type IVec4,
+  vec3Copy,
+  vec3Hermite,
+  vec3Lerp,
+  vec4$initFrom,
+  vec4$normalize,
+  vec4Hermite,
+  vec4Lerp,
+} from '@gglib/math'
 import type {
   AnimationData,
   AnimationDataChannel,
@@ -194,7 +205,7 @@ export class AnimationChannelSampler {
     }
     if (this.rotation) {
       this.sampleVec4(time, this.rotation, target.rotation)
-      Quat.normalize(target.rotation, target.rotation)
+      vec4$normalize(target.rotation)
     }
     if (this.scale) {
       this.sampleVec3(time, this.scale, target.scale)
@@ -210,14 +221,14 @@ export class AnimationChannelSampler {
       const t = d > 0 ? (time - sample0.time) / d : 0
       if (t > 0) {
         if (indexer.interpolation === 'linear') {
-          Vec3.lerp(sample0.value, sample1.value, t, out)
+          vec3Lerp(sample0.value, sample1.value, t, out)
         } else {
-          Vec3.hermite(sample0.value, sample0.tangent1, sample1.value, sample1.tangent0, t, out)
+          vec3Hermite(sample0.value, sample0.tangent1, sample1.value, sample1.tangent0, t, out)
         }
         return
       }
     }
-    Vec3.copy(sample0.value, out)
+    vec3Copy(sample0.value, out)
   }
 
   private sampleVec4(time: number, channel: AnimationChannel<IVec4>, out: IVec4) {
@@ -229,14 +240,14 @@ export class AnimationChannelSampler {
       const t = d > 0 ? (time - sample0.time) / d : 0
       if (t > 0) {
         if (channel.interpolation === 'linear') {
-          Vec4.lerp(sample0.value, sample1.value, t, out)
+          vec4Lerp(sample0.value, sample1.value, t, out)
         } else {
-          Vec4.hermite(sample0.value, sample0.tangent1, sample1.value, sample1.tangent0, t, out)
+          vec4Hermite(sample0.value, sample0.tangent1, sample1.value, sample1.tangent0, t, out)
         }
         return
       }
     }
-    Vec4.copy(sample0.value, out)
+    vec4$initFrom(out, sample0.value)
   }
 }
 

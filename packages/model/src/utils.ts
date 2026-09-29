@@ -1,20 +1,27 @@
-import { Transform } from '@gglib/math'
+import {
+  mat4$initFromArray,
+  mat4Copy,
+  mat4Decompose,
+  Transform,
+  vec3$initFromArray,
+  vec4$initFromArray,
+} from '@gglib/math'
 import type { NodeData, SkinData } from './Data'
 import { Skeleton } from './Skeleton'
 
 export function initTransformNode<T extends Transform>(node: NodeData, transform: T) {
   if (node.translation) {
-    transform.translation.initFromArray(node.translation)
+    vec3$initFromArray(transform.translation, node.translation)
   }
   if (node.rotation) {
-    transform.rotation.initFromArray(node.rotation)
+    vec4$initFromArray(transform.rotation, node.rotation)
   }
   if (node.scale) {
-    transform.scale.initFromArray(node.scale)
+    vec3$initFromArray(transform.scale, node.scale)
   }
   if (node.matrix) {
-    transform.matrix.initFromArray(node.matrix)
-    transform.matrix.decompose(transform.scale, transform.rotation, transform.translation)
+    mat4$initFromArray(transform.matrix, node.matrix)
+    mat4Decompose(transform.matrix, transform.scale, transform.rotation, transform.translation)
   }
   transform.markAsChanged()
 }
@@ -64,7 +71,7 @@ export function createSkeletons(skins: SkinData[], transforms: Transform<NodeDat
   }
   for (const skin of skins) {
     const bones = skin.joints.map((index) => transforms[index])
-    const inverse = skin.inverseBindMatrices.map((it) => it.copy())
+    const inverse = skin.inverseBindMatrices.map((it) => mat4Copy(it))
     skeletons.push(new Skeleton(bones, inverse))
   }
   return skeletons

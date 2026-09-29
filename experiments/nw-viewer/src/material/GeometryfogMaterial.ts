@@ -9,7 +9,7 @@ import {
   type MaterialOptions,
   type ShaderModuleOptions,
 } from '@gglib/graphics'
-import { Mat4, Vec4 } from '@gglib/math'
+import { mat4Identity, vec4 } from '@gglib/math'
 import { Noise3DKey } from '../content'
 import SCHEMA from './GeometryfogMaterial.meta'
 import WGSL from './GeometryfogMaterial.wgsl'
@@ -97,8 +97,8 @@ export class GeometryFogMaterial extends MaterialWithSchema(SCHEMA) {
     this.setAttributes(attrs, shaderFlags)
     this.setPublicParams(params)
 
-    // this.UvTransform1 = Mat4.createIdentity()
-    // this.UvTransform2 = Mat4.createIdentity()
+    // this.UvTransform1 = mat4Identity()
+    // this.UvTransform2 = mat4Identity()
   }
 
   private setDefaults() {
@@ -115,13 +115,13 @@ export class GeometryFogMaterial extends MaterialWithSchema(SCHEMA) {
 
     this.TextureSampler = SamplerState.LinearWrap
 
-    this.UvTransform1 = Mat4.createIdentity()
+    this.UvTransform1 = mat4Identity()
     this.FinalMultiplier = 1
     this.SoftIntersectionFactor = 1
     this.ViewDependencyFactor = 2.0
-    this.StartColor = Vec4.create(1, 1, 1, 1)
-    this.EndColor = Vec4.create(1, 1, 1, 0)
-    this.DiffuseColor = Vec4.create(1, 1, 1, 1)
+    this.StartColor = vec4(1, 1, 1, 1)
+    this.EndColor = vec4(1, 1, 1, 0)
+    this.DiffuseColor = vec4(1, 1, 1, 1)
 
     this.FadingFeaturing = 0.55
     this.DustUVScale = 0.6
@@ -167,7 +167,7 @@ export class GeometryFogMaterial extends MaterialWithSchema(SCHEMA) {
   }
 
   private setAttributes(attrs: NwMaterialProps['attrs'], flags: Set<FeatureFlag>) {
-    this.DiffuseColor = paramVec4(attrs.Diffuse, Vec4.One)
+    this.DiffuseColor = paramVec4(attrs.Diffuse, vec4.One)
 
     if (flags.has('NOISE')) {
       this.EnabledNoise = TRUE

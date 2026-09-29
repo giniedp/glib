@@ -1,9 +1,11 @@
 import { BoundingCapsule } from '../BoundingCapsule'
 import { Mat4 } from '../Mat4'
-import { Vec3 } from '../Vec3'
+import { vec3, vec3$applyMat4Rotation, vec3$init, vec3ApplyMat4, vec3Length } from '../Vec3'
 
 export function transformCapsule(capsule: BoundingCapsule, transform: Mat4, out: BoundingCapsule) {
-  transform.transformV3(capsule.start, out.start)
-  transform.transformV3(capsule.end, out.end)
-  out.radius = transform.transformV3Normal(Vec3.$0.init(out.radius, out.radius, out.radius)).length()
+  vec3ApplyMat4(capsule.start, transform, out.start)
+  vec3ApplyMat4(capsule.end, transform, out.end)
+  vec3$init(vec3.$0, out.radius, out.radius, out.radius)
+  vec3$applyMat4Rotation(vec3.$0, transform)
+  out.radius = vec3Length(vec3.$0)
 }

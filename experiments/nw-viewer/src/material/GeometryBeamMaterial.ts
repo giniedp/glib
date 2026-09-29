@@ -12,7 +12,7 @@ import {
   type MaterialOptions,
   type ShaderModuleOptions,
 } from '@gglib/graphics'
-import { Mat4, Vec4 } from '@gglib/math'
+import { mat4Identity, vec4 } from '@gglib/math'
 import { Noise3DKey } from '../content'
 import SCHEMA from './GeometryBeamMaterial.meta'
 import WGSL from './GeometryBeamMaterial.wgsl'
@@ -127,9 +127,9 @@ export class GeometryBeamMaterial extends MaterialWithSchema(SCHEMA) {
     this.SamplerLinear = SamplerState.LinearWrap
     this.SamplerPoint = SamplerState.PointWrap
 
-    this.DiffuseColor = Vec4.create(1, 1, 1, 1)
-    this.StartColor = new Vec4(1.0, 1.0, 1.0, 1.0)
-    this.EndColor = new Vec4(1.0, 1.0, 1.0, 1.0)
+    this.DiffuseColor = vec4(1, 1, 1, 1)
+    this.StartColor = vec4(1.0, 1.0, 1.0, 1.0)
+    this.EndColor = vec4(1.0, 1.0, 1.0, 1.0)
     this.FinalMultiplier = 1.0
     this.SoftIntersectionFactor = 1.0
     this.ViewDependencyFactor = 2.0
@@ -150,7 +150,7 @@ export class GeometryBeamMaterial extends MaterialWithSchema(SCHEMA) {
     this.FogColorInfluence = 0.0
     this.FadeOutDistande = 0.2
 
-    this.UvModDiffuse = Mat4.createIdentity()
+    this.UvModDiffuse = mat4Identity()
   }
 
   private setTextures(maps: NwMaterialProps['textures']) {
@@ -219,7 +219,7 @@ export class GeometryBeamMaterial extends MaterialWithSchema(SCHEMA) {
   }
 
   private setAttributes(attrs: NwMaterialProps['attrs'], flags: Set<FeatureFlag>) {
-    this.DiffuseColor = paramVec4(attrs.Diffuse, Vec4.One)
+    this.DiffuseColor = paramVec4(attrs.Diffuse, vec4.One)
   }
 
   private setPublicParams(params: PublicParams) {

@@ -1,6 +1,6 @@
-import { Mat4, Transform } from '@gglib/math'
+import { Mat4, mat4$initFrom, mat4$multiply, mat4Identity, mat4Invert, Transform } from '@gglib/math'
 
-const _worldInverse = Mat4.createIdentity()
+const _worldInverse = mat4Identity()
 
 export interface SkeletonOptions {
   /**
@@ -56,7 +56,7 @@ export class Skeleton {
     // this.inverseBindMatrices.map((it) => console.log(it.debug))
 
     for (let i = 0; i < this.boneCount; i++) {
-      this.inverseBindMatrices[i] = this.bones[i].world.copy().invert()
+      this.inverseBindMatrices[i] = mat4Invert(this.bones[i].world)
     }
     // this.inverseBindMatrices.map((it) => console.log(it.debug))
     this.jointMatrices = []
@@ -65,7 +65,7 @@ export class Skeleton {
 
   public reset() {
     for (let i = 0; i < this.boneCount; i++) {
-      this.jointMatrices[i] = this.inverseBindMatrices[i].copy().invert()
+      this.jointMatrices[i] = mat4Invert(this.inverseBindMatrices[i])
     }
   }
 
@@ -74,16 +74,16 @@ export class Skeleton {
    */
   public update(world: Mat4) {
     if (world) {
-      Mat4.invert(world, _worldInverse)
+      mat4Invert(world, _worldInverse)
     }
     for (let i = 0; i < this.boneCount; i++) {
       const joint = this.jointMatrices[i]
-      joint.initFrom(this.inverseBindMatrices[i])
+      mat4$initFrom(joint, this.inverseBindMatrices[i])
       if (this.bones[i]) {
-        joint.multiply(this.bones[i].world)
+        mat4$multiply(joint, this.bones[i].world)
       }
       if (world) {
-        joint.multiply(_worldInverse)
+        mat4$multiply(joint, _worldInverse)
       }
     }
   }

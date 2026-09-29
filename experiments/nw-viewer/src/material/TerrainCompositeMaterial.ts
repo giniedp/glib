@@ -6,7 +6,7 @@ import {
   type ShaderModuleOptions,
   type Texture,
 } from '@gglib/graphics'
-import { Vec4 } from '@gglib/math'
+import { vec4 } from '@gglib/math'
 import { getShaderConstants, MaterialLayerMasks, type FeatureFlag } from './common'
 import { smoothnessToRoughness } from './common.wgsl'
 import type { NwMaterialProps } from './GltfExtension'
@@ -103,8 +103,8 @@ export class TerrainCompositeMaterial extends MaterialWithSchema(Schema) {
   }
 
   private setAttributes(attr: NwMaterialProps['attrs'], flags: Set<FeatureFlag>) {
-    this.BaseColor = paramVec4(attr.Diffuse, Vec4.One)
-    this.SpecularColor = paramVec4(attr.Specular, Vec4.One)
+    this.BaseColor = paramVec4(attr.Diffuse, vec4.One)
+    this.SpecularColor = paramVec4(attr.Specular, vec4.One)
     if (attr.Emittance) {
       // console.log('Emittance', attr.Emittance)
       // this.EmissiveColor.initFrom(parseColor(attr.Emittance))

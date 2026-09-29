@@ -1,8 +1,8 @@
 import { BlendState, Color, Texture, TextureUsage, WebGpuDevice, WebGpuTexture, type Device } from '@gglib/graphics'
+import { ALBEDO_MULTIPLIER } from '../../constants'
 import { BC3Encoder } from '../../graphics'
 import { SplatPackMaterial, type TerrainCompositeMaterial } from '../../material'
 import type { TerrainTile } from './TerrainTileManager'
-import { ALBEDO_MULTIPLIER } from '../../constants'
 
 export interface TileRendererOptions {
   width: number
@@ -27,7 +27,7 @@ export class TerrainTileRenderer {
       throw new Error('width and height must be at least 1')
     }
 
-    this.combine = new SplatPackMaterial(this.device)
+    this.combine = new SplatPackMaterial(this.device, { properties: {} })
     this.encoder = new BC3Encoder(this.device, options)
 
     this.stagingMap1 = this.device.createTexture({

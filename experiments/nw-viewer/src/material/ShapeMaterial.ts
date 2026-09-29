@@ -1,6 +1,5 @@
 import {
   BlendState,
-  CommonBlocks,
   CullState,
   DepthState,
   MaterialWithSchema,
@@ -9,7 +8,7 @@ import {
 } from '@gglib/graphics'
 import Schema from './ShapeMaterial.meta'
 import WGSL from './ShapeMaterial.wgsl'
-import { MaterialLayerMasks, InputBlocks } from './common'
+import { InputBlocks, MaterialLayerMasks } from './common'
 
 export function shapeShaderOptions(): ShaderModuleOptions {
   return {

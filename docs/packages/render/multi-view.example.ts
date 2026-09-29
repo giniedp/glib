@@ -1,6 +1,17 @@
 import { ContentLoader } from '@gglib/content'
-import { Color, CommonInputs, createDevice, PlatformId, sphereGeometry, FrameContext } from '@gglib/graphics'
-import { DEGREE_TO_RAD, Mat4, vec3, Vec3 } from '@gglib/math'
+import { Color, CommonInputs, createDevice, FrameContext, PlatformId, sphereGeometry } from '@gglib/graphics'
+import {
+  DEGREE_TO_RAD,
+  mat4$initOrthographicOffCenter,
+  mat4$initPerspectiveFieldOfView,
+  mat4$setTranslationY,
+  mat4CreateLookAt,
+  mat4GetTranslationX,
+  mat4GetTranslationY,
+  mat4Invert,
+  vec3,
+  vec3AddScalars,
+} from '@gglib/math'
 import { Renderer } from '@gglib/render'
 import { mountUi } from 'tweak-ui'
 import { createCamera, createObject, createScene } from './basics-scene'
@@ -30,25 +41,25 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     renderer.createView({
       viewport: { x: 0.0, y: 0.0, width: 0.5, height: 0.5 },
       camera: createCamera({
-        world: Mat4.createLookAt(vec3(SIZE), center, Vec3.UnitY),
+        world: mat4CreateLookAt(vec3(SIZE), center, vec3.UnitY),
       }),
     }),
     renderer.createView({
       viewport: { x: 0.5, y: 0.0, width: 0.5, height: 0.5 },
       camera: createCamera({
-        world: Mat4.createLookAt(Vec3.addXYZ(center, 0.0, 15, 0.1), center, Vec3.UnitY),
+        world: mat4CreateLookAt(vec3AddScalars(center, 0.0, 15, 0.1), center, vec3.UnitY),
       }),
     }),
     renderer.createView({
       viewport: { x: 0.0, y: 0.5, width: 0.5, height: 0.5 },
       camera: createCamera({
-        world: Mat4.createLookAt(Vec3.addXYZ(center, 0, 0, 15), center, Vec3.UnitY),
+        world: mat4CreateLookAt(vec3AddScalars(center, 0, 0, 15), center, vec3.UnitY),
       }),
     }),
     renderer.createView({
       viewport: { x: 0.5, y: 0.5, width: 0.5, height: 0.5 },
       camera: createCamera({
-        world: Mat4.createLookAt(Vec3.addXYZ(center, 0, 0, -15), center, Vec3.UnitY),
+        world: mat4CreateLookAt(vec3AddScalars(center, 0, 0, -15), center, vec3.UnitY),
       }),
     }),
   ]
@@ -78,9 +89,10 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     device.resize()
     for (let i = 0; i < scene.views.length; i++) {
       const view = scene.views[i]
-      Mat4.invert(view.camera.world, view.camera.view)
+      mat4Invert(view.camera.world, view.camera.view)
       if (i == 0) {
-        view.camera.projection.initPerspectiveFieldOfView(
+        mat4$initPerspectiveFieldOfView(
+          view.camera.projection,
           45 * DEGREE_TO_RAD,
           device.output.aspectRatio,
           view.camera.near,
@@ -89,7 +101,8 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
           view.camera.reversedZ,
         )
       } else {
-        view.camera.projection.initOrthographicOffCenter(
+        mat4$initOrthographicOffCenter(
+          view.camera.projection,
           -SIZE * device.output.aspectRatio * 0.25,
           SIZE * device.output.aspectRatio * 0.25,
           -SIZE * 0.25,
@@ -104,11 +117,11 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
 
     for (const item of scene.items) {
       const w = item.transform
-      const x = w.translationX - SIZE / 2
-      const z = w.translationZ - SIZE / 2
+      const x = mat4GetTranslationX(w) - SIZE / 2
+      const z = mat4GetTranslationY(w) - SIZE / 2
       const r = Math.sqrt(x * x + z * z)
       const y = Math.sin(r - ctx.time) * 0.5
-      w.setTranslationY(y)
+      mat4$setTranslationY(w, y)
     }
 
     renderer.update(ctx.time)

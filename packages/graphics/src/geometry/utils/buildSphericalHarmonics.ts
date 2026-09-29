@@ -1,4 +1,4 @@
-import { Vec3 } from '@gglib/math'
+import { vec3, vec3MultiplyScalar, vec3Normalize } from '@gglib/math'
 import type { GeometryBuilder } from '../GeometryBuilder'
 
 /**
@@ -44,11 +44,11 @@ export function buildSphericalHarmonics(
       let y = scale * Math.sin(phi) * Math.sin(theta)
       let z = scale * Math.cos(phi)
 
-      let normal = Vec3.create(x, y, z)
+      let normal = vec3(x, y, z)
 
       builder.addVertex({
-        position: Vec3.multiplyScalar(normal, radius),
-        normal: normal.normalize(),
+        position: vec3MultiplyScalar(normal, radius),
+        normal: vec3Normalize(normal),
         texture: [du, dv],
       })
     }

@@ -10,19 +10,30 @@ import {
 import { MouseInput } from '@gglib/game'
 import {
   BlendState,
+  boxGeometry,
   Color,
+  createDevice,
   CullState,
   DepthState,
   Mesh,
   PlatformId,
   SpriteBatch,
-  TRUE,
   TextureUsage,
-  boxGeometry,
-  createDevice,
+  TRUE,
 } from '@gglib/graphics'
 import { DDS, GLTF, KTX } from '@gglib/loaders'
-import { BoundingSphere, DEGREE_TO_RAD, Mat4, Vec3 } from '@gglib/math'
+import {
+  BoundingSphere,
+  DEGREE_TO_RAD,
+  mat4$initLookAt,
+  mat4$initPerspectiveFieldOfView,
+  mat4$invert,
+  mat4Identity,
+  mat4Premultiply,
+  vec3,
+  vec3$add,
+  vec3$initSpherical,
+} from '@gglib/math'
 import { Model } from '@gglib/model'
 
 export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
@@ -110,15 +121,15 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     ],
   })
 
-  const world = Mat4.createIdentity()
+  const world = mat4Identity()
   const camera = {
     theta: 0,
     phi: 90,
     fow: 45,
     distance: 1,
-    position: Vec3.create(),
-    view: Mat4.createIdentity(),
-    projection: Mat4.createIdentity(),
+    position: vec3(),
+    view: mat4Identity(),
+    projection: mat4Identity(),
   }
 
   function updateCamera() {
@@ -133,14 +144,17 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     }
 
     // prettier-ignore
-    camera.position.initSpherical(
+    vec3$initSpherical(camera.position,
       camera.phi * DEGREE_TO_RAD,
       camera.theta * DEGREE_TO_RAD,
       camera.distance * sphere.radius * 2,
-    ).add(sphere.center)
+    )
+    vec3$add(camera.position, sphere.center)
 
-    camera.view.initLookAt(camera.position, sphere.center, Vec3.UnitY).invert()
-    camera.projection.initPerspectiveFieldOfView(
+    mat4$initLookAt(camera.view, camera.position, sphere.center, vec3.UnitY)
+    mat4$invert(camera.view)
+    mat4$initPerspectiveFieldOfView(
+      camera.projection,
       camera.fow * DEGREE_TO_RAD,
       device.output.aspectRatio,
       0.01,
@@ -174,7 +188,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
 
   function drawSky() {
     const material = skybox.materials[0] as SkyboxMaterial
-    material.ViewProjection = Mat4.premultiply(camera.view, camera.projection)
+    material.ViewProjection = mat4Premultiply(camera.view, camera.projection)
     skybox.draw()
   }
 

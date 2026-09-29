@@ -11,7 +11,7 @@ import {
   planeGeometry,
   sphereGeometry,
 } from '@gglib/graphics'
-import { Mat4, type IVec3, type IVec4 } from '@gglib/math'
+import { type Mat4, mat4CreateRotationX, type IVec3, type IVec4 } from '@gglib/math'
 import { ShapeMaterial } from '../../material/ShapeMaterial'
 import type { DebugShapeType } from './DebugShapeComponent'
 
@@ -78,7 +78,7 @@ export function createShapeGeometry(device: Device, type: DebugShapeType, solid:
     case 'sphere':
     case 'bounds-sphere': {
       return sphereGeometry(device, {
-        vertexTransform: Mat4.createRotationX(Math.PI / 2), // rotate to z up
+        vertexTransform: mat4CreateRotationX(Math.PI / 2), // rotate to z up
         radius: 1,
         stacks: 4,
         slices: 8,
@@ -88,14 +88,14 @@ export function createShapeGeometry(device: Device, type: DebugShapeType, solid:
     case 'box':
     case 'bounds-box': {
       return boxGeometry(device, {
-        vertexTransform: Mat4.createRotationX(Math.PI / 2), // rotate to z up
+        vertexTransform: mat4CreateRotationX(Math.PI / 2), // rotate to z up
         size: 1,
         lines: !solid,
       })
     }
     case 'plane': {
       return planeGeometry(device, {
-        vertexTransform: Mat4.createRotationX(Math.PI / 2), // rotate to z up
+        vertexTransform: mat4CreateRotationX(Math.PI / 2), // rotate to z up
         size: 1,
         depthSegments: 2,
         widthSegments: 2,
@@ -104,14 +104,14 @@ export function createShapeGeometry(device: Device, type: DebugShapeType, solid:
     }
     case 'disc': {
       return discGeometry(device, {
-        vertexTransform: Mat4.createRotationX(Math.PI / 2), // rotate to z up
+        vertexTransform: mat4CreateRotationX(Math.PI / 2), // rotate to z up
         radius: 1,
         lines: !solid,
       })
     }
     case 'cylinder': {
       return cylinderGeometry(device, {
-        vertexTransform: Mat4.createRotationX(Math.PI / 2), // rotate to z up
+        vertexTransform: mat4CreateRotationX(Math.PI / 2), // rotate to z up
         height: 1,
         radius: 1,
         lines: !solid,
@@ -119,7 +119,7 @@ export function createShapeGeometry(device: Device, type: DebugShapeType, solid:
     }
     case 'cone': {
       return cylinderGeometry(device, {
-        vertexTransform: Mat4.createRotationX(Math.PI / 2), // rotate to z up
+        vertexTransform: mat4CreateRotationX(Math.PI / 2), // rotate to z up
         height: 1,
         radius: 1,
         topRadius: 0,

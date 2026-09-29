@@ -9,9 +9,9 @@ import {
 } from '@gglib/components'
 import { ContentLoader } from '@gglib/content'
 import { GameComponent, GameEntity, InitializableComponent } from '@gglib/ecs'
-import { BasicMaterial, PlatformId } from '@gglib/graphics'
+import { PlatformId } from '@gglib/graphics'
 import { GLTF, MTL, OBJ } from '@gglib/loaders'
-import { DEGREE_TO_RAD, Vec3 } from '@gglib/math'
+import { DEGREE_TO_RAD, vec3 } from '@gglib/math'
 import { Renderer } from '@gglib/render'
 import { mountUi } from 'tweak-ui'
 
@@ -49,7 +49,7 @@ class Game extends EcsGame {
       parent: this.scene.entity,
       components: [new CameraComponent({ type: 'perspective' })],
       transform: new TransformComponent({
-        position: Vec3.create(0, 0, 3),
+        position: vec3(0, 0, 3),
       }),
     })
     this.scene.setCamera(0, entity.component(CameraComponent))
@@ -65,7 +65,7 @@ class Game extends EcsGame {
         parent: this.scene.entity,
         components: [new PendulumComponent(timeName)],
         transform: new TransformComponent({
-          position: Vec3.create(x, 1, -5),
+          position: vec3(x, 1, -5),
         }),
       })
 
@@ -73,7 +73,7 @@ class Game extends EcsGame {
         parent: pivot,
         components: [new ModelComponent(), new CubeLoader()],
         transform: new TransformComponent({
-          position: Vec3.create(0, -2, 0),
+          position: vec3(0, -2, 0),
         }),
       })
     }

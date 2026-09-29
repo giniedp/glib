@@ -1,6 +1,6 @@
-import { Mat4 } from './Mat4'
+import { Mat4, mat4$setForward, mat4$setRight, mat4$setUp, mat4Identity, mat4Transpose } from './Mat4'
 import { IVec3 } from './Types'
-import { Vec3 } from './Vec3'
+import { vec3, vec3Negate } from './Vec3'
 
 /**
  * Defines the axes of a 3D coordinate space.
@@ -29,9 +29,9 @@ export class SpaceBasis {
    * Godot, Bevy, three.js, Babylon.js, VRML/X3D
    */
   public static Y_UP_NEG_Z = new SpaceBasis({
-    up: Vec3.UnitY,
-    right: Vec3.UnitX,
-    forward: Vec3.NegativeUnitZ,
+    up: vec3(0, 1, 0),
+    right: vec3(1, 0, 0),
+    forward: vec3(0, 0, -1),
   })
 
   /**
@@ -43,9 +43,9 @@ export class SpaceBasis {
    * Used by: CryEngine, 3ds Max, Autodesk FBX (Z-up option), Valve Source, Quake/idTech
    */
   public static Z_UP_POS_Y = new SpaceBasis({
-    up: Vec3.UnitZ,
-    right: Vec3.UnitX,
-    forward: Vec3.UnitY,
+    up: vec3(0, 0, 1),
+    right: vec3(1, 0, 0),
+    forward: vec3(0, 1, 0),
   })
 
   /**
@@ -57,9 +57,9 @@ export class SpaceBasis {
    * Used by: Blender
    */
   public static Z_UP_NEG_Y = new SpaceBasis({
-    up: Vec3.UnitZ,
-    right: Vec3.UnitX,
-    forward: Vec3.NegativeUnitY,
+    up: vec3(0, 0, 1),
+    right: vec3(1, 0, 0),
+    forward: vec3(0, 0, -1),
   })
 
   /**
@@ -107,8 +107,8 @@ export class SpaceBasis {
    * always receive Y-up, -Z forward view coordinates:
    *
    * ```ts
-   * Mat4.invert(world, view)
-   * Mat4.premultiply(view, space.toViewSpace, view)
+   * mat4Invert(world, view)
+   * mat4Premultiply(view, space.toViewSpace, view)
    * ```
    *
    * Is the transpose of {@link fromViewSpace}.
@@ -116,19 +116,19 @@ export class SpaceBasis {
   public readonly toViewSpace: Mat4
 
   public constructor(definition: SpaceDefinition) {
-    this.up = Vec3.copy(definition.up)
-    this.right = Vec3.copy(definition.right)
-    this.forward = Vec3.copy(definition.forward)
+    this.up = vec3(definition.up)
+    this.right = vec3(definition.right)
+    this.forward = vec3(definition.forward)
 
-    this.down = Vec3.negate(this.up)
-    this.left = Vec3.negate(this.right)
-    this.backward = Vec3.negate(this.forward)
+    this.down = vec3Negate(this.up)
+    this.left = vec3Negate(this.right)
+    this.backward = vec3Negate(this.forward)
 
-    this.fromViewSpace = Mat4.createIdentity()
-    this.fromViewSpace.setUp(this.up)
-    this.fromViewSpace.setRight(this.right)
-    this.fromViewSpace.setForward(this.forward)
+    this.fromViewSpace = mat4Identity()
+    mat4$setUp(this.fromViewSpace, this.up)
+    mat4$setRight(this.fromViewSpace, this.right)
+    mat4$setForward(this.fromViewSpace, this.forward)
 
-    this.toViewSpace = Mat4.transpose(this.fromViewSpace)
+    this.toViewSpace = mat4Transpose(this.fromViewSpace)
   }
 }

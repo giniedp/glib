@@ -1,10 +1,21 @@
 import { type GameComponent, GameEntity } from '@gglib/ecs'
-import { type IVec3, Vec3, clamp } from '@gglib/math'
+import {
+  type IVec3,
+  clamp,
+  mat4GetForward,
+  vec3,
+  vec3$add,
+  vec3$initFrom,
+  vec3$multiplyScalar,
+  vec3$applyMat4,
+  vec3DistanceSquared,
+  vec3Lerp,
+} from '@gglib/math'
 import { TransformComponent } from '../components/TransformComponent'
 
-let tmp0: Vec3
-let tmp1: Vec3
-let tmp2: Vec3
+let tmp0: IVec3
+let tmp1: IVec3
+let tmp2: IVec3
 
 /**
  * Options for the {@link LookAtConstraint}
@@ -94,31 +105,31 @@ export class LookAtConstraint implements GameComponent {
       return
     }
 
-    let v0 = (tmp0 = tmp0 || Vec3.create())
-    let v1 = (tmp1 = tmp1 || Vec3.create())
-
+    let v0 = (tmp0 = tmp0 || vec3())
+    let v1 = (tmp1 = tmp1 || vec3())
+    let v2 = (tmp2 = tmp2 || vec3())
     // v0 = position of them in world space
-    v0.initFrom(this.source.translation)
+    vec3$initFrom(v0, this.source.translation)
     if (this.source.parent && this.sourceSpace === 'world') {
-      v0.transformByMat4(this.source.world)
+      vec3$applyMat4(v0, this.source.world)
     }
 
     // v1 = position of us in world space
-    v1.initFrom(this.target.translation)
+    vec3$initFrom(v1, this.target.translation)
     if (this.target.parent && this.targetSpace === 'world') {
-      v1.transformByMat4(this.target.world)
+      vec3$applyMat4(v1, this.target.world)
     }
 
     if (this.weight < 1) {
       // d = squared distance between objects
-      const d = Vec3.distanceSquared(v1, v0)
+      const d = vec3DistanceSquared(v1, v0)
       // v2 = current lookAt point at same distance
-      let v2 = tmp2 || Vec3.create()
-      this.target.world.getForward(v2)
-      v2.multiplyScalar(d)
-      v2.add(v1)
+
+      mat4GetForward(this.target.world, v2)
+      vec3$multiplyScalar(v2, d)
+      vec3$add(v2, v1)
       // v1 = new lookAt point
-      Vec3.lerp(v2, v0, clamp(this.weight, 0, 1), v0)
+      vec3Lerp(v2, v0, clamp(this.weight, 0, 1), v0)
     }
 
     // to local space

@@ -10,7 +10,7 @@ import {
   type EffectOptions,
   type ShaderModuleOptions,
 } from '@gglib/graphics'
-import { Vec4 } from '@gglib/math'
+import { vec4 } from '@gglib/math'
 import { TERRAIN_PATCH_SHADER as WGSL } from './TerrainPatchMaterial.wgsl'
 import { InputBlocks, MaterialLayerMasks } from './common'
 
@@ -75,10 +75,10 @@ export class TerrainPatchMaterial extends MaterialWithSchema(TerrainPatchMateria
     this.ColorMapSampler = SamplerState.LinearClamp
     this.MountainHeight = 2048
 
-    this.HeightMapUvTransform = Vec4.create(1, 1, 0, 0)
-    this.HeightMapUvTransformCoarse = Vec4.create(1, 1, 0, 0)
-    this.ColorMapUvTransform = Vec4.create(1, 1, 0, 0)
-    this.ColorMapUvTransformCoarse = Vec4.create(1, 1, 0, 0)
+    this.HeightMapUvTransform = vec4(1, 1, 0, 0)
+    this.HeightMapUvTransformCoarse = vec4(1, 1, 0, 0)
+    this.ColorMapUvTransform = vec4(1, 1, 0, 0)
+    this.ColorMapUvTransformCoarse = vec4(1, 1, 0, 0)
 
     this.effect.cullState = CullState.None
   }

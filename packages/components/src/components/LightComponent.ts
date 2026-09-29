@@ -1,6 +1,6 @@
 import type { GameComponent, GameEntity, InitializableComponent } from '@gglib/ecs'
 import { LightType } from '@gglib/graphics'
-import { BoundingSphere, Vec3 } from '@gglib/math'
+import { BoundingSphere, IVec3, mat4GetForward, mat4GetTranslation, vec3 } from '@gglib/math'
 import { BoundsComponent } from './BoundsComponent'
 import type { TransformComponent } from './TransformComponent'
 
@@ -15,9 +15,9 @@ export interface LightComponentOptions {
   intensity?: number
   spotAngle?: number
   castShadow?: boolean
-  position?: Vec3
-  direction?: Vec3
-  color?: Vec3
+  position?: IVec3
+  direction?: IVec3
+  color?: IVec3
   type?: LightType
 }
 
@@ -60,15 +60,15 @@ export class LightComponent implements GameComponent, InitializableComponent {
   /**
    * The current light position
    */
-  public position: Vec3 = Vec3.create(0, 0, 0)
+  public position: IVec3 = vec3(0, 0, 0)
   /**
    * The current light direction
    */
-  public direction: Vec3 = Vec3.create(0, 0, -1)
+  public direction: IVec3 = vec3(0, 0, -1)
   /**
    * The current light color
    */
-  public color: Vec3 = Vec3.create(1, 1, 1)
+  public color: IVec3 = vec3(1, 1, 1)
   /**
    * The light type
    */
@@ -90,9 +90,9 @@ export class LightComponent implements GameComponent, InitializableComponent {
       this.spotAngle = options.spotAngle ?? this.spotAngle
       this.castShadow = options.castShadow ?? this.castShadow
       this.type = options.type ?? this.type
-      this.color = Vec3.convert(options.color ?? this.color)
-      this.position = Vec3.convert(options.position ?? this.position)
-      this.direction = Vec3.convert(options.direction ?? this.direction)
+      this.color = vec3(options.color ?? this.color)
+      this.position = vec3(options.position ?? this.position)
+      this.direction = vec3(options.direction ?? this.direction)
     }
   }
 
@@ -108,8 +108,8 @@ export class LightComponent implements GameComponent, InitializableComponent {
 
   public update() {
     if (this.transform) {
-      this.transform.world.getForward(this.direction)
-      this.transform.world.getTranslation(this.position)
+      mat4GetForward(this.transform.world, this.direction)
+      mat4GetTranslation(this.transform.world, this.position)
     }
     this.updateParams()
   }

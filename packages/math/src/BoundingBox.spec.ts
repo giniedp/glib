@@ -1,12 +1,12 @@
-import { IVec3 } from './Types'
+import { describe, expect, it } from 'vitest'
 import { BoundingBox } from './BoundingBox'
-import { Vec3 } from './Vec3'
-import { BoundingSphere } from './BoundingSphere'
-import { Ray } from './Ray'
-import { Plane } from './Plane'
 import { BoundingFrustum } from './BoundingFrustum'
-import { describe, it, expect } from 'vitest'
-import { Mat4 } from './Mat4'
+import { BoundingSphere } from './BoundingSphere'
+import { mat4CreateTranslationXYZ } from './Mat4'
+import { rayCreate } from './Ray'
+import { IVec3 } from './Types'
+import { vec3 } from './Vec3'
+import { vec4 } from './Vec4'
 
 describe('BoundingBox', () => {
   function expectVec3Components(v: IVec3, x: number, y: number, z: number) {
@@ -68,79 +68,79 @@ describe('BoundingBox', () => {
 
   describe('#initFromMinMax', () => {
     it('initializes components', () => {
-      expectVec3Components(new BoundingBox().initFromMinMax(Vec3.create(1, 2, 3), Vec3.create(4, 5, 6)).min, 1, 2, 3)
-      expectVec3Components(new BoundingBox().initFromMinMax(Vec3.create(1, 2, 3), Vec3.create(4, 5, 6)).max, 4, 5, 6)
+      expectVec3Components(new BoundingBox().initFromMinMax(vec3(1, 2, 3), vec3(4, 5, 6)).min, 1, 2, 3)
+      expectVec3Components(new BoundingBox().initFromMinMax(vec3(1, 2, 3), vec3(4, 5, 6)).max, 4, 5, 6)
     })
   })
 
   describe('#createFromV', () => {
     it('initializes components', () => {
-      expectVec3Components(BoundingBox.createFromV(Vec3.create(1, 2, 3), Vec3.create(4, 5, 6)).min, 1, 2, 3)
-      expectVec3Components(BoundingBox.createFromV(Vec3.create(1, 2, 3), Vec3.create(4, 5, 6)).max, 4, 5, 6)
+      expectVec3Components(BoundingBox.createFromV(vec3(1, 2, 3), vec3(4, 5, 6)).min, 1, 2, 3)
+      expectVec3Components(BoundingBox.createFromV(vec3(1, 2, 3), vec3(4, 5, 6)).max, 4, 5, 6)
     })
   })
 
   describe('#initFromSphere', () => {
     it('creates from sphere', () => {
       const box1 = new BoundingBox().initFromSphere(new BoundingSphere(0, 0, 0, 1))
-      expectVec3Equality(box1.min, Vec3.create(-1, -1, -1))
-      expectVec3Equality(box1.max, Vec3.create(1, 1, 1))
+      expectVec3Equality(box1.min, vec3(-1, -1, -1))
+      expectVec3Equality(box1.max, vec3(1, 1, 1))
     })
   })
 
   describe('.createFromSphere', () => {
     it('creates from sphere', () => {
       const box1 = BoundingBox.createFromSphere(new BoundingSphere(0, 0, 0, 1))
-      expectVec3Equality(box1.min, Vec3.create(-1, -1, -1))
-      expectVec3Equality(box1.max, Vec3.create(1, 1, 1))
+      expectVec3Equality(box1.min, vec3(-1, -1, -1))
+      expectVec3Equality(box1.max, vec3(1, 1, 1))
     })
   })
 
   describe('#initFromArray', () => {
     it('merges points', () => {
       const box1 = new BoundingBox().initFromArray([1, 2, 3, 4, 5, 6])
-      expectVec3Equality(box1.min, Vec3.create(1, 2, 3))
-      expectVec3Equality(box1.max, Vec3.create(4, 5, 6))
+      expectVec3Equality(box1.min, vec3(1, 2, 3))
+      expectVec3Equality(box1.max, vec3(4, 5, 6))
     })
   })
 
   describe('.createFromArray', () => {
     it('merges points', () => {
       const box1 = BoundingBox.createFromArray([1, 2, 3, 4, 5, 6])
-      expectVec3Equality(box1.min, Vec3.create(1, 2, 3))
-      expectVec3Equality(box1.max, Vec3.create(4, 5, 6))
+      expectVec3Equality(box1.min, vec3(1, 2, 3))
+      expectVec3Equality(box1.max, vec3(4, 5, 6))
     })
   })
 
   describe('#initFromPointsBuffer', () => {
     it('merges points', () => {
       const box1 = new BoundingBox().initFromPointsBuffer([1, 2, 3, 4, 5, 6])
-      expectVec3Equality(box1.min, Vec3.create(1, 2, 3))
-      expectVec3Equality(box1.max, Vec3.create(4, 5, 6))
+      expectVec3Equality(box1.min, vec3(1, 2, 3))
+      expectVec3Equality(box1.max, vec3(4, 5, 6))
     })
   })
 
   describe('.createFromPointsBuffer', () => {
     it('merges points', () => {
       const box1 = BoundingBox.createFromPointsBuffer([1, 2, 3, 4, 5, 6])
-      expectVec3Equality(box1.min, Vec3.create(1, 2, 3))
-      expectVec3Equality(box1.max, Vec3.create(4, 5, 6))
+      expectVec3Equality(box1.min, vec3(1, 2, 3))
+      expectVec3Equality(box1.max, vec3(4, 5, 6))
     })
   })
 
   describe('#initFromPoints', () => {
     it('merges points', () => {
-      const box1 = new BoundingBox().initFromPoints([Vec3.create(1, 2, 3), Vec3.create(4, 5, 6)])
-      expectVec3Equality(box1.min, Vec3.create(1, 2, 3))
-      expectVec3Equality(box1.max, Vec3.create(4, 5, 6))
+      const box1 = new BoundingBox().initFromPoints([vec3(1, 2, 3), vec3(4, 5, 6)])
+      expectVec3Equality(box1.min, vec3(1, 2, 3))
+      expectVec3Equality(box1.max, vec3(4, 5, 6))
     })
   })
 
   describe('.createFromPoints', () => {
     it('merges points', () => {
-      const box1 = BoundingBox.createFromPoints([Vec3.create(1, 2, 3), Vec3.create(4, 5, 6)])
-      expectVec3Equality(box1.min, Vec3.create(1, 2, 3))
-      expectVec3Equality(box1.max, Vec3.create(4, 5, 6))
+      const box1 = BoundingBox.createFromPoints([vec3(1, 2, 3), vec3(4, 5, 6)])
+      expectVec3Equality(box1.min, vec3(1, 2, 3))
+      expectVec3Equality(box1.max, vec3(4, 5, 6))
     })
   })
 
@@ -290,90 +290,90 @@ describe('BoundingBox', () => {
 
   describe('#mergePoint', () => {
     it('merges point into box', () => {
-      let box1 = new BoundingBox(1, 2, 3, 4, 5, 6).mergePoint(Vec3.create(0, 2, 3))
-      expectVec3Equality(box1.min, Vec3.create(0, 2, 3))
-      expectVec3Equality(box1.max, Vec3.create(4, 5, 6))
+      let box1 = new BoundingBox(1, 2, 3, 4, 5, 6).mergePoint(vec3(0, 2, 3))
+      expectVec3Equality(box1.min, vec3(0, 2, 3))
+      expectVec3Equality(box1.max, vec3(4, 5, 6))
 
-      box1 = new BoundingBox(1, 2, 3, 4, 5, 6).mergePoint(Vec3.create(1, 1, 3))
-      expectVec3Equality(box1.min, Vec3.create(1, 1, 3))
-      expectVec3Equality(box1.max, Vec3.create(4, 5, 6))
+      box1 = new BoundingBox(1, 2, 3, 4, 5, 6).mergePoint(vec3(1, 1, 3))
+      expectVec3Equality(box1.min, vec3(1, 1, 3))
+      expectVec3Equality(box1.max, vec3(4, 5, 6))
 
-      box1 = new BoundingBox(1, 2, 3, 4, 5, 6).mergePoint(Vec3.create(1, 2, 2))
-      expectVec3Equality(box1.min, Vec3.create(1, 2, 2))
-      expectVec3Equality(box1.max, Vec3.create(4, 5, 6))
+      box1 = new BoundingBox(1, 2, 3, 4, 5, 6).mergePoint(vec3(1, 2, 2))
+      expectVec3Equality(box1.min, vec3(1, 2, 2))
+      expectVec3Equality(box1.max, vec3(4, 5, 6))
 
-      box1 = new BoundingBox(1, 2, 3, 4, 5, 6).mergePoint(Vec3.create(5, 5, 6))
-      expectVec3Equality(box1.min, Vec3.create(1, 2, 3))
-      expectVec3Equality(box1.max, Vec3.create(5, 5, 6))
+      box1 = new BoundingBox(1, 2, 3, 4, 5, 6).mergePoint(vec3(5, 5, 6))
+      expectVec3Equality(box1.min, vec3(1, 2, 3))
+      expectVec3Equality(box1.max, vec3(5, 5, 6))
 
-      box1 = new BoundingBox(1, 2, 3, 4, 5, 6).mergePoint(Vec3.create(4, 6, 6))
-      expectVec3Equality(box1.min, Vec3.create(1, 2, 3))
-      expectVec3Equality(box1.max, Vec3.create(4, 6, 6))
+      box1 = new BoundingBox(1, 2, 3, 4, 5, 6).mergePoint(vec3(4, 6, 6))
+      expectVec3Equality(box1.min, vec3(1, 2, 3))
+      expectVec3Equality(box1.max, vec3(4, 6, 6))
 
-      box1 = new BoundingBox(1, 2, 3, 4, 5, 6).mergePoint(Vec3.create(4, 5, 7))
-      expectVec3Equality(box1.min, Vec3.create(1, 2, 3))
-      expectVec3Equality(box1.max, Vec3.create(4, 5, 7))
+      box1 = new BoundingBox(1, 2, 3, 4, 5, 6).mergePoint(vec3(4, 5, 7))
+      expectVec3Equality(box1.min, vec3(1, 2, 3))
+      expectVec3Equality(box1.max, vec3(4, 5, 7))
     })
   })
 
   describe('.mergePoint', () => {
     it('merges point into box', () => {
       let box1 = new BoundingBox(1, 2, 3, 4, 5, 6)
-      BoundingBox.mergePoint(box1, Vec3.create(0, 2, 3), box1)
-      expectVec3Equality(box1.min, Vec3.create(0, 2, 3))
-      expectVec3Equality(box1.max, Vec3.create(4, 5, 6))
+      BoundingBox.mergePoint(box1, vec3(0, 2, 3), box1)
+      expectVec3Equality(box1.min, vec3(0, 2, 3))
+      expectVec3Equality(box1.max, vec3(4, 5, 6))
 
       box1 = new BoundingBox(1, 2, 3, 4, 5, 6)
-      BoundingBox.mergePoint(box1, Vec3.create(1, 1, 3), box1)
-      expectVec3Equality(box1.min, Vec3.create(1, 1, 3))
-      expectVec3Equality(box1.max, Vec3.create(4, 5, 6))
+      BoundingBox.mergePoint(box1, vec3(1, 1, 3), box1)
+      expectVec3Equality(box1.min, vec3(1, 1, 3))
+      expectVec3Equality(box1.max, vec3(4, 5, 6))
 
       box1 = new BoundingBox(1, 2, 3, 4, 5, 6)
-      BoundingBox.mergePoint(box1, Vec3.create(1, 2, 2), box1)
-      expectVec3Equality(box1.min, Vec3.create(1, 2, 2))
-      expectVec3Equality(box1.max, Vec3.create(4, 5, 6))
+      BoundingBox.mergePoint(box1, vec3(1, 2, 2), box1)
+      expectVec3Equality(box1.min, vec3(1, 2, 2))
+      expectVec3Equality(box1.max, vec3(4, 5, 6))
 
       box1 = new BoundingBox(1, 2, 3, 4, 5, 6)
-      BoundingBox.mergePoint(box1, Vec3.create(5, 5, 6), box1)
-      expectVec3Equality(box1.min, Vec3.create(1, 2, 3))
-      expectVec3Equality(box1.max, Vec3.create(5, 5, 6))
+      BoundingBox.mergePoint(box1, vec3(5, 5, 6), box1)
+      expectVec3Equality(box1.min, vec3(1, 2, 3))
+      expectVec3Equality(box1.max, vec3(5, 5, 6))
 
       box1 = new BoundingBox(1, 2, 3, 4, 5, 6)
-      BoundingBox.mergePoint(box1, Vec3.create(4, 6, 6), box1)
-      expectVec3Equality(box1.min, Vec3.create(1, 2, 3))
-      expectVec3Equality(box1.max, Vec3.create(4, 6, 6))
+      BoundingBox.mergePoint(box1, vec3(4, 6, 6), box1)
+      expectVec3Equality(box1.min, vec3(1, 2, 3))
+      expectVec3Equality(box1.max, vec3(4, 6, 6))
 
       box1 = new BoundingBox(1, 2, 3, 4, 5, 6)
-      BoundingBox.mergePoint(box1, Vec3.create(4, 5, 7), box1)
-      expectVec3Equality(box1.min, Vec3.create(1, 2, 3))
-      expectVec3Equality(box1.max, Vec3.create(4, 5, 7))
+      BoundingBox.mergePoint(box1, vec3(4, 5, 7), box1)
+      expectVec3Equality(box1.min, vec3(1, 2, 3))
+      expectVec3Equality(box1.max, vec3(4, 5, 7))
     })
   })
 
   describe('.convert', () => {
     it('converts from number[]', () => {
       const box1 = BoundingBox.convert([1, 2, 3, 4, 5, 6])
-      expectVec3Equality(box1.min, Vec3.create(1, 2, 3))
-      expectVec3Equality(box1.max, Vec3.create(4, 5, 6))
+      expectVec3Equality(box1.min, vec3(1, 2, 3))
+      expectVec3Equality(box1.max, vec3(4, 5, 6))
     })
   })
 
   describe('#intersectsRay', () => {
     it('tests for intersection', () => {
       const box = BoundingBox.create(0, 0, 0, 2, 2, 2)
-      expect(box.intersectsRay(Ray.create(-1, 1, 1, 1, 0, 0)), 'from left').toBe(true)
-      expect(box.intersectsRay(Ray.create(3, 1, 1, -1, 0, 0)), 'from right').toBe(true)
-      expect(box.intersectsRay(Ray.create(1, -1, 1, 0, 1, 0)), 'from below').toBe(true)
-      expect(box.intersectsRay(Ray.create(1, 3, 1, 0, -1, 0)), 'from above').toBe(true)
-      expect(box.intersectsRay(Ray.create(1, 1, -1, 0, 0, 1)), 'from behind').toBe(true)
-      expect(box.intersectsRay(Ray.create(1, 1, 3, 0, 0, -1)), 'from upfront').toBe(true)
+      expect(box.intersectsRay(rayCreate(vec3(-1, 1, 1), vec3(1, 0, 0))), 'from left').toBe(true)
+      expect(box.intersectsRay(rayCreate(vec3(3, 1, 1), vec3(-1, 0, 0))), 'from right').toBe(true)
+      expect(box.intersectsRay(rayCreate(vec3(1, -1, 1), vec3(0, 1, 0))), 'from below').toBe(true)
+      expect(box.intersectsRay(rayCreate(vec3(1, 3, 1), vec3(0, -1, 0))), 'from above').toBe(true)
+      expect(box.intersectsRay(rayCreate(vec3(1, 1, -1), vec3(0, 0, 1))), 'from behind').toBe(true)
+      expect(box.intersectsRay(rayCreate(vec3(1, 1, 3), vec3(0, 0, -1))), 'from upfront').toBe(true)
 
-      expect(box.intersectsRay(Ray.create(-1, 1, 1, -1, 0, 0)), 'away, left').toBe(false)
-      expect(box.intersectsRay(Ray.create(3, 1, 1, 1, 0, 0)), 'away, right').toBe(false)
-      expect(box.intersectsRay(Ray.create(1, -1, 1, 0, -1, 0)), 'away, below').toBe(false)
-      expect(box.intersectsRay(Ray.create(1, 3, 1, 0, 1, 0)), 'away, above').toBe(false)
-      expect(box.intersectsRay(Ray.create(1, 1, -1, 0, 0, -1)), 'away, behind').toBe(false)
-      expect(box.intersectsRay(Ray.create(1, 1, 3, 0, 0, 1)), 'away, upfront').toBe(false)
+      expect(box.intersectsRay(rayCreate(vec3(-1, 1, 1), vec3(-1, 0, 0))), 'away, left').toBe(false)
+      expect(box.intersectsRay(rayCreate(vec3(3, 1, 1), vec3(1, 0, 0))), 'away, right').toBe(false)
+      expect(box.intersectsRay(rayCreate(vec3(1, -1, 1), vec3(0, -1, 0))), 'away, below').toBe(false)
+      expect(box.intersectsRay(rayCreate(vec3(1, 3, 1), vec3(0, 1, 0))), 'away, above').toBe(false)
+      expect(box.intersectsRay(rayCreate(vec3(1, 1, -1), vec3(0, 0, -1))), 'away, behind').toBe(false)
+      expect(box.intersectsRay(rayCreate(vec3(1, 1, 3), vec3(0, 0, 1))), 'away, upfront').toBe(false)
     })
   })
 
@@ -381,35 +381,35 @@ describe('BoundingBox', () => {
     it('tests for intersection', () => {
       const box = BoundingBox.create(0, 0, 0, 1, 2, 3)
 
-      expect(box.intersectsPlane(Plane.create(1, 0, 0, -1.001))).toBe(false)
-      expect(box.intersectsPlane(Plane.create(1, 0, 0, -1.0))).toBe(true)
-      expect(box.intersectsPlane(Plane.create(1, 0, 0, 0.0))).toBe(true)
-      expect(box.intersectsPlane(Plane.create(1, 0, 0, 0.001))).toBe(false)
+      expect(box.intersectsPlane(vec4(1, 0, 0, -1.001))).toBe(false)
+      expect(box.intersectsPlane(vec4(1, 0, 0, -1.0))).toBe(true)
+      expect(box.intersectsPlane(vec4(1, 0, 0, 0.0))).toBe(true)
+      expect(box.intersectsPlane(vec4(1, 0, 0, 0.001))).toBe(false)
 
-      expect(box.intersectsPlane(Plane.create(0, 1, 0, -2.001))).toBe(false)
-      expect(box.intersectsPlane(Plane.create(0, 1, 0, -2.0))).toBe(true)
-      expect(box.intersectsPlane(Plane.create(0, 1, 0, 0.0))).toBe(true)
-      expect(box.intersectsPlane(Plane.create(0, 1, 0, 0.001))).toBe(false)
+      expect(box.intersectsPlane(vec4(0, 1, 0, -2.001))).toBe(false)
+      expect(box.intersectsPlane(vec4(0, 1, 0, -2.0))).toBe(true)
+      expect(box.intersectsPlane(vec4(0, 1, 0, 0.0))).toBe(true)
+      expect(box.intersectsPlane(vec4(0, 1, 0, 0.001))).toBe(false)
 
-      expect(box.intersectsPlane(Plane.create(0, 0, 1, -3.001))).toBe(false)
-      expect(box.intersectsPlane(Plane.create(0, 0, 1, -3.0))).toBe(true)
-      expect(box.intersectsPlane(Plane.create(0, 0, 1, 0.0))).toBe(true)
-      expect(box.intersectsPlane(Plane.create(0, 0, 1, 0.001))).toBe(false)
+      expect(box.intersectsPlane(vec4(0, 0, 1, -3.001))).toBe(false)
+      expect(box.intersectsPlane(vec4(0, 0, 1, -3.0))).toBe(true)
+      expect(box.intersectsPlane(vec4(0, 0, 1, 0.0))).toBe(true)
+      expect(box.intersectsPlane(vec4(0, 0, 1, 0.001))).toBe(false)
 
-      expect(box.intersectsPlane(Plane.create(-1, 0, 0, 1.001))).toBe(false)
-      expect(box.intersectsPlane(Plane.create(-1, 0, 0, 1.0))).toBe(true)
-      expect(box.intersectsPlane(Plane.create(-1, 0, 0, 0.0))).toBe(true)
-      expect(box.intersectsPlane(Plane.create(-1, 0, 0, -0.001))).toBe(false)
+      expect(box.intersectsPlane(vec4(-1, 0, 0, 1.001))).toBe(false)
+      expect(box.intersectsPlane(vec4(-1, 0, 0, 1.0))).toBe(true)
+      expect(box.intersectsPlane(vec4(-1, 0, 0, 0.0))).toBe(true)
+      expect(box.intersectsPlane(vec4(-1, 0, 0, -0.001))).toBe(false)
 
-      expect(box.intersectsPlane(Plane.create(0, -1, 0, 2.001))).toBe(false)
-      expect(box.intersectsPlane(Plane.create(0, -1, 0, 2.0))).toBe(true)
-      expect(box.intersectsPlane(Plane.create(0, -1, 0, 0.0))).toBe(true)
-      expect(box.intersectsPlane(Plane.create(0, -1, 0, -0.001))).toBe(false)
+      expect(box.intersectsPlane(vec4(0, -1, 0, 2.001))).toBe(false)
+      expect(box.intersectsPlane(vec4(0, -1, 0, 2.0))).toBe(true)
+      expect(box.intersectsPlane(vec4(0, -1, 0, 0.0))).toBe(true)
+      expect(box.intersectsPlane(vec4(0, -1, 0, -0.001))).toBe(false)
 
-      expect(box.intersectsPlane(Plane.create(0, 0, -1, 3.001))).toBe(false)
-      expect(box.intersectsPlane(Plane.create(0, 0, -1, 3.0))).toBe(true)
-      expect(box.intersectsPlane(Plane.create(0, 0, -1, 0.0))).toBe(true)
-      expect(box.intersectsPlane(Plane.create(0, 0, -1, -0.001))).toBe(false)
+      expect(box.intersectsPlane(vec4(0, 0, -1, 3.001))).toBe(false)
+      expect(box.intersectsPlane(vec4(0, 0, -1, 3.0))).toBe(true)
+      expect(box.intersectsPlane(vec4(0, 0, -1, 0.0))).toBe(true)
+      expect(box.intersectsPlane(vec4(0, 0, -1, -0.001))).toBe(false)
     })
   })
 
@@ -463,29 +463,29 @@ describe('BoundingBox', () => {
     it('tests for containment', () => {
       const box = BoundingBox.create(0, 0, 0, 1, 1, 1)
 
-      expect(box.intersectsPoint(Vec3.create(-0.001, 0, 0))).toBe(false)
-      expect(box.intersectsPoint(Vec3.create(0.0, 0, 0))).toBe(true)
-      expect(box.intersectsPoint(Vec3.create(0.001, 0, 0))).toBe(true)
+      expect(box.intersectsPoint(vec3(-0.001, 0, 0))).toBe(false)
+      expect(box.intersectsPoint(vec3(0.0, 0, 0))).toBe(true)
+      expect(box.intersectsPoint(vec3(0.001, 0, 0))).toBe(true)
 
-      expect(box.intersectsPoint(Vec3.create(0, -0.001, 0))).toBe(false)
-      expect(box.intersectsPoint(Vec3.create(0, 0.0, 0))).toBe(true)
-      expect(box.intersectsPoint(Vec3.create(0, 0.001, 0))).toBe(true)
+      expect(box.intersectsPoint(vec3(0, -0.001, 0))).toBe(false)
+      expect(box.intersectsPoint(vec3(0, 0.0, 0))).toBe(true)
+      expect(box.intersectsPoint(vec3(0, 0.001, 0))).toBe(true)
 
-      expect(box.intersectsPoint(Vec3.create(0, 0, -0.001))).toBe(false)
-      expect(box.intersectsPoint(Vec3.create(0, 0, 0.0))).toBe(true)
-      expect(box.intersectsPoint(Vec3.create(0, 0, 0.001))).toBe(true)
+      expect(box.intersectsPoint(vec3(0, 0, -0.001))).toBe(false)
+      expect(box.intersectsPoint(vec3(0, 0, 0.0))).toBe(true)
+      expect(box.intersectsPoint(vec3(0, 0, 0.001))).toBe(true)
 
-      expect(box.intersectsPoint(Vec3.create(1 + 0.001, 0, 0))).toBe(false)
-      expect(box.intersectsPoint(Vec3.create(1 + 0.0, 0, 0))).toBe(true)
-      expect(box.intersectsPoint(Vec3.create(1 - 0.001, 0, 0))).toBe(true)
+      expect(box.intersectsPoint(vec3(1 + 0.001, 0, 0))).toBe(false)
+      expect(box.intersectsPoint(vec3(1 + 0.0, 0, 0))).toBe(true)
+      expect(box.intersectsPoint(vec3(1 - 0.001, 0, 0))).toBe(true)
 
-      expect(box.intersectsPoint(Vec3.create(0, 1 + 0.001, 0))).toBe(false)
-      expect(box.intersectsPoint(Vec3.create(0, 1 + 0.0, 0))).toBe(true)
-      expect(box.intersectsPoint(Vec3.create(0, 1 - 0.001, 0))).toBe(true)
+      expect(box.intersectsPoint(vec3(0, 1 + 0.001, 0))).toBe(false)
+      expect(box.intersectsPoint(vec3(0, 1 + 0.0, 0))).toBe(true)
+      expect(box.intersectsPoint(vec3(0, 1 - 0.001, 0))).toBe(true)
 
-      expect(box.intersectsPoint(Vec3.create(0, 0, 1 + 0.001))).toBe(false)
-      expect(box.intersectsPoint(Vec3.create(0, 0, 1 + 0.0))).toBe(true)
-      expect(box.intersectsPoint(Vec3.create(0, 0, 1 - 0.001))).toBe(true)
+      expect(box.intersectsPoint(vec3(0, 0, 1 + 0.001))).toBe(false)
+      expect(box.intersectsPoint(vec3(0, 0, 1 + 0.0))).toBe(true)
+      expect(box.intersectsPoint(vec3(0, 0, 1 - 0.001))).toBe(true)
     })
   })
 
@@ -645,7 +645,7 @@ describe('BoundingBox', () => {
       const box = BoundingBox.create(-1, -1, -1, 1, 1, 1)
 
       // Pure translation: center (0,0,0) → (2,3,4), extent unchanged
-      const mat = Mat4.createTranslationXYZ(2, 3, 4)
+      const mat = mat4CreateTranslationXYZ(2, 3, 4)
       const out = BoundingBox.transform(box, mat)
 
       // center moves to (2,3,4), extent stays (1,1,1) → min=(1,2,3), max=(3,4,5)

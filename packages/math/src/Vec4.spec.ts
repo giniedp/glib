@@ -1,641 +1,102 @@
-import { beforeEach, describe, expect, it } from 'vitest'
-import { IVec4, Mat2, Mat3, Mat4, Quat, vec4, Vec4 } from './index'
+import { describe, expect, it } from 'vitest'
+import {
+  IVec4,
+  mat2CreateRotationX,
+  mat2CreateRotationY,
+  mat2CreateRotationZ,
+  mat3CreateAxisAngle,
+  mat4CreateAxisAngle,
+  mat4CreateTranslationXYZ,
+  quatCreateAxisAngle,
+  vec4,
+  vec4$add,
+  vec4$addScalar,
+  vec4$addScaled,
+  vec4$clamp,
+  vec4$clampScalar,
+  vec4$divide,
+  vec4$divideScalar,
+  vec4$init,
+  vec4$initFill,
+  vec4$initFrom,
+  vec4$initRandom,
+  vec4$invert,
+  vec4$multiply,
+  vec4$multiplyScalar,
+  vec4$negate,
+  vec4$normalize,
+  vec4$saturate,
+  vec4$subtract,
+  vec4$subtractScalar,
+  vec4$subtractScaled,
+  vec4$applyMat2,
+  vec4$applyMat3,
+  vec4$applyMat4,
+  vec4$applyQuat,
+  vec4Add,
+  vec4AddScalar,
+  vec4AddScaled,
+  vec4Barycentric,
+  vec4Clamp,
+  vec4ClampScalar,
+  vec4Copy,
+  vec4Distance,
+  vec4DistanceSquared,
+  vec4Divide,
+  vec4DivideScalar,
+  vec4Dot,
+  vec4Equals,
+  vec4Format,
+  vec4FromArray,
+  vec4Invert,
+  vec4Length,
+  vec4LengthSquared,
+  vec4Lerp,
+  vec4Max,
+  vec4MaxScalar,
+  vec4Min,
+  vec4MinScalar,
+  vec4Multiply,
+  vec4MultiplyScalar,
+  vec4Negate,
+  vec4Normalize,
+  vec4Saturate,
+  vec4Subtract,
+  vec4SubtractScalar,
+  vec4SubtractScaled,
+  vec4ToArray,
+  vec4ApplyMat2,
+  vec4ApplyMat3,
+  vec4ApplyMat4,
+  vec4ApplyQuat,
+} from './index'
 
-describe('Vec4', () => {
+describe('vec4', () => {
   function expectComponents(v: IVec4, x: number, y: number, z: number, w: number) {
-    expect(v.x, 'x component of Vec4 invalid').toBeCloseTo(x, 10)
-    expect(v.y, 'y component of Vec4 invalid').toBeCloseTo(y, 10)
-    expect(v.z, 'z component of Vec4 invalid').toBeCloseTo(z, 10)
-    expect(v.w, 'w component of Vec4 invalid').toBeCloseTo(w, 10)
+    expect(v.x, 'x component invalid').toBeCloseTo(x, 10)
+    expect(v.y, 'y component invalid').toBeCloseTo(y, 10)
+    expect(v.z, 'z component invalid').toBeCloseTo(z, 10)
+    expect(v.w, 'w component invalid').toBeCloseTo(w, 10)
   }
 
-  function expectEquality(v1: IVec4, v2: IVec4) {
-    expect(v1.x, 'x component of Vec4 invalid').toBeCloseTo(v2.x, 10)
-    expect(v1.y, 'y component of Vec4 invalid').toBeCloseTo(v2.y, 10)
-    expect(v1.z, 'z component of Vec4 invalid').toBeCloseTo(v2.z, 10)
-    expect(v1.w, 'w component of Vec4 invalid').toBeCloseTo(v2.w, 10)
-  }
-
-  let a = new Vec4()
-  let b = new Vec4()
-  let c = new Vec4()
-  let d = new Vec4()
-
-  beforeEach(() => {
-    a = new Vec4()
-    b = new Vec4()
-    c = new Vec4()
-    d = new Vec4()
-  })
-
-  describe('#constructor', () => {
-    it('initializes all components', () => {
-      expectComponents(new Vec4(1, 2, 3, 4), 1, 2, 3, 4)
-    })
-    it('initializes to 0 without arguments', () => {
-      expectComponents(new Vec4(), 0, 0, 0, 0)
-    })
-  })
-
-  describe('#setX', () => {
-    it('set the value', () => expectComponents(a.setX(1), 1, 0, 0, 0))
-    it('returns same instance', () => expect(a.setX(1)).toBe(a))
-  })
-  describe('#setY', () => {
-    it('set the value', () => expectComponents(a.setY(1), 0, 1, 0, 0))
-    it('returns same instance', () => expect(a.setY(1)).toBe(a))
-  })
-  describe('#setZ', () => {
-    it('set the value', () => expectComponents(a.setZ(1), 0, 0, 1, 0))
-    it('returns same instance', () => expect(a.setZ(1)).toBe(a))
-  })
-  describe('#setW', () => {
-    it('set the value', () => expectComponents(a.setW(1), 0, 0, 0, 1))
-    it('returns same instance', () => expect(a.setW(1)).toBe(a))
-  })
-  describe('#set', () => {
-    it('set x value by key', () => expectComponents(a.set('x', 1), 1, 0, 0, 0))
-    it('set y value by key', () => expectComponents(a.set('y', 1), 0, 1, 0, 0))
-    it('set z value by key', () => expectComponents(a.set('z', 1), 0, 0, 1, 0))
-    it('set w value by key', () => expectComponents(a.set('w', 1), 0, 0, 0, 1))
-    it('set x value by index', () => expectComponents(a.set(0, 1), 1, 0, 0, 0))
-    it('set y value by index', () => expectComponents(a.set(1, 1), 0, 1, 0, 0))
-    it('set z value by index', () => expectComponents(a.set(2, 1), 0, 0, 1, 0))
-    it('set w value by index', () => expectComponents(a.set(3, 1), 0, 0, 0, 1))
-    it('returns same instance', () => expect(a.set(0, 1)).toBe(a))
-  })
-  describe('#get', () => {
-    beforeEach(() => {
-      a = Vec4.create(1, 2, 3, 4)
-    })
-    it('gets x value by key', () => expect(a.get('x')).toEqual(1))
-    it('gets y value by key', () => expect(a.get('y')).toEqual(2))
-    it('gets z value by key', () => expect(a.get('z')).toEqual(3))
-    it('gets w value by key', () => expect(a.get('w')).toEqual(4))
-    it('gets x value by index', () => expect(a.get(0)).toEqual(1))
-    it('gets y value by index', () => expect(a.get(1)).toEqual(2))
-    it('gets z value by index', () => expect(a.get(2)).toEqual(3))
-    it('gets w value by index', () => expect(a.get(3)).toEqual(4))
-  })
-  describe('#init', () => {
-    it('inits all components', () => expectComponents(a.init(1, 2, 3, 4), 1, 2, 3, 4))
-    it('returns same instance', () => expect(a.init(1, 2, 3, 4)).toBe(a))
-  })
-  describe('.create', () => {
-    it('creates a new vector', () => {
-      expectComponents(Vec4.create(), 0, 0, 0, 0)
-      expectComponents(Vec4.create(1, 2, 3, 4), 1, 2, 3, 4)
-    })
-  })
-  describe('#initFrom', () => {
-    beforeEach(() => {
-      b = Vec4.create(1, 2, 3, 4)
-    })
-    it('inits all components', () => expectComponents(a.initFrom(b), 1, 2, 3, 4))
-    it('returns same instance', () => expect(a.initFrom(b)).toBe(a))
-  })
-  describe('.createFrom', () => {
-    beforeEach(() => {
-      b = Vec4.create(1, 2, 3, 4)
-    })
-    it('inits all components', () => expectComponents(Vec4.createFrom(b), 1, 2, 3, 4))
-  })
-  describe('#initFromBuffer', () => {
-    it('inits all components', () => expectComponents(a.initFromArray([1, 2, 3, 4, 5], 1), 2, 3, 4, 5))
-    it('returns same instance', () => expect(a.initFromArray([1, 2, 3, 4, 5], 1)).toBe(a))
-  })
-  describe('.createFromBuffer', () => {
-    it('inits all components', () => expectComponents(Vec4.createFromArray([1, 2, 3, 4, 5], 1), 2, 3, 4, 5))
-  })
-  describe('#clone', () => {
-    beforeEach(() => {
-      a = Vec4.create(1, 2, 3, 4)
-    })
-    it('clones all components', () => expectComponents(a.copy(), 1, 2, 3, 4))
-    it('returns new instance', () => expect(a.copy()).not.toBe(a))
-  })
-  describe('.clone', () => {
-    beforeEach(() => {
-      a = Vec4.create(1, 2, 3, 4)
-    })
-    it('clones all components', () => expectComponents(Vec4.copy(a), 1, 2, 3, 4))
-    it('returns new instance', () => expect(Vec4.copy(a)).not.toBe(a))
-  })
-  describe('#toArray', () => {
-    beforeEach(() => {
-      a = Vec4.create(1, 2, 3, 4)
-    })
-    it('copies components', () => expect(a.toArray()).toEqual([1, 2, 3, 4]))
-    it('copies components at offset', () => expect(a.toArray([0, 0, 0, 0, 0], 1)).toEqual([0, 1, 2, 3, 4]))
-  })
-  describe('.toArray', () => {
-    beforeEach(() => {
-      a = Vec4.create(1, 2, 3, 4)
-    })
-    it('copies components', () => expect(Vec4.toArray(a, [])).toEqual([1, 2, 3, 4]))
-    it('copies components at offset', () => expect(Vec4.toArray(a, [0, 0, 0, 0, 0], 1)).toEqual([0, 1, 2, 3, 4]))
-  })
-  describe('.toArray', () => {
-    beforeEach(() => {
-      a = Vec4.create(1, 2, 3, 4)
-    })
-    it('copies components', () => expect(Vec4.toArray(a, [])).toEqual([1, 2, 3, 4]))
-    it('copies components at offset', () => expect(Vec4.toArray(a, [0, 0, 0, 0, 0], 1)).toEqual([0, 1, 2, 3, 4]))
-  })
-  describe('#equals', () => {
-    it('compares components', () => {
-      expect(Vec4.create(0, 0, 0, 0).equals(Vec4.create(0, 0, 0, 0))).toBe(true)
-      expect(Vec4.create(1, 0, 0, 0).equals(Vec4.create(1, 0, 0, 0))).toBe(true)
-      expect(Vec4.create(0, 1, 0, 0).equals(Vec4.create(0, 1, 0, 0))).toBe(true)
-      expect(Vec4.create(0, 0, 1, 0).equals(Vec4.create(0, 0, 1, 0))).toBe(true)
-      expect(Vec4.create(0, 0, 0, 1).equals(Vec4.create(0, 0, 0, 1))).toBe(true)
-      expect(Vec4.create(0, 0, 0, 0).equals(Vec4.create(1, 0, 0, 0))).toBe(false)
-      expect(Vec4.create(0, 0, 0, 0).equals(Vec4.create(0, 1, 0, 0))).toBe(false)
-      expect(Vec4.create(0, 0, 0, 0).equals(Vec4.create(0, 0, 1, 0))).toBe(false)
-      expect(Vec4.create(0, 0, 0, 0).equals(Vec4.create(0, 0, 0, 1))).toBe(false)
-    })
-  })
-  describe('.equals', () => {
-    it('compares components', () => {
-      expect(Vec4.equals(Vec4.create(0, 0, 0, 0), Vec4.create(0, 0, 0, 0))).toBe(true)
-      expect(Vec4.equals(Vec4.create(1, 0, 0, 0), Vec4.create(1, 0, 0, 0))).toBe(true)
-      expect(Vec4.equals(Vec4.create(0, 1, 0, 0), Vec4.create(0, 1, 0, 0))).toBe(true)
-      expect(Vec4.equals(Vec4.create(0, 0, 1, 0), Vec4.create(0, 0, 1, 0))).toBe(true)
-      expect(Vec4.equals(Vec4.create(0, 0, 0, 1), Vec4.create(0, 0, 0, 1))).toBe(true)
-      expect(Vec4.equals(Vec4.create(0, 0, 0, 0), Vec4.create(1, 0, 0, 0))).toBe(false)
-      expect(Vec4.equals(Vec4.create(0, 0, 0, 0), Vec4.create(0, 1, 0, 0))).toBe(false)
-      expect(Vec4.equals(Vec4.create(0, 0, 0, 0), Vec4.create(0, 0, 1, 0))).toBe(false)
-      expect(Vec4.equals(Vec4.create(0, 0, 0, 0), Vec4.create(0, 0, 0, 1))).toBe(false)
-    })
-  })
-  describe('#length', () => {
-    it('calculates length', () => {
-      expect(Vec4.create(2, 0, 0, 0).length()).toBe(2)
-      expect(Vec4.create(0, 3, 0, 0).length()).toBe(3)
-      expect(Vec4.create(0, 0, 4, 0).length()).toBe(4)
-      expect(Vec4.create(0, 0, 0, 5).length()).toBe(5)
-    })
-  })
-  describe('.magnitude', () => {
-    it('calculates length', () => {
-      expect(Vec4.magnitude(Vec4.create(2, 0, 0, 0))).toBe(2)
-      expect(Vec4.magnitude(Vec4.create(0, 3, 0, 0))).toBe(3)
-      expect(Vec4.magnitude(Vec4.create(0, 0, 4, 0))).toBe(4)
-      expect(Vec4.magnitude(Vec4.create(0, 0, 0, 5))).toBe(5)
-    })
-  })
-  describe('#lengthSquared', () => {
-    it('calculates length', () => {
-      expect(Vec4.create(2, 0, 0, 0).lengthSquared()).toBe(4)
-      expect(Vec4.create(0, 3, 0, 0).lengthSquared()).toBe(9)
-      expect(Vec4.create(0, 0, 4, 0).lengthSquared()).toBe(16)
-      expect(Vec4.create(0, 0, 0, 5).lengthSquared()).toBe(25)
-    })
-  })
-  describe('.lengthSquared', () => {
-    it('calculates length', () => {
-      expect(Vec4.lengthSquared(Vec4.create(2, 0, 0, 0))).toBe(4)
-      expect(Vec4.lengthSquared(Vec4.create(0, 3, 0, 0))).toBe(9)
-      expect(Vec4.lengthSquared(Vec4.create(0, 0, 4, 0))).toBe(16)
-      expect(Vec4.lengthSquared(Vec4.create(0, 0, 0, 5))).toBe(25)
-    })
-  })
-  describe('#distance', () => {
-    it('calculates distance', () => {
-      expect(Vec4.create(2, 0, 0, 0).distance(Vec4.create(4, 0, 0, 0))).toBe(2)
-      expect(Vec4.create(0, 3, 0, 0).distance(Vec4.create(0, 6, 0, 0))).toBe(3)
-      expect(Vec4.create(0, 0, 4, 0).distance(Vec4.create(0, 0, 8, 0))).toBe(4)
-      expect(Vec4.create(0, 0, 0, 5).distance(Vec4.create(0, 0, 0, 10))).toBe(5)
-    })
-  })
-  describe('.distance', () => {
-    it('calculates distance', () => {
-      expect(Vec4.distance(Vec4.create(2, 0, 0, 0), Vec4.create(4, 0, 0, 0))).toBe(2)
-      expect(Vec4.distance(Vec4.create(0, 3, 0, 0), Vec4.create(0, 6, 0, 0))).toBe(3)
-      expect(Vec4.distance(Vec4.create(0, 0, 4, 0), Vec4.create(0, 0, 8, 0))).toBe(4)
-      expect(Vec4.distance(Vec4.create(0, 0, 0, 5), Vec4.create(0, 0, 0, 10))).toBe(5)
-    })
-  })
-  describe('#distanceSquared', () => {
-    it('calculates distance', () => {
-      expect(Vec4.create(2, 0, 0, 0).distanceSquared(Vec4.create(4, 0, 0, 0))).toBe(4)
-      expect(Vec4.create(0, 3, 0, 0).distanceSquared(Vec4.create(0, 6, 0, 0))).toBe(9)
-      expect(Vec4.create(0, 0, 4, 0).distanceSquared(Vec4.create(0, 0, 8, 0))).toBe(16)
-      expect(Vec4.create(0, 0, 0, 5).distanceSquared(Vec4.create(0, 0, 0, 10))).toBe(25)
-    })
-  })
-  describe('.distanceSquared', () => {
-    it('calculates distance', () => {
-      expect(Vec4.distanceSquared(Vec4.create(2, 0, 0, 0), Vec4.create(4, 0, 0, 0))).toBe(4)
-      expect(Vec4.distanceSquared(Vec4.create(0, 3, 0, 0), Vec4.create(0, 6, 0, 0))).toBe(9)
-      expect(Vec4.distanceSquared(Vec4.create(0, 0, 4, 0), Vec4.create(0, 0, 8, 0))).toBe(16)
-      expect(Vec4.distanceSquared(Vec4.create(0, 0, 0, 5), Vec4.create(0, 0, 0, 10))).toBe(25)
-    })
-  })
-  describe('#dot', () => {
-    it('calculates dot', () => {
-      expect(Vec4.create(2, 0, 0, 0).dot(Vec4.create(4, 0, 0, 0))).toBe(8)
-      expect(Vec4.create(0, 3, 0, 0).dot(Vec4.create(0, 6, 0, 0))).toBe(18)
-      expect(Vec4.create(0, 0, 4, 0).dot(Vec4.create(0, 0, 8, 0))).toBe(32)
-      expect(Vec4.create(0, 0, 0, 5).dot(Vec4.create(0, 0, 0, 10))).toBe(50)
-    })
-  })
-  describe('.dot', () => {
-    it('calculates dot', () => {
-      expect(Vec4.dot(Vec4.create(2, 0, 0, 0), Vec4.create(4, 0, 0, 0))).toBe(8)
-      expect(Vec4.dot(Vec4.create(0, 3, 0, 0), Vec4.create(0, 6, 0, 0))).toBe(18)
-      expect(Vec4.dot(Vec4.create(0, 0, 4, 0), Vec4.create(0, 0, 8, 0))).toBe(32)
-      expect(Vec4.dot(Vec4.create(0, 0, 0, 5), Vec4.create(0, 0, 0, 10))).toBe(50)
-    })
-  })
-  describe('#normalize', () => {
-    it('normalizes', () => expect(Vec4.create(1, 2, 3, 4).normalize().length()).toBeCloseTo(1))
-  })
-  describe('.normalize', () => {
-    it('normalizes', () => expect(Vec4.magnitude(Vec4.normalize(Vec4.create(1, 2, 3, 4)))).toBeCloseTo(1))
-  })
-  describe('#invert', () => {
-    it('inverts', () => expectComponents(Vec4.create(2, 4, 8, 16).invert(), 0.5, 0.25, 0.125, 0.0625))
-    it('return instance', () => expect(a.init(2, 4, 8, 16).invert()).toBe(a))
-  })
-  describe('.invert', () => {
-    it('inverts', () => expectComponents(Vec4.invert(Vec4.create(2, 4, 8, 16)), 0.5, 0.25, 0.125, 0.0625))
-  })
-  describe('#negate', () => {
-    it('negates', () => expectComponents(Vec4.create(2, 4, 8, 16).negate(), -2, -4, -8, -16))
-    it('return instance', () => expect(a.init(2, 4, 8, 16).negate()).toBe(a))
-  })
-  describe('.negate', () => {
-    it('negates', () => expectComponents(Vec4.negate(Vec4.create(2, 4, 8, 16)), -2, -4, -8, -16))
-  })
-  describe('add operations', () => {
-    beforeEach(() => {
-      a = Vec4.create(1, 2, 3, 4)
-      b = Vec4.create(5, 6, 7, 8)
-      c = Vec4.create(6, 8, 10, 12)
-    })
-    describe('#add', () => {
-      it('calculates C = A + B', () => {
-        expectEquality(a.add(b), c)
-      })
-      it('returns instance', () => {
-        expect(a.add(b)).toBe(a)
-      })
-    })
-    describe('.add', () => {
-      it('adds', () => expectEquality(Vec4.add(a, b), c))
-      it('returns new instance', () => {
-        let res = Vec4.add(a, b)
-        expect(res).not.toBe(a)
-        expect(res).not.toBe(b)
-      })
-      it('returns given instance', () => expect(Vec4.add(a, b, d)).toBe(d))
-    })
-    describe('#addScaled', () => {
-      it('adds', () => {
-        a = Vec4.create(1, 2, 3, 4)
-        b = Vec4.create(5, 6, 7, 8)
-        c = a.addScaled(b, 0.5)
-        expectComponents(c, 3.5, 5, 6.5, 8)
-        expect(a).toBe(c)
-      })
-    })
-    describe('#addScalar', () => {
-      it('adds', () => {
-        a = Vec4.create(1, 2, 3, 4)
-        c = a.addScalar(0.5)
-        expectComponents(c, 1.5, 2.5, 3.5, 4.5)
-        expect(a).toBe(c)
-      })
-    })
-    describe('.addScalar', () => {
-      it('adds', () => {
-        a = Vec4.create(1, 2, 3, 4)
-        Vec4.addScalar(a, 0.5, c)
-        expectComponents(c, 1.5, 2.5, 3.5, 4.5)
-        expect(a).not.toBe(c)
-      })
-    })
-  })
-
-  describe('subtract operation', () => {
-    beforeEach(() => {
-      a = Vec4.create(5, 6, 7, 8)
-      b = Vec4.create(4, 3, 2, 1)
-      c = Vec4.create(1, 3, 5, 7)
-    })
-    describe('#subtract', () => {
-      it('subtracts', () => expectEquality(a.subtract(b), c))
-      it('returns instance', () => expect(a.subtract(b)).toBe(a))
-    })
-    describe('.subtract', () => {
-      it('subtracts', () => expectEquality(Vec4.subtract(a, b), c))
-      it('returns new instance', () => {
-        let res = Vec4.subtract(a, b)
-        expect(res).not.toBe(a)
-        expect(res).not.toBe(b)
-      })
-      it('returns given instance', () => expect(Vec4.subtract(a, b, d)).toBe(d))
-    })
-    describe('#subtractScaled', () => {
-      it('subtracts', () => {
-        a = Vec4.create(5, 6, 7, 8)
-        b = Vec4.create(1, 2, 3, 4)
-        c = a.subtractScaled(b, 0.5)
-        expectComponents(c, 4.5, 5, 5.5, 6)
-        expect(a).toBe(c)
-      })
-    })
-    describe('#subtractScalar', () => {
-      it('subtracts', () => {
-        a = Vec4.create(1, 2, 3, 4)
-        c = a.subtractScalar(0.5)
-        expectComponents(c, 0.5, 1.5, 2.5, 3.5)
-        expect(a).toBe(c)
-      })
-    })
-    describe('.subtractScalar', () => {
-      it('subtracts', () => {
-        a = Vec4.create(1, 2, 3, 4)
-        Vec4.subtractScalar(a, 0.5, c)
-        expectComponents(c, 0.5, 1.5, 2.5, 3.5)
-        expect(a).not.toBe(c)
-      })
-    })
-  })
-
-  describe('multiply operation', () => {
-    beforeEach(() => {
-      a = Vec4.create(1, 2, 3, 4)
-      b = Vec4.create(5, 6, 7, 8)
-      c = Vec4.create(5, 12, 21, 32)
-    })
-    describe('#multiply', () => {
-      it('multiplies', () => expectEquality(a.multiply(b), c))
-      it('returns instance', () => expect(a.multiply(b)).toBe(a))
-    })
-    describe('.multiply', () => {
-      it('multiplies', () => expectEquality(Vec4.multiply(a, b), c))
-      it('returns new instance', () => {
-        let res = Vec4.multiply(a, b)
-        expect(res).not.toBe(a)
-        expect(res).not.toBe(b)
-      })
-      it('returns given instance', () => expect(Vec4.multiply(a, b, d)).toBe(d))
-    })
-    describe('#multiplyScalar', () => {
-      it('multiplies', () => {
-        a = Vec4.create(1, 2, 3, 4)
-        c = a.multiplyScalar(0.5)
-        expectComponents(c, 0.5, 1, 1.5, 2)
-        expect(a).toBe(c)
-      })
-    })
-    describe('.multiplyScalar', () => {
-      it('multiplies', () => {
-        a = Vec4.create(1, 2, 3, 4)
-        Vec4.multiplyScalar(a, 0.5, c)
-        expectComponents(c, 0.5, 1, 1.5, 2)
-        expect(a).not.toBe(c)
-      })
-    })
-  })
-
-  describe('divide operation', () => {
-    beforeEach(() => {
-      a = Vec4.create(4, 16, 64, 256)
-      b = Vec4.create(2, 4, 8, 16)
-      c = Vec4.create(2, 4, 8, 16)
-    })
-    describe('#divide', () => {
-      it('divides', () => expectEquality(a.divide(b), c))
-      it('returns instance', () => expect(a.divide(b)).toBe(a))
-    })
-    describe('.divide', () => {
-      it('divides', () => expectEquality(Vec4.divide(a, b), c))
-      it('returns new instance', () => {
-        let res = Vec4.divide(a, b)
-        expect(res).not.toBe(a)
-        expect(res).not.toBe(b)
-      })
-      it('returns given instance', () => expect(Vec4.divide(a, b, d)).toBe(d))
-    })
-    describe('#divideScalar', () => {
-      it('divides', () => {
-        a = Vec4.create(1, 2, 3, 4)
-        c = a.divideScalar(2)
-        expectComponents(c, 0.5, 1, 1.5, 2)
-        expect(a).toBe(c)
-      })
-    })
-    describe('.divideScalar', () => {
-      it('divides', () => {
-        a = Vec4.create(1, 2, 3, 4)
-        Vec4.divideScalar(a, 2, c)
-        expectComponents(c, 0.5, 1, 1.5, 2)
-        expect(a).not.toBe(c)
-      })
-    })
-  })
-
-  describe('.clamp', () => {
-    it('clamps to min', () => {
-      a = Vec4.create(1, 2, 3, 4)
-      b = Vec4.create(1.5, 2.5, 3.5, 4.5)
-      c = Vec4.clamp(Vec4.create(0.9, 1.9, 2.9, 3.9), a, b)
-      expectComponents(c, 1, 2, 3, 4)
-    })
-
-    it('clamps to max', () => {
-      a = Vec4.create(1, 2, 3, 4)
-      b = Vec4.create(1.5, 2.5, 3.5, 4.5)
-      c = Vec4.clamp(Vec4.create(1.6, 2.6, 3.6, 4.6), a, b)
-      expectComponents(c, 1.5, 2.5, 3.5, 4.5)
-    })
-  })
-
-  describe('.clampScalar', () => {
-    it('clamps to min', () => {
-      c = Vec4.clampScalar(Vec4.create(1, 2, 3, 4), 5, 10)
-      expectComponents(c, 5, 5, 5, 5)
-    })
-
-    it('clamps to max', () => {
-      c = Vec4.clampScalar(Vec4.create(3, 4, 5, 6), 1, 2)
-      expectComponents(c, 2, 2, 2, 2)
-    })
-  })
-
-  describe('.min', () => {
-    it('gets min of the components', () => {
-      expectComponents(Vec4.min(Vec4.create(1, 2, 3, 4), Vec4.create(5, 6, 7, 8)), 1, 2, 3, 4)
-      expectComponents(Vec4.min(Vec4.create(5, 6, 7, 8), Vec4.create(1, 2, 3, 4)), 1, 2, 3, 4)
-    })
-  })
-
-  describe('.minScalar', () => {
-    it('gets min of the components', () => {
-      expectComponents(Vec4.minScalar(Vec4.create(1, 2, 3, 4), 0.5), 0.5, 0.5, 0.5, 0.5)
-      expectComponents(Vec4.minScalar(Vec4.create(1, 2, 3, 4), 5), 1, 2, 3, 4)
-    })
-  })
-
-  describe('.max', () => {
-    it('gets max of the components', () => {
-      expectComponents(Vec4.max(Vec4.create(1, 2, 3, 4), Vec4.create(5, 6, 7, 8)), 5, 6, 7, 8)
-      expectComponents(Vec4.max(Vec4.create(5, 6, 7, 8), Vec4.create(1, 2, 3, 4)), 5, 6, 7, 8)
-    })
-  })
-
-  describe('.maxScalar', () => {
-    it('gets maxScalar of the components', () => {
-      expectComponents(Vec4.maxScalar(Vec4.create(1, 2, 3, 4), 5), 5, 5, 5, 5)
-      expectComponents(Vec4.maxScalar(Vec4.create(1, 2, 3, 4), 0.5), 1, 2, 3, 4)
-    })
-  })
-
-  describe('.lerp', () => {
-    it('interpolates of the components', () => {
-      expectComponents(Vec4.lerp(Vec4.create(1, 2, 3, 4), Vec4.create(5, 6, 7, 8), 0.5), 3, 4, 5, 6)
-    })
-  })
-
-  describe('.barycentric', () => {
-    it('interpolates the components', () => {
-      expectComponents(
-        Vec4.barycentric(Vec4.create(1, 2, 3, 4), Vec4.create(5, 6, 7, 8), Vec4.create(9, 10, 11, 12), 0.5, 0.5),
-        7,
-        8,
-        9,
-        10,
-      )
-    })
-  })
-
-  describe('.convert', () => {
-    it('converts number', () => {
-      expectComponents(Vec4.convert(1), 1, 1, 1, 1)
-    })
-
-    it('converts number[]', () => {
-      expectComponents(Vec4.convert([1, 2, 3, 4]), 1, 2, 3, 4)
-      expectComponents(Vec4.convert([null, null, null, null]), 0, 0, 0, 0)
-    })
-
-    it('converts IVec4', () => {
-      expectComponents(Vec4.convert({ x: 1, y: 2, z: 3, w: 4 }), 1, 2, 3, 4)
-      expectComponents(Vec4.convert({} as any), 0, 0, 0, 0)
-    })
-  })
-
-  describe('#transformByQuat', () => {
-    it('transforms by quaternion', () => {
-      expectComponents(
-        Vec4.create(1, 1, 1, 1).transformByQuat(Quat.createAxisAngle({ x: 1, y: 0, z: 0 }, Math.PI * 0.5)),
-        1,
-        -1,
-        1,
-        1,
-      )
-      expectComponents(
-        Vec4.create(1, 1, 1, 1).transformByQuat(Quat.createAxisAngle({ x: 0, y: 1, z: 0 }, Math.PI * 0.5)),
-        1,
-        1,
-        -1,
-        1,
-      )
-      expectComponents(
-        Vec4.create(1, 1, 1, 1).transformByQuat(Quat.createAxisAngle({ x: 0, y: 0, z: 1 }, Math.PI * 0.5)),
-        -1,
-        1,
-        1,
-        1,
-      )
-    })
-  })
-
-  describe('#transformByMat4', () => {
-    it('transforms by Mat4', () => {
-      expectComponents(
-        Vec4.create(1, 1, 1, 1).transformByMat4(Mat4.createAxisAngle({ x: 1, y: 0, z: 0 }, Math.PI * 0.5)),
-        1,
-        -1,
-        1,
-        1,
-      )
-      expectComponents(
-        Vec4.create(1, 1, 1, 1).transformByMat4(Mat4.createAxisAngle({ x: 0, y: 1, z: 0 }, Math.PI * 0.5)),
-        1,
-        1,
-        -1,
-        1,
-      )
-      expectComponents(
-        Vec4.create(1, 1, 1, 1).transformByMat4(Mat4.createAxisAngle({ x: 0, y: 0, z: 1 }, Math.PI * 0.5)),
-        -1,
-        1,
-        1,
-        1,
-      )
-      expectComponents(Vec4.create(1, 1, 1, 1).transformByMat4(Mat4.createTranslationXYZ(1, 2, 3)), 2, 3, 4, 1)
-    })
-  })
-
-  describe('#transformByMat3', () => {
-    it('transforms by Mat3', () => {
-      expectComponents(
-        Vec4.create(1, 1, 1, 1).transformByMat3(Mat3.createAxisAngle({ x: 1, y: 0, z: 0 }, Math.PI * 0.5)),
-        1,
-        -1,
-        1,
-        1,
-      )
-      expectComponents(
-        Vec4.create(1, 1, 1, 1).transformByMat3(Mat3.createAxisAngle({ x: 0, y: 1, z: 0 }, Math.PI * 0.5)),
-        1,
-        1,
-        -1,
-        1,
-      )
-      expectComponents(
-        Vec4.create(1, 1, 1, 1).transformByMat3(Mat3.createAxisAngle({ x: 0, y: 0, z: 1 }, Math.PI * 0.5)),
-        -1,
-        1,
-        1,
-        1,
-      )
-    })
-  })
-
-  describe('#transformByMat2', () => {
-    it('transforms by Mat2', () => {
-      expectComponents(Vec4.create(1, 1, 1, 1).transformByMat2(Mat2.createRotationX(Math.PI * 0.5)), 1, 0, 1, 1)
-      expectComponents(Vec4.create(1, 1, 1, 1).transformByMat2(Mat2.createRotationY(Math.PI * 0.5)), 0, 1, 1, 1)
-      expectComponents(Vec4.create(1, 1, 1, 1).transformByMat2(Mat2.createRotationZ(Math.PI * 0.5)), -1, 1, 1, 1)
-    })
-  })
-
-  describe('#format', () => {
-    it('formats components', () => {
-      expect(Vec4.create(1, 2, 3, 4).format()).toBe('x: 1.00000, y: 2.00000, z: 3.00000, w: 4.00000')
-    })
-  })
-
-  describe('vec4 helper', () => {
-    it('vec4()', () => {
+  describe('vec4', () => {
+    it('creates zero vector', () => {
       expect(vec4()).toEqual({ x: 0, y: 0, z: 0, w: 0 })
     })
 
-    it('vec4(xyzw)', () => {
+    it('creates from xyzw', () => {
       expect(vec4(1)).toEqual({ x: 1, y: 1, z: 1, w: 1 })
       expect(vec4({ x: 1, y: 2 })).toEqual({ x: 1, y: 2, z: 0, w: 0 })
       expect(vec4({ x: 1, y: 2, z: 3 })).toEqual({ x: 1, y: 2, z: 3, w: 0 })
+      expect(vec4({ x: 1, y: 2, z: 3, w: 4 })).toEqual({ x: 1, y: 2, z: 3, w: 4 })
+      expect(vec4({} as any)).toEqual({ x: 0, y: 0, z: 0, w: 0 })
       expect(vec4([1])).toEqual({ x: 1, y: 0, z: 0, w: 0 })
       expect(vec4([1, 2])).toEqual({ x: 1, y: 2, z: 0, w: 0 })
       expect(vec4([1, 2, 3])).toEqual({ x: 1, y: 2, z: 3, w: 0 })
+      expect(vec4([null, null, null, null])).toEqual({ x: 0, y: 0, z: 0, w: 0 })
     })
 
-    it('vec4(xyz, z)', () => {
+    it('creates from xyz, w', () => {
       expect(vec4(1, 2)).toEqual({ x: 1, y: 1, z: 1, w: 2 })
       expect(vec4({ x: 1, y: 2 }, 3)).toEqual({ x: 1, y: 2, z: 0, w: 3 })
       expect(vec4({ x: 1, y: 2, z: 3 }, 4)).toEqual({ x: 1, y: 2, z: 3, w: 4 })
@@ -644,13 +105,535 @@ describe('Vec4', () => {
       expect(vec4([1, 2, 3], 4)).toEqual({ x: 1, y: 2, z: 3, w: 4 })
     })
 
-    it('vec4(xy, z, w)', () => {
+    it('creates from xy, z, w', () => {
       expect(vec4(1, 2, 3)).toEqual({ x: 1, y: 1, z: 2, w: 3 })
       expect(vec4({ x: 1, y: 2 }, 3, 4)).toEqual({ x: 1, y: 2, z: 3, w: 4 })
       expect(vec4({ x: 1, y: 2, z: 3 }, 4, 5)).toEqual({ x: 1, y: 2, z: 4, w: 5 })
       expect(vec4([1], 2, 3)).toEqual({ x: 1, y: 0, z: 2, w: 3 })
       expect(vec4([1, 2], 3, 4)).toEqual({ x: 1, y: 2, z: 3, w: 4 })
       expect(vec4([1, 2, 3], 4, 5)).toEqual({ x: 1, y: 2, z: 4, w: 5 })
+    })
+
+    it('creates from x, y, z, w', () => {
+      expect(vec4(1, 2, 3, 4)).toEqual({ x: 1, y: 2, z: 3, w: 4 })
+    })
+  })
+
+  describe('vec4FromArray', () => {
+    it('reads components', () => {
+      expectComponents(vec4FromArray([1, 2, 3, 4]), 1, 2, 3, 4)
+    })
+    it('reads at offset', () => {
+      expectComponents(vec4FromArray([1, 2, 3, 4, 5], 1), 2, 3, 4, 5)
+    })
+    it('reads with stride', () => {
+      expectComponents(vec4FromArray([1, 2, 3, 4, 5, 6, 7, 8], 0, 2), 1, 3, 5, 7)
+    })
+  })
+
+  describe('vec4$init', () => {
+    it('sets components', () => {
+      expectComponents(vec4$init(vec4(), 1, 2, 3, 4), 1, 2, 3, 4)
+    })
+    it('returns out', () => {
+      const out = vec4()
+      expect(vec4$init(out, 1, 2, 3, 4)).toBe(out)
+    })
+  })
+
+  describe('vec4$initFrom', () => {
+    it('copies components', () => {
+      expectComponents(vec4$initFrom(vec4(), vec4(1, 2, 3, 4)), 1, 2, 3, 4)
+    })
+    it('returns out', () => {
+      const out = vec4()
+      expect(vec4$initFrom(out, vec4(1, 2, 3, 4))).toBe(out)
+    })
+  })
+
+  describe('vec4$initFill', () => {
+    it('sets all components', () => {
+      expectComponents(vec4$initFill(vec4(), 2), 2, 2, 2, 2)
+    })
+    it('returns out', () => {
+      const out = vec4()
+      expect(vec4$initFill(out, 2)).toBe(out)
+    })
+  })
+
+  describe('vec4$initRandom', () => {
+    it('sets components in range', () => {
+      const out = vec4$initRandom(vec4(), 2, 3)
+      for (const v of vec4ToArray(out)) {
+        expect(v).toBeGreaterThanOrEqual(2)
+        expect(v).toBeLessThanOrEqual(3)
+      }
+    })
+    it('returns out', () => {
+      const out = vec4()
+      expect(vec4$initRandom(out)).toBe(out)
+    })
+  })
+
+  describe('vec4Copy', () => {
+    it('copies components', () => {
+      expectComponents(vec4Copy(vec4(1, 2, 3, 4)), 1, 2, 3, 4)
+    })
+    it('returns new vector', () => {
+      const a = vec4(1, 2, 3, 4)
+      expect(vec4Copy(a)).not.toBe(a)
+    })
+    it('returns out', () => {
+      const out = vec4()
+      expect(vec4Copy(vec4(1, 2, 3, 4), out)).toBe(out)
+    })
+  })
+
+  describe('vec4ToArray', () => {
+    it('writes components', () => {
+      expect(vec4ToArray(vec4(1, 2, 3, 4))).toEqual([1, 2, 3, 4])
+    })
+    it('writes at offset', () => {
+      expect(vec4ToArray(vec4(1, 2, 3, 4), [0, 0, 0, 0, 0], 1)).toEqual([0, 1, 2, 3, 4])
+    })
+  })
+
+  describe('vec4Equals', () => {
+    it('compares components', () => {
+      expect(vec4Equals(vec4(0, 0, 0, 0), vec4(0, 0, 0, 0))).toBe(true)
+      expect(vec4Equals(vec4(1, 0, 0, 0), vec4(1, 0, 0, 0))).toBe(true)
+      expect(vec4Equals(vec4(0, 1, 0, 0), vec4(0, 1, 0, 0))).toBe(true)
+      expect(vec4Equals(vec4(0, 0, 1, 0), vec4(0, 0, 1, 0))).toBe(true)
+      expect(vec4Equals(vec4(0, 0, 0, 1), vec4(0, 0, 0, 1))).toBe(true)
+      expect(vec4Equals(vec4(0, 0, 0, 0), vec4(1, 0, 0, 0))).toBe(false)
+      expect(vec4Equals(vec4(0, 0, 0, 0), vec4(0, 1, 0, 0))).toBe(false)
+      expect(vec4Equals(vec4(0, 0, 0, 0), vec4(0, 0, 1, 0))).toBe(false)
+      expect(vec4Equals(vec4(0, 0, 0, 0), vec4(0, 0, 0, 1))).toBe(false)
+    })
+  })
+
+  describe('vec4Length', () => {
+    it('computes length', () => {
+      expect(vec4Length(vec4(2, 0, 0, 0))).toBe(2)
+      expect(vec4Length(vec4(0, 3, 0, 0))).toBe(3)
+      expect(vec4Length(vec4(0, 0, 4, 0))).toBe(4)
+      expect(vec4Length(vec4(0, 0, 0, 5))).toBe(5)
+    })
+  })
+
+  describe('vec4LengthSquared', () => {
+    it('computes squared length', () => {
+      expect(vec4LengthSquared(vec4(2, 0, 0, 0))).toBe(4)
+      expect(vec4LengthSquared(vec4(0, 3, 0, 0))).toBe(9)
+      expect(vec4LengthSquared(vec4(0, 0, 4, 0))).toBe(16)
+      expect(vec4LengthSquared(vec4(0, 0, 0, 5))).toBe(25)
+    })
+  })
+
+  describe('vec4Distance', () => {
+    it('computes distance', () => {
+      expect(vec4Distance(vec4(2, 0, 0, 0), vec4(4, 0, 0, 0))).toBe(2)
+      expect(vec4Distance(vec4(0, 3, 0, 0), vec4(0, 6, 0, 0))).toBe(3)
+      expect(vec4Distance(vec4(0, 0, 4, 0), vec4(0, 0, 8, 0))).toBe(4)
+      expect(vec4Distance(vec4(0, 0, 0, 5), vec4(0, 0, 0, 10))).toBe(5)
+    })
+  })
+
+  describe('vec4DistanceSquared', () => {
+    it('computes squared distance', () => {
+      expect(vec4DistanceSquared(vec4(2, 0, 0, 0), vec4(4, 0, 0, 0))).toBe(4)
+      expect(vec4DistanceSquared(vec4(0, 3, 0, 0), vec4(0, 6, 0, 0))).toBe(9)
+      expect(vec4DistanceSquared(vec4(0, 0, 4, 0), vec4(0, 0, 8, 0))).toBe(16)
+      expect(vec4DistanceSquared(vec4(0, 0, 0, 5), vec4(0, 0, 0, 10))).toBe(25)
+    })
+  })
+
+  describe('vec4Dot', () => {
+    it('computes dot product', () => {
+      expect(vec4Dot(vec4(2, 0, 0, 0), vec4(4, 0, 0, 0))).toBe(8)
+      expect(vec4Dot(vec4(0, 3, 0, 0), vec4(0, 6, 0, 0))).toBe(18)
+      expect(vec4Dot(vec4(0, 0, 4, 0), vec4(0, 0, 8, 0))).toBe(32)
+      expect(vec4Dot(vec4(0, 0, 0, 5), vec4(0, 0, 0, 10))).toBe(50)
+    })
+  })
+
+  describe('vec4Normalize', () => {
+    it('normalizes', () => {
+      expect(vec4Length(vec4Normalize(vec4(1, 2, 3, 4)))).toBeCloseTo(1)
+    })
+    it('writes to out', () => {
+      const out = vec4()
+      expect(vec4Normalize(vec4(1, 2, 3, 4), out)).toBe(out)
+    })
+  })
+
+  describe('vec4$normalize', () => {
+    it('normalizes in place', () => {
+      const out = vec4(1, 2, 3, 4)
+      expect(vec4$normalize(out)).toBe(out)
+      expect(vec4Length(out)).toBeCloseTo(1)
+    })
+  })
+
+  describe('vec4Invert', () => {
+    it('inverts', () => {
+      expectComponents(vec4Invert(vec4(2, 4, 8, 16)), 0.5, 0.25, 0.125, 0.0625)
+    })
+  })
+
+  describe('vec4$invert', () => {
+    it('inverts in place', () => {
+      const out = vec4(2, 4, 8, 16)
+      expect(vec4$invert(out)).toBe(out)
+      expectComponents(out, 0.5, 0.25, 0.125, 0.0625)
+    })
+  })
+
+  describe('vec4Negate', () => {
+    it('negates', () => {
+      expectComponents(vec4Negate(vec4(2, 4, 8, 16)), -2, -4, -8, -16)
+    })
+  })
+
+  describe('vec4$negate', () => {
+    it('negates in place', () => {
+      const out = vec4(2, 4, 8, 16)
+      expect(vec4$negate(out)).toBe(out)
+      expectComponents(out, -2, -4, -8, -16)
+    })
+  })
+
+  describe('add', () => {
+    describe('vec4Add', () => {
+      it('adds', () => {
+        expectComponents(vec4Add(vec4(1, 2, 3, 4), vec4(5, 6, 7, 8)), 6, 8, 10, 12)
+      })
+      it('returns new vector', () => {
+        const a = vec4(1, 2, 3, 4)
+        const b = vec4(5, 6, 7, 8)
+        const res = vec4Add(a, b)
+        expect(res).not.toBe(a)
+        expect(res).not.toBe(b)
+      })
+      it('returns out', () => {
+        const out = vec4()
+        expect(vec4Add(vec4(1, 2, 3, 4), vec4(5, 6, 7, 8), out)).toBe(out)
+      })
+    })
+    describe('vec4$add', () => {
+      it('adds in place', () => {
+        const out = vec4(1, 2, 3, 4)
+        expect(vec4$add(out, vec4(5, 6, 7, 8))).toBe(out)
+        expectComponents(out, 6, 8, 10, 12)
+      })
+    })
+    describe('vec4AddScalar', () => {
+      it('adds', () => {
+        expectComponents(vec4AddScalar(vec4(1, 2, 3, 4), 0.5), 1.5, 2.5, 3.5, 4.5)
+      })
+    })
+    describe('vec4$addScalar', () => {
+      it('adds in place', () => {
+        const out = vec4(1, 2, 3, 4)
+        expect(vec4$addScalar(out, 0.5)).toBe(out)
+        expectComponents(out, 1.5, 2.5, 3.5, 4.5)
+      })
+    })
+    describe('vec4AddScaled', () => {
+      it('adds', () => {
+        expectComponents(vec4AddScaled(vec4(1, 2, 3, 4), vec4(5, 6, 7, 8), 0.5), 3.5, 5, 6.5, 8)
+      })
+    })
+    describe('vec4$addScaled', () => {
+      it('adds in place', () => {
+        const out = vec4(1, 2, 3, 4)
+        expect(vec4$addScaled(out, vec4(5, 6, 7, 8), 0.5)).toBe(out)
+        expectComponents(out, 3.5, 5, 6.5, 8)
+      })
+    })
+  })
+
+  describe('subtract', () => {
+    describe('vec4Subtract', () => {
+      it('subtracts', () => {
+        expectComponents(vec4Subtract(vec4(5, 6, 7, 8), vec4(4, 3, 2, 1)), 1, 3, 5, 7)
+      })
+      it('returns out', () => {
+        const out = vec4()
+        expect(vec4Subtract(vec4(5, 6, 7, 8), vec4(4, 3, 2, 1), out)).toBe(out)
+      })
+    })
+    describe('vec4$subtract', () => {
+      it('subtracts in place', () => {
+        const out = vec4(5, 6, 7, 8)
+        expect(vec4$subtract(out, vec4(4, 3, 2, 1))).toBe(out)
+        expectComponents(out, 1, 3, 5, 7)
+      })
+    })
+    describe('vec4SubtractScalar', () => {
+      it('subtracts', () => {
+        expectComponents(vec4SubtractScalar(vec4(1, 2, 3, 4), 0.5), 0.5, 1.5, 2.5, 3.5)
+      })
+    })
+    describe('vec4$subtractScalar', () => {
+      it('subtracts in place', () => {
+        const out = vec4(1, 2, 3, 4)
+        expect(vec4$subtractScalar(out, 0.5)).toBe(out)
+        expectComponents(out, 0.5, 1.5, 2.5, 3.5)
+      })
+    })
+    describe('vec4SubtractScaled', () => {
+      it('subtracts', () => {
+        expectComponents(vec4SubtractScaled(vec4(5, 6, 7, 8), vec4(1, 2, 3, 4), 0.5), 4.5, 5, 5.5, 6)
+      })
+    })
+    describe('vec4$subtractScaled', () => {
+      it('subtracts in place', () => {
+        const out = vec4(5, 6, 7, 8)
+        expect(vec4$subtractScaled(out, vec4(1, 2, 3, 4), 0.5)).toBe(out)
+        expectComponents(out, 4.5, 5, 5.5, 6)
+      })
+    })
+  })
+
+  describe('multiply', () => {
+    describe('vec4Multiply', () => {
+      it('multiplies', () => {
+        expectComponents(vec4Multiply(vec4(1, 2, 3, 4), vec4(5, 6, 7, 8)), 5, 12, 21, 32)
+      })
+      it('returns out', () => {
+        const out = vec4()
+        expect(vec4Multiply(vec4(1, 2, 3, 4), vec4(5, 6, 7, 8), out)).toBe(out)
+      })
+    })
+    describe('vec4$multiply', () => {
+      it('multiplies in place', () => {
+        const out = vec4(1, 2, 3, 4)
+        expect(vec4$multiply(out, vec4(5, 6, 7, 8))).toBe(out)
+        expectComponents(out, 5, 12, 21, 32)
+      })
+    })
+    describe('vec4MultiplyScalar', () => {
+      it('multiplies', () => {
+        expectComponents(vec4MultiplyScalar(vec4(1, 2, 3, 4), 0.5), 0.5, 1, 1.5, 2)
+      })
+    })
+    describe('vec4$multiplyScalar', () => {
+      it('multiplies in place', () => {
+        const out = vec4(1, 2, 3, 4)
+        expect(vec4$multiplyScalar(out, 0.5)).toBe(out)
+        expectComponents(out, 0.5, 1, 1.5, 2)
+      })
+    })
+  })
+
+  describe('divide', () => {
+    describe('vec4Divide', () => {
+      it('divides', () => {
+        expectComponents(vec4Divide(vec4(4, 16, 64, 256), vec4(2, 4, 8, 16)), 2, 4, 8, 16)
+      })
+      it('returns out', () => {
+        const out = vec4()
+        expect(vec4Divide(vec4(4, 16, 64, 256), vec4(2, 4, 8, 16), out)).toBe(out)
+      })
+    })
+    describe('vec4$divide', () => {
+      it('divides in place', () => {
+        const out = vec4(4, 16, 64, 256)
+        expect(vec4$divide(out, vec4(2, 4, 8, 16))).toBe(out)
+        expectComponents(out, 2, 4, 8, 16)
+      })
+    })
+    describe('vec4DivideScalar', () => {
+      it('divides', () => {
+        expectComponents(vec4DivideScalar(vec4(1, 2, 3, 4), 2), 0.5, 1, 1.5, 2)
+      })
+    })
+    describe('vec4$divideScalar', () => {
+      it('divides in place', () => {
+        const out = vec4(1, 2, 3, 4)
+        expect(vec4$divideScalar(out, 2)).toBe(out)
+        expectComponents(out, 0.5, 1, 1.5, 2)
+      })
+    })
+  })
+
+  describe('vec4Saturate', () => {
+    it('clamps to [0, 1]', () => {
+      expectComponents(vec4Saturate(vec4(-1, 0.5, 2, 1)), 0, 0.5, 1, 1)
+    })
+  })
+
+  describe('vec4$saturate', () => {
+    it('clamps in place', () => {
+      const out = vec4(-1, 0.5, 2, 1)
+      expect(vec4$saturate(out)).toBe(out)
+      expectComponents(out, 0, 0.5, 1, 1)
+    })
+  })
+
+  describe('vec4Clamp', () => {
+    const min = vec4(1, 2, 3, 4)
+    const max = vec4(1.5, 2.5, 3.5, 4.5)
+    it('clamps to min', () => {
+      expectComponents(vec4Clamp(vec4(0.9, 1.9, 2.9, 3.9), min, max), 1, 2, 3, 4)
+    })
+    it('clamps to max', () => {
+      expectComponents(vec4Clamp(vec4(1.6, 2.6, 3.6, 4.6), min, max), 1.5, 2.5, 3.5, 4.5)
+    })
+  })
+
+  describe('vec4$clamp', () => {
+    it('clamps in place', () => {
+      const out = vec4(0.9, 2.6, 3.2, 4.6)
+      expect(vec4$clamp(out, vec4(1, 2, 3, 4), vec4(1.5, 2.5, 3.5, 4.5))).toBe(out)
+      expectComponents(out, 1, 2.5, 3.2, 4.5)
+    })
+  })
+
+  describe('vec4ClampScalar', () => {
+    it('clamps to min', () => {
+      expectComponents(vec4ClampScalar(vec4(1, 2, 3, 4), 5, 10), 5, 5, 5, 5)
+    })
+    it('clamps to max', () => {
+      expectComponents(vec4ClampScalar(vec4(3, 4, 5, 6), 1, 2), 2, 2, 2, 2)
+    })
+  })
+
+  describe('vec4$clampScalar', () => {
+    it('clamps in place', () => {
+      const out = vec4(0, 1.5, 3, 4)
+      expect(vec4$clampScalar(out, 1, 2)).toBe(out)
+      expectComponents(out, 1, 1.5, 2, 2)
+    })
+  })
+
+  describe('vec4Min', () => {
+    it('takes component min', () => {
+      expectComponents(vec4Min(vec4(1, 2, 3, 4), vec4(5, 6, 7, 8)), 1, 2, 3, 4)
+      expectComponents(vec4Min(vec4(5, 6, 7, 8), vec4(1, 2, 3, 4)), 1, 2, 3, 4)
+    })
+  })
+
+  describe('vec4MinScalar', () => {
+    it('takes component min', () => {
+      expectComponents(vec4MinScalar(vec4(1, 2, 3, 4), 0.5), 0.5, 0.5, 0.5, 0.5)
+      expectComponents(vec4MinScalar(vec4(1, 2, 3, 4), 5), 1, 2, 3, 4)
+    })
+  })
+
+  describe('vec4Max', () => {
+    it('takes component max', () => {
+      expectComponents(vec4Max(vec4(1, 2, 3, 4), vec4(5, 6, 7, 8)), 5, 6, 7, 8)
+      expectComponents(vec4Max(vec4(5, 6, 7, 8), vec4(1, 2, 3, 4)), 5, 6, 7, 8)
+    })
+  })
+
+  describe('vec4MaxScalar', () => {
+    it('takes component max', () => {
+      expectComponents(vec4MaxScalar(vec4(1, 2, 3, 4), 5), 5, 5, 5, 5)
+      expectComponents(vec4MaxScalar(vec4(1, 2, 3, 4), 0.5), 1, 2, 3, 4)
+    })
+  })
+
+  describe('vec4Lerp', () => {
+    it('interpolates', () => {
+      expectComponents(vec4Lerp(vec4(1, 2, 3, 4), vec4(5, 6, 7, 8), 0.5), 3, 4, 5, 6)
+    })
+  })
+
+  describe('vec4Barycentric', () => {
+    it('interpolates', () => {
+      expectComponents(vec4Barycentric(vec4(1, 2, 3, 4), vec4(5, 6, 7, 8), vec4(9, 10, 11, 12), 0.5, 0.5), 7, 8, 9, 10)
+    })
+  })
+
+  describe('vec4ApplyQuat', () => {
+    it('rotates around x', () => {
+      expectComponents(vec4ApplyQuat(vec4(1), quatCreateAxisAngle({ x: 1, y: 0, z: 0 }, Math.PI * 0.5)), 1, -1, 1, 1)
+    })
+    it('rotates around y', () => {
+      expectComponents(vec4ApplyQuat(vec4(1), quatCreateAxisAngle({ x: 0, y: 1, z: 0 }, Math.PI * 0.5)), 1, 1, -1, 1)
+    })
+    it('rotates around z', () => {
+      expectComponents(vec4ApplyQuat(vec4(1), quatCreateAxisAngle({ x: 0, y: 0, z: 1 }, Math.PI * 0.5)), -1, 1, 1, 1)
+    })
+  })
+
+  describe('vec4$applyQuat', () => {
+    it('rotates in place', () => {
+      const out = vec4(1)
+      expect(vec4$applyQuat(out, quatCreateAxisAngle({ x: 1, y: 0, z: 0 }, Math.PI * 0.5))).toBe(out)
+      expectComponents(out, 1, -1, 1, 1)
+    })
+  })
+
+  describe('vec4ApplyMat4', () => {
+    it('rotates around x', () => {
+      expectComponents(vec4ApplyMat4(vec4(1), mat4CreateAxisAngle({ x: 1, y: 0, z: 0 }, Math.PI * 0.5)), 1, -1, 1, 1)
+    })
+    it('rotates around y', () => {
+      expectComponents(vec4ApplyMat4(vec4(1), mat4CreateAxisAngle({ x: 0, y: 1, z: 0 }, Math.PI * 0.5)), 1, 1, -1, 1)
+    })
+    it('rotates around z', () => {
+      expectComponents(vec4ApplyMat4(vec4(1), mat4CreateAxisAngle({ x: 0, y: 0, z: 1 }, Math.PI * 0.5)), -1, 1, 1, 1)
+    })
+    it('translates', () => {
+      expectComponents(vec4ApplyMat4(vec4(1), mat4CreateTranslationXYZ(1, 2, 3)), 2, 3, 4, 1)
+    })
+  })
+
+  describe('vec4$applyMat4', () => {
+    it('transforms in place', () => {
+      const out = vec4(1)
+      expect(vec4$applyMat4(out, mat4CreateTranslationXYZ(1, 2, 3))).toBe(out)
+      expectComponents(out, 2, 3, 4, 1)
+    })
+  })
+
+  describe('vec4ApplyMat3', () => {
+    it('rotates around x', () => {
+      expectComponents(vec4ApplyMat3(vec4(1), mat3CreateAxisAngle({ x: 1, y: 0, z: 0 }, Math.PI * 0.5)), 1, -1, 1, 1)
+    })
+    it('rotates around y', () => {
+      expectComponents(vec4ApplyMat3(vec4(1), mat3CreateAxisAngle({ x: 0, y: 1, z: 0 }, Math.PI * 0.5)), 1, 1, -1, 1)
+    })
+    it('rotates around z', () => {
+      expectComponents(vec4ApplyMat3(vec4(1), mat3CreateAxisAngle({ x: 0, y: 0, z: 1 }, Math.PI * 0.5)), -1, 1, 1, 1)
+    })
+  })
+
+  describe('vec4$applyMat3', () => {
+    it('transforms in place', () => {
+      const out = vec4(1)
+      expect(vec4$applyMat3(out, mat3CreateAxisAngle({ x: 1, y: 0, z: 0 }, Math.PI * 0.5))).toBe(out)
+      expectComponents(out, 1, -1, 1, 1)
+    })
+  })
+
+  describe('vec4ApplyMat2', () => {
+    it('rotates around x', () => {
+      expectComponents(vec4ApplyMat2(vec4(1), mat2CreateRotationX(Math.PI * 0.5)), 1, 0, 1, 1)
+    })
+    it('rotates around y', () => {
+      expectComponents(vec4ApplyMat2(vec4(1), mat2CreateRotationY(Math.PI * 0.5)), 0, 1, 1, 1)
+    })
+    it('rotates around z', () => {
+      expectComponents(vec4ApplyMat2(vec4(1), mat2CreateRotationZ(Math.PI * 0.5)), -1, 1, 1, 1)
+    })
+  })
+
+  describe('vec4$applyMat2', () => {
+    it('transforms in place', () => {
+      const out = vec4(1)
+      expect(vec4$applyMat2(out, mat2CreateRotationZ(Math.PI * 0.5))).toBe(out)
+      expectComponents(out, -1, 1, 1, 1)
+    })
+  })
+
+  describe('vec4Format', () => {
+    it('formats components', () => {
+      expect(vec4Format(vec4(1, 2, 3, 4))).toBe('x: 1.00000, y: 2.00000, z: 3.00000, w: 4.00000')
     })
   })
 })

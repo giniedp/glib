@@ -8,7 +8,18 @@ import {
   Texture,
   VertexBuffer,
 } from '@gglib/graphics'
-import { IVec4, lerp, vec2, vec2$init, vec3, Vec3, vec4, Vec4, type IVec3 } from '@gglib/math'
+import {
+  IVec4,
+  lerp,
+  vec2,
+  vec2$init,
+  vec3,
+  vec3$initFrom,
+  vec4,
+  vec4$initFrom,
+  vec4$initRandom,
+  type IVec3,
+} from '@gglib/math'
 import { ParticleMaterial } from './ParticleMaterial'
 // import { ParticleEffect } from './ParticleEffect'
 
@@ -181,10 +192,10 @@ export class ParticleChannel {
     const settings = this.settings
     mtl.Duration = settings.duration
     mtl.DurationRandomness = settings.durationRandomness
-    mtl.Gravity = Vec3.initFrom(mtl.Gravity || vec3(), settings.gravity)
     mtl.EndVelocity = settings.endVelocity
-    mtl.MinColor = Vec4.initFrom(mtl.MinColor || vec4(), settings.minColor)
-    mtl.MaxColor = Vec4.initFrom(mtl.MaxColor || vec4(), settings.maxColor)
+    vec3$initFrom((mtl.Gravity ||= vec3()), settings.gravity)
+    vec4$initFrom((mtl.MinColor ||= vec4()), settings.minColor)
+    vec4$initFrom((mtl.MaxColor ||= vec4()), settings.maxColor)
     vec2$init((mtl.RotateSpeed ||= vec2()), settings.minRotateSpeed, settings.maxRotateSpeed)
     vec2$init((mtl.StartSize ||= vec2()), settings.minStartSize, settings.maxStartSize)
     vec2$init((mtl.EndSize ||= vec2()), settings.minEndSize, settings.maxEndSize)
@@ -286,7 +297,7 @@ export class ParticleChannel {
     this.writer.seek(this.startFree)
     this.writer.writeField(this.layout.fields.position, position)
     this.writer.writeField(this.layout.fields.velocity, velocity)
-    this.writer.writeField(this.layout.fields.random, Vec4.$0.initRandom())
+    this.writer.writeField(this.layout.fields.random, vec4$initRandom(vec4.$0))
     this.writer.writeField(this.layout.fields.time, this.time)
     this.times[this.startFree] = this.time
     this.frames[this.startFree] = this.frame

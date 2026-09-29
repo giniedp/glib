@@ -1,4 +1,4 @@
-import { Mat4 } from '@gglib/math'
+import { Mat4, mat4CreateRotationX, mat4CreateRotationZ } from '@gglib/math'
 import { Color } from '../../Color'
 import { Device } from '../../Device'
 import { Geometry } from '../Geometry'
@@ -15,8 +15,8 @@ function buildAxis(builder: GeometryBuilder, direction: 'x' | 'y' | 'z') {
   // Rotation matrices to orient the Y-up cylinder toward each axis
   const transforms: Record<string, Mat4 | null> = {
     y: null,
-    x: Mat4.createRotationZ(-Math.PI / 2),
-    z: Mat4.createRotationX(Math.PI / 2),
+    x: mat4CreateRotationZ(-Math.PI / 2),
+    z: mat4CreateRotationX(Math.PI / 2),
   }
   const colors = {
     x: Color.Red,

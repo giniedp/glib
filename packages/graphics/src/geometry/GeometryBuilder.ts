@@ -1,4 +1,15 @@
-import { BoundingBox, BoundingSphere, IVec2, IVec3, IVec4, Mat4 } from '@gglib/math'
+import {
+  BoundingBox,
+  BoundingSphere,
+  IVec2,
+  IVec3,
+  IVec4,
+  Mat4,
+  mat4Copy,
+  mat4Premultiply,
+  mat4ApplyToVec3DirArray,
+  mat4ApplyToVec3Array,
+} from '@gglib/math'
 import { Color } from '../Color'
 import { Device } from '../Device'
 import { BufferUsage, FrontFace, PrimitiveType } from '../enums'
@@ -209,7 +220,7 @@ export class GeometryBuilder {
 
   public pushTransform(transform: Mat4): this {
     const top = this.transformStack[this.transformStack.length - 1]
-    this.transformStack.push(top ? Mat4.premultiply(transform, top) : transform.copy())
+    this.transformStack.push(top ? mat4Premultiply(transform, top) : mat4Copy(transform))
     return this
   }
 
@@ -338,10 +349,10 @@ export class GeometryBuilder {
       if (transform) {
         const mode = this.transformModes[semantic]
         if (mode == TransformMode.Position) {
-          transform.transformV3Array(item)
+          mat4ApplyToVec3Array(transform, item)
         }
         if (mode == TransformMode.Normal) {
-          transform.transformV3NormalArray(item)
+          mat4ApplyToVec3DirArray(transform, item)
         }
       }
 
