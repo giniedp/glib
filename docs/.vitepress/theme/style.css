@@ -73,6 +73,10 @@
   --vp-c-danger-2: var(--vp-c-red-2);
   --vp-c-danger-3: var(--vp-c-red-3);
   --vp-c-danger-soft: var(--vp-c-red-soft);
+
+  --font-head: 'Departure Mono', monospace;
+  /* --vp-font-family-base: 'Pixelify Sans', sans-serif; */
+  /* --vp-font-family-mono: 'Departure Mono', monospace; */
 }
 .dark {
   --vp-c-brand-1: #22d98a;
@@ -148,28 +152,19 @@
   max-width: 100% !important;
 }
 
-/* @media (min-width: 1920px) {
-  :root {
-    --vp-layout-max-width: 1920px;
-  }
-} */
-
-/* .VPDoc:not(.has-sidebar) .container {
-  max-width: 1584px !important;
-}
-
-.VPDoc:not(.has-sidebar) .content {
-  max-width: 1264px !important;
-}
-
-.VPDoc.has-aside .content-container {
-  max-width: 1168px !important;
-} */
-
 html {
   scrollbar-gutter: stable;
 }
 
+h1:not(.heading),
+h2,
+.title,
+.menu .link,
+.tagline,
+.VPButton {
+  font-family: var(--font-head);
+  text-transform: uppercase;
+}
 h1 + .example-frame {
   margin-top: 1rem;
 }
