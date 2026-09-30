@@ -1,7 +1,16 @@
 import { EcsGame, PriorityLane, SchedulerSystem } from '@gglib/components'
 import { GameQuery, GameSystem, GameWorld } from '@gglib/ecs'
 import { Device } from '@gglib/graphics'
-import { mat4CreateTranslation, vec3, vec3$initFrom, vec4, vec4$init, type IVec4 } from '@gglib/math'
+import {
+  mat4$setScale,
+  mat4$setScaleXYZ,
+  mat4CreateTranslation,
+  vec3,
+  vec3$initFrom,
+  vec4,
+  vec4$init,
+  type IVec4,
+} from '@gglib/math'
 import { removeItemUnordered } from '@gglib/utils'
 
 import { LOD_RANGE_FACTOR, QUAD_LEAF_SIZE } from '../../constants'
@@ -264,11 +273,7 @@ export class TerrainSystem extends GameSystem {
 
       vec3$initFrom(vec3.$1, renderNode.bounds.min)
       const mat = mat4CreateTranslation(vec3.$1)
-      mat.setScale({
-        x: renderNode.size / p.region.leafSize,
-        y: renderNode.size / p.region.leafSize,
-        z: 1,
-      })
+      mat4$setScaleXYZ(mat, renderNode.size / p.region.leafSize, renderNode.size / p.region.leafSize, 1)
       mesh.writeTransform(mat)
 
       const morphLod = Math.log2(renderNode.size / p.region.leafSize)

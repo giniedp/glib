@@ -29,7 +29,7 @@ import {
   vec3Subtract,
   vec4,
 } from '@gglib/math'
-import { BloomPass, GeometryPass, RenderChannel, Renderer, TonemapPass, type RendererStats } from '@gglib/render'
+import { BloomPass, RenderChannel, Renderer, TonemapPass, type RendererStats } from '@gglib/render'
 import { brand, lfmt, type EventType } from '@gglib/utils'
 import { redrawUi } from 'tweak-ui'
 import { getLevelListUrl } from './api'
@@ -46,6 +46,7 @@ import { RegionSystem } from './game/region/RegionSystem'
 import { SliceSystem } from './game/slice/SliceSystem'
 import { TerrainSystem } from './game/terrain/TerrainSystem'
 import { InputSlots, NwMaterialExtension } from './material'
+import { DepthResolveEffect, OpaquePass, TransparentPass } from './graphics'
 import { attachOverlay } from './ui/overlay'
 
 export interface NwViewerOptions {
@@ -122,16 +123,21 @@ export class NwViewer extends EcsGame {
         linearToSrgb: false,
         pipeline: {
           passes: [
-            new GeometryPass({
+            new OpaquePass({
               order: 0,
               clearColors: [Color.TransparentBlack, Color.TransparentBlack],
               outputsMsaa: [RenderChannel.ColorMsaa, RenderChannel.LinearDepthMsaa],
               outputs: [RenderChannel.Color, RenderChannel.LinearDepth],
-              resolver: [
-                null, //new ResolveMsaaEffect(this.device, { operator: ResolveMsaaOperator.KARIS }),
-                null, //new ResolveMsaaEffect(this.device, { operator: ResolveMsaaOperator.MIN }),
-              ],
+              resolver: [null, new DepthResolveEffect(this.device, { operator: 'max' })],
               slots: [CommonInputs.View.SceneColorMap, CommonInputs.View.SceneDepthMap],
+            }),
+            // TODO: SSAO pass (order 5) reading RenderChannel.LinearDepth
+            new TransparentPass({
+              order: 10,
+              outputsMsaa: [RenderChannel.ColorMsaa, RenderChannel.LinearDepthMsaa],
+              // linear depth stays opaque only, no resolve
+              outputs: [RenderChannel.Color, null],
+              inputs: [RenderChannel.Color, RenderChannel.LinearDepth],
             }),
             new BloomPass(this.device, {
               enabled: true,

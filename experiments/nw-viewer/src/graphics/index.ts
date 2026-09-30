@@ -1,2 +1,6 @@
 export * from './TileTextureManager'
 export * from './BC3Encoder'
+export * from './MsaaResolve'
+export * from './DepthResolveEffect'
+export * from './OpaquePass'
+export * from './TransparentPass'
