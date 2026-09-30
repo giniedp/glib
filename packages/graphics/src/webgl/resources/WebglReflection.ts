@@ -200,7 +200,7 @@ function resolveAliasName(namePath: string, glsl: GlslMember[]): string {
       console.log(glsl.map((it) => it.name))
       return namePath
     }
-    if (result.length && !result[result.length - 1].endsWith(']')) {
+    if (result.length) {
       result.push('.')
     }
 

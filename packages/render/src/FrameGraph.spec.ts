@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { FrameGraph } from './FrameGraph'
 import { createRenderChannelSchema, renderChannel } from './RenderChannel'
+import { TextureUsage } from '@gglib/graphics'
 
 const channels = {
   Depth: renderChannel('depth'),
@@ -11,8 +12,21 @@ const channels = {
 describe('FrameGraph', () => {
   let graph: FrameGraph<string>
   beforeEach(() => {
+    const schema = createRenderChannelSchema(null)
+    schema[channels.Normals] = {
+      name: 'RenderChannel.Normals',
+      type: '2d',
+      format: 'rgba16float',
+      width: 1,
+      height: 1,
+      depth: 1,
+      sampleCount: 1,
+      mipLevelCount: 1,
+      usage: TextureUsage.RenderTarget | TextureUsage.TextureBinding,
+    }
+
     graph = new FrameGraph<string>()
-    graph.setDescriptors(createRenderChannelSchema(null))
+    graph.setDescriptors(schema)
   })
 
   it('accepts read/write before end and trhows after', () => {

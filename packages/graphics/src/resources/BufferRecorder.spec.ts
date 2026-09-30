@@ -1,7 +1,7 @@
+import { mat4Assert, type Mat4 } from '@gglib/math'
 import { describe, expect, it, vi } from 'vitest'
-import type { Mat4 } from '@gglib/math'
-import { BufferRecorder } from './BufferRecorder'
 import type { Buffer, BufferField } from '../resources'
+import { BufferRecorder } from './BufferRecorder'
 
 function createGpuBuffer(size: number) {
   return {
@@ -388,14 +388,14 @@ describe('BufferRecorder', () => {
     it('writes all 16 matrix elements sequentially', () => {
       const rec = new BufferRecorder({ capacity: 4, autosize: false, recordByteSize: 64 })
       const elements = Array.from({ length: 16 }, (_, i) => i + 1)
-      const mat4 = { elements } as unknown as Mat4
+      const mat4 = mat4Assert(elements)
       rec.writeMat4(mat4)
       expect(Array.from(rec.dataFloat32.slice(0, 16))).toEqual(elements)
     })
 
     it('throws when there is not enough space left', () => {
       const rec = new BufferRecorder({ capacity: 1, autosize: false, recordByteSize: 32 })
-      const mat4 = { elements: Array.from({ length: 16 }, (_, i) => i) } as unknown as Mat4
+      const mat4: Mat4 = Array.from({ length: 16 }, (_, i) => i)
       expect(() => rec.writeMat4(mat4)).toThrow()
     })
   })
@@ -418,8 +418,8 @@ describe('BufferRecorder', () => {
     it('writes a mat4x4f field at its byte offset', () => {
       const rec = new BufferRecorder({ capacity: 1, autosize: false, recordByteSize: 64 })
       const field = { byteOffset: 0, type: 'mat4x4f' } as unknown as BufferField<'mat4x4f'>
-      const elements = Array.from({ length: 16 }, (_, i) => i)
-      rec.writeField(field, { elements } as unknown as Mat4)
+      const elements = mat4Assert(Array.from({ length: 16 }, (_, i) => i))
+      rec.writeField(field, elements)
       expect(Array.from(rec.dataFloat32.slice(0, 16))).toEqual(elements)
     })
 

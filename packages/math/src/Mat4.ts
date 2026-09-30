@@ -39,7 +39,7 @@ mat4.$0 = mat4Identity()
 mat4.$1 = mat4Identity()
 mat4.$2 = mat4Identity()
 
-export function mat4Cast(m: Float32Array): Mat4 {
+export function mat4Assert(m: ArrayLike<number>): Mat4 {
   console.assert(m.length === SIZE, `matrix data must have length of ${SIZE}`)
   return m as Mat4
 }

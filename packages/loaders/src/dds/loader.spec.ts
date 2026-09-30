@@ -14,23 +14,24 @@ describe('DDS Loader', () => {
     content.http.cacheName = 'test-cache'
   })
 
-  it('/assets/textures/dds/bobcat_diff.dds?.url', async () => {
+  it('/assets/textures/formats/ice_normals.dds?.url', async () => {
     // @ts-ignore
-    const url = await import('/assets/textures/dds/bobcat_diff.dds?url').then((it) => it.default)
+
+    const url = await import('/assets/textures/formats/ice_normals.dds?url').then((it) => it.default)
     const result = await content.loadTexture(url)
     expect(result).instanceOf(Texture)
   })
 
-  it('/assets/textures/dds/bobcat_ddna.a.dds?.url', async () => {
+  it('/assets/textures/formats/ice_base.dds?.url', async () => {
     // @ts-ignore
-    const url = await import('/assets/textures/dds/bobcat_ddna.a.dds?url').then((it) => it.default)
+    const url = await import('/assets/textures/formats/ice_base.dds?url').then((it) => it.default)
     const result = await content.loadTexture(url)
     expect(result).instanceOf(Texture)
   })
 
-  it('/assets/textures/dds/bobcat_ddna.dds?.url', async () => {
+  it('/assets/textures/formats/ice_orm.dds?.url', async () => {
     // @ts-ignore
-    const url = await import('/assets/textures/dds/bobcat_ddna.dds?url').then((it) => it.default)
+    const url = await import('/assets/textures/formats/ice_orm.dds?url').then((it) => it.default)
     const result = await content.loadTexture(url)
     expect(result).instanceOf(Texture)
   })

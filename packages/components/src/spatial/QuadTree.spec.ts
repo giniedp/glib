@@ -260,6 +260,12 @@ describe('QuadTree', () => {
 
     describe('findFittingNode', () => {
       beforeEach(() => {
+        tree = QuadTree.create({
+          min: { x: 0, y: 0, z: 0 },
+          max: { x: S, y: 100, z: S },
+          verticalAxis: 'y',
+          leafLevel: 2,
+        })
         tree.subdivideToLevel(2)
       })
 

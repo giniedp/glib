@@ -369,31 +369,30 @@ export class WebGpuRenderEncoder extends RenderEncoder {
     }
   }
 
-  private clearColor = [0, 0, 0, 1]
   public setClearColor(index: number, color: GPUColor | IVec4) {
+    // each attachment owns its clear value, sharing one object would make all attachments clear to the same color
+    const clearValue = this.clearPassAttachment(index).clearValue as GPUColorDict
     if (color == null) {
-      this.clearColor[0] = 0
-      this.clearColor[1] = 0
-      this.clearColor[2] = 0
-      this.clearColor[3] = 0
+      clearValue.r = 0
+      clearValue.g = 0
+      clearValue.b = 0
+      clearValue.a = 0
     } else if (Array.isArray(color)) {
-      this.clearColor[0] = color[0]
-      this.clearColor[1] = color[1]
-      this.clearColor[2] = color[2]
-      this.clearColor[3] = color[3]
+      clearValue.r = color[0]
+      clearValue.g = color[1]
+      clearValue.b = color[2]
+      clearValue.a = color[3]
     } else if ('r' in color) {
-      this.clearColor[0] = color.r
-      this.clearColor[1] = color.g
-      this.clearColor[2] = color.b
-      this.clearColor[3] = color.a
+      clearValue.r = color.r
+      clearValue.g = color.g
+      clearValue.b = color.b
+      clearValue.a = color.a
     } else if ('x' in color) {
-      this.clearColor[0] = color.x
-      this.clearColor[1] = color.y
-      this.clearColor[2] = color.z
-      this.clearColor[3] = color.w
+      clearValue.r = color.x
+      clearValue.g = color.y
+      clearValue.b = color.z
+      clearValue.a = color.w
     }
-
-    this.clearPassAttachment(index).clearValue = this.clearColor
   }
 
   public setClearDepth(depth: number) {
@@ -877,7 +876,7 @@ export class WebGpuRenderEncoder extends RenderEncoder {
     this.setClearDepth(DepthState.DefaultClear)
     this.setClearStencil(StencilState.DefaultClear)
     for (let i = 0; i < this.device.capabilities.maxRenderTargets; i++) {
-      this.setClearColor(0, Color.TransparentBlack)
+      this.setClearColor(i, Color.TransparentBlack)
       this.setRenderTarget(i, null)
     }
 

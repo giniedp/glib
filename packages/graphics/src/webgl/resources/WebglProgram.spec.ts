@@ -51,7 +51,7 @@ const FS_UNIFORM_STRUCT_ARRAY = /* glsl */ `
   uniform Color u_color[2];
   out vec4 outColor;
   void main() {
-    outColor = u_color[0].value;
+    outColor = u_color[0].value + u_color[1].value;
   }
 `
 describe('WebglProgram', () => {

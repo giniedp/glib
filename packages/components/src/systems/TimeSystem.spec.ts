@@ -22,54 +22,54 @@ describe('TimeSystem', () => {
   })
 
   it('accumulates game time', () => {
-    time.update(realTime, 16)
-    expect(time.game.deltaMs).toBe(16)
-    expect(time.game.totalMs).toBe(16)
+    time.update(realTime, 0.016)
+    expect(time.game.delta).toBeCloseTo(0.016)
+    expect(time.game.total).toBeCloseTo(0.016)
 
-    time.update(realTime, 16)
-    expect(time.game.deltaMs).toBe(16)
-    expect(time.game.totalMs).toBe(32)
+    time.update(realTime, 0.016)
+    expect(time.game.delta).toBeCloseTo(0.016)
+    expect(time.game.total).toBeCloseTo(0.032)
 
-    time.update(realTime, 8)
-    expect(time.game.deltaMs).toBe(8)
-    expect(time.game.totalMs).toBe(40)
+    time.update(realTime, 0.008)
+    expect(time.game.delta).toBeCloseTo(0.008)
+    expect(time.game.total).toBeCloseTo(0.04)
 
     // draw times are tracked individually
 
-    time.update(realTime, 32)
-    expect(time.game.deltaMs).toBe(32)
-    expect(time.game.totalMs).toBe(32)
+    time.render(realTime, 0.032)
+    expect(time.game.delta).toBeCloseTo(0.032)
+    expect(time.game.total).toBeCloseTo(0.032)
 
-    time.update(realTime, 16)
-    expect(time.game.deltaMs).toBe(16)
-    expect(time.game.totalMs).toBe(48)
+    time.render(realTime, 0.016)
+    expect(time.game.delta).toBeCloseTo(0.016)
+    expect(time.game.total).toBeCloseTo(0.048)
   })
 
   it('accumulates real time', () => {
-    realTime = 16
+    realTime = 0.016
     time.update(realTime, 0)
-    expect(time.wall.deltaMs).toBe(16)
-    expect(time.wall.totalMs).toBe(16)
+    expect(time.wall.delta).toBeCloseTo(0.016)
+    expect(time.wall.total).toBeCloseTo(0.016)
 
-    realTime += 16
+    realTime += 0.016
     time.update(realTime, 0)
-    expect(time.wall.deltaMs).toBe(16)
-    expect(time.wall.totalMs).toBe(32)
+    expect(time.wall.delta).toBeCloseTo(0.016)
+    expect(time.wall.total).toBeCloseTo(0.032)
 
-    realTime += 8
+    realTime += 0.008
     time.update(realTime, 0)
-    expect(time.wall.deltaMs).toBe(8)
-    expect(time.wall.totalMs).toBe(40)
+    expect(time.wall.delta).toBeCloseTo(0.008)
+    expect(time.wall.total).toBeCloseTo(0.04)
 
     // draw times are tracked individually
 
-    time.update(realTime, 0)
-    expect(time.wall.deltaMs).toBe(40)
-    expect(time.wall.totalMs).toBe(40)
+    time.render(realTime, 0)
+    expect(time.wall.delta).toBeCloseTo(0.04)
+    expect(time.wall.total).toBeCloseTo(0.04)
 
-    realTime += 8
-    time.update(realTime, 0)
-    expect(time.wall.deltaMs).toBe(8)
-    expect(time.wall.totalMs).toBe(48)
+    realTime += 0.008
+    time.render(realTime, 0)
+    expect(time.wall.delta).toBeCloseTo(0.008)
+    expect(time.wall.total).toBeCloseTo(0.048)
   })
 })
