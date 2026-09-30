@@ -132,4 +132,21 @@ describe('FrameGraph', () => {
 
     expect(graph.nodes.map((it) => it.pass)).toEqual(['A', 'B'])
   })
+
+  it('keeps passes that modify in place before a later modifier', () => {
+    graph.begin([channels.Color], 1, 1)
+
+    graph.addPass('A')
+    const resource = graph.write(channels.Color)
+
+    graph.addPass('B')
+    expect(graph.modifyInPlace(channels.Color)).toBe(resource)
+
+    graph.addPass('C')
+    expect(graph.modifyInPlace(channels.Color)).toBe(resource) // depends on B, which depends on A
+
+    graph.compile()
+
+    expect(graph.nodes.map((it) => it.pass)).toEqual(['A', 'B', 'C'])
+  })
 })

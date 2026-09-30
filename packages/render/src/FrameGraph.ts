@@ -247,6 +247,8 @@ export class FrameGraph<T = RenderPass> {
 
     // dependency on previous producer
     addDependency(this.current, resource.producer)
+    // subsequent readers and modifiers must depend on this pass
+    resource.producer = this.current
 
     this.current.reads.push(resource)
     this.current.writes.push(resource)
