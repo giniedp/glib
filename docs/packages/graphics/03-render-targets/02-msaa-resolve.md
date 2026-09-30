@@ -10,12 +10,7 @@ Toggle multisampling on and off and look closely at the cube's edges - MSAA
 renders each pixel at 4 sub-sample positions and averages them, softening
 the jagged "staircase" look of a single-sampled render.
 
-:::tabs variant:code
-== WebGPU
-<Example platform="webgpu" />
-== WebGL
-<Example platform="webgl2" />
-:::
+<Example  />
 
 :::tabs variant:code
 == example.ts

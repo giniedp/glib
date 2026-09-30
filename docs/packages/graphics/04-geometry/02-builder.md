@@ -5,12 +5,7 @@ order: 20
 
 # Builder
 
-:::tabs variant:code
-== WebGPU
-<Example platform="webgpu" />
-== WebGL
-<Example platform="webgl2" />
-:::
+<Example  />
 
 The `GeometryBuilder` class is a helper utility for programmatic geometry compositions at runtime.
 

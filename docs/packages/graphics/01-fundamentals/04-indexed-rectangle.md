@@ -9,12 +9,7 @@ order: 40
 Draw a rectangle from 4 unique vertices instead of 6, by reusing shared
 corners through an index buffer.
 
-:::tabs variant:code
-== WebGPU
-<Example platform="webgpu" />
-== WebGL
-<Example platform="webgl2" />
-:::
+<Example  />
 
 :::tabs variant:code
 == example.ts

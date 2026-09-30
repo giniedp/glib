@@ -1,6 +1,5 @@
 <template>
   <div class="example-frame" ref="frame">
-    <canvas ref="canvas" style="width: 100%; height: 100%; z-index: 1"></canvas>
     <div class="example-tools twk-dark" @mousedown="stopPropagation" @wheel="stopPropagation">
       <div>
         <div ref="fsTools"></div>
@@ -33,14 +32,19 @@
 
 .example-tools {
   position: absolute;
-  top: 0;
-  right: 0;
+  top: 0.25rem;
+  right: 0.25rem;
   max-height: 100%;
   overflow: auto;
   z-index: 1;
-  opacity: 0;
-  --twk-radius: 0;
-  --twk-gap: 0;
+  /* opacity: 0; */
+  --twk-radius: 0.125rem;
+  --twk-gap: 0.125rem;
+}
+.example-tools > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 .example-frame:hover .example-tools {
   opacity: 0.25 !important;
@@ -81,7 +85,7 @@ canvas {
 /// <reference types="vite/client" />
 import { PlatformId } from '@gglib/graphics'
 import { mergeUri } from '@gglib/utils'
-import { mountUi } from 'tweak-ui'
+import { mountUi, unmountUi } from 'tweak-ui'
 import { useRoute } from 'vitepress'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 export type RunFn = (canvas: HTMLCanvasElement, tools: HTMLElement) => RunDisposeFn
@@ -121,7 +125,6 @@ function getExample(): Example {
 }
 
 const frame = ref<HTMLElement | null>(null)
-const canvas = ref<HTMLCanvasElement | null>(null)
 const fsTools = ref<HTMLElement | null>(null)
 const tools = ref<HTMLElement | null>(null)
 const props = defineProps({
@@ -130,18 +133,52 @@ const props = defineProps({
 })
 let toDispose: RunDisposeFn | null = null
 let isMounted = false
+let loadId = 0
+let canvas: HTMLCanvasElement | null = null
+
+// 'auto' allows switching between both platforms, a specific platform locks the other one
+const requestedPlatform = (props.platform || 'auto') as PlatformId
+const supportsWebGPU = typeof navigator !== 'undefined' && !!navigator.gpu
+let activePlatform: PlatformId = requestedPlatform
+if (activePlatform === 'auto') {
+  activePlatform = supportsWebGPU ? 'webgpu' : 'webgl2'
+}
 
 const route = useRoute()
 const showCapture = computed(() => import.meta.env.DEV && route.path.includes('/examples/'))
 
 onMounted(async () => {
   isMounted = true
-  loadExample(props.platform as any)
+  loadExample(activePlatform)
   mountUi(fsTools.value!, (ui) => {
-    if (showCapture.value) {
-      ui.button('CAPTRUE', { onclick: captureCanvas })
-    }
-    ui.button('Fullscreen', { onclick: toggleFullscreen })
+    ui.flex({ flow: 'row' }, (ui) => {
+      ui.button('WebGPU', {
+        flex: '1',
+        get accent() {
+          return activePlatform === 'webgpu'
+        },
+        disabled: requestedPlatform === 'webgl2' || !supportsWebGPU,
+        onclick: () => switchPlatform('webgpu'),
+      })
+      ui.button('WebGL', {
+        flex: '1',
+        get accent() {
+          return activePlatform === 'webgl2'
+        },
+        disabled: requestedPlatform === 'webgpu',
+        onclick: () => switchPlatform('webgl2'),
+      })
+      ui.button('FS', {
+        flex: 'none',
+        onclick: toggleFullscreen,
+      })
+      if (showCapture.value) {
+        ui.button('CA', {
+          flex: 'none',
+          onclick: captureCanvas,
+        })
+      }
+    })
   })
 })
 
@@ -150,12 +187,32 @@ onUnmounted(() => {
   unloadExample()
 })
 
+function switchPlatform(platform: PlatformId) {
+  if (platform === activePlatform) {
+    return
+  }
+  activePlatform = platform
+  loadExample(platform)
+}
+
+function createCanvas() {
+  // a canvas is bound to a single context type, so each platform needs a fresh one
+  const result = document.createElement('canvas')
+  result.style.width = '100%'
+  result.style.height = '100%'
+  result.style.zIndex = '1'
+  frame.value!.prepend(result)
+  return result
+}
+
 async function loadExample(platform: PlatformId) {
   unloadExample()
+  const id = ++loadId
+  canvas = createCanvas()
   try {
     const module: any = await getExample().load()
-    if (isMounted) {
-      toDispose = module.default(canvas.value, tools.value, platform) || null
+    if (isMounted && id === loadId) {
+      toDispose = module.default(canvas, tools.value, platform) || null
     }
   } catch (e) {
     console.error(e)
@@ -163,11 +220,16 @@ async function loadExample(platform: PlatformId) {
 }
 
 function unloadExample() {
-  if (!toDispose) {
-    return
-  }
-  Promise.resolve(toDispose).then((dispose) => dispose())
+  const oldCanvas = canvas
+  const dispose = toDispose
+  canvas = null
   toDispose = null
+  if (tools.value) {
+    unmountUi(tools.value)
+  }
+  Promise.resolve(dispose)
+    .then((fn) => fn?.())
+    .finally(() => oldCanvas?.remove())
 }
 
 function stopPropagation(event: MouseEvent) {
@@ -188,7 +250,7 @@ function toggleFullscreen() {
 
 async function captureCanvas() {
   const blob = await new Promise<Blob | null>((resolve) => {
-    ;(canvas.value as HTMLCanvasElement).toBlob(resolve, 'image/png')
+    canvas!.toBlob(resolve, 'image/png')
   })
 
   if (!blob) {

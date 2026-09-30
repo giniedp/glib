@@ -5,12 +5,7 @@ order: 10
 
 # Geometry
 
-:::tabs variant:code
-== WebGPU
-<Example platform="webgpu" />
-== WebGL
-<Example platform="webgl2" />
-:::
+<Example  />
 
 Until now we created an index and vertex buffer and called the appropriet methods
 on a pass instance to configure and issue a draw command. This can be grouped in

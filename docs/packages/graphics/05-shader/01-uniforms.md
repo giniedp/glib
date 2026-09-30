@@ -8,12 +8,7 @@ order: 10
 
 A static triangle, moved and recolored purely through uniforms.
 
-:::tabs variant:code
-== WebGPU
-<Example platform="webgpu" />
-== WebGL
-<Example platform="webgl2" />
-:::
+<Example  />
 
 :::tabs variant:code
 == example.ts

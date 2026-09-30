@@ -9,12 +9,7 @@ order: 30
 One draw call, two output images: the fragment shader writes a color to
 one texture and a brightness mask to another, in the same pass.
 
-:::tabs variant:code
-== WebGPU
-<Example platform="webgpu" />
-== WebGL
-<Example platform="webgl2" />
-:::
+<Example  />
 
 :::tabs variant:code
 == example.ts

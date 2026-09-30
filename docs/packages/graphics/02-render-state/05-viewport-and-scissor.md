@@ -10,12 +10,7 @@ The same rotating triangle, drawn four times into four independent
 viewports. An optional scissor rect then clips each one further,
 independently of the viewport transform.
 
-:::tabs variant:code
-== WebGPU
-<Example platform="webgpu" />
-== WebGL
-<Example platform="webgl2" />
-:::
+<Example  />
 
 :::tabs variant:code
 == example.ts

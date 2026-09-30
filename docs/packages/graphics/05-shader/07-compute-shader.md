@@ -9,6 +9,7 @@ order: 70
 ::: warning
 WebGPU Only
 :::
+
 :::tabs variant:code
 == example.ts
 <ExampleCode />

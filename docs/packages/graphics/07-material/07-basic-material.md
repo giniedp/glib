@@ -8,14 +8,7 @@ Going forward, the examples are going to use the built in BasicMaterial instead 
 
 The BasicMaterial implements simple hemispheric light, single texture mapping and vertex color tint.
 
-:::tabs variant:code
-
-== WebGPU
-<Example platform="webgpu" />
-
-== WebGL
-<Example platform="webgl2" />
-:::
+<Example />
 
 :::tabs variant:code
 == example.ts

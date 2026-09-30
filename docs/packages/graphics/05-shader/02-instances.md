@@ -14,13 +14,9 @@ and instantly consumes and applies all given uniform values.
 For WebGPU, the same result can be achieved by callin `.submit()` after eacht `.draw()`
 but at the cost of performance.
 
-:::tabs variant:code
-== WebGPU
-<Example platform="webgpu" />
-== WebGL
-<Example platform="webgl2" />
+<Example />
+
 The WebGL example renders always the same, regardless of chosen settings
-:::
 
 :::tabs variant:code
 == example.ts

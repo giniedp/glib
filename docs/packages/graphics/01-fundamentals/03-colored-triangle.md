@@ -9,12 +9,7 @@ order: 30
 Add a second vertex attribute alongside position: a per-vertex color,
 interleaved into the same buffer.
 
-:::tabs variant:code
-== WebGPU
-<Example platform="webgpu" />
-== WebGL
-<Example platform="webgl2" />
-:::
+<Example  />
 
 :::tabs variant:code
 == example.ts

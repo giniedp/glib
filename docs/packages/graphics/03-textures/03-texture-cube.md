@@ -11,12 +11,7 @@ instead of a 2D UV coordinate. The same shader draws it two ways: once as
 a skybox surrounding the camera, and once as a reflection on a tumbling
 cube in front of it - a single `mode` uniform switches between the two.
 
-:::tabs variant:code
-== WebGPU
-<Example platform="webgpu" />
-== WebGL
-<Example platform="webgl2" />
-:::
+<Example  />
 
 :::tabs variant:code
 == example.ts

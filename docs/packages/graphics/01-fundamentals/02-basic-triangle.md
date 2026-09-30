@@ -8,12 +8,7 @@ order: 20
 
 A shader program and a vertex buffer with three positions.
 
-:::tabs variant:code
-== WebGPU
-<Example platform="webgpu" />
-== WebGL
-<Example platform="webgl2" />
-:::
+<Example  />
 
 :::tabs variant:code
 == example.ts

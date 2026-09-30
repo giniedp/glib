@@ -4,12 +4,7 @@ aside: false
 
 # Ammo.js Physics
 
-:::tabs variant:code
-== WebGL
-<Example platform="webgl2" src="game.ts" />
-== WebGPU
-<Example platform="webgpu" src="game.ts" />
-:::
+<Example src="game.ts" />
 
 :::tabs variant:code
 == example.ts

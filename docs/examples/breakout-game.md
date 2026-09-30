@@ -4,7 +4,7 @@ aside: false
 
 # Breakout Game
 
-<Example platform="auto" src="game.ts" />
+<Example src="game.ts" />
 
 :::tabs variant:code
 == game.ts

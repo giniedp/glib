@@ -9,12 +9,7 @@ order: 30
 Two overlapping semi-transparent quads. The blend state controls how a
 newly drawn pixel is combined with what is already in the render target.
 
-:::tabs variant:code
-== WebGPU
-<Example platform="webgpu" />
-== WebGL
-<Example platform="webgl2" />
-:::
+<Example  />
 
 :::tabs variant:code
 == example.ts

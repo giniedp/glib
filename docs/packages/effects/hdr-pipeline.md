@@ -20,12 +20,7 @@ The `output` dropdown lets you inspect the texture at each stage. Every stage wr
 render target - more than a real pipeline would need - purely so the intermediate buffers can be
 selected and viewed here.
 
-:::tabs variant:code
-== WebGPU
-<Example platform="webgpu" />
-== WebGL
-<Example platform="webgl2" />
-:::
+<Example  />
 
 :::tabs variant:code
 == example.ts
