@@ -90,6 +90,7 @@ export class RenderTargetManager {
       options.format,
       `${options.width}x${options.height}x${options.depth}`,
       options.sampleCount,
+      `mips:${options.mipLevelCount ?? 1}`,
       label || '',
     ].join('|')
     options.name ??= `rt:${key}`
@@ -153,7 +154,8 @@ export class RenderTargetManager {
       a.depth === b.depth &&
       a.format === b.format &&
       a.type === b.type &&
-      a.sampleCount === b.sampleCount
+      a.sampleCount === b.sampleCount &&
+      (a.mipLevelCount ?? 1) === (b.mipLevelCount ?? 1)
       // a.usage === b.usage
     )
   }
