@@ -15,7 +15,7 @@ import { boxGeometry, FALSE, Texture, TRUE } from '@gglib/graphics'
 import { DDS, GLTF, HDR, KTX } from '@gglib/loaders'
 import { Mat3, mat3CreateIdentity, vec3$initFrom } from '@gglib/math'
 import { AnimationPlayer, Model } from '@gglib/model'
-import { BloomPass, GeometryPass, Renderer, TonemapPass } from '@gglib/render'
+import { BloomPass, opaquePassMSAA, Renderer, TonemapPass, transparentPassMSAA } from '@gglib/render'
 
 export interface ModelViewerOptions {
   canvas: HTMLCanvasElement
@@ -84,7 +84,7 @@ export class ModelViewer extends EcsGame {
       new Renderer(this.device, {
         linearToSrgb: false,
         pipeline: {
-          passes: [new GeometryPass(), this.bloomPass, this.tonemapPass],
+          passes: [opaquePassMSAA(), transparentPassMSAA(), this.bloomPass, this.tonemapPass],
         },
       }),
     )

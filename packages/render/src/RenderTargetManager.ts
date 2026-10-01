@@ -26,6 +26,7 @@ export class RenderTargetManager {
   protected usedList: ManagedTexture[] = []
 
   public maxKeepAlifeFrames = 60
+  public sizeInBytes: number = 0
 
   public constructor(device: Device, options?: RenderTargetManagerOptions) {
     this.device = device
@@ -38,6 +39,7 @@ export class RenderTargetManager {
   public update() {
     this.evict()
     this.frameCount++
+    this.udpateSizeInBytes()
   }
 
   protected toDispose: ManagedTexture[] = []
@@ -50,7 +52,7 @@ export class RenderTargetManager {
     }
     while (this.toDispose.length > 0) {
       const item = this.toDispose.pop()
-      console.debug('RenderTarget dispose', item.key)
+      // console.debug('RenderTarget dispose', item.key)
       removeItemUnordered(this.freeList, item)
       try {
         item.texture.dispose()
@@ -100,7 +102,7 @@ export class RenderTargetManager {
     } else {
       target = this.device.createRenderTarget(options)
     }
-    console.debug('RenderTarget created', key)
+    // console.debug('RenderTarget created', key)
     this.usedList.push({
       lastUse: this.frameCount,
       texture: target,
@@ -145,6 +147,7 @@ export class RenderTargetManager {
     }
     this.usedList.length = 0
     this.freeList.length = 0
+    this.sizeInBytes = 0
   }
 
   protected compatible(a: TextureDescriptor, b: TextureDescriptor): boolean {
@@ -158,5 +161,16 @@ export class RenderTargetManager {
       (a.mipLevelCount ?? 1) === (b.mipLevelCount ?? 1)
       // a.usage === b.usage
     )
+  }
+
+  private udpateSizeInBytes() {
+    let size = 0
+    for (const item of this.usedList) {
+      size += item.texture.sizeInBytes
+    }
+    for (const item of this.freeList) {
+      size += item.texture.sizeInBytes
+    }
+    this.sizeInBytes = size
   }
 }

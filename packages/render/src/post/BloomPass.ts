@@ -25,16 +25,15 @@ export interface BloomPassOptions {
 
 export type BloomPassMode = 'kawase' | 'jimnez'
 
+export function bloomPass(device: Device, options: BloomPassOptions = {}): BloomPass {
+  return new BloomPass(device, options)
+}
+
 export class BloomPass implements RenderPass {
   /**
    * Pass name and debug label
    */
   public readonly name: string = 'Bloom'
-
-  /**
-   *
-   */
-  public order = 100
 
   /**
    *
@@ -99,7 +98,6 @@ export class BloomPass implements RenderPass {
       this.createEffects()
     })
 
-    this.order = options.order ?? this.order
     this.enabled = options.enabled ?? this.enabled
     this.threshold = options.threshold ?? this.threshold
     this.intensity = options.intensity ?? this.intensity

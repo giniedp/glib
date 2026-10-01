@@ -11,7 +11,7 @@ import { GameComponent, GameEntity, InitializableComponent } from '@gglib/ecs'
 import { GamepadAxes, KeyboardKeys } from '@gglib/game'
 import { Color, PlatformId, Texture } from '@gglib/graphics'
 import { IVec4, mat4$initOrthographicOffCenter, mat4Identity, vec4 } from '@gglib/math'
-import { BloomPass, GeometryPass, LayerMask, PixelatePass, Renderer } from '@gglib/render'
+import { BloomPass, LayerMask, opaquePassMSAA, PixelatePass, Renderer, transparentPassMSAA } from '@gglib/render'
 import { mountUi } from 'tweak-ui'
 export default (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
   const game = new PongGame({ canvas, platform, autosize: true })
@@ -66,7 +66,7 @@ class PongGame extends EcsGame {
     this.world.addSystem(
       new Renderer(this.device, {
         pipeline: {
-          passes: [new GeometryPass(), this.bloom, this.pixelate],
+          passes: [opaquePassMSAA(), transparentPassMSAA(), this.bloom, this.pixelate],
         },
       }),
     )

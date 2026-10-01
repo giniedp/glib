@@ -30,6 +30,10 @@ export interface FrameGraphNode<T = unknown> {
   writes: FrameResource<T>[]
   dependencies: FrameGraphNode<T>[]
   culled: boolean
+  /**
+   * Whether the pass has side effects outside of the graph (e.g. sets render inputs) and must not be culled
+   */
+  keepAlive: boolean
 
   acquire: FrameResource[]
   release: FrameResource[]
@@ -118,6 +122,7 @@ export class FrameGraph<T = RenderPass> {
       release: [],
       dependencies: [],
       culled: false,
+      keepAlive: false,
     }
     node.id = this.passes.size
     node.pass = pass
@@ -127,9 +132,24 @@ export class FrameGraph<T = RenderPass> {
     node.release.length = 0
     node.dependencies.length = 0
     node.culled = false
+    node.keepAlive = false
 
     this.passes.push(node)
     this.current = node
+  }
+
+  /**
+   * Marks the current pass as having side effects outside of the graph (e.g. it sets render inputs),
+   * so it is never culled, even if no output depends on it. The pass still executes in the order it was added.
+   */
+  public keepAlive(): void {
+    if (this.isCompiled) {
+      throw new Error('Can not modify compiled frame')
+    }
+    if (!this.current) {
+      throw new Error('No active pass')
+    }
+    this.current.keepAlive = true
   }
 
   /**
@@ -363,6 +383,12 @@ export class FrameGraph<T = RenderPass> {
       const resource = this.latestVersions[channel]
       if (resource?.producer) {
         this.uncull(resource.producer)
+      }
+    }
+    for (let i = 0; i < this.passes.size; i++) {
+      const node = this.passes.item(i)
+      if (node.keepAlive) {
+        this.uncull(node)
       }
     }
 

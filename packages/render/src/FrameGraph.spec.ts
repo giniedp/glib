@@ -149,4 +149,28 @@ describe('FrameGraph', () => {
 
     expect(graph.nodes.map((it) => it.pass)).toEqual(['A', 'B', 'C'])
   })
+
+  it('keeps passes with side effects', () => {
+    graph.begin([channels.Color], 1, 1)
+
+    graph.addPass('A')
+    graph.keepAlive() // no writes, but kept
+
+    graph.addPass('B')
+    graph.write(channels.Depth)
+
+    graph.addPass('C')
+    graph.read(channels.Depth) // keeps B alive
+    graph.keepAlive()
+
+    graph.addPass('D')
+    graph.write(channels.Color)
+
+    graph.addPass('E')
+    graph.write(channels.Normals) // not an output, culled
+
+    graph.compile()
+
+    expect(graph.nodes.map((it) => it.pass)).toEqual(['A', 'B', 'C', 'D'])
+  })
 })

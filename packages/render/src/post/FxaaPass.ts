@@ -12,7 +12,6 @@ export interface FxaaOptions {
   quality?: number
 }
 export class FxaaPass implements RenderPass {
-  public order = 100
   public name: string = 'Fxaa Pass'
 
   public enabled = false
@@ -32,7 +31,6 @@ export class FxaaPass implements RenderPass {
       this.effect = new FxaaEffect(device)
     }
 
-    this.order = options.order ?? this.order
     this.enabled = options.enabled ?? this.enabled
     this.thresholdMin = options.thresholdMin ?? this.thresholdMin
     this.thresholdMax = options.thresholdMax ?? this.thresholdMax

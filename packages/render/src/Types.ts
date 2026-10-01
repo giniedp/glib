@@ -274,10 +274,6 @@ export interface RenderContext {
 
 export interface RenderPass {
   /**
-   * The render order of this pass
-   */
-  order: number
-  /**
    * Name of this render pass
    */
   name: string

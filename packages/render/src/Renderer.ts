@@ -29,7 +29,7 @@ import {
   vec3,
 } from '@gglib/math'
 import { eventSource } from '@gglib/utils'
-import { GeometryPass } from './passes'
+import { opaquePassMSAA, transparentPassMSAA } from './passes'
 import { createRenderChannelSchema, RenderChannel } from './RenderChannel'
 import {
   MeshPartRenderCollector,
@@ -104,6 +104,10 @@ export class Renderer {
     delta: 0,
   }
 
+  public get resourceSizeInBytes(): number {
+    return this.resources.sizeInBytes
+  }
+
   /**
    * Event emitted when the render context is ready to be used for rendering.
    * This allows to set custom render parameters or perform other preparations before the render pipeline is executed.
@@ -118,7 +122,8 @@ export class Renderer {
     } else {
       this.pipeline = new RenderPipeline(
         options?.pipeline || {
-          passes: [new GeometryPass()],
+          name: 'Default Pipeline',
+          passes: [opaquePassMSAA(), transparentPassMSAA()],
         },
       )
     }

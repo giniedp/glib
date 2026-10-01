@@ -14,7 +14,6 @@ export interface PixelatePassOptions {
   gap?: number
 }
 export class PixelatePass implements RenderPass {
-  public order = 100
   public name: string = 'Pixelate Pass'
 
   public enabled = false
@@ -36,7 +35,6 @@ export class PixelatePass implements RenderPass {
       this.pixelate = new PixelateShader(device)
     }
 
-    this.order = options.order ?? this.order
     this.enabled = options.enabled ?? this.enabled
     this.size = options.size ?? this.size
     this.corner = options.corner ?? this.corner

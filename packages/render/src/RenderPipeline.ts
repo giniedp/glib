@@ -37,7 +37,6 @@ export class RenderPipeline {
   public execute(ctx: RenderContext): void {
     this.graph.setDescriptors(ctx.channelDescriptors)
     this.graph.begin(ctx.view.output, ctx.viewWidth, ctx.viewHeight)
-    this.passes.sort(byOrder)
     for (const pass of this.passes) {
       pass.setup(this.graph, ctx)
     }
@@ -63,8 +62,8 @@ export class RenderPipeline {
         }
       }
     }
-    for (const step of this.passes) {
-      step.cleanup(ctx)
+    for (const pass of this.passes) {
+      pass.cleanup(ctx)
     }
 
     for (const resource of this.exports) {
@@ -76,8 +75,4 @@ export class RenderPipeline {
       ctx.view.exports[resource.channel] = newTexture
     }
   }
-}
-
-function byOrder(a: RenderPass, b: RenderPass) {
-  return a.order - b.order
 }

@@ -1,13 +1,13 @@
 import { ContentLoader } from '@gglib/content'
 import { CreateEntityOptions, GameWorld } from '@gglib/ecs'
+import { GameLoop } from '@gglib/game'
 import { createDevice, type CreateDeviceOptions, Device } from '@gglib/graphics'
 import { SpaceBasis } from '@gglib/math'
-import { GeometryPass, RenderChannel, Renderer } from '@gglib/render'
+import { RenderChannel, Renderer } from '@gglib/render'
 import { EventEmitter } from '@gglib/utils'
 import { SceneComponent, TransformComponent } from '../components'
 import { BehaviorSystem } from './BehaviorSystem'
 import { BoundsUpdateSystem } from './BoundsUpdateSystem'
-import { GameLoop } from '@gglib/game'
 import { SceneSystem } from './SceneSystem'
 import { TimeSystem } from './TimeSystem'
 import { TweenSystem } from './TweenSystem'
@@ -101,11 +101,7 @@ export class EcsGame {
     }
 
     if (!this.world.hasSystem(Renderer)) {
-      this.world.addSystem(
-        new Renderer(this.device, {
-          pipeline: { passes: [new GeometryPass()] },
-        }),
-      )
+      this.world.addSystem(new Renderer(this.device))
     }
 
     this.content ||= this.world.getSystem(ContentLoader)

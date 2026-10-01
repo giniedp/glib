@@ -14,8 +14,11 @@ export interface TonemapPassOptions {
   srgb?: boolean
 }
 
+export function tonemapPass(device: Device, options?: TonemapPassOptions): TonemapPass {
+  return new TonemapPass(device, options)
+}
+
 export class TonemapPass implements RenderPass {
-  public order = 100
   public name: string = 'Tonemap Pass'
 
   public enabled: boolean = true
@@ -36,7 +39,6 @@ export class TonemapPass implements RenderPass {
       this.effect = new TonemapEffect(device)
     }
 
-    this.order = options.order ?? this.order
     this.enabled = options.enabled ?? this.enabled
     this.exposure = options?.exposure ?? this.exposure
     this.whitePoint = options?.whitePoint ?? this.whitePoint

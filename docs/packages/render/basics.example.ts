@@ -12,7 +12,7 @@ import {
   vec3,
 } from '@gglib/math'
 
-import { BloomPass, GeometryPass, PixelatePass, Renderer, TonemapPass } from '@gglib/render'
+import { BloomPass, opaquePassMSAA, PixelatePass, Renderer, TonemapPass, transparentPassMSAA } from '@gglib/render'
 import { mountUi } from 'tweak-ui'
 import { createCamera, createObject, createScene } from './basics-scene'
 
@@ -28,7 +28,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
 
   const renderer = new Renderer(device, {
     pipeline: {
-      passes: [new GeometryPass(), pixelate, bloom, tonemap],
+      passes: [opaquePassMSAA(), transparentPassMSAA(), pixelate, bloom, tonemap],
     },
   })
 
