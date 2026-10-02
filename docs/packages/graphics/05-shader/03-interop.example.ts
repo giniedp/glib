@@ -1,18 +1,7 @@
 import { Color, createDevice, Device, FrameContext, PlatformId, vertexLayout } from '@gglib/graphics'
-import { mountUi } from 'tweak-ui'
-
-const settings = {
-  instances: true,
-  instantSubmit: false,
-}
 
 export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
   const device: Device = await createDevice({ canvas, platform, autosize: true }).ready
-
-  mountUi(tools, (ui) => {
-    ui.bool(settings, 'instances', { label: 'Instanced' })
-    ui.bool(settings, 'instantSubmit', { label: 'Instant submit' })
-  })
 
   const shader = device.createShaderModule({
     wgsl: { source: wgslShader },
