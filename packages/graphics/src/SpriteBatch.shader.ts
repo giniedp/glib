@@ -74,7 +74,6 @@ export const SPRITE_BATCH_WGSL: string = /* wgsl*/ `
   fn fsMain(input: FragmentInput) -> FragmentOutput {
     var out: FragmentOutput;
     out.color = textureSample(textureMap, textureSampler, input.uv) * input.color;
-    out.color *= input.color;
     out.color *= vec4(vec3(uniforms.exposure), 1.0);
     if (uniforms.tonemap == 1) {
       out.color = vec4(tonemapReinhardJodie(out.color.rgb), out.color.a);
