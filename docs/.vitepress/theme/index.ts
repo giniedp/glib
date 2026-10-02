@@ -9,6 +9,7 @@ import Example from './components/example.vue'
 import HeroImage from './components/hero-image.vue'
 import KhronosSamples from './components/khronos-samples.vue'
 import KhronosTests from './components/khronos-tests.vue'
+import { trackLocationSearch } from './location-search'
 import './fonts.css'
 import './style.css'
 
@@ -37,5 +38,6 @@ export default {
     app.component('Example', Example)
     app.component('ExampleCode', ExampleCode)
     enhanceAppWithTabs(app)
+    trackLocationSearch(router)
   },
 } satisfies Theme

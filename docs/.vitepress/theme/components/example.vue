@@ -101,7 +101,8 @@ canvas {
   opacity: 0;
 }
 
-.example-frame:has(canvas.loading)::after {
+.example-frame:has(canvas.loading)::after,
+.example-frame:has(canvas.content-loading)::after {
   content: '';
   position: absolute;
   top: 50%;
@@ -109,10 +110,12 @@ canvas {
   width: 32px;
   height: 32px;
   margin: -16px 0 0 -16px;
-  border: 3px solid rgba(0, 0, 0, 0.15);
-  border-top-color: rgba(0, 0, 0, 0.6);
+  border: 3px solid rgba(255, 255, 255, 0.15);
+  border-top-color: rgba(255, 255, 255, 0.6);
+  border-bottom-color: rgba(255, 255, 255, 0.6);
   border-radius: 50%;
   animation: example-frame-spin 0.8s linear infinite !important;
+  z-index: 1;
 }
 
 @keyframes example-frame-spin {
@@ -127,7 +130,8 @@ import { PlatformId } from '@gglib/graphics'
 import { mergeUri } from '@gglib/utils'
 import { mountUi, unmountUi } from 'tweak-ui'
 import { useRoute } from 'vitepress'
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { locationSearch } from '../location-search'
 export type RunFn = (canvas: HTMLCanvasElement, tools: HTMLElement) => RunDisposeFn
 export type RunDisposeFn = () => void
 
@@ -175,6 +179,8 @@ let toDispose: RunDisposeFn | null = null
 let isMounted = false
 let loadId = 0
 let canvas: HTMLCanvasElement | null = null
+// query string the running example was loaded with
+let loadedSearch: string | null = null
 
 // 'auto' allows switching between both platforms, a specific platform locks the other one
 const requestedPlatform = (props.platform || 'auto') as PlatformId
@@ -246,6 +252,14 @@ onMounted(async () => {
   })
 })
 
+// in production builds vitepress keeps the page mounted when only the query changes,
+// so examples reading the query must be restarted explicitly
+watch(locationSearch, (search) => {
+  if (isMounted && loadedSearch !== null && search !== loadedSearch) {
+    loadExample(activePlatform)
+  }
+})
+
 onUnmounted(() => {
   isMounted = false
   unloadExample()
@@ -273,6 +287,7 @@ function createCanvas() {
 async function loadExample(platform: PlatformId) {
   unloadExample()
   const id = ++loadId
+  loadedSearch = location.search
   message.value = null
   if (!isSupported(platform)) {
     message.value = {

@@ -42,14 +42,14 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement) => {
       if (modelKey !== `${mdl.name}_${name}`) {
         continue
       }
-      canvas.classList.add('loading')
+      canvas.classList.add('content-loading')
       canvas.classList.remove('error')
       viewer
         .loadModel({
           url: `${baseUrl}/${mdl.name}/${name}/${path}`,
         })
         .then(console.log)
-        .then(() => canvas.classList.remove('loading'))
+        .then(() => canvas.classList.remove('content-loading'))
         .catch(() => canvas.classList.add('error'))
     }
   }
