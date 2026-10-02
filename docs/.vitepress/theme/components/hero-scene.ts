@@ -25,6 +25,7 @@ import {
 } from '@gglib/graphics'
 import { GLTF } from '@gglib/loaders'
 import {
+  clamp,
   DEGREE_TO_RAD,
   mat4$initLookAt,
   mat4$initPerspectiveFieldOfView,
@@ -114,11 +115,15 @@ export default async (canvas: HTMLCanvasElement) => {
   let accumX = 0
   let accumY = 0
 
+  const tilt = deviceTilt()
+
   function updateScene(time: number, dt: number) {
     mouse.update()
 
-    accumX += (mouse.xNormalized - accumX) * 0.1
-    accumY += (mouse.yNormalized - accumY) * 0.1
+    const targetX = tilt.active ? tilt.x : mouse.xNormalized
+    const targetY = tilt.active ? tilt.y : mouse.yNormalized
+    accumX += (targetX - accumX) * 0.1
+    accumY += (targetY - accumY) * 0.1
 
     const offset = Math.sin(0.75 * Math.PI + time * Math.PI * 0.5) * 0.05
 
@@ -246,6 +251,69 @@ export default async (canvas: HTMLCanvasElement) => {
 
   device.schedule(frame)
   return () => {
+    tilt.dispose()
     device.dispose()
   }
+}
+
+/**
+ * Tracks device tilt relative to the pose the device is held in.
+ * Outputs x/y in 0..1 (0.5 at rest), matching the normalized mouse position.
+ */
+function deviceTilt() {
+  const RANGE = 30 // degrees of tilt for full deflection
+  const state = { active: false, x: 0.5, y: 0.5, dispose }
+  let restX: number | null = null
+  let restY: number | null = null
+
+  function onOrientation(e: DeviceOrientationEvent) {
+    if (e.beta == null || e.gamma == null) {
+      return
+    }
+    // map device axes to screen axes depending on screen rotation
+    const angle = screen.orientation?.angle ?? 0
+    let tx = e.gamma
+    let ty = e.beta
+    if (angle === 90) {
+      tx = e.beta
+      ty = -e.gamma
+    } else if (angle === 270 || angle === -90) {
+      tx = -e.beta
+      ty = e.gamma
+    }
+    if (restX == null || restY == null) {
+      restX = tx
+      restY = ty
+    }
+    // slowly re-center, so a changed holding pose becomes the new rest pose
+    restX += (tx - restX) * 0.005
+    restY += (ty - restY) * 0.005
+
+    state.active = true
+    state.x = 0.5 + 0.5 * clamp((tx - restX) / RANGE, -1, 1)
+    state.y = 0.5 + 0.5 * clamp((ty - restY) / RANGE, -1, 1)
+  }
+
+  // iOS requires permission, which can only be requested from a user gesture
+  const Orientation = globalThis.DeviceOrientationEvent as unknown as { requestPermission?: () => Promise<string> }
+  function requestPermission() {
+    Orientation?.requestPermission?.().catch(() => {})
+  }
+
+  if (typeof window !== 'undefined' && Orientation) {
+    if (!window.isSecureContext) {
+      console.warn('device orientation events are only delivered in secure contexts (https or localhost)')
+    }
+    window.addEventListener('deviceorientation', onOrientation)
+    if (Orientation.requestPermission) {
+      window.addEventListener('touchend', requestPermission, { once: true })
+    }
+  }
+
+  function dispose() {
+    window.removeEventListener('deviceorientation', onOrientation)
+    window.removeEventListener('touchend', requestPermission)
+  }
+
+  return state
 }
