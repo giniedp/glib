@@ -168,6 +168,9 @@ h2,
 h1 + .example-frame {
   margin-top: 1rem;
 }
+.twk-dragging .example-frame:hover .example-tools {
+  opacity: 1 !important;
+}
 
 .hljs-comment--doc,
 .hljs-comment--inline,
