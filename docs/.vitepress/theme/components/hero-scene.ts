@@ -4,6 +4,7 @@ import {
   DownsampleOperator,
   ExtractEffect,
   ExtractOperator,
+  FlameEffect,
   TonemapEffect,
   TonemapOperator,
   UpsampleEffect,
@@ -56,6 +57,10 @@ export default async (canvas: HTMLCanvasElement) => {
     format: 'rgba16float',
     usage: TextureUsage.TextureBinding,
   })
+  const flameTarget = device.createRenderTarget({
+    format: 'rgba16float',
+    usage: TextureUsage.TextureBinding,
+  })
   const extractTarget = device.createRenderTarget({
     format: 'rgba16float',
     usage: TextureUsage.TextureBinding,
@@ -70,18 +75,20 @@ export default async (canvas: HTMLCanvasElement) => {
     })
   }
 
+  const fxFlame = await new FlameEffect(device).compiled
   const fxExtract = await new ExtractEffect(device).compiled
   const fxDownsample = await new DownsampleEffect(device).compiled
   const fxUpsample = await new UpsampleEffect(device).compiled
   const fxTonemap = await new TonemapEffect(device).compiled
-
+  const color1 = Color.fromHex('#ffd500')
+  const color2 = Color.fromHex('#00b86b')
   const content = new ContentLoader(device)
   content.registerLoader(GLTF.Loader)
   content.registerCreator(AssetType.Material, (ctx, asset) => {
     const material = new BasicMaterial(ctx.device, asset)
 
-    material.AmbientColor = Color.fromHex('#ffd500')
-    material.AmbientColorTop = Color.fromHex('#00b86b')
+    material.AmbientColor = color1
+    material.AmbientColorTop = color2
     material.AmbientDirection = vec3Normalize(vec3(-1, 1, 0))
 
     return material
@@ -147,6 +154,7 @@ export default async (canvas: HTMLCanvasElement) => {
     msaaScene.resizeToMatch(device.output)
     msaaDepth.resizeToMatch(device.output)
     sceneTarget.resizeToMatch(device.output)
+    flameTarget.resizeToMatch(device.output)
     extractTarget.resizeToMatch(device.output)
 
     const pass = device.renderPass
@@ -185,11 +193,24 @@ export default async (canvas: HTMLCanvasElement) => {
     pass.flush()
 
     pass.setRenderBlend(0, BlendState.Opaque)
+    fxFlame.time = ctx.time
+    fxFlame.colorCore = color1
+    fxFlame.colorEdge = color2
+    fxFlame.distortion = 0.25
+    fxFlame.intensity = 2.5
+    fxFlame.scale = 10
+    fxFlame.height = 0.1
+    fxFlame.occlusion = 0.9
+    fxFlame.refraction = 0.015
+    fxFlame.textureIn = sceneTarget
+    fxFlame.textureOut = flameTarget
+    fxFlame.render(pass)
+
     fxExtract.operatorId = ExtractOperator.HIGH_PASS
     fxExtract.knee = 0.25
     fxExtract.range = 0
-    fxExtract.threshold = 0.5
-    fxExtract.textureIn = sceneTarget
+    fxExtract.threshold = 0.75
+    fxExtract.textureIn = flameTarget
     fxExtract.textureOut = extractTarget
     fxExtract.render(pass)
 
@@ -209,12 +230,12 @@ export default async (canvas: HTMLCanvasElement) => {
       // fxUpsample.operator = UpsampleOperator.KAWASE
       fxUpsample.weight = 0.75 + w
       fxUpsample.textureIn = downsampleTargets[i]
-      fxUpsample.textureOut = downsampleTargets[i - 1] || sceneTarget
+      fxUpsample.textureOut = downsampleTargets[i - 1] || flameTarget
       fxUpsample.render(pass)
     }
 
     pass.setRenderBlend(0, BlendState.Opaque)
-    fxTonemap.textureIn = sceneTarget
+    fxTonemap.textureIn = flameTarget
     fxTonemap.textureOut = device.output
     fxTonemap.operator = TonemapOperator.PBR_NEUTRAL
     fxTonemap.whitePoint = 1

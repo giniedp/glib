@@ -1,6 +1,7 @@
 export * from './combine'
 export * from './downsample'
 export * from './extract'
+export * from './flame'
 export * from './pixelate'
 export * from './upsample'
 export * from './vignette'
