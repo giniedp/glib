@@ -68,7 +68,7 @@ class RaytracerClient {
     this.canvas = canvas
     this.context = canvas.getContext('2d')!
     this.worker = Array.from({ length: navigator.hardwareConcurrency || 4 }, () => {
-      const worker = new Worker('./simple-raytracer/worker.ts', { type: 'module' })
+      const worker = new Worker(new URL('./worker.ts', import.meta.url), { type: 'module' })
       worker.addEventListener('message', (e) => this.onmessage(worker, e))
       return worker
     })
