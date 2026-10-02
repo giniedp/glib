@@ -1,5 +1,9 @@
 <template>
   <div class="example-frame" ref="frame">
+    <div v-if="message" class="example-message">
+      <p class="example-message-title">{{ message.title }}</p>
+      <p v-if="message.detail">{{ message.detail }}</p>
+    </div>
     <div class="example-tools twk-dark" @mousedown="stopPropagation" @wheel="stopPropagation">
       <div>
         <div ref="fsTools"></div>
@@ -55,6 +59,29 @@
 
 canvas {
   background-color: black;
+}
+
+.example-message {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  padding: 1rem;
+  text-align: center;
+  font-size: 14px;
+  color: var(--vp-c-text-2);
+  background-color: var(--vp-c-bg-soft);
+  border-radius: 8px;
+}
+.example-message p {
+  margin: 0;
+}
+.example-message .example-message-title {
+  font-weight: 600;
+  color: var(--vp-c-text-1);
 }
 
 .example-frame {
@@ -138,10 +165,27 @@ let canvas: HTMLCanvasElement | null = null
 
 // 'auto' allows switching between both platforms, a specific platform locks the other one
 const requestedPlatform = (props.platform || 'auto') as PlatformId
-const supportsWebGPU = typeof navigator !== 'undefined' && !!navigator.gpu
+const supportsWebGL2 = typeof WebGL2RenderingContext !== 'undefined'
+let supportsWebGPU = false
 let activePlatform: PlatformId = requestedPlatform
-if (activePlatform === 'auto') {
-  activePlatform = supportsWebGPU ? 'webgpu' : 'webgl2'
+
+const message = ref<{ title: string; detail?: string } | null>(null)
+const platformNames: Record<string, string> = {
+  webgpu: 'WebGPU',
+  webgl2: 'WebGL2',
+}
+
+// navigator.gpu may exist while no adapter is available (blocklisted GPU, disabled flag)
+async function detectWebGPU() {
+  try {
+    return !!(await navigator.gpu?.requestAdapter())
+  } catch {
+    return false
+  }
+}
+
+function isSupported(platform: PlatformId) {
+  return platform === 'webgpu' ? supportsWebGPU : supportsWebGL2
 }
 
 const route = useRoute()
@@ -149,6 +193,13 @@ const showCapture = computed(() => import.meta.env.DEV && route.path.includes('/
 
 onMounted(async () => {
   isMounted = true
+  supportsWebGPU = await detectWebGPU()
+  if (!isMounted) {
+    return
+  }
+  if (activePlatform === 'auto') {
+    activePlatform = supportsWebGPU ? 'webgpu' : 'webgl2'
+  }
   loadExample(activePlatform)
   mountUi(fsTools.value!, (ui) => {
     ui.flex({ flow: 'row' }, (ui) => {
@@ -165,7 +216,7 @@ onMounted(async () => {
         get accent() {
           return activePlatform === 'webgl2'
         },
-        disabled: requestedPlatform === 'webgpu',
+        disabled: requestedPlatform === 'webgpu' || !supportsWebGL2,
         onclick: () => switchPlatform('webgl2'),
       })
       ui.button('FS', {
@@ -208,14 +259,37 @@ function createCanvas() {
 async function loadExample(platform: PlatformId) {
   unloadExample()
   const id = ++loadId
+  message.value = null
+  if (!isSupported(platform)) {
+    message.value = {
+      title: `${platformNames[platform]} is not supported by your browser or device.`,
+      detail:
+        requestedPlatform === 'auto'
+          ? 'This example could not find a supported graphics platform.'
+          : `This example requires ${platformNames[platform]}.`,
+    }
+    return
+  }
   canvas = createCanvas()
+  const showError = (e: unknown) => {
+    console.error(e)
+    if (id === loadId) {
+      canvas?.remove()
+      message.value = {
+        title: `The example failed to start with ${platformNames[platform]}.`,
+        detail: e instanceof Error ? e.message : String(e ?? ''),
+      }
+    }
+  }
   try {
     const module: any = await getExample().load()
     if (isMounted && id === loadId) {
       toDispose = module.default(canvas, tools.value, platform) || null
+      // examples set up asynchronously, a rejection would otherwise leave a blank canvas
+      Promise.resolve(toDispose).catch(showError)
     }
   } catch (e) {
-    console.error(e)
+    showError(e)
   }
 }
 
@@ -229,6 +303,7 @@ function unloadExample() {
   }
   Promise.resolve(dispose)
     .then((fn) => fn?.())
+    .catch(() => {}) // already reported by loadExample
     .finally(() => oldCanvas?.remove())
 }
 
