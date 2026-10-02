@@ -72,6 +72,10 @@ export const InputSlots = {
     FogFar: inputSlotScalar('global', 'fog_far'),
 
     Debug: inputSlotScalar('global', 'debug'),
+    /**
+     * When set to 1, materials skip fog (deferred to the fog pass). Set by the opaque pass
+     */
+    SkipFog: inputSlotScalar('global', 'skipFog'),
     EnvMap: inputSlotTexture('global', 'envMap'),
   },
 }

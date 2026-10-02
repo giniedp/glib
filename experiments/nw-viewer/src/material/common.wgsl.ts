@@ -206,6 +206,8 @@ struct GlobalBlock {
 
   fogHeightOffset  : f32,
   debug            : u32,
+  // 1 while rendering opaque geometry, fog is then applied in a deferred fog pass
+  skipFog          : u32,
 
 };
 
@@ -777,6 +779,9 @@ fn applyFog(
   worldPos: vec3f,
   camPos:   vec3f,
 ) -> vec4f {
+  if (global.skipFog != 0u) {
+    return vec4f(color, alpha);
+  }
   let factor    = getVolumetricFogDensity(worldPos);
   let fog_color = global.volumetricFogColorGradientBase.rgb;
   return vec4f(

@@ -1,3 +1,4 @@
+import { Renderer } from '@gglib/render'
 import type { ClosureComponent } from 'mithril'
 import {
   h,
@@ -30,16 +31,18 @@ import { uiRegistry } from './registry'
 import { CameraComponentProps } from './registry/uiCameraComponent'
 import { DebugShapeSystemProps } from './registry/uiDebugShapeSystem'
 import { LightSystemProps } from './registry/uiLightSystem'
+import { RenderPipelineProps } from './registry/uiRenderPipeline'
 import { TimeOfDayProps } from './registry/uiTimeOfDay'
 
 export function attachOverlay(element: HTMLDivElement, viewer: NwViewer) {
-  const treeEl = document.createElement('div')
-  treeEl.style.position = 'absolute'
-  treeEl.style.top = '0'
-  treeEl.style.left = '0'
-  element.appendChild(treeEl)
+  const el = document.createElement('div')
+  el.style.position = 'absolute'
+  el.style.top = '0'
+  el.style.left = '0'
+  el.style.pointerEvents = 'none'
+  element.appendChild(el)
 
-  mountUi(treeEl, {
+  mountUi(el, {
     view: () => [h(OverlayComponent, { viewer })],
   })
 }
@@ -62,8 +65,8 @@ const OverlayComponent: ClosureComponent<OverlayComponentAttrs> = () => {
       })
     },
     view: ({ attrs: { viewer } }) => [
-      uiSection({ class: 'twk-bg-transparent', style: { height: '100%' } }, [
-        uiSectionHeader({}, [
+      uiSection({ class: 'twk-bg-transparent', style: { height: '100%', pointerEvents: 'none' } }, [
+        uiSectionHeader({ style: { pointerEvents: 'all' } }, [
           uiBar(
             {
               class: 'twk-glass twk-glass-300',
@@ -120,10 +123,9 @@ const OverlayComponent: ClosureComponent<OverlayComponentAttrs> = () => {
                 'div.twk-bg-300',
                 {
                   style: { flex: '0 0 325px' },
-                  onmousedown: (e) => e.stopPropagation(),
                 },
                 [
-                  uiSplit({ style: { height: '100%' } }, [
+                  uiSplit({ style: { height: '100%', pointerEvents: 'all' } }, [
                     h(NwSceneBrowser, {
                       viewer,
                       registry,
@@ -137,11 +139,15 @@ const OverlayComponent: ClosureComponent<OverlayComponentAttrs> = () => {
             : h(
                 'div.twk-bg-300',
                 {
-                  style: { flex: '0 0 325px' },
-                  onmousedown: (e) => e.stopPropagation(),
+                  style: {
+                    flex: '0 0 325px',
+                    overflowY: 'auto',
+                    overflowX: 'clip',
+                    pointerEvents: 'all',
+                  },
                 },
                 [
-                  uiGroup({}, [
+                  uiGroup({ style: {} }, [
                     uiGraph({
                       collapsed: true,
                       rows: [
@@ -161,6 +167,14 @@ const OverlayComponent: ClosureComponent<OverlayComponentAttrs> = () => {
                           smoothing: 0.9,
                           sample: () => {
                             return viewer.frameTime > 0 ? 1 / viewer.frameTime : 0
+                          },
+                        },
+                        {
+                          name: 'Frame (MB)',
+                          min: 0,
+                          max: 2048,
+                          sample: () => {
+                            return viewer.world.getSystem(Renderer).resourceSizeInBytes / 1024 / 1024
                           },
                         },
                         {
@@ -224,8 +238,10 @@ const OverlayComponent: ClosureComponent<OverlayComponentAttrs> = () => {
                         },
                       ],
                     }),
-                    uiGroup({ title: 'Camera' }, [h(CameraComponentProps, { data: viewer.camera })]),
-                    uiGroup({ title: 'Debug' }, [
+                    uiGroup({ title: 'Camera', collapsible: true, collapsed: true }, [
+                      h(CameraComponentProps, { data: viewer.camera }),
+                    ]),
+                    uiGroup({ title: 'Debug', collapsible: true, collapsed: true }, [
                       uiSelect({
                         value: viewer,
                         field: 'debug',
@@ -234,10 +250,13 @@ const OverlayComponent: ClosureComponent<OverlayComponentAttrs> = () => {
                       }),
                       h(DebugShapeSystemProps, { data: viewer.world.getSystem(DebugShapeSystem) }),
                     ]),
-                    uiGroup({ title: 'Time of Day' }, [
+                    uiGroup({ title: 'Time of Day', collapsible: true, collapsed: true }, [
                       h(TimeOfDayProps, { data: viewer.world.getSystem(SkyLightSystem).timeOfDay }),
                     ]),
                     uiGroup({ title: 'Lights' }, [h(LightSystemProps, { data: viewer.world.getSystem(LightSystem) })]),
+                    uiGroup({ title: 'Render Pipeline', collapsible: true }, [
+                      h(RenderPipelineProps, { data: viewer.world.getSystem(Renderer).pipeline }),
+                    ]),
                   ]),
                 ],
               ),

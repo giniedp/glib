@@ -11,8 +11,7 @@ import {
   type SchedulerStats,
 } from '@gglib/components'
 import { type GameEntity } from '@gglib/ecs'
-import { TonemapOperator } from '@gglib/effects'
-import { Color, CommonInputs, type DeviceStats } from '@gglib/graphics'
+import { Color, type DeviceStats } from '@gglib/graphics'
 import { DDS, GLTF, HDR } from '@gglib/loaders'
 import {
   DEGREE_TO_RAD,
@@ -29,7 +28,7 @@ import {
   vec3Subtract,
   vec4,
 } from '@gglib/math'
-import { BloomPass, RenderChannel, Renderer, TonemapPass, type RendererStats } from '@gglib/render'
+import { Renderer, type RendererStats } from '@gglib/render'
 import { brand, lfmt, type EventType } from '@gglib/utils'
 import { redrawUi } from 'tweak-ui'
 import { getLevelListUrl } from './api'
@@ -45,9 +44,10 @@ import { LightSystem } from './game/light/LightSystem'
 import { RegionSystem } from './game/region/RegionSystem'
 import { SliceSystem } from './game/slice/SliceSystem'
 import { TerrainSystem } from './game/terrain/TerrainSystem'
+import { createRenderPipeline } from './graphics'
 import { InputSlots, NwMaterialExtension } from './material'
-import { DepthResolveEffect, OpaquePass, TransparentPass } from './graphics'
 import { attachOverlay } from './ui/overlay'
+import { MouseListener } from '@gglib/game'
 
 export interface NwViewerOptions {
   element: HTMLDivElement
@@ -106,7 +106,14 @@ export class NwViewer extends EcsGame {
     this.world.addSystem(SpaceBasis.Z_UP_POS_Y)
     this.world.addSystem(new ContentService())
     this.world.addSystem(new KeyboardInputSystem())
-    this.world.addSystem(new MouseInputSystem({}))
+    this.world.addSystem(
+      new MouseInputSystem({
+        provider: new MouseListener({
+          captureTarget: this.device.canvas as HTMLCanvasElement,
+          eventTarget: this.device.canvas as HTMLCanvasElement,
+        }),
+      }),
+    )
     this.world.addSystem(new TerrainSystem())
     this.world.addSystem(new RegionSystem())
     this.world.addSystem(new CapitalSystem())
@@ -121,41 +128,7 @@ export class NwViewer extends EcsGame {
     this.world.addSystem(
       new Renderer(this.device, {
         linearToSrgb: false,
-        pipeline: {
-          passes: [
-            new OpaquePass({
-              order: 0,
-              clearColors: [Color.TransparentBlack, Color.TransparentBlack],
-              outputsMsaa: [RenderChannel.ColorMsaa, RenderChannel.LinearDepthMsaa],
-              outputs: [RenderChannel.Color, RenderChannel.LinearDepth],
-              resolver: [null, new DepthResolveEffect(this.device, { operator: 'max' })],
-              slots: [CommonInputs.View.SceneColorMap, CommonInputs.View.SceneDepthMap],
-            }),
-            // TODO: SSAO pass (order 5) reading RenderChannel.LinearDepth
-            new TransparentPass({
-              order: 10,
-              outputsMsaa: [RenderChannel.ColorMsaa, RenderChannel.LinearDepthMsaa],
-              // linear depth stays opaque only, no resolve
-              outputs: [RenderChannel.Color, null],
-              inputs: [RenderChannel.Color, RenderChannel.LinearDepth],
-            }),
-            new BloomPass(this.device, {
-              enabled: true,
-              threshold: 1,
-              knee: 0.5,
-              intensity: 0.6,
-              steps: 10,
-              mode: 'jimnez',
-            }),
-            new TonemapPass(this.device, {
-              enabled: true,
-              exposure: 1,
-              operator: TonemapOperator.ACES_NARKOWICZ,
-              whitePoint: 10.0,
-              srgb: true,
-            }),
-          ],
-        },
+        pipeline: createRenderPipeline(this.device),
       }),
     )
   }
