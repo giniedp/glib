@@ -1,30 +1,52 @@
-import { mountUi } from 'tweak-ui'
+import { mountUi, redrawUi } from 'tweak-ui'
 import { sceneNames } from './scene'
 
 export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   const client = new RaytracerClient(canvas)
   const rect = canvas.getBoundingClientRect()
   client.width = rect.width | 0
-  client.height = (rect.width | 0) / 2
+  client.height = rect.width | 0
+
+  // tiles complete at a high rate, redraw the stats at most once per frame
+  let redrawRequest = 0
+  client.onprogress = () => {
+    redrawRequest ||= requestAnimationFrame(() => {
+      redrawRequest = 0
+      redrawUi()
+    })
+  }
   client.update()
 
   mountUi(tools, (ui) => {
-    ui.select(client, 'scene', {
-      options: sceneNames,
-      onchange: () => client.update(),
+    ui.group('Stats', { collapsed: true, collapsible: true }, () => {
+      ui.widget('Workers', () => String(client.workerCount))
+      ui.scalar(client, 'progress', { range: true, min: 0, max: 100, readonly: true, decimals: 0, unit: '%' })
+      ui.widget('Jobs', () => `${client.jobsDone} / ${client.jobsTotal}`)
+      ui.widget('Passes', () => `${client.passesDone} / ${client.samples}`)
+      ui.widget('Time', () => `${(client.elapsed / 1000).toFixed(1)} s`)
+      ui.widget('Speed', () => `${(client.samplesPerSecond / 1e6).toFixed(2)} M samples/s`)
     })
-    ui.scalar(client, 'samples', { range: true, min: 1, max: 1000, step: 1, label: 'Num Samples' })
-    ui.scalar(client, 'depth', { range: true, min: 0, max: 1000, step: 1, label: 'Max Depth' })
-    ui.scalar(client, 'width', { range: true, min: 300, max: 1200, step: 1, label: 'Width' })
-    ui.button('Render', {
-      onclick: () => {
-        client.height = client.width / 2
-        client.update()
-      },
+    ui.group('Settings', { collapsible: true, collapsed: true }, () => {
+      ui.select(client, 'scene', {
+        options: sceneNames,
+        onchange: () => client.update(),
+      })
+      ui.scalar(client, 'samples', { range: true, min: 1, max: 1000, step: 1, label: 'Num Samples' })
+      ui.scalar(client, 'depth', { range: true, min: 0, max: 1000, step: 1, label: 'Max Depth' })
+      ui.scalar(client, 'width', { range: true, min: 300, max: 2400, step: 1, label: 'Width' })
+      ui.button('Render', {
+        onclick: () => {
+          client.height = client.width
+          client.update()
+        },
+      })
     })
   })
 
-  return () => client.dispose()
+  return () => {
+    cancelAnimationFrame(redrawRequest)
+    client.dispose()
+  }
 }
 
 const TILE_SIZE = 64
@@ -63,6 +85,52 @@ class RaytracerClient {
   private nextJob = 0
   private totalJobs = 0
   private inFlight = new Map<Worker, number>()
+
+  // stats of the current render
+  private startTime = 0
+  private endTime = 0
+  private jobsCompleted = 0
+  private pixelSamples = 0
+
+  /** Called whenever a job of the current render completes */
+  public onprogress?: () => void
+
+  public get workerCount() {
+    return this.worker.length
+  }
+
+  public get jobsDone() {
+    return this.jobsCompleted
+  }
+
+  public get jobsTotal() {
+    return this.totalJobs
+  }
+
+  /** Render progress in percent */
+  public get progress() {
+    return this.totalJobs ? (this.jobsCompleted / this.totalJobs) * 100 : 0
+  }
+
+  /** Number of sample passes completed by every tile */
+  public get passesDone() {
+    let result = this.tiles.length ? Infinity : 0
+    for (const tile of this.tiles) {
+      result = Math.min(result, tile.samples)
+    }
+    return result
+  }
+
+  /** Render time in milliseconds, stops when the render completes */
+  public get elapsed() {
+    return (this.endTime || performance.now()) - this.startTime
+  }
+
+  /** Number of traced pixel samples per second */
+  public get samplesPerSecond() {
+    const elapsed = this.elapsed
+    return elapsed > 0 ? (this.pixelSamples / elapsed) * 1000 : 0
+  }
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas
@@ -105,6 +173,11 @@ class RaytracerClient {
     }
     this.nextJob = 0
     this.totalJobs = this.tiles.length * this.samples
+    this.jobsCompleted = 0
+    this.pixelSamples = 0
+    this.startTime = performance.now()
+    this.endTime = 0
+    this.onprogress?.()
 
     // workers still busy with an outdated query pick up new jobs once they report back
     for (const worker of this.worker) {
@@ -183,5 +256,12 @@ class RaytracerClient {
       }
     }
     this.context.putImageData(this.imageData, 0, 0, x1, y1, x2 - x1, y2 - y1)
+
+    this.jobsCompleted++
+    this.pixelSamples += (x2 - x1) * (y2 - y1)
+    if (this.jobsCompleted === this.totalJobs) {
+      this.endTime = performance.now()
+    }
+    this.onprogress?.()
   }
 }
