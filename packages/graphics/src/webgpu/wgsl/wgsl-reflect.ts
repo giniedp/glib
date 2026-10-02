@@ -63,6 +63,11 @@ export interface WgslResourceTypeInfo {
    * The type of the uniform or element if the uniform is an array, vector or matrix
    */
   elementType: DataType
+  /**
+   * Whether this is a runtime-sized array (`array<T>`). The reflected size covers one element,
+   * the actual length is determined by the bound buffer.
+   */
+  runtimeSized?: boolean
 }
 
 export interface WgslTextureInfo {
@@ -472,15 +477,16 @@ function resolveTypeInfo(
     }
 
     const countParam = getWgslTemplateParameter(type.template, 1)
-    if (!countParam[0]) {
-      throw new Error(`Missing array element count parameter for type: ${type.name}`)
-    }
-    const count = resolveConstIntExpression(program, countParam[0].value)
+    // A runtime-sized array takes its length from the bound buffer (`arrayLength()`).
+    // It is reflected with a single element, which matches the minimum binding size,
+    // so a default buffer can be preallocated and replaced by a properly sized one.
+    const runtimeSized = !countParam[0]
+    const count = runtimeSized ? 1 : resolveConstIntExpression(program, countParam[0].value)
     if (count == null) {
       throw new Error(`Unable to resolve array element count for type: ${type.name}`)
     }
 
-    return {
+    const result: WgslResourceTypeInfo & WgslResourceFootprintInfo = {
       ...typeInfo,
       container: 'array',
       elementCount: typeInfo.elementCount * count,
@@ -488,6 +494,10 @@ function resolveTypeInfo(
       elementStride: strideOf(typeInfo),
       size: sizeOfArray(typeInfo, count),
     }
+    if (runtimeSized) {
+      result.runtimeSized = true
+    }
+    return result
   }
 
   if (type.name.startsWith('texture')) {

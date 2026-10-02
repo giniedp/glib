@@ -795,6 +795,47 @@ describe('wgslReflect', () => {
     })
   })
 
+  describe('runtime-sized array', () => {
+    test('reflects a single element', () => {
+      const result = reflectWgsl(parseWgsl(/* wgsl */ `var<storage, read> param: array<vec3<f32>>;`))
+      expect(result.resources[0]).toMatchObject({
+        name: 'param',
+        container: 'array',
+        elementType: 'float32',
+        elementCount: 3,
+        elementContainer: 'vec3',
+        elementStride: 16,
+        align: 16,
+        size: 16,
+        isStorage: true,
+        runtimeSized: true,
+      })
+    })
+
+    test('reflects a single struct element', () => {
+      const result = reflectWgsl(
+        parseWgsl(/* wgsl */ `
+          struct Body { pos: vec2f, vel: vec2f };
+          var<storage, read_write> bodies: array<Body>;
+        `),
+      )
+      expect(result.resources[0]).toMatchObject({
+        name: 'bodies',
+        container: 'array',
+        elementStride: 16,
+        size: 16,
+        isStorage: true,
+        isReadWrite: true,
+        runtimeSized: true,
+      })
+    })
+
+    test('does not flag fixed-size arrays', () => {
+      const result = reflectWgsl(parseWgsl(/* wgsl */ `var<storage, read> param: array<f32, 4>;`))
+      expect(result.resources[0].runtimeSized).toBeUndefined()
+    })
+  })
+
   describe('struct', () => {
     const tests = [
       {

@@ -132,8 +132,8 @@ const wgslCompute = /* wgsl */ `
     count: u32
   };
 
-  @group(0) @binding(0) var<storage, read> bodiesIn: array<Body, 1>;
-  @group(0) @binding(1) var<storage, read_write> bodiesOut: array<Body, 1>;
+  @group(0) @binding(0) var<storage, read> bodiesIn: array<Body>;
+  @group(0) @binding(1) var<storage, read_write> bodiesOut: array<Body>;
   @group(0) @binding(2) var<uniform> params: Params;
 
   const G: f32 = 0.00004;

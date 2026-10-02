@@ -165,7 +165,7 @@ const wgslShader = /*wgsl*/ `
   // @block global
   @group(0) @binding(0) var<uniform> global: GlobalBlock;
   // @block instances
-  @group(0) @binding(1) var<storage, read> instances: array<InstanceData, 1>;
+  @group(0) @binding(1) var<storage, read> instances: array<InstanceData>;
 
   @vertex
   fn vs(input : VertexInput) -> VertexOutput {
