@@ -88,6 +88,19 @@ canvas {
   position: relative;
 }
 
+/* absolute, so the old and new canvas overlap and crossfade when switching */
+.example-frame > canvas {
+  position: absolute;
+  inset: 0;
+  opacity: 1;
+  /* important: vitepress zeroes all transitions under prefers-reduced-motion, a fade is fine there */
+  transition: opacity 300ms ease !important;
+}
+.example-frame > canvas.loading,
+.example-frame > canvas.leaving {
+  opacity: 0;
+}
+
 .example-frame:has(canvas.loading)::after {
   content: '';
   position: absolute;
@@ -252,6 +265,7 @@ function createCanvas() {
   result.style.width = '100%'
   result.style.height = '100%'
   result.style.zIndex = '1'
+  result.classList.add('loading')
   frame.value!.prepend(result)
   return result
 }
@@ -271,6 +285,7 @@ async function loadExample(platform: PlatformId) {
     return
   }
   canvas = createCanvas()
+  const target = canvas
   const showError = (e: unknown) => {
     console.error(e)
     if (id === loadId) {
@@ -286,12 +301,20 @@ async function loadExample(platform: PlatformId) {
     if (isMounted && id === loadId) {
       toDispose = module.default(canvas, tools.value, platform) || null
       // examples set up asynchronously, a rejection would otherwise leave a blank canvas
-      Promise.resolve(toDispose).catch(showError)
+      Promise.resolve(toDispose)
+        .then(() => {
+          // give the example a couple of frames to draw before fading in
+          requestAnimationFrame(() => requestAnimationFrame(() => target.classList.remove('loading')))
+        })
+        .catch(showError)
     }
   } catch (e) {
     showError(e)
   }
 }
+
+// keep in sync with the canvas opacity transition
+const FADE_DURATION = 300
 
 function unloadExample() {
   const oldCanvas = canvas
@@ -301,7 +324,11 @@ function unloadExample() {
   if (tools.value) {
     unmountUi(tools.value)
   }
-  Promise.resolve(dispose)
+  oldCanvas?.classList.add('leaving')
+  // let the canvas fade out before tearing down the example
+  const fadeOut = new Promise((resolve) => setTimeout(resolve, oldCanvas ? FADE_DURATION : 0))
+  fadeOut
+    .then(() => dispose)
     .then((fn) => fn?.())
     .catch(() => {}) // already reported by loadExample
     .finally(() => oldCanvas?.remove())
