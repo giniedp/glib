@@ -3,7 +3,7 @@ import { SamplerState } from '../states'
 import type { InputValueType, ProgramInput } from './ProgramInput'
 import { ProgramInputBlock } from './ProgramInputSource'
 import type { ShaderModule } from './ShaderModule'
-import { Texture } from './Texture'
+import { Texture, type TextureView } from './Texture'
 
 export interface ProgramOptions {
   /**
@@ -196,7 +196,7 @@ export abstract class Program {
     this.get(path).setMat4x4(value)
   }
 
-  public setTexture(path: string, value: Texture): void {
+  public setTexture(path: string, value: Texture | TextureView): void {
     this.get(path).setTexture(value as any)
   }
 

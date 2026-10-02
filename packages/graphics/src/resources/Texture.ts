@@ -123,6 +123,63 @@ export interface TextureOptions extends Partial<TextureDescriptor> {
   crossOrigin?: string
 }
 
+/**
+ * Selects a range of mip levels of a texture
+ */
+export interface TextureSubresourceRange {
+  /**
+   * First mip level of the range. Defaults to 0
+   */
+  baseMipLevel?: number
+  /**
+   * Number of mip levels in the range. Defaults to all remaining levels
+   */
+  mipLevelCount?: number
+}
+
+/**
+ * A range of mip levels of a texture, that can be bound to a shader input instead of the whole texture.
+ *
+ * In the shader, mip level 0 of the input addresses {@link baseMipLevel} of the texture.
+ * This allows to sample one mip level of a texture while rendering into another mip level of the same texture.
+ *
+ * @remarks
+ * Views are created with {@link Texture.subresource} and are cached by the texture.
+ *
+ * WebGL2 has no texture views. The range is applied as `TEXTURE_BASE_LEVEL` and `TEXTURE_MAX_LEVEL`
+ * of the texture object when it is bound, so a texture can not be bound with two different ranges in one draw.
+ * Do not rely on `textureSize` in GLSL for a view with `baseMipLevel > 0`, ANGLE (D3D11) reports wrong sizes.
+ * Pass the size as a uniform instead.
+ */
+export class TextureView {
+  public constructor(
+    public readonly texture: Texture,
+    public readonly baseMipLevel: number,
+    public readonly mipLevelCount: number,
+  ) {}
+
+  /**
+   * Whether the view covers all mip levels of the texture
+   */
+  public get isFullRange() {
+    return this.baseMipLevel === 0 && this.mipLevelCount === this.texture.mipLevelCount
+  }
+
+  /**
+   * Width of the base mip level of this view
+   */
+  public get width() {
+    return Math.max(1, this.texture.width >> this.baseMipLevel)
+  }
+
+  /**
+   * Height of the base mip level of this view
+   */
+  public get height() {
+    return Math.max(1, this.texture.height >> this.baseMipLevel)
+  }
+}
+
 export abstract class Texture implements ReferenceCounted {
   /**
    * Value for the `crossOrigin` attribute to be used when fetching image or video by url
@@ -325,6 +382,32 @@ export abstract class Texture implements ReferenceCounted {
   }
 
   public abstract resize(width: number, height: number, depth?: number): void
+
+  private views = new Map<number, TextureView>()
+
+  /**
+   * Gets a view of a range of mip levels of this texture, that can be bound to a shader input.
+   * Views are cached, the same range returns the same instance.
+   *
+   * @see {@link TextureView}
+   */
+  public subresource(range: TextureSubresourceRange): TextureView {
+    const base = range.baseMipLevel ?? 0
+    const count = range.mipLevelCount ?? this.mipLevelCount - base
+    if (base < 0 || count < 1 || base + count > this.mipLevelCount) {
+      throw new Error(
+        `Invalid subresource range: baseMipLevel=${base} mipLevelCount=${count} for texture with ${this.mipLevelCount} mip levels`,
+      )
+    }
+    // mip level count is limited to 32 (2^32 texture size)
+    const key = base * 32 + count
+    let view = this.views.get(key)
+    if (!view) {
+      view = new TextureView(this, base, count)
+      this.views.set(key, view)
+    }
+    return view
+  }
 
   public resizeToMatch(other: { width: number; height: number }) {
     this.resize(other.width, other.height)

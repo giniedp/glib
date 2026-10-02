@@ -17,6 +17,7 @@ import {
   type ReferenceCounted,
   type ReferenceCounter,
   type TextureOptions,
+  type TextureView,
 } from '../../resources'
 import type { GpuResource } from '../types'
 import type { WebGpuDevice } from '../WebGpuDevice'
@@ -145,6 +146,29 @@ export class WebGpuTexture extends Texture implements GpuResource<GPUTexture>, R
     self.gpuObject?.destroy()
     self.gpuObject = null
     self.gpuView = null
+    this.gpuSubViews.clear()
+  }
+
+  private gpuSubViews = new Map<TextureView, GPUTextureView>()
+
+  /**
+   * Gets the GPU view for the given view of this texture. Views are cached until the GPU texture is recreated.
+   */
+  public getGpuView(view: TextureView): GPUTextureView {
+    if (view.isFullRange) {
+      return this.gpuView
+    }
+    let gpuView = this.gpuSubViews.get(view)
+    if (!gpuView) {
+      gpuView = this.gpuObject.createView({
+        label: `${this.name || `Texture_${this.uid}`} mip ${view.baseMipLevel}+${view.mipLevelCount}`,
+        dimension: this.gpuViewDimension,
+        baseMipLevel: view.baseMipLevel,
+        mipLevelCount: view.mipLevelCount,
+      })
+      this.gpuSubViews.set(view, gpuView)
+    }
+    return gpuView
   }
 
   private createResource(): void {
@@ -170,6 +194,7 @@ export class WebGpuTexture extends Texture implements GpuResource<GPUTexture>, R
       label: this.name || `Texture_${this.uid}`,
       dimension: this.gpuViewDimension,
     })
+    this.gpuSubViews.clear()
 
     self.sizeInBytes = this.estimateSize()
   }

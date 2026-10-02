@@ -23,6 +23,15 @@ import type { WebglDevice } from '../WebglDevice'
 import type { WebglTextureUnit } from './WebglTextureUnit'
 
 /**
+ * Initial `TEXTURE_BASE_LEVEL` of a GL texture object
+ */
+export const GL_DEFAULT_BASE_LEVEL = 0
+/**
+ * Initial `TEXTURE_MAX_LEVEL` of a GL texture object. Covers all mip levels.
+ */
+export const GL_DEFAULT_MAX_LEVEL = 1000
+
+/**
  * Describes a texture object.
  *
  * @public
@@ -43,6 +52,14 @@ export class WebglTexture extends Texture implements WebglResource<WebGLTexture 
   public readonly isMultisampled: boolean
   public readonly isRenderBuffer: boolean
   public readonly ref: ReferenceCounter
+  /**
+   * The `TEXTURE_BASE_LEVEL` currently set on the GL texture object. Managed by {@link WebglTextureUnit}
+   */
+  public glBaseLevel: number = GL_DEFAULT_BASE_LEVEL
+  /**
+   * The `TEXTURE_MAX_LEVEL` currently set on the GL texture object. Managed by {@link WebglTextureUnit}
+   */
+  public glMaxLevel: number = GL_DEFAULT_MAX_LEVEL
 
   /**
    * Constructs an instance of a Texture.
@@ -177,6 +194,8 @@ export class WebglTexture extends Texture implements WebglResource<WebGLTexture 
       gl.bindRenderbuffer(this.glType, null)
     } else {
       self.glHandle = gl.createTexture()
+      this.glBaseLevel = GL_DEFAULT_BASE_LEVEL
+      this.glMaxLevel = GL_DEFAULT_MAX_LEVEL
       this.device.textureUnits[0].activate(this, SamplerState.Default)
       // if (this.format === 'DEPTH32_FLOAT' || this.format === 'DEPTH32_FLOAT_STENCIL8') {
       //   this.device.textureUnits[0].activate(this, SamplerState.PointClamp)

@@ -1,4 +1,4 @@
-import type { Buffer, InputTypeName, Texture } from '../../resources'
+import type { Buffer, InputTypeName, Texture, TextureView } from '../../resources'
 import { SamplerState } from '../../states'
 import type { WebglDevice } from '../WebglDevice'
 import type { WebglReflectUniform } from './WebglReflection'
@@ -12,7 +12,7 @@ export class WebglUniformSamplerBinding implements WebglUniform {
   public readonly alias: string
   public readonly type: InputTypeName
   public readonly sampler: SamplerState
-  public readonly texture: WebglTexture
+  public readonly texture: WebglTexture | TextureView
   public readonly unit: number
 
   public constructor(program: WebglShaderModule, info: WebglReflectUniform) {
@@ -41,9 +41,9 @@ export class WebglUniformSamplerBinding implements WebglUniform {
     throw new Error('Cannot write numeric value to sampler parameter.')
   }
 
-  public setTexture(value: Texture): void {
+  public setTexture(value: Texture | TextureView): void {
     value ||= this.device.defaultTexture
-    ;(this as Mutable<this>).texture = value as WebglTexture
+    ;(this as Mutable<this>).texture = value as WebglTexture | TextureView
   }
 
   public setSampler(value: SamplerState): void {

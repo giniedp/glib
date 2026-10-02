@@ -1,5 +1,5 @@
 import { dataTypeToArrayType, type TypedArray } from '../../enums'
-import { type Texture, type InputTypeName, Buffer } from '../../resources'
+import { type Texture, type TextureView, type InputTypeName, Buffer } from '../../resources'
 import { SamplerState } from '../../states'
 import { glslComponentCount, glslUploadFunction, type GlslTypeSampler, type GlslValueType } from '../glsl'
 import type { WebglDevice } from '../WebglDevice'
@@ -77,7 +77,7 @@ export class WebglUniformLocation implements WebglUniform {
     this.position++
   }
 
-  public setTexture(_value: Texture): void {
+  public setTexture(_value: Texture | TextureView): void {
     throw new Error(`Cannot set texture on non-sampler parameter '${this.name}'`)
   }
 

@@ -1,4 +1,12 @@
-import { InputValueType, Program, ProgramInput, ProgramInputBlock, type ProgramOptions } from '../../resources'
+import {
+  InputValueType,
+  Program,
+  ProgramInput,
+  ProgramInputBlock,
+  TextureView,
+  type Texture,
+  type ProgramOptions,
+} from '../../resources'
 import { Mutable } from '../types'
 import type { WebglDevice } from '../WebglDevice'
 import { WebglPendingInput, WebglProgramInput } from './WebglProgramInput'
@@ -98,13 +106,46 @@ export class WebglProgram extends Program {
   }
 
   public activate(): void {
+    let hasView = false
     for (const binding of this.sampler) {
       const unit = this.device.textureUnits[binding.unit]
       unit?.update(binding.texture, binding.sampler)
+      hasView ||= binding.texture instanceof TextureView
+    }
+    if (hasView) {
+      this.checkRangeConflicts()
     }
     for (const block of this.blocks) {
       const unit = this.device.uniformBlockUnits[block.index]
       unit?.update(block.boundBuffer)
+    }
+  }
+
+  private didWarnRangeConflict = false
+
+  /**
+   * The mip range of a texture is state of the texture object in WebGL2.
+   * Binding the same texture with different ranges in one draw is not possible, the last binding wins.
+   */
+  private checkRangeConflicts() {
+    if (this.didWarnRangeConflict) {
+      return
+    }
+    const bindings = this.sampler
+    for (let i = 0; i < bindings.length; i++) {
+      const a = bindings[i].texture
+      const ta = a instanceof TextureView ? a.texture : a
+      for (let j = i + 1; j < bindings.length; j++) {
+        const b = bindings[j].texture
+        const tb = b instanceof TextureView ? b.texture : b
+        if (ta === tb && rangeKey(a) !== rangeKey(b)) {
+          this.didWarnRangeConflict = true
+          console.warn(
+            `WebglProgram: '${bindings[i].name}' and '${bindings[j].name}' bind the same texture with different mip ranges. WebGL2 can not express this, the last binding wins.`,
+          )
+          return
+        }
+      }
     }
   }
 
@@ -294,4 +335,11 @@ function convertPendingInputs(inputs: Record<string, ProgramInput>, uniforms: Re
 }
 function createPendingInput(input: string, module: WebglShaderModule): ProgramInput {
   return new WebglPendingInput(input, module)
+}
+
+function rangeKey(value: Texture | TextureView): string {
+  if (value instanceof TextureView && !value.isFullRange) {
+    return `${value.baseMipLevel}:${value.mipLevelCount}`
+  }
+  return 'full'
 }

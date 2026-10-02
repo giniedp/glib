@@ -4,6 +4,7 @@ import {
   Buffer,
   ProgramInput,
   Texture,
+  TextureView,
   type MatrixLike,
   type InputTypeName,
   type InputValueType,
@@ -225,10 +226,12 @@ export class WebGpuProgramInput extends ProgramInput {
     this.resource.markAsChanged(this.array.byteOffset, 4 * 16)
   }
 
-  public setTexture(value: Texture | GPUTexture | GPUTextureView | GPUExternalTexture): void {
+  public setTexture(value: Texture | TextureView | GPUTexture | GPUTextureView | GPUExternalTexture): void {
     value ||= this.device.defaultTexture
     if (value instanceof Texture) {
       this.resource.setTexture((value as WebGpuTexture).gpuView)
+    } else if (value instanceof TextureView) {
+      this.resource.setTexture((value.texture as WebGpuTexture).getGpuView(value))
     } else {
       this.resource.setTexture(value)
     }

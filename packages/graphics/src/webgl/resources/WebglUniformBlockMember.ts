@@ -1,5 +1,5 @@
 import type { TypedArray } from '../../enums'
-import type { Buffer, InputTypeName, Texture } from '../../resources'
+import type { Buffer, InputTypeName, Texture, TextureView } from '../../resources'
 import type { SamplerState } from '../../states'
 import { type GlslValueType } from '../glsl'
 import { WebglBuffer } from './WebglBuffer'
@@ -103,7 +103,7 @@ export class WebglUniformBlockMember implements WebglUniform {
     this.block.markAsChanged(byteOffset, byteLength)
   }
 
-  public setTexture(_value: Texture): void {
+  public setTexture(_value: Texture | TextureView): void {
     throw new Error('Cannot set texture on a uniform block parameter.')
   }
 

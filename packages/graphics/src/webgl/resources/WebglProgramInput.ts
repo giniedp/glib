@@ -3,6 +3,7 @@ import {
   Buffer,
   ProgramInput,
   Texture,
+  TextureView,
   type MatrixLike,
   type InputTypeName,
   type InputValueType,
@@ -59,7 +60,7 @@ export class WebglProgramInput extends ProgramInput {
         this.set = (value) => {
           if (value == null) {
             this.setTexture(null)
-          } else if (value instanceof Texture) {
+          } else if (value instanceof Texture || value instanceof TextureView) {
             this.setTexture(value)
           } else if (value instanceof SamplerState) {
             this.setSampler(value)
@@ -160,7 +161,7 @@ export class WebglProgramInput extends ProgramInput {
     }
   }
 
-  public setTexture(value: Texture): void {
+  public setTexture(value: Texture | TextureView): void {
     this.uniform.setTexture(value)
   }
 
@@ -227,7 +228,7 @@ export class WebglPendingInput extends ProgramInput {
     this.value = value
     this.method = 'setMat4x4'
   }
-  public setTexture(value: Texture): void {
+  public setTexture(value: Texture | TextureView): void {
     this.value = value
     this.method = 'setTexture'
   }

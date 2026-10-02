@@ -2,7 +2,7 @@ import type { IVec2, IVec3, IVec4 } from '@gglib/math'
 import { Brand } from '@gglib/utils'
 import type { SamplerState } from '../states'
 import { Buffer } from './Buffer'
-import type { Texture } from './Texture'
+import type { Texture, TextureView } from './Texture'
 
 export type MatrixLike = { elements: ArrayLike<number> } | ArrayLike<number>
 export type InputValueType =
@@ -13,6 +13,7 @@ export type InputValueType =
   | ArrayLike<number>
   | MatrixLike
   | Texture
+  | TextureView
   | SamplerState
   | Buffer
 export type InputTypeName =
@@ -49,7 +50,7 @@ export type InputTypeMap = {
   mat4x2: MatrixLike
   mat4x3: MatrixLike
   mat4x4: MatrixLike
-  texture: Texture
+  texture: Texture | TextureView
   sampler: SamplerState
   buffer: Buffer
 }
@@ -162,8 +163,8 @@ export abstract class ProgramInput {
   /** Sets a 4x4 matrix value */
   public abstract setMat4x4(value: MatrixLike): void
 
-  /** Sets the texture resource for this input */
-  public abstract setTexture(value: Texture): void
+  /** Sets the texture resource for this input, or a range of its mip levels */
+  public abstract setTexture(value: Texture | TextureView): void
 
   /** Sets the sampler state for this input */
   public abstract setSampler(value: SamplerState): void

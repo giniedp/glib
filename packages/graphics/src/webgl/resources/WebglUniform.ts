@@ -1,4 +1,4 @@
-import type { Buffer, InputTypeName, Texture } from '../../resources'
+import type { Buffer, InputTypeName, Texture, TextureView } from '../../resources'
 import type { SamplerState } from '../../states'
 
 export interface WebglUniform {
@@ -33,7 +33,7 @@ export interface WebglUniform {
   /**
    * Sets the texture for this uniform
    */
-  setTexture(value: Texture): void
+  setTexture(value: Texture | TextureView): void
   /**
    * Sets the sampler for this uniform
    */
