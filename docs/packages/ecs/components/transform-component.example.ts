@@ -92,6 +92,10 @@ class Game extends EcsGame {
       }),
     })
   }
+
+  protected override onUpdate(time: number, dt: number): void {
+    this.scene.getCamera<CameraComponent>(0).aspect = this.device.output.aspectRatio
+  }
 }
 
 // Invisible pivot — rotates around Y to carry its children in an orbit

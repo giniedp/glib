@@ -72,56 +72,58 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   mountUi(tools, (ui) => {
     loadTexture(params.texture)
 
-    ui.select(params, 'texture', {
-      options: files,
-      onchange: () => loadTexture(params.texture),
-    })
-    ui.scalar(params, 'zoom', { range: true, min: 0.1, max: 10 })
-    ui.bool(params, 'animate')
-    ui.select(params, 'output', {
-      options: ['scene', 'extract', 'downsample', 'blur', 'combine', 'result'] satisfies Array<Output>,
-      onchange: () => loadTexture(params.texture),
-    })
-    ui.group('Extract', { collapsible: true }, () => {
-      ui.select(params, 'operatorId', {
-        label: 'Operator',
-        options: ExtractOperator,
+    ui.group('Settings', { collapsible: true, collapsed: true }, () => {
+      ui.select(params, 'texture', {
+        options: files,
+        onchange: () => loadTexture(params.texture),
       })
-      ui.scalar(params, 'knee', { range: true, min: 0, max: 1 })
-      ui.scalar(params, 'threshold', { range: true, min: 0, max: 1 })
-      ui.scalar(params, 'range', { range: true, min: 0, max: 1 })
-      ui.flex({ flow: 'row' }, () => {
-        ui.scalarInput(params, 'colorKeyR', { range: true, min: 0, max: 1 })
-        ui.scalarInput(params, 'colorKeyG', { range: true, min: 0, max: 1 })
-        ui.scalarInput(params, 'colorKeyB', { range: true, min: 0, max: 1 })
+      ui.scalar(params, 'zoom', { range: true, min: 0.1, max: 10 })
+      ui.bool(params, 'animate')
+      ui.select(params, 'output', {
+        options: ['scene', 'extract', 'downsample', 'blur', 'combine', 'result'] satisfies Array<Output>,
+        onchange: () => loadTexture(params.texture),
       })
-    })
-    ui.group('Blur', () => {
-      ui.scalar(params, 'downsampleSteps', { range: true, min: 1, max: 10, step: 1 })
-      ui.select(params, 'downsampleOperator', {
-        options: DownsampleOperator,
+      ui.group('Extract', { collapsible: true }, () => {
+        ui.select(params, 'operatorId', {
+          label: 'Operator',
+          options: ExtractOperator,
+        })
+        ui.scalar(params, 'knee', { range: true, min: 0, max: 1 })
+        ui.scalar(params, 'threshold', { range: true, min: 0, max: 1 })
+        ui.scalar(params, 'range', { range: true, min: 0, max: 1 })
+        ui.flex({ flow: 'row' }, () => {
+          ui.scalarInput(params, 'colorKeyR', { range: true, min: 0, max: 1 })
+          ui.scalarInput(params, 'colorKeyG', { range: true, min: 0, max: 1 })
+          ui.scalarInput(params, 'colorKeyB', { range: true, min: 0, max: 1 })
+        })
       })
-      ui.select(params, 'upsampleOperator', {
-        options: UpsampleOperator,
+      ui.group('Blur', () => {
+        ui.scalar(params, 'downsampleSteps', { range: true, min: 1, max: 10, step: 1 })
+        ui.select(params, 'downsampleOperator', {
+          options: DownsampleOperator,
+        })
+        ui.select(params, 'upsampleOperator', {
+          options: UpsampleOperator,
+        })
+        ui.scalar(params, 'upsampleWeight', { range: true, min: 0, max: 1 })
       })
-      ui.scalar(params, 'upsampleWeight', { range: true, min: 0, max: 1 })
-    })
-    ui.group('Combine', () => {
-      ui.select(params, 'combineOperator', {
-        label: 'Operator',
-        options: CombineOperator,
+      ui.group('Combine', () => {
+        ui.select(params, 'combineOperator', {
+          label: 'Operator',
+          options: CombineOperator,
+        })
+        ui.scalar(params, 'combineWeight1', { label: 'Weight1', range: true, min: 0, max: 3 })
+        ui.scalar(params, 'combineWeight2', { label: 'Weight2', range: true, min: 0, max: 3 })
+        ui.scalar(params, 'combineBlend', { label: 'Blend', range: true, min: 0, max: 1 })
       })
-      ui.scalar(params, 'combineWeight1', { label: 'Weight1', range: true, min: 0, max: 3 })
-      ui.scalar(params, 'combineWeight2', { label: 'Weight2', range: true, min: 0, max: 3 })
-      ui.scalar(params, 'combineBlend', { label: 'Blend', range: true, min: 0, max: 1 })
-    })
-    ui.group('Tonemap', () => {
-      ui.select(params, 'tonemapOperator', {
-        label: 'Operator',
-        options: TonemapOperator,
+      ui.group('Tonemap', () => {
+        ui.select(params, 'tonemapOperator', {
+          label: 'Operator',
+          options: TonemapOperator,
+        })
+        ui.scalar(params, 'tonemapExposure', { label: 'Exposure', range: true, min: 0, max: 10 })
+        ui.scalar(params, 'whitePoint', { label: 'White Point', range: true, min: 0, max: 20 })
       })
-      ui.scalar(params, 'tonemapExposure', { label: 'Exposure', range: true, min: 0, max: 10 })
-      ui.scalar(params, 'whitePoint', { label: 'White Point', range: true, min: 0, max: 20 })
     })
   })
 

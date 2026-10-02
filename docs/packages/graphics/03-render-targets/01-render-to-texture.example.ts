@@ -71,7 +71,7 @@ export default async (canvas: HTMLCanvasElement, _: any, platform: PlatformId) =
     mat4$scaleUniform(world, 2 + Math.sin(ctx.time))
     mat4$initLookAt(view, cameraPosition, vec3(0, 0, 0), vec3(0, 1, 0))
     mat4$invert(view)
-    mat4$initPerspectiveFieldOfView(projection, 60 * DEGREE_TO_RAD, 1, 0.1, 100, device.ndcMinZ)
+    mat4$initPerspectiveFieldOfView(projection, 60 * DEGREE_TO_RAD, device.output.aspectRatio, 0.1, 100, device.ndcMinZ)
 
     const sceneProgram = sceneShader.program
     sceneProgram.set('uWorld', world)

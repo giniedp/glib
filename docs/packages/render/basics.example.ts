@@ -93,26 +93,30 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   }
 
   mountUi(tools, (ui) => {
-    ui.group('Pixelate Pass', (ui) => {
-      ui.bool(pixelate, 'enabled')
-      ui.scalar(pixelate, 'size', { range: true, min: 1, max: 50, step: 1 })
-      ui.scalar(pixelate, 'aspect', { range: true, min: 0.001, max: 2, step: 0.001 })
-      ui.scalar(pixelate, 'corner', { range: true, min: 0, max: 1 })
-      ui.scalar(pixelate, 'dither', { range: true, min: 0, max: 1 })
-      ui.scalar(pixelate, 'gap', { range: true, min: 0, max: 1 })
-    })
-    ui.group('Bloom Pass', (ui) => {
-      ui.bool(bloom, 'enabled')
-      ui.scalar(bloom, 'threshold', { range: true, min: 0, max: 1 })
-      ui.scalar(bloom, 'knee', { range: true, min: 0, max: 1 })
-      ui.scalar(bloom, 'steps', { range: true, min: 1, max: 10, step: 1 })
-      ui.scalar(bloom, 'intensity', { range: true, min: 0, max: 1 })
-    })
-    ui.group('Tonemap Pass', (ui) => {
-      ui.bool(tonemap, 'enabled')
-      ui.scalar(tonemap, 'exposure', { range: true, min: 0, max: 10 })
-      ui.select(tonemap, 'operator', {
-        options: TonemapOperator,
+    ui.group('Settings', { collapsible: true, collapsed: true }, () => {
+      ui.tabs(() => {
+        ui.group('Pixelate', {}, (ui) => {
+          ui.bool(pixelate, 'enabled')
+          ui.scalar(pixelate, 'size', { range: true, min: 1, max: 50, step: 1 })
+          ui.scalar(pixelate, 'aspect', { range: true, min: 0.001, max: 2, step: 0.001 })
+          ui.scalar(pixelate, 'corner', { range: true, min: 0, max: 1 })
+          ui.scalar(pixelate, 'dither', { range: true, min: 0, max: 1 })
+          ui.scalar(pixelate, 'gap', { range: true, min: 0, max: 1 })
+        })
+        ui.group('Bloom', {}, (ui) => {
+          ui.bool(bloom, 'enabled')
+          ui.scalar(bloom, 'threshold', { range: true, min: 0, max: 1 })
+          ui.scalar(bloom, 'knee', { range: true, min: 0, max: 1 })
+          ui.scalar(bloom, 'steps', { range: true, min: 1, max: 10, step: 1 })
+          ui.scalar(bloom, 'intensity', { range: true, min: 0, max: 1 })
+        })
+        ui.group('Tonemap', {}, (ui) => {
+          ui.bool(tonemap, 'enabled')
+          ui.scalar(tonemap, 'exposure', { range: true, min: 0, max: 10 })
+          ui.select(tonemap, 'operator', {
+            options: TonemapOperator,
+          })
+        })
       })
     })
   })

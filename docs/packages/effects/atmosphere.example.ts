@@ -28,13 +28,15 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   content.registerLoader(HDR.Loader)
 
   mountUi(tools, (ui) => {
-    ui.scalar(params, 'sunLatitude', { range: true, min: 0, max: Math.PI })
-    ui.scalar(params, 'sunLongitude', { range: true, min: 0, max: Math.PI * 2 })
-    ui.scalar(params, 'sunIntensity', { range: true, min: 0, max: 100 })
-    ui.scalar(params, 'mieScattering', { range: true, min: 0.0001, max: 0.01, decimals: 5 })
-    ui.scalar(params, 'rayleighScattering', { range: true, min: 0.00005, max: 0.001, decimals: 5 })
-    ui.scalar(params, 'phaseAsymmetry', { range: true, min: -0.999, max: 0.999, decimals: 5 })
-    ui.color(params, 'groundColor', { format: '{n}xyz' })
+    ui.group('Settings', { collapsible: true, collapsed: true }, () => {
+      ui.scalar(params, 'sunLatitude', { range: true, min: 0, max: Math.PI })
+      ui.scalar(params, 'sunLongitude', { range: true, min: 0, max: Math.PI * 2 })
+      ui.scalar(params, 'sunIntensity', { range: true, min: 0, max: 100 })
+      ui.scalar(params, 'mieScattering', { range: true, min: 0.0001, max: 0.01, decimals: 5 })
+      ui.scalar(params, 'rayleighScattering', { range: true, min: 0.00005, max: 0.001, decimals: 5 })
+      ui.scalar(params, 'phaseAsymmetry', { range: true, min: -0.999, max: 0.999, decimals: 5 })
+      ui.color(params, 'groundColor', { format: '{n}xyz' })
+    })
   })
 
   const spriteBatch = new SpriteBatch(device)

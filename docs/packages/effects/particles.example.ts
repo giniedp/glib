@@ -14,14 +14,6 @@ import {
 } from '@gglib/math'
 import { mountUi } from 'tweak-ui'
 
-const files = {
-  Court: '/textures/hdr/footprint_court.hdr',
-  Exterior: '/textures/hdr/cannon_exterior.hdr',
-  Overcast: '/textures/hdr/overcast_puresky.hdr',
-  Memorial: '/textures/hdr/memorial.hdr',
-}
-const params = {}
-
 export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
   const device = await createDevice({ canvas, platform, autosize: true }).ready
 
@@ -68,14 +60,16 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   }
 
   mountUi(tools, (ui) => {
-    ui.color(channel.settings, 'minColor', { format: '{n}xyz' })
-    ui.color(channel.settings, 'maxColor', { format: '{n}xyz' })
-    ui.scalar(channel.settings, 'minStartSize', { range: true, min: 0, max: 2, step: 0.1 })
-    ui.scalar(channel.settings, 'maxStartSize', { range: true, min: 0, max: 5, step: 0.1 })
-    ui.scalar(channel.settings, 'minEndSize', { range: true, min: 0, max: 2, step: 0.1 })
-    ui.scalar(channel.settings, 'maxEndSize', { range: true, min: 0, max: 5, step: 0.1 })
-    ui.scalar(channel.settings, 'minRotateSpeed', { range: true, min: 0, max: 1, step: 0.1 })
-    ui.scalar(channel.settings, 'maxRotateSpeed', { range: true, min: 0, max: 1, step: 0.1 })
+    ui.group('Settings', { collapsible: true, collapsed: true }, () => {
+      ui.color(channel.settings, 'minColor', { format: '{n}xyz' })
+      ui.color(channel.settings, 'maxColor', { format: '{n}xyz' })
+      ui.scalar(channel.settings, 'minStartSize', { range: true, min: 0, max: 2, step: 0.1 })
+      ui.scalar(channel.settings, 'maxStartSize', { range: true, min: 0, max: 5, step: 0.1 })
+      ui.scalar(channel.settings, 'minEndSize', { range: true, min: 0, max: 2, step: 0.1 })
+      ui.scalar(channel.settings, 'maxEndSize', { range: true, min: 0, max: 5, step: 0.1 })
+      ui.scalar(channel.settings, 'minRotateSpeed', { range: true, min: 0, max: 1, step: 0.1 })
+      ui.scalar(channel.settings, 'maxRotateSpeed', { range: true, min: 0, max: 1, step: 0.1 })
+    })
   })
 
   function updateCamera() {

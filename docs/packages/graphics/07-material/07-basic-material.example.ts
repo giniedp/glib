@@ -38,12 +38,14 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   const device: Device = await createDevice({ canvas, platform, autosize: true }).ready
 
   mountUi(tools, (ui) => {
-    ui.color(params, 'baseColor', { format: '{n}xyz' })
-    ui.color(params, 'ambientColorTop', { format: '{n}xyz' })
-    ui.color(params, 'ambientColor', { format: '{n}xyz' })
-    ui.spherical(params, 'ambientDirection')
-    ui.scalar(params, 'alpha', { range: true, min: 0, max: 1, decimals: 2 })
-    ui.bool(params, 'textured')
+    ui.group('Material', { collapsed: true, collapsible: true }, () => {
+      ui.color(params, 'baseColor', { format: '{n}xyz' })
+      ui.color(params, 'ambientColorTop', { format: '{n}xyz' })
+      ui.color(params, 'ambientColor', { format: '{n}xyz' })
+      ui.spherical(params, 'ambientDirection')
+      ui.scalar(params, 'alpha', { range: true, min: 0, max: 1, decimals: 2 })
+      ui.bool(params, 'textured')
+    })
   })
 
   const geometry = torusGeometry(device)

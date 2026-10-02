@@ -1,7 +1,7 @@
 import { CameraComponent, CopyPositionConstraint, EcsGame, ModelComponent, TransformComponent } from '@gglib/components'
 import { ContentLoader } from '@gglib/content'
 import { GameComponent, GameEntity, InitializableComponent } from '@gglib/ecs'
-import { BasicMaterial, PlatformId } from '@gglib/graphics'
+import { PlatformId } from '@gglib/graphics'
 import { GLTF } from '@gglib/loaders'
 import { vec3 } from '@gglib/math'
 import { Renderer } from '@gglib/render'
@@ -137,6 +137,7 @@ class Game extends EcsGame {
       .setPositionX(Math.cos(this.t) * settings.radius)
       .setPositionY(Math.sin(this.t) * settings.radius)
       .setPositionZ(-settings.distance)
+    this.scene.getCamera<CameraComponent>(0).aspect = this.device.output.aspectRatio
   }
 }
 

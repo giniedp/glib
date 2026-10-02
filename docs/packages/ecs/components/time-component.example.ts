@@ -78,6 +78,10 @@ class Game extends EcsGame {
       })
     }
   }
+
+  protected override onUpdate(time: number, dt: number): void {
+    this.scene.getCamera<CameraComponent>(0).aspect = this.device.output.aspectRatio
+  }
 }
 
 // Swings the pivot around Z using sin(time.total) — each instance reads a different named time

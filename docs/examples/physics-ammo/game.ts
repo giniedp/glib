@@ -11,9 +11,9 @@ import {
 
 import { GameEntity } from '@gglib/ecs'
 import { KeyboardKeys } from '@gglib/game'
-import { Color, CommonInputs, Device, PlatformId } from '@gglib/graphics'
+import { Color, CommonInputs, PlatformId } from '@gglib/graphics'
 import { MTL, OBJ } from '@gglib/loaders'
-import { DEGREE_TO_RAD, mat4$initPerspectiveFieldOfView, vec3, vec3Normalize, vec4 } from '@gglib/math'
+import { vec3, vec3Normalize, vec4 } from '@gglib/math'
 import { Renderer } from '@gglib/render'
 import Ammo from 'ammojs-typed'
 import { mountUi } from 'tweak-ui'
@@ -198,16 +198,8 @@ class Game extends EcsGame {
   }
 
   public override onUpdate(time: number, dt: number) {
-    const view = this.scene.getView(0)
+    this.scene.getCamera<CameraComponent>(0).aspect = this.device.output.aspectRatio
 
-    mat4$initPerspectiveFieldOfView(
-      view.camera.projection,
-      70 * DEGREE_TO_RAD,
-      this.world.getSystem(Device).output.aspectRatio,
-      0.01,
-      100,
-      this.device.ndcMinZ,
-    )
     if (this.keyboard.justPressed(KeyboardKeys.Enter)) {
       this.resetCubes()
     }

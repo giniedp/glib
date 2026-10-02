@@ -13,7 +13,6 @@ import {
   vec3AddScalars,
 } from '@gglib/math'
 import { Renderer } from '@gglib/render'
-import { mountUi } from 'tweak-ui'
 import { createCamera, createObject, createScene } from './basics-scene'
 
 const SIZE = 20
@@ -21,15 +20,6 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   const device = await createDevice({ canvas, platform }).ready
 
   let frameTime = 0
-  mountUi(tools, (ui) => {
-    ui.graph({
-      rows: [
-        {
-          sample: () => frameTime,
-        },
-      ],
-    })
-  })
 
   const content = new ContentLoader(device)
   const renderer = new Renderer(device)

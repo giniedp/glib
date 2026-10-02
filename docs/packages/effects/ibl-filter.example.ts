@@ -51,41 +51,43 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   mountUi(tools, (ui) => {
     loadTexture(params.texture)
 
-    ui.group('Input', () => {
-      ui.select(params, 'texture', {
-        options: files,
-        onchange: () => loadTexture(params.texture),
+    ui.group('Settings', { collapsible: true, collapsed: true }, () => {
+      ui.group('Input', () => {
+        ui.select(params, 'texture', {
+          options: files,
+          onchange: () => loadTexture(params.texture),
+        })
       })
-    })
 
-    ui.group('IBL Filter', () => {
-      ui.scalar(params, 'lutSampleCount', { range: true, min: 32, max: 1024, step: 32 })
-      ui.scalar(params, 'lambertSampleCount', { range: true, min: 32, max: 2048, step: 32 })
-      ui.scalar(params, 'ggxSampleCount', { range: true, min: 32, max: 1024, step: 32 })
-      ui.scalar(params, 'charlieSampleCount', { range: true, min: 32, max: 1024, step: 32 })
-      ui.scalar(params, 'intensity', { range: true, min: 0, max: 10 })
-    })
-
-    ui.group('Cubemap', () => {
-      ui.select(params, 'cubemap', {
-        label: 'Display Cubemap',
-        options: ['cubemap', 'lambert', 'ggx', 'charlie'] satisfies DisplayCubemap[],
+      ui.group('IBL Filter', () => {
+        ui.scalar(params, 'lutSampleCount', { range: true, min: 32, max: 1024, step: 32 })
+        ui.scalar(params, 'lambertSampleCount', { range: true, min: 32, max: 2048, step: 32 })
+        ui.scalar(params, 'ggxSampleCount', { range: true, min: 32, max: 1024, step: 32 })
+        ui.scalar(params, 'charlieSampleCount', { range: true, min: 32, max: 1024, step: 32 })
+        ui.scalar(params, 'intensity', { range: true, min: 0, max: 10 })
       })
-      ui.scalar(params, 'cubemapBlur', { label: 'Blur', range: true, min: 0, max: 1 })
-      ui.scalar(params, 'fieldOfView', { range: true, min: 10, max: 120 })
-    })
-    ui.group('Performance', () => {
-      ui.graph({
-        rows: [
-          {
-            name: 'frameTime',
-            sample: () => params.frameTime,
-            fractionDigits: 2,
-            smoothing: 0.9,
-            min: 0,
-            max: 50,
-          },
-        ],
+
+      ui.group('Cubemap', () => {
+        ui.select(params, 'cubemap', {
+          label: 'Display Cubemap',
+          options: ['cubemap', 'lambert', 'ggx', 'charlie'] satisfies DisplayCubemap[],
+        })
+        ui.scalar(params, 'cubemapBlur', { label: 'Blur', range: true, min: 0, max: 1 })
+        ui.scalar(params, 'fieldOfView', { range: true, min: 10, max: 120 })
+      })
+      ui.group('Performance', () => {
+        ui.graph({
+          rows: [
+            {
+              name: 'frameTime',
+              sample: () => params.frameTime,
+              fractionDigits: 2,
+              smoothing: 0.9,
+              min: 0,
+              max: 50,
+            },
+          ],
+        })
       })
     })
   })

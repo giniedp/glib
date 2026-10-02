@@ -98,6 +98,10 @@ class Game extends EcsGame {
       })
       .bind((tween) => transform.setScaleUniform(tween.value))
   }
+
+  protected override onUpdate(time: number, dt: number): void {
+    this.scene.getCamera<CameraComponent>(0).aspect = this.device.output.aspectRatio
+  }
 }
 
 class CubeComponent implements GameComponent, InitializableComponent {

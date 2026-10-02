@@ -128,6 +128,13 @@ export class SceneComponent implements GameComponent, InitializableComponent, Re
     this.views[view].camera = camera
   }
 
+  public getCamera<T extends CameraData>(view: number): T {
+    if (!this.views[view]) {
+      throw new Error(`No view exist at index ${view}`)
+    }
+    return this.views[view].camera as T
+  }
+
   public getView(view: number) {
     if (!this.views[view]) {
       throw new Error(`No view exist at index ${view}`)

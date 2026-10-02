@@ -140,6 +140,7 @@ class Game extends EcsGame {
       .setPositionX(8 * Math.sin(time))
       .setPositionY(0)
       .setPositionZ(-8)
+    this.scene.getCamera<CameraComponent>(0).aspect = this.device.output.aspectRatio
   }
 }
 

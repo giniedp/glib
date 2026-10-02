@@ -66,21 +66,23 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   const iblSampler = await new IblSampler(device, {}).compiled
 
   mountUi(tools, (ui) => {
-    ui.color(SETTINGS, 'baseColor', { format: '{n}xyz' })
-    ui.scalar(SETTINGS, 'alpha', { range: true, min: 0, max: 1, decimals: 2 })
-    ui.color(SETTINGS, 'specularColor', { format: '{n}xyz' })
-    ui.scalar(SETTINGS, 'specularWeight', { range: true, min: 0, max: 1, decimals: 2 })
-    ui.color(SETTINGS, 'emissiveColor', { format: '{n}xyz' })
-    ui.scalar(SETTINGS, 'emissiveStrength', { range: true, min: 0, max: 10, decimals: 2 })
+    ui.group('Settings', { collapsible: true, collapsed: true }, () => {
+      ui.color(SETTINGS, 'baseColor', { format: '{n}xyz' })
+      ui.scalar(SETTINGS, 'alpha', { range: true, min: 0, max: 1, decimals: 2 })
+      ui.color(SETTINGS, 'specularColor', { format: '{n}xyz' })
+      ui.scalar(SETTINGS, 'specularWeight', { range: true, min: 0, max: 1, decimals: 2 })
+      ui.color(SETTINGS, 'emissiveColor', { format: '{n}xyz' })
+      ui.scalar(SETTINGS, 'emissiveStrength', { range: true, min: 0, max: 10, decimals: 2 })
 
-    ui.scalar(SETTINGS, 'metallic', { range: true, min: 0, max: 1, decimals: 2 })
-    ui.scalar(SETTINGS, 'roughness', { range: true, min: 0, max: 1, decimals: 2 })
-    ui.scalar(SETTINGS, 'ior', { range: true, min: 0, max: 2, decimals: 2 })
+      ui.scalar(SETTINGS, 'metallic', { range: true, min: 0, max: 1, decimals: 2 })
+      ui.scalar(SETTINGS, 'roughness', { range: true, min: 0, max: 1, decimals: 2 })
+      ui.scalar(SETTINGS, 'ior', { range: true, min: 0, max: 2, decimals: 2 })
 
-    ui.scalar(SETTINGS, 'iblBlur', { range: true, min: 0, max: 1, decimals: 2 })
-    ui.scalar(SETTINGS, 'iblIntensity', { range: true, min: 0, max: 10, decimals: 2 })
+      ui.scalar(SETTINGS, 'iblBlur', { range: true, min: 0, max: 1, decimals: 2 })
+      ui.scalar(SETTINGS, 'iblIntensity', { range: true, min: 0, max: 10, decimals: 2 })
 
-    ui.bool(SETTINGS, 'srgb')
+      ui.bool(SETTINGS, 'srgb')
+    })
   })
 
   const pass = device.renderPass

@@ -115,6 +115,7 @@ class Game extends EcsGame {
       .rotateAxisAngle(1, 0, 0, dt * settings.speedX * 120 * DEGREE_TO_RAD)
       .rotateAxisAngle(0, 1, 0, dt * settings.speedY * 120 * DEGREE_TO_RAD)
       .rotateAxisAngle(0, 0, 1, dt * settings.speedZ * 120 * DEGREE_TO_RAD)
+    this.scene.getCamera<CameraComponent>(0).aspect = this.device.output.aspectRatio
   }
 }
 
