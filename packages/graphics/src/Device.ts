@@ -240,6 +240,10 @@ export abstract class Device<C extends GPUCanvasContext | WebGL2RenderingContext
    * ResizeObserver callback that updates output size using device-pixel-accurate metrics when available
    */
   protected readonly resizeFromObserver = (entries: ResizeObserverEntry[]) => {
+    if (!(this.canvas as HTMLElement).isConnected) {
+      // invisible
+      return
+    }
     const entry = entries[0]
     if (entry.devicePixelContentBoxSize) {
       const width = entry.devicePixelContentBoxSize[0].inlineSize
