@@ -80,6 +80,12 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   mat4$scale(maskWorld, vec3(0.7, 0.7, 1))
   const contentWorld = mat4CreateScaleUniform(2)
 
+  // Each draw call needs it's own shader program copy. Uniform writes are
+  // queued ahead of the draw commands, so sharing one program would make both
+  // draws use whatever `uWorld` was committed last.
+  const maskProgram = shader.program.clone()
+  const contentProgram = shader.program.clone()
+
   const settings = {
     masked: true,
   }
@@ -115,9 +121,6 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
       return
     }
 
-    const program = shader.program
-    program.set('uTexture', texture)
-    pass.setProgram(program)
     pass.setVertexBuffer(vertices)
     pass.setIndexBuffer(indices)
 
@@ -127,8 +130,10 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
       pass.setRenderMask(0, 0)
       pass.setStencilState(WRITE_MASK)
       pass.setStencilReference(1)
-      program.set('uWorld', maskWorld)
-      program.commit()
+      maskProgram.set('uTexture', texture)
+      maskProgram.set('uWorld', maskWorld)
+      maskProgram.commit()
+      pass.setProgram(maskProgram)
       pass.drawIndexed(6)
 
       // Pass 2: draw the content quad normally, but only where the
@@ -140,8 +145,10 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
       pass.setStencilState(StencilState.Default)
     }
 
-    program.set('uWorld', contentWorld)
-    program.commit()
+    contentProgram.set('uTexture', texture)
+    contentProgram.set('uWorld', contentWorld)
+    contentProgram.commit()
+    pass.setProgram(contentProgram)
     pass.drawIndexed(6)
 
     pass.submit()
