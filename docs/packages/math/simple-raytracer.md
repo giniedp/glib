@@ -4,7 +4,7 @@ title: Simple raytracer
 
 # Simple raytracer
 
-<Example  />
+<Example src="example.ts" />
 
 This simple implementation of a (CPU) raytracer demonstrates some concepts of the math api.
 
@@ -14,9 +14,9 @@ References:
 
 :::tabs variant:code
 == example.ts
-<ExampleCode src="./simple-raytracer.example.ts" />
+<ExampleCode src="example.ts" />
 == scene.ts
-<ExampleCode src="./scene.ts" />
+<ExampleCode src="scene.ts" />
 == worker.ts
-<ExampleCode src="./worker.ts" />
+<ExampleCode src="worker.ts" />
 :::
