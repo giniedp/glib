@@ -20,7 +20,7 @@ import {
   mat4GetTranslationY,
   mat4GetTranslationZ,
 } from '@gglib/math'
-import { RenderListMode, Sortable } from './RenderListMode'
+import { compareSortKey, RenderListMode, Sortable, SortKey } from './RenderListMode'
 import { RenderView } from './Types'
 
 export class RenderListCache {
@@ -62,7 +62,9 @@ export class RenderList {
 
   protected mode: RenderListMode
 
-  protected keys: bigint[] = []
+  protected keysHi: number[] = []
+  protected keysLo: number[] = []
+  protected key: SortKey = { hi: 0, lo: 0 }
   protected indices: number[] = []
   protected items: Renderable[] = []
   protected effect: Effect[] = []
@@ -150,11 +152,12 @@ export class RenderList {
     this.item.material = material
     this.item.state = state
     this.item.geometry = geometry
-    return this.mode.getKey(this.item)
+    // the returned key is reused, it must be passed to add() before the next call
+    return this.mode.getKey(this.item, this.key)
   }
 
   public add(
-    key: bigint,
+    key: SortKey,
     item: Renderable,
     effect: Effect | null,
     inputs: Record<string, ProgramInputBlock>,
@@ -169,7 +172,8 @@ export class RenderList {
     this.items[index] = item
     this.effect[index] = effect
     this.inputs[index] = inputs
-    this.keys[index] = key
+    this.keysHi[index] = key.hi
+    this.keysLo[index] = key.lo
     this.indices[index] = index
     this.transforms[index] = transform
     this.instances[index] = instance
@@ -188,7 +192,7 @@ export class RenderList {
   }
 
   private sortBy = (a: number, b: number) => {
-    return compare(this.keys[a], this.keys[b])
+    return compareSortKey(this.keysHi[a], this.keysLo[a], this.keysHi[b], this.keysLo[b])
   }
 
   private batch() {
@@ -348,18 +352,10 @@ export class RenderList {
     const result = new Array<string>(this.size)
     for (let i = 0; i < this.size; i++) {
       const index = this.indices[i]
-      result[i] = this.keys[index].toString(2)
+      result[i] = this.keysHi[index].toString(2).padStart(53, '0') + ':' + this.keysLo[index].toString(2).padStart(53, '0')
     }
     return result
   }
 }
 
-function compare(a: bigint, b: bigint): number {
-  if (a < b) {
-    return -1
-  }
-  if (a > b) {
-    return 1
-  }
-  return 0
-}
+
