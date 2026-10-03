@@ -7,7 +7,7 @@ import {
   InitializableComponent,
   Type,
 } from '@gglib/ecs'
-import { CommonInputs, Mesh, Texture } from '@gglib/graphics'
+import { CommonInputs, Material, Mesh, Texture } from '@gglib/graphics'
 import { BoundingFrustum, Intersection, IntersectionType, Mat4 } from '@gglib/math'
 import {
   CameraData,
@@ -48,6 +48,8 @@ export interface SceneStats {
 }
 
 const modelTransformVersion = Symbol('modelTransformVersion')
+const materialIsInstanced = Symbol('materialIsInstanced')
+const materialUpdateFrame = Symbol('materialUpdateFrame')
 
 export class SceneComponent implements GameComponent, InitializableComponent, RenderScene {
   public static readonly Member = SceneMemberComponent
@@ -217,10 +219,7 @@ export class SceneComponent implements GameComponent, InitializableComponent, Re
 
     for (const item of comp['cacheItems'] as MeshPartRenderItem[]) {
       const material = item.data.material
-      material.setInput(CommonInputs.Object.ModelMatrix, transform.world)
-      if (material.update) {
-        material.update(this.frame.time, this.frame.delta, this.frame.id)
-      }
+      this.updateMaterial(material, transform.world)
       if (item.layer & this.visibilityMask) {
         this.collectResult.push(item)
       }
@@ -257,11 +256,7 @@ export class SceneComponent implements GameComponent, InitializableComponent, Re
 
     for (const item of comp['cacheItems'] as MeshPartRenderItem[]) {
       const material = item.data.material
-
-      material.setInput(CommonInputs.Object.ModelMatrix, item.transform)
-      if (material.update) {
-        material.update(this.frame.time, this.frame.delta, this.frame.id)
-      }
+      this.updateMaterial(material, item.transform)
       if (item.layer & this.visibilityMask) {
         this.collectResult.push(item)
       }
@@ -289,10 +284,7 @@ export class SceneComponent implements GameComponent, InitializableComponent, Re
         continue
       }
 
-      material.setInput(CommonInputs.Object.ModelMatrix, transform)
-      if (material.update) {
-        material.update(this.frame.time, this.frame.delta, this.frame.id)
-      }
+      this.updateMaterial(material, transform)
 
       item.data.geometry = geometry
       item.data.material = material
@@ -306,6 +298,32 @@ export class SceneComponent implements GameComponent, InitializableComponent, Re
       }
 
       out.push(item)
+    }
+  }
+
+  /**
+   * Updates the per object inputs of a material and calls its per frame update.
+   *
+   * @remarks
+   * Materials whose effect reads transforms from the per instance buffer don't need the model matrix input.
+   * Setting it anyway would invalidate the input block every frame and cause all material inputs to be re-applied.
+   * The per frame update runs once per frame, even if the material is shared by many items.
+   */
+  private updateMaterial(material: Material, transform: Mat4) {
+    let isInstanced = material[materialIsInstanced] as boolean | undefined
+    if (isInstanced === undefined) {
+      const effect = material.effect
+      if (effect) {
+        isInstanced = !!effect.program.perInstanceTransformBlock
+        material[materialIsInstanced] = isInstanced
+      }
+    }
+    if (!isInstanced) {
+      material.setInput(CommonInputs.Object.ModelMatrix, transform)
+    }
+    if (material.update && material[materialUpdateFrame] !== this.frame.id) {
+      material[materialUpdateFrame] = this.frame.id
+      material.update(this.frame.time, this.frame.delta, this.frame.id)
     }
   }
 
