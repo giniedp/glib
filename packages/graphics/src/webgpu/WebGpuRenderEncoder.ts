@@ -162,8 +162,25 @@ export class WebGpuRenderEncoder extends RenderEncoder {
 
   public setVertexBuffer(buffer: VertexBuffer): void
   public setVertexBuffer(buffer: WebGpuVertexBuffer): void {
-    this.pipelineParamsChanged ||= buffer !== this.vertexBuffer
-    this.vertexBuffer = buffer
+    if (buffer !== this.vertexBuffer) {
+      this.vertexBuffer = buffer
+      // the pipeline only depends on the vertex layout, which is resolved and compared in getPass()
+      this.vertexBufferChanged = true
+    }
+  }
+
+  /**
+   * State that is bound to the current pass, used to skip redundant calls
+   */
+  private vertexBufferChanged = false
+  private boundPipeline: GPURenderPipeline | null = null
+  private boundBindGroups: GPUBindGroup[] = []
+  private boundVertexBuffers: GPUBuffer[] = []
+
+  private resetBoundState() {
+    this.boundPipeline = null
+    this.boundBindGroups.length = 0
+    this.boundVertexBuffers.length = 0
   }
 
   private colorTargetParams: ColorTargetParams[] = []
@@ -221,13 +238,21 @@ export class WebGpuRenderEncoder extends RenderEncoder {
   }
 
   public setRenderBlend(index: number, blendState: BlendState) {
-    this.endPass()
+    // blend state is part of the pipeline, the render pass can continue
+    if (this.colorTargetParam(index).blendState === (blendState ?? BlendState.Disabled)) {
+      return
+    }
     this.updateColorTargetBlend(index, blendState)
+    this.pipelineParamsChanged = true
   }
 
   public setRenderMask(index: number, writeMask: number) {
-    this.endPass()
+    // write mask is part of the pipeline, the render pass can continue
+    if (this.colorTargetParam(index).writeMask === (writeMask ?? GPUColorWrite.ALL)) {
+      return
+    }
     this.updateColorTargetMask(index, writeMask)
+    this.pipelineParamsChanged = true
   }
 
   public setRenderTarget(
@@ -527,9 +552,10 @@ export class WebGpuRenderEncoder extends RenderEncoder {
     }
     const bindGroups = params.bindGroups
     for (let i = 0; i < bindGroups.length; i++) {
-      if (bindGroups[i]) {
+      if (bindGroups[i] && this.boundBindGroups[i] !== bindGroups[i]) {
         // TODO: utilize bind group offsets
         this.pass.setBindGroup(i, bindGroups[i])
+        this.boundBindGroups[i] = bindGroups[i]
       }
     }
     this.programParamsChanged = false
@@ -540,8 +566,13 @@ export class WebGpuRenderEncoder extends RenderEncoder {
       return
     }
     for (let i = 0; i < this.vertexBuffer.buffers.length; i++) {
-      this.pass.setVertexBuffer(i, this.vertexBuffer.buffers[i].resource)
+      const resource = this.vertexBuffer.buffers[i].resource
+      if (this.boundVertexBuffers[i] !== resource) {
+        this.pass.setVertexBuffer(i, resource)
+        this.boundVertexBuffers[i] = resource
+      }
     }
+    this.vertexBufferChanged = false
   }
 
   public draw(vertexCount: number, instanceCount?: number, vertexOffset?: number, instanceOffset?: number) {
@@ -772,6 +803,7 @@ export class WebGpuRenderEncoder extends RenderEncoder {
     if (!this.pass) {
       const descriptor = this.getColorPassDescriptor()
       this.pass = this.getEncoder().beginRenderPass(descriptor)
+      this.resetBoundState()
 
       if (!this.applyPipeline(this.pass)) {
         // still loading
@@ -786,12 +818,18 @@ export class WebGpuRenderEncoder extends RenderEncoder {
       this.applyViewportState(this.pass)
       this.applyScissorState(this.pass)
     }
+    if (this.vertexBufferChanged && this.pipelineParams.vertexLayout !== this.getVertexLayout()) {
+      this.pipelineParamsChanged = true
+    }
     if (this.pipelineParamsChanged) {
       if (!this.applyPipeline(this.pass)) {
         // still loading
         return null
       }
       this.applyBindGroups()
+      this.applyVertexBuffer()
+    }
+    if (this.vertexBufferChanged) {
       this.applyVertexBuffer()
     }
     if (this.programParamsChanged) {
@@ -810,7 +848,10 @@ export class WebGpuRenderEncoder extends RenderEncoder {
   private applyPipeline(pass: GPURenderPassEncoder) {
     const pipeline = this.getPipeline()
     if (pipeline) {
-      pass.setPipeline(pipeline)
+      if (this.boundPipeline !== pipeline) {
+        pass.setPipeline(pipeline)
+        this.boundPipeline = pipeline
+      }
       return true
     }
     return false
@@ -822,6 +863,7 @@ export class WebGpuRenderEncoder extends RenderEncoder {
     }
     this.pass.end()
     this.pass = null
+    this.resetBoundState()
   }
 
   /**

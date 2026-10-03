@@ -142,14 +142,15 @@ export class WebGpuShaderModule extends ShaderModule implements GpuResource<GPUS
     return maxLocation
   }
 
-  private vertexLayoutCache = new WeakMap<VertexBuffer, GPUVertexBufferLayout[]>()
+  private vertexLayoutByID = new Map<string, GPUVertexBufferLayout[]>()
+  private vertexLayoutByBuffer = new WeakMap<VertexBuffer, GPUVertexBufferLayout[]>()
   public getVertexLayout(vertexBuffer: VertexBuffer): GPUVertexBufferLayout[] {
-    if (this.vertexLayoutCache.has(vertexBuffer)) {
-      return this.vertexLayoutCache.get(vertexBuffer)
+    if (this.vertexLayoutByBuffer.has(vertexBuffer)) {
+      return this.vertexLayoutByBuffer.get(vertexBuffer)
     }
     const result: GPUVertexBufferLayout[] = []
 
-    this.vertexLayoutCache.set(vertexBuffer, result)
+    this.vertexLayoutByBuffer.set(vertexBuffer, result)
     if (!this.vertexEntry) {
       return result
     }
@@ -217,7 +218,14 @@ export class WebGpuShaderModule extends ShaderModule implements GpuResource<GPUS
       })
     }
 
-    return result
+    const vertexLayoutID = JSON.stringify(result)
+    let interned = this.vertexLayoutByID.get(vertexLayoutID)
+    if (!interned) {
+      interned = result
+      this.vertexLayoutByID.set(vertexLayoutID, interned)
+    }
+    this.vertexLayoutByBuffer.set(vertexBuffer, interned)
+    return interned
   }
 
   public dispose(): void {
