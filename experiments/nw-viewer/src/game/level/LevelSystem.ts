@@ -50,6 +50,7 @@ import { SkyLightSystem } from './SkyLightSystem'
 export class LevelSystem extends GameSystem {
   private content: ContentService
   private sky: SkyLightSystem
+  private terrain: TerrainSystem
 
   public game: EcsGame
   public entity: GameEntity
@@ -71,6 +72,7 @@ export class LevelSystem extends GameSystem {
     this.renderer = game.getSystem(Renderer)
 
     this.sky = game.getSystem(SkyLightSystem)
+    this.terrain = game.getSystem(TerrainSystem)
   }
 
   public destroy(): void {
@@ -113,42 +115,43 @@ export class LevelSystem extends GameSystem {
   }
 
   public async loadLevel(name: string) {
-    this.unload()
+    this.loadCancel()
+
     if (!name) {
       return
     }
+
+    const loadSignal = this.beginLoad()
+
     console.log(...lfmt.merge(this.logTag, lfmt.green(`Loading level ${name}`)))
-    const baseUrl = this.content.nwbtUrl
-    const levelInfo = await fetchTypedRequest(baseUrl, getLevelInfoUrl(name))
+
+    const levelInfo = await fetchTypedRequest(this.content.nwbtUrl, getLevelInfoUrl(name))
+    loadSignal.throwIfAborted()
 
     console.log(...this.logTag, 'Level data loaded', levelInfo)
-    this.entity = this.game.createEntity(levelEntityOptions(this.game.scene.entity, levelInfo))
-    this.timeOfDay.reset(levelInfo.mission?.timeOfDay || null)
-    const lighting = levelInfo.mission?.environment?.lighting
-    if (lighting) {
-      this.timeOfDay.setLighting(lighting)
-    }
-    const moon = levelInfo.mission?.environment?.moon
-    if (moon) {
-      this.timeOfDay.moonRotationLatitude = moon.latitude
-      this.timeOfDay.moonRotationLongitude = moon.longitude
-      this.timeOfDay.moonSize = moon.size
-      this.content.loadTexture(moon.texture).then((texture) => {
-        this.timeOfDay.moonTexture = texture
-      })
-    }
 
+    this.entity = this.game.createEntity(levelEntityOptions(this.game.scene.entity, levelInfo))
     this.skyEntity = this.game.createEntity(createSkySphere(this.entity, this.renderer.device))
-    // this.skyEntity = this.game.createEntity(skyEntity(this.entity))
-    this.game.world.getSystem(TerrainSystem).mountainHeight = levelInfo.mountainHeight
-    this.game.world.getSystem(TerrainSystem).oceanLevel = levelInfo.oceanLevel
+
+    this.timeOfDay.setLevelInfo(levelInfo, {
+      content: this.content,
+      signal: loadSignal,
+    })
+
+    this.terrain.setLevelInfo(levelInfo, {
+      content: this.content,
+      signal: loadSignal,
+    })
   }
 
   public async loadModel(model: string, material?: string, transform?: number[]) {
-    this.unload()
+    this.loadCancel()
+
     if (!model) {
       return
     }
+
+    const loadSignal = this.beginLoad()
 
     const camera = this.game.scene.getView(0).camera as CameraComponent
     const wasd = camera.entity.component(WASDComponent)
@@ -191,10 +194,13 @@ export class LevelSystem extends GameSystem {
   }
 
   public async loadMaterial(assetUrl: string) {
-    this.unload()
+    this.loadCancel()
+
     if (!assetUrl) {
       return
     }
+
+    const loadSignal = this.beginLoad()
 
     const camera = this.game.scene.getView(0).camera as CameraComponent
     const wasd = camera.entity.component(WASDComponent)
@@ -206,12 +212,16 @@ export class LevelSystem extends GameSystem {
 
     const content = this.content
     const asset = await content.loadAsset(assetUrl)
+    loadSignal.throwIfAborted()
+
     const materials: Material[] = []
     for (let i = 0; i < asset.count(AssetType.Material); i++) {
       const options = await asset.load<MaterialOptions>(AssetType.Material, i, {
         content: content.loader,
         baseUrl: content.nwbtFileUrl,
       })
+      loadSignal.throwIfAborted()
+
       const material = content.loader.createMaterial(options)
       materials.push(material)
     }
@@ -290,6 +300,21 @@ export class LevelSystem extends GameSystem {
     this.skyEntity = this.game.createEntity(createSkySphere(this.entity, this.renderer.device))
     // this.skyEntity = this.game.createEntity(skyEntity(this.entity))
     this.gizmoEntity = this.game.createEntity(createGizmoGrid(this.entity, this.renderer.device))
+  }
+
+  private loadCtrl: AbortController
+  private beginLoad() {
+    this.loadCancel()
+    this.loadCtrl = new AbortController()
+    return this.loadCtrl.signal
+  }
+
+  private loadCancel() {
+    if (this.loadCtrl) {
+      this.loadCtrl.abort()
+      this.loadCtrl = null
+    }
+    this.unload()
   }
 
   private unload() {

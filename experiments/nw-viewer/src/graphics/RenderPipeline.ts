@@ -59,6 +59,12 @@ export function createRenderPipeline(device: Device): RenderPipelineOptions {
       renderInputsPass({
         name: 'TransparentInputs',
         values: [[InputSlots.Global.SkipFog, FALSE]],
+        // bind the color and depth versions the transparent pass reads (after fog),
+        // the ones bound in 'SceneInputs' are not guaranteed to be alive anymore
+        textures: [
+          [CommonInputs.View.SceneColorMap, RenderChannel.Color],
+          [CommonInputs.View.SceneDepthMap, RenderChannel.LinearDepth],
+        ],
       }),
       new GeometryPass({
         name: 'TransparentPass',

@@ -5,8 +5,13 @@ import { Model } from '@gglib/model'
 import { addItemIfAbsent, type Type } from '@gglib/utils'
 import { fetchTypedRequest, type TypedRequest, type ViewerSlice } from '../api'
 
+// Global engine texture keys
+// TODO: this is a hack and needs proper solution
 export const Noise3DKey = Symbol('noise3d')
 export const Noise2DKey = Symbol('noise2d')
+export const FoamMapKey = Symbol('FoamMap')
+export const FoamNormalMapKey = Symbol('FoamNormalMap')
+export const GlossMapKey = Symbol('GlossMap')
 
 export class ContentService extends GameSystem {
   public loader: ContentLoader
@@ -34,6 +39,10 @@ export class ContentService extends GameSystem {
   public nullPathMap2: Texture
   public noise3d: Texture
   public noise2d: Texture
+
+  public waterFoamMap: Texture
+  public waterFoamNormalMap: Texture
+  public waterGlossMap: Texture
 
   public initialize(world: GameWorld): void {
     this.device = world.getSystem(Device)
@@ -129,6 +138,43 @@ export class ContentService extends GameSystem {
       this.noise2d = texture
       this.device[Noise2DKey] = this.noise2d
       console.log('Loaded noise2d texture', texture)
+    })
+
+    this.waterFoamMap = device.createTexture({
+      name: 'waterFoamMap',
+      width: 4,
+      height: 4,
+      depth: 1,
+      format: 'rgba8unorm',
+    })
+    this.device[FoamMapKey] = this.waterFoamMap
+    this.loadTexture(`engineassets/shading/waterfoam.dds`).then((texture) => {
+      this.waterFoamMap = texture
+      this.device[FoamMapKey] = this.waterFoamMap
+    })
+    this.waterFoamNormalMap = device.createTexture({
+      name: 'waterFoamNormalMap',
+      width: 4,
+      height: 4,
+      depth: 1,
+      format: 'rgba8unorm',
+    })
+    this.device[FoamNormalMapKey] = this.waterFoamNormalMap
+    this.loadTexture(`engineassets/shading/waterfoam2_ddn.dds`).then((texture) => {
+      this.waterFoamNormalMap = texture
+      this.device[FoamNormalMapKey] = this.waterFoamNormalMap
+    })
+    this.waterGlossMap = device.createTexture({
+      name: 'waterGlossMap',
+      width: 4,
+      height: 4,
+      depth: 1,
+      format: 'rgba8unorm',
+    })
+    this.device[GlossMapKey] = this.waterGlossMap
+    this.loadTexture(`engineassets/textures/water_gloss.dds`).then((texture) => {
+      this.waterGlossMap = texture
+      this.device[GlossMapKey] = this.waterGlossMap
     })
   }
 

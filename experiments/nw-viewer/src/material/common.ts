@@ -70,6 +70,10 @@ export const InputSlots = {
     FogHeightOffset: inputSlotScalar('global', 'fogHeightOffset'),
     FogNear: inputSlotScalar('global', 'fog_near'),
     FogFar: inputSlotScalar('global', 'fog_far'),
+    /**
+     * xyz = ocean fog color (sun tinted), w = density (log2 base)
+     */
+    OceanFogColorDensity: inputSlotVec4('global', 'oceanFogColorDensity'),
 
     Debug: inputSlotScalar('global', 'debug'),
     /**
@@ -120,6 +124,8 @@ export const DebugOptions = {
   DEBUG_SH_REFLECTION: 304,
   DEBUG_SH_FRESNEL: 305,
   DEBUG_SH_COUNT: 306,
+  DEBUG_SH_SPECULAR_AA: 307,
+  DEBUG_SH_NO_SPECULAR_AA: 308,
 } as const
 
 export const MaterialLayerMasks = {
@@ -260,6 +266,18 @@ export function getShaderFlags(genMask: string | null): Set<FeatureFlag> {
     }
   }
   return result
+}
+
+/**
+ * Shader constants for the distance based dither fade (ditherFade in common.wgsl).
+ * A fade 'in' and a fade 'out' with the same range blend without gaps.
+ */
+export function ditherFadeConstants(mode: 'in' | 'out', start: number, end: number): Record<string, number> {
+  return {
+    DITHER_FADE_MODE: mode === 'in' ? 1 : 2,
+    DITHER_FADE_START: start,
+    DITHER_FADE_END: end,
+  }
 }
 
 export function getShaderConstants(flags: Set<FeatureFlag>) {

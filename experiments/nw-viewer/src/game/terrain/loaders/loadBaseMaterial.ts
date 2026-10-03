@@ -18,34 +18,24 @@ export function loadBaseMaterial(
   return scheduler.schedule({
     lane: PriorityLane.High,
     load: async (_, signal) => {
-      if (signal.aborted) {
-        return
-      }
+      signal.throwIfAborted()
 
       colorMap = await content.loadTexture(data.colorMap)
+      signal.throwIfAborted()
 
-      if (signal.aborted) {
-        return
-      }
       normalMap = await content.loadTexture(data.normalMap)
-
-      if (signal.aborted) {
-        return
-      }
+      signal.throwIfAborted()
 
       specularMap = await content.loadTexture(data.specularMap)
+      signal.throwIfAborted()
 
-      if (signal.aborted) {
-        return
-      }
+      const result = await content.loader.loadMaterial(data.defaultMaterial + '.glb', {
+        baseUrl: content.nwbtFileUrl,
+        signal: signal,
+      })
+      signal.throwIfAborted()
 
-      material = await content.loader
-        .loadMaterial(data.defaultMaterial + '.glb', {
-          baseUrl: content.nwbtFileUrl,
-          signal: signal,
-        })
-        .then((it) => it as TerrainCompositeMaterial)
-
+      material = result as TerrainCompositeMaterial
       if (!material) {
         return
       }

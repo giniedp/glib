@@ -3,6 +3,7 @@ import { type GameComponent, type GameEntity } from '@gglib/ecs'
 import { Device } from '@gglib/graphics'
 import { TerrainHeightmapArray } from './TerrainHeightmap'
 import { TerrainRegionComponent } from './TerrainRegionComponent'
+import type { TerrainMesh } from './TerrainMesh'
 
 export interface TerrainComponentOptions {
   regionSize: number
@@ -15,6 +16,14 @@ export class TerrainComponent implements GameComponent {
   public heightmap: TerrainHeightmapArray
   public regionSize: number
   public renderRegions: TerrainRegionComponent[] = []
+
+  public get mesh() {
+    return this.meshComponent?.mesh as TerrainMesh
+  }
+
+  public set mesh(value: TerrainMesh) {
+    this.meshComponent.mesh = value
+  }
 
   public constructor(options: TerrainComponentOptions) {
     this.regionSize = options.regionSize

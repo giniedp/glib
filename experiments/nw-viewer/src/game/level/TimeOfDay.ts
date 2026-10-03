@@ -24,7 +24,8 @@ import {
 } from '@gglib/math'
 import type { CameraData } from '@gglib/render'
 import { removeItemUnordered } from '@gglib/utils'
-import type { Lighting, TimeOfDay as TimeOfDayData } from '../../api'
+import type { LevelInfo, TimeOfDay as TimeOfDayData } from '../../api'
+import type { ContentService } from '../../content'
 import { TodParams, type TodParam } from './TimeOfDayParams'
 import { TimeOfDayPreset } from './TimeOfDayPreset'
 
@@ -85,6 +86,10 @@ export class TimeOfDay {
 
   public fogHeightOffset = 0.5
 
+  // ocean fog color (premultiplied with its multiplier) and density
+  public oceanFogColor = vec3(29 / 255, 102 / 255, 141 / 255)
+  public oceanFogDensity = 0.2
+
   public base: TimeOfDayPreset
   public poiLayers: TimeOfDayLayer[] = []
   public time: number = 12
@@ -111,6 +116,42 @@ export class TimeOfDay {
     }
   }
 
+  public async setLevelInfo(info: LevelInfo, ctx: { content: ContentService; signal: AbortSignal }) {
+    this.reset(info.mission?.timeOfDay || null)
+
+    // #region set lighting
+    const lighting = info.mission?.environment?.lighting
+    if (lighting) {
+      this.sunRotationLatitude = lighting.sunRotation
+      this.sunRotationLongitude = lighting.longitude
+
+      this.dawnStart = (lighting.dawnTime - lighting.dawnDuration * 0.5) / 60.0
+      this.dawnEnd = (lighting.dawnTime + lighting.dawnDuration * 0.5) / 60.0
+      this.duskStart = 12.0 + (lighting.duskTime - lighting.duskDuration * 0.5) / 60.0
+      this.duskEnd = 12.0 + (lighting.duskTime + lighting.duskDuration * 0.5) / 60.0
+      if (this.dawnEnd > this.duskStart) {
+        this.duskEnd += this.dawnEnd - this.duskStart
+        this.duskStart = this.dawnEnd
+      }
+    }
+    // #endregion
+
+    // #region set moon
+    const moon = info.mission?.environment?.moon
+    if (moon) {
+      this.moonRotationLatitude = moon.latitude
+      this.moonRotationLongitude = moon.longitude
+      this.moonSize = moon.size
+
+      const moonTexture = await ctx.content.loadTexture(moon.texture)
+      ctx.signal.throwIfAborted()
+
+      this.moonTexture = moonTexture
+    }
+
+    // #endregion
+  }
+
   public reset(data?: TimeOfDayData) {
     this.base = new TimeOfDayPreset(data)
     this.time = 12
@@ -129,20 +170,6 @@ export class TimeOfDay {
     this.dawnEnd = 360.0 / 60.0
     this.duskStart = 12.0 + 360.0 / 60.0
     this.duskEnd = 12.0 + 370.0 / 60.0
-  }
-
-  public setLighting(lighting: Lighting) {
-    this.sunRotationLatitude = lighting.sunRotation
-    this.sunRotationLongitude = lighting.longitude
-
-    this.dawnStart = (lighting.dawnTime - lighting.dawnDuration * 0.5) / 60.0
-    this.dawnEnd = (lighting.dawnTime + lighting.dawnDuration * 0.5) / 60.0
-    this.duskStart = 12.0 + (lighting.duskTime - lighting.duskDuration * 0.5) / 60.0
-    this.duskEnd = 12.0 + (lighting.duskTime + lighting.duskDuration * 0.5) / 60.0
-    if (this.dawnEnd > this.duskStart) {
-      this.duskEnd += this.dawnEnd - this.duskStart
-      this.duskStart = this.dawnEnd
-    }
   }
 
   private interpolate() {
@@ -439,6 +466,10 @@ export class TimeOfDay {
     this.updateFogColorGradientConstants()
     this.updateFogColorGradientParams()
     this.updateFogColorGradientRadial(view)
+
+    this.getParamColor(TodParams.OCEANFOG_COLOR, this.oceanFogColor)
+    vec3MultiplyScalar(this.oceanFogColor, this.getParamValue(TodParams.OCEANFOG_COLOR_MULTIPLIER), this.oceanFogColor)
+    this.oceanFogDensity = this.getParamValue(TodParams.OCEANFOG_DENSITY)
   }
 
   private updateVolumetricFogParams(view: CameraData) {
@@ -481,6 +512,11 @@ export class TimeOfDay {
     let rampInfluence = this.getParamValue(TodParams.VOLFOG_RAMP_INFLUENCE)
 
     rampStart = rampStart < 0 ? 0 : rampStart // start
+    // POI presets may leave the ramp end at 0. The game renders with volumetric fog 2, where this ramp is unused,
+    // but here the clamp below would turn it into a hard step at the ramp start (a visible band around the camera)
+    if (rampEnd <= rampStart) {
+      rampInfluence = 0
+    }
     rampEnd = rampEnd < rampStart + 0.1 ? rampStart + 0.1 : rampEnd // end
     rampInfluence = clamp(rampInfluence, 0.0, 1.0) // influence
 
@@ -502,9 +538,10 @@ export class TimeOfDay {
     this.fogColGradBase.y = this.fogColor.y * this.fogMultiplier
     this.fogColGradBase.z = this.fogColor.z * this.fogMultiplier
 
-    this.fogColGradDelta.x = this.fogColGradBase.x - this.fogTopColor.x * this.fogTopMultiplier
-    this.fogColGradDelta.y = this.fogColGradBase.y - this.fogTopColor.y * this.fogTopMultiplier
-    this.fogColGradDelta.z = this.fogColGradBase.z - this.fogTopColor.z * this.fogTopMultiplier
+    // top - base, see sGetFogColorGradientConstants in D3DHWShader.cpp
+    this.fogColGradDelta.x = this.fogTopColor.x * this.fogTopMultiplier - this.fogColGradBase.x
+    this.fogColGradDelta.y = this.fogTopColor.y * this.fogTopMultiplier - this.fogColGradBase.y
+    this.fogColGradDelta.z = this.fogTopColor.z * this.fogTopMultiplier - this.fogColGradBase.z
   }
 
   private updateFogColorGradientParams() {

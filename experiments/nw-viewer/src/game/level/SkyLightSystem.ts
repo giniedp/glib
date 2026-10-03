@@ -130,6 +130,14 @@ export class SkyLightSystem extends GameSystem {
     inputs.set(InputSlots.Global.VolumetricFogColorGradientRadial, tod.fogColGradRadial)
 
     inputs.set(InputSlots.Global.EnvMap, this.fxIbl.envMapGGX)
+
+    // see Ocean.cpp, ocean fog color is tinted by the sun, density is converted to log2 base
+    const oceanFog = inputs.get(InputSlots.Global.OceanFogColorDensity) || vec4(0)
+    oceanFog.x = tod.sunColor.x * tod.oceanFogColor.x
+    oceanFog.y = tod.sunColor.y * tod.oceanFogColor.y
+    oceanFog.z = tod.sunColor.z * tod.oceanFogColor.z
+    oceanFog.w = tod.oceanFogDensity * Math.LOG2E
+    inputs.set(InputSlots.Global.OceanFogColorDensity, oceanFog)
   }
 
   public destroy(): void {

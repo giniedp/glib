@@ -209,6 +209,9 @@ struct GlobalBlock {
   // 1 while rendering opaque geometry, fog is then applied in a deferred fog pass
   skipFog          : u32,
 
+  // xyz = ocean fog color (sun tinted), w = density (log2 base)
+  oceanFogColorDensity : vec4f,
+
 };
 
 struct ObjectBlock {

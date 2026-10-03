@@ -1,20 +1,13 @@
 import { EcsGame, PriorityLane, SchedulerSystem } from '@gglib/components'
 import { GameQuery, GameSystem, GameWorld } from '@gglib/ecs'
 import { Device } from '@gglib/graphics'
-import {
-  mat4$setScale,
-  mat4$setScaleXYZ,
-  mat4CreateTranslation,
-  vec3,
-  vec3$initFrom,
-  vec4,
-  vec4$init,
-  type IVec4,
-} from '@gglib/math'
+import { mat4$setScaleXYZ, mat4CreateTranslation, vec3, vec3$initFrom, vec4, vec4$init, type IVec4 } from '@gglib/math'
 import { removeItemUnordered } from '@gglib/utils'
 
+import type { LevelInfo } from '../../api'
 import { LOD_RANGE_FACTOR, QUAD_LEAF_SIZE } from '../../constants'
 import { ContentService } from '../../content'
+import { WaterPatchMaterial, type OceanAnimationParams } from '../../material'
 import { TerrainComponent } from './TerrainComponent'
 import { TerrainMesh } from './TerrainMesh'
 import { TerrainRegionComponent, TerraQuadState, type TerraQuad } from './TerrainRegionComponent'
@@ -36,8 +29,12 @@ export class TerrainSystem extends GameSystem {
 
   private frame = 0
 
-  public mountainHeight = 2048
-  public oceanLevel = 40
+  private mountainHeight = 2048
+  private oceanLevel = 40
+
+  private oceanMtl: WaterPatchMaterial
+  private oceanDirty = true
+  private oceanAnimation: OceanAnimationParams = {}
 
   public initialize(world: GameWorld): void {
     this.device = world.getSystem(Device)
@@ -73,10 +70,34 @@ export class TerrainSystem extends GameSystem {
     this.tiles = null
   }
 
+  public async setLevelInfo(info: LevelInfo, ctx: { content: ContentService; signal: AbortSignal }) {
+    this.mountainHeight = info.mountainHeight
+    this.oceanLevel = info.oceanLevel
+    this.oceanAnimation = info.mission?.environment?.oceanAnimation
+    this.oceanMtl = null
+    this.oceanDirty = true
+
+    const materialName = info.mission?.environment?.ocean?.material
+    if (!materialName) {
+      return
+    }
+
+    const mtlPath = materialName.toLowerCase().replace(/.mtl$/, '') + '.mtl'
+    const glbPath = mtlPath + '.glb'
+    const material = await this.content.loader.loadMaterial(glbPath, {
+      baseUrl: this.content.nwbtFileUrl,
+      signal: ctx.signal,
+    })
+    ctx.signal.throwIfAborted()
+
+    this.oceanMtl = material as WaterPatchMaterial
+    this.oceanDirty = true
+  }
+
   // #region Update Terrain Entity
 
   private updateTerrain(terrain: TerrainComponent) {
-    if (!terrain.meshComponent.mesh) {
+    if (!terrain.mesh) {
       const mesh = new TerrainMesh(this.device, { size: QUAD_LEAF_SIZE })
       mesh.TerrainMaterial.ColorMap1 = this.tiles.colorMap1
       mesh.TerrainMaterial.ColorMap2 = this.tiles.colorMap2
@@ -88,7 +109,22 @@ export class TerrainSystem extends GameSystem {
       mesh.WaterMaterial.WaterLevel = this.oceanLevel
       mesh.WaterMaterial.WaterHeight = this.oceanLevel
 
-      terrain.meshComponent.mesh = mesh
+      terrain.mesh = mesh
+    }
+
+    if (this.oceanDirty) {
+      this.oceanDirty = false
+
+      const mesh = terrain.mesh
+      const oldMaterial = mesh.WaterMaterial
+      mesh.WaterMaterial = this.oceanMtl || new WaterPatchMaterial(this.device, { properties: {} })
+      mesh.WaterMaterial.applyOceanAnimation(this.oceanAnimation)
+      mesh.WaterMaterial.HeightMap = this.content.nullHeightmapArray
+      mesh.WaterMaterial.MountainHeight = this.mountainHeight
+      mesh.WaterMaterial.WaterLevel = this.oceanLevel
+      mesh.WaterMaterial.WaterHeight = this.oceanLevel
+      // TODO:
+      // oldMaterial  .dispose()
     }
 
     for (const entity of this.allRegions) {

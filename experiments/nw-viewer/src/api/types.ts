@@ -77,12 +77,28 @@ export interface EnvironmentInfo {
   // cloudShadows: CloudShadows
   // particleLighting: ParticleLighting
   // skyBox: SkyBox
-  // ocean: Ocean
-  // oceanAnimation: OceanAnimation
+  ocean?: OceanInfo
+  oceanAnimation?: OceanAnimationInfo
   moon: Moon
   // dynTexSource: DynTexSource
   // totalIllumination: TotalIllumination
   lighting: Lighting
+}
+
+export interface OceanInfo {
+  material: string
+  causticsDistanceAtten: string
+  causticDepth: string
+  causticIntensity: string
+  causticsTilling: string
+}
+
+export interface OceanAnimationInfo {
+  windDirection: string
+  windSpeed: string
+  wavesAmount: string
+  wavesSize: string
+  wavesSpeed: string
 }
 
 export interface Moon {

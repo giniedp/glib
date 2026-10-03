@@ -37,6 +37,9 @@ export class TerrainMesh extends Mesh {
   public get WaterMaterial() {
     return this.materials[1] as WaterPatchMaterial
   }
+  public set WaterMaterial(value: WaterPatchMaterial) {
+    this.materials[1] = value
+  }
 
   public constructor(device: Device, options: TerrainMeshOptions) {
     super(device, {
