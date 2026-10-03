@@ -138,7 +138,7 @@ export class GameEntity {
    * Gets the transform component of this entity
    */
   public getTransform<T extends GameTransform = GameTransform>(): T | null {
-    return this.component<T>(GameTransformToken, { optional: true })
+    return this.component<T>(GameTransformToken, GetComponent.Optional)
   }
 
   /**
