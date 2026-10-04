@@ -5,9 +5,9 @@ import {
   ProgramInput,
   Texture,
   TextureView,
-  type MatrixLike,
   type InputTypeName,
   type InputValueType,
+  type MatrixLike,
 } from '../../resources'
 import { SamplerState } from '../../states'
 import type { WebGpuDevice } from '../WebGpuDevice'
@@ -229,7 +229,12 @@ export class WebGpuProgramInput extends ProgramInput {
   public setTexture(value: Texture | TextureView | GPUTexture | GPUTextureView | GPUExternalTexture): void {
     value ||= this.device.defaultTexture
     if (value instanceof Texture) {
-      this.resource.setTexture((value as WebGpuTexture).gpuView)
+      if (value.residentMipLevel > 0) {
+        const view = value.subresource(value.residentMipLevel)
+        this.resource.setTexture((value as WebGpuTexture).getGpuView(view))
+      } else {
+        this.resource.setTexture((value as WebGpuTexture).gpuView)
+      }
     } else if (value instanceof TextureView) {
       this.resource.setTexture((value.texture as WebGpuTexture).getGpuView(value))
     } else {

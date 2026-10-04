@@ -95,6 +95,7 @@ export class WebGpuTexture extends Texture implements GpuResource<GPUTexture>, R
     self.isMultisampled = options.sampleCount > 1
     self.isCompressed = surfaceFormatIsCompressed(this.format)
     self.mipLevelCount = options.mipLevelCount ?? getMipmapCount(this.width, this.height, this.depth)
+    self.residentMipLevel = Math.min(options.residentMipLevel ?? 0, this.mipLevelCount - 1)
     self.sampleCount = options.sampleCount ?? 1
 
     self.gpuDimension = textureTypeToWebGPUDimension(this.type)
@@ -245,7 +246,9 @@ export class WebGpuTexture extends Texture implements GpuResource<GPUTexture>, R
     if (!source.levels.length) {
       throw new Error('Texture source has no data levels to upload')
     }
-    this.resize(source.width, source.height, this.type === 'cube' ? 6 : source.levels[0].length)
+    // leading levels may be empty when only the smaller mips are loaded
+    const solidLevel = source.levels.find((level) => level?.length) ?? source.levels[0]
+    this.resize(source.width, source.height, this.type === 'cube' ? 6 : solidLevel.length)
     switch (this.type) {
       case 'cube': {
         setData(source, this, 6)

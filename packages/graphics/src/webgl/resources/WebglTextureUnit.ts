@@ -1,7 +1,9 @@
-import { TextureView, type Texture } from '../../resources'
+import { Texture, TextureView } from '../../resources'
 import { SamplerState } from '../../states'
 import type { WebglDevice } from '../WebglDevice'
-import { GL_DEFAULT_BASE_LEVEL, GL_DEFAULT_MAX_LEVEL, type WebglTexture } from '../resources/WebglTexture'
+import { type WebglTexture } from '../resources/WebglTexture'
+
+const DEFAULT_MAX_LEVEL = 32
 
 /**
  * @public
@@ -16,8 +18,8 @@ export class WebglTextureUnit {
   private texture: WebGLTexture
   private sampler: WebGLSampler
   private resource: WebglTexture
-  private baseLevel: number = GL_DEFAULT_BASE_LEVEL
-  private maxLevel: number = GL_DEFAULT_MAX_LEVEL
+  private baseLevel: number = 0
+  private maxLevel: number = DEFAULT_MAX_LEVEL
 
   public constructor(device: WebglDevice, index: number) {
     this.device = device
@@ -39,36 +41,44 @@ export class WebglTextureUnit {
    * on the texture object. A plain texture restores the full range.
    */
   public set(texture: Texture | TextureView, sampler: SamplerState): void {
-    let baseLevel = GL_DEFAULT_BASE_LEVEL
-    let maxLevel = GL_DEFAULT_MAX_LEVEL
-    if (texture instanceof TextureView) {
+    texture ||= this.device.defaultTexture
+    sampler ||= SamplerState.Default
+
+    let glBaseLevel = 0
+    let glMaxLevel = DEFAULT_MAX_LEVEL
+    if (texture instanceof Texture) {
+      glBaseLevel = texture.residentMipLevel
+      glMaxLevel = texture.mipLevelCount
+    } else if (texture instanceof TextureView) {
       if (!texture.isFullRange) {
-        baseLevel = texture.baseMipLevel
-        maxLevel = texture.baseMipLevel + texture.mipLevelCount - 1
+        glBaseLevel = texture.baseMipLevel
+        glMaxLevel = texture.baseMipLevel + texture.mipLevelCount - 1
+      } else {
+        glBaseLevel = texture.texture.residentMipLevel
+        glMaxLevel = texture.texture.mipLevelCount
       }
       texture = texture.texture
     }
-    texture ||= this.device.defaultTexture
-    sampler ||= SamplerState.Default
 
     const resource = texture as WebglTexture
     const glType = resource.glType
     const glTexture = resource.glHandle
     const glSampler = this.device.getSampler(sampler).glHandle
+
     if (
+      this.type !== glType ||
       this.texture !== glTexture ||
       this.sampler !== glSampler ||
-      this.type !== glType ||
-      // range state lives on the texture object and may have been changed through another unit
-      resource.glBaseLevel !== baseLevel ||
-      resource.glMaxLevel !== maxLevel
+      this.resource !== resource ||
+      this.baseLevel !== glBaseLevel ||
+      this.maxLevel !== glMaxLevel
     ) {
       this.type = glType
       this.texture = glTexture
       this.sampler = glSampler
       this.resource = resource
-      this.baseLevel = baseLevel
-      this.maxLevel = maxLevel
+      this.baseLevel = glBaseLevel
+      this.maxLevel = glMaxLevel
       this.changed = true
     }
   }
@@ -84,14 +94,8 @@ export class WebglTextureUnit {
       gl.bindSampler(this.index, this.sampler)
       const resource = this.resource
       if (resource && !resource.isRenderBuffer) {
-        if (resource.glBaseLevel !== this.baseLevel) {
-          gl.texParameteri(this.type, gl.TEXTURE_BASE_LEVEL, this.baseLevel)
-          resource.glBaseLevel = this.baseLevel
-        }
-        if (resource.glMaxLevel !== this.maxLevel) {
-          gl.texParameteri(this.type, gl.TEXTURE_MAX_LEVEL, this.maxLevel)
-          resource.glMaxLevel = this.maxLevel
-        }
+        gl.texParameteri(this.type, gl.TEXTURE_BASE_LEVEL, this.baseLevel)
+        gl.texParameteri(this.type, gl.TEXTURE_MAX_LEVEL, this.maxLevel)
       }
       this.changed = false
     }

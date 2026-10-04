@@ -95,6 +95,11 @@ export interface TextureOptions extends Partial<TextureDescriptor> {
   mipLevelCount?: number
 
   /**
+   * The first mip level that holds data, see {@link Texture.residentMipLevel}. Defaults to 0
+   */
+  residentMipLevel?: number
+
+  /**
    * The number of samples per pixel when used as a render target
    */
   sampleCount?: number
@@ -124,20 +129,6 @@ export interface TextureOptions extends Partial<TextureDescriptor> {
 }
 
 /**
- * Selects a range of mip levels of a texture
- */
-export interface TextureSubresourceRange {
-  /**
-   * First mip level of the range. Defaults to 0
-   */
-  baseMipLevel?: number
-  /**
-   * Number of mip levels in the range. Defaults to all remaining levels
-   */
-  mipLevelCount?: number
-}
-
-/**
  * A range of mip levels of a texture, that can be bound to a shader input instead of the whole texture.
  *
  * In the shader, mip level 0 of the input addresses {@link baseMipLevel} of the texture.
@@ -156,7 +147,9 @@ export class TextureView {
     public readonly texture: Texture,
     public readonly baseMipLevel: number,
     public readonly mipLevelCount: number,
-  ) {}
+  ) {
+    //
+  }
 
   /**
    * Whether the view covers all mip levels of the texture
@@ -233,6 +226,16 @@ export abstract class Texture implements ReferenceCounted {
   public readonly mipLevelCount: number
 
   /**
+   * The first mip level that holds data.
+   *
+   * @remarks
+   * Textures may be allocated with their full mip chain while only the smaller mip levels are loaded.
+   * When bound to a shader input, only the levels from this level onwards are visible,
+   * so sampling never reads the missing levels.
+   */
+  public residentMipLevel: number = 0
+
+  /**
    * The number of samples when used as a render target
    */
   public readonly sampleCount: number
@@ -283,6 +286,11 @@ export abstract class Texture implements ReferenceCounted {
   public abstract readonly ref: ReferenceCounter
 
   /**
+   * A default view for this texture to use when binding to shader
+   */
+  public defaultView: TextureView | null
+
+  /**
    * Value for the `crossOrigin` attribute to be used when fetching image or video by url
    *
    * {@link https://developer.mozilla.org/en-US/docs/Web/HTML/CORS_enabled_image}
@@ -294,7 +302,6 @@ export abstract class Texture implements ReferenceCounted {
    * Collection of file extensions that are recognized as video files.
    */
   public static videoTypes = ['.mp4', '.ogv', '.ogg', '.webm']
-  hasStencil: any
 
   /**
    * Releases all resources and notifies the device that the texture is being destroyed.
@@ -391,19 +398,18 @@ export abstract class Texture implements ReferenceCounted {
    *
    * @see {@link TextureView}
    */
-  public subresource(range: TextureSubresourceRange): TextureView {
-    const base = range.baseMipLevel ?? 0
-    const count = range.mipLevelCount ?? this.mipLevelCount - base
-    if (base < 0 || count < 1 || base + count > this.mipLevelCount) {
+  public subresource(baseMipLevel: number, mipLevelCount?: number): TextureView {
+    mipLevelCount ??= this.mipLevelCount - baseMipLevel
+    if (baseMipLevel < 0 || mipLevelCount < 1 || baseMipLevel + mipLevelCount > this.mipLevelCount) {
       throw new Error(
-        `Invalid subresource range: baseMipLevel=${base} mipLevelCount=${count} for texture with ${this.mipLevelCount} mip levels`,
+        `Invalid subresource range: baseMipLevel=${baseMipLevel} mipLevelCount=${mipLevelCount} for texture with ${this.mipLevelCount} mip levels`,
       )
     }
     // mip level count is limited to 32 (2^32 texture size)
-    const key = base * 32 + count
+    const key = baseMipLevel * 32 + mipLevelCount
     let view = this.views.get(key)
     if (!view) {
-      view = new TextureView(this, base, count)
+      view = new TextureView(this, baseMipLevel, mipLevelCount)
       this.views.set(key, view)
     }
     return view

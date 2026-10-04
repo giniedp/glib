@@ -1,4 +1,3 @@
-import { SurfaceFormat } from '@gglib/graphics'
 import { BinaryReader } from '@gglib/utils'
 
 export interface Header {
@@ -189,7 +188,7 @@ export function parse(buffer: ArrayBuffer) {
     isCubemap = (header.Caps2 & DDSCAPS2_CUBEMAP) !== 0
   }
 
-  const images = readImages({
+  const { images, residentMipLevel } = readImages({
     width: header.Width,
     height: header.Height,
     depth: Math.max(1, header.Depth),
@@ -208,6 +207,7 @@ export function parse(buffer: ArrayBuffer) {
     isCubemap,
     is1D,
     images,
+    residentMipLevel,
   }
 }
 
@@ -844,6 +844,34 @@ function readImages({
   let position = 0
   const mipmaps: Array<{ faces: Array<ImageFace> }> = []
 
+  // A file may contain only the smallest mips of a single image (the base file of a split DDS).
+  // In that case the data holds the tail of the mip chain, find the first level that fits.
+  let residentMipLevel = 0
+  if (arraySize === 1) {
+    let totalBytes = 0
+    const sizes: number[] = []
+    let w = width
+    let h = height
+    let d = depth
+    for (let i = 0; i < mipCount; i++) {
+      const size = getSurfaceInfo(w, h, format).numBytes * d
+      totalBytes += size
+      sizes.push(size)
+      w = Math.max(1, w >> 1)
+      h = Math.max(1, h >> 1)
+      d = Math.max(1, d >> 1)
+    }
+
+    let missingBytes = totalBytes - data.byteLength
+    while (missingBytes > 0) {
+      missingBytes -= sizes[residentMipLevel]
+      residentMipLevel++
+    }
+    if (residentMipLevel === mipCount) {
+      throw new Error('DDS file contains no complete mip level')
+    }
+  }
+
   for (let j = 0; j < arraySize; j++) {
     let w = width
     let h = height
@@ -852,12 +880,14 @@ function readImages({
       const info = getSurfaceInfo(w, h, format)
       const size = info.numBytes * d
       mipmaps[i] ||= { faces: [] }
-      mipmaps[i].faces.push({
-        data: new Uint8Array(data, position, size),
-        rows: info.numRows,
-        bytesPerRow: info.rowBytes,
-      })
-      position += size
+      if (i >= residentMipLevel) {
+        mipmaps[i].faces.push({
+          data: new Uint8Array(data, position, size),
+          rows: info.numRows,
+          bytesPerRow: info.rowBytes,
+        })
+        position += size
+      }
 
       w = w >> 1
       h = h >> 1
@@ -874,5 +904,5 @@ function readImages({
     }
   }
 
-  return mipmaps
+  return { images: mipmaps, residentMipLevel }
 }

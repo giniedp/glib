@@ -39,6 +39,7 @@ export class Loader implements AssetLoader {
       depth: dds.isCubemap ? 6 : dds.depth,
       generateMipmap: false,
       mipLevelCount: dds.images.length,
+      residentMipLevel: dds.residentMipLevel,
       format: format,
     }
 
