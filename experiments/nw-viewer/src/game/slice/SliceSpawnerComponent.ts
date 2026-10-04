@@ -39,6 +39,7 @@ import {
 } from '../../api'
 import { CHUNK_MESH_RANGE, ENABLE_CHUNK_RANGE_CLAMP, IMPOSTOR_HOLD_CHUNK_SIZES } from '../../constants'
 import { ContentService } from '../../content'
+import { MaterialLayerMasks } from '../../material'
 import { DebugLayer, DebugShapeComponent } from '../debug/DebugShapeComponent'
 import { TimeOfDayComponent } from '../level/TimeOfDayComponent'
 import { LightComponent } from '../light/LightComponent'
@@ -223,6 +224,8 @@ export class SliceSpawnerComponent implements GameComponent, ActivatableComponen
     }
 
     for (const item of this.data.entities) {
+      // entities of an inactive spawner (nested slice) are inactive as well
+      const inactive = !!item.inactive || this.entity.layer === MaterialLayerMasks.Inactive
       let range = 0
       const rangeSources: string[] = []
       const debug = new DebugShapeComponent()
@@ -300,6 +303,10 @@ export class SliceSpawnerComponent implements GameComponent, ActivatableComponen
           continue
         }
         if (isViewerLightComponent(comp)) {
+          if (inactive) {
+            // lights are not filtered by layers, an inactive light would always shine
+            continue
+          }
           const light = comp.light
           switch (light.type) {
             case 'Point': {
@@ -408,6 +415,10 @@ export class SliceSpawnerComponent implements GameComponent, ActivatableComponen
           lifeCycle: range || cellMember ? LifeCycleFlags.Propagate : LifeCycleFlags.Full,
         }),
       })
+      if (inactive) {
+        // shown only when the Inactive layer is enabled on the camera
+        entity.layer = MaterialLayerMasks.Inactive
+      }
 
       if (cellMember) {
         this.cell.addMember({ entity, loaders })

@@ -89,7 +89,7 @@ export class MeshLoaderComponent implements GameComponent {
               materials: false,
             })
 
-            this.entity.world.createEntity({
+            const child = this.entity.world.createEntity({
               parent: this.entity,
               transform: new TransformComponent({
                 local: mat4CreateFromArray(inst),
@@ -107,6 +107,8 @@ export class MeshLoaderComponent implements GameComponent {
                 createModelComponent(model),
               ].filter((it) => !!it),
             })
+            // render layer of the owning entity (e.g. inactive entities)
+            child.layer = this.entity.layer
           }
         } else {
           const model =
@@ -139,7 +141,7 @@ export class MeshLoaderComponent implements GameComponent {
             boxTransforms.push(mat4Multiply(node.world, boxTransform))
           }
 
-          this.entity.world.createEntity({
+          const child = this.entity.world.createEntity({
             parent: this.entity,
             transform: new TransformComponent({
               local: mat4Identity(),
@@ -158,6 +160,8 @@ export class MeshLoaderComponent implements GameComponent {
               createModelComponent(model),
             ].filter((it) => !!it),
           })
+          // render layer of the owning entity (e.g. inactive entities)
+          child.layer = this.entity.layer
         }
         return true
       },

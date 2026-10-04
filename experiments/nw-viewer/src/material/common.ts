@@ -139,6 +139,11 @@ export const MaterialLayerMasks = {
   Meshparticle: 1 << 8,
   FxMeshAdvanced: 1 << 9,
   ParticleImposter: 1 << 10,
+  /**
+   * Entities that are not active when their slice is instantiated (isRuntimeActive = false),
+   * e.g. alternative states switched by scripts or cutscenes. Hidden by default (camera visibility mask).
+   */
+  Inactive: 1 << 11,
 }
 
 const FLAGS_ARRAY = [

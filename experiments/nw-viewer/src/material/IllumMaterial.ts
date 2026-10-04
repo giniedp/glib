@@ -1,6 +1,7 @@
 import {
   BlendState,
   CullState,
+  DepthBiasState,
   DepthState,
   Effect,
   type EffectOptions,
@@ -170,6 +171,13 @@ const illum = new MtlUtil('Illum', {
     'VERTCOLORS',
   ],
 })
+
+/**
+ * Depth bias of decal materials. Reversed Z, so a positive bias moves towards the camera.
+ * WebGPU takes an integer constant bias, and with a float depth buffer its unit is tiny for distant
+ * geometry, so the slope term does most of the work. (DepthBiasState.Decal has bias 0.5 and no slope, which is 0 on WebGPU.)
+ */
+const DECAL_DEPTH_BIAS = DepthBiasState.get({ enable: true, bias: 1, slopeScale: 1 })
 
 export class IllumMaterial extends MaterialWithSchema(SCHEMA) {
   // declared without emit: assigned in configure(), which runs inside the base constructor before field initializers
@@ -529,6 +537,10 @@ export class IllumMaterial extends MaterialWithSchema(SCHEMA) {
       this.EnabledAlphaBlend = TRUE
       this.effect.blendState = BlendState.Alpha
       this.effect.depthState = DepthState.GreaterEqualNoWrite
+      if (flags.has('DECAL')) {
+        // decals are coplanar with the surface below, pull them towards the camera to avoid z-fighting
+        this.effect.offsetState = DECAL_DEPTH_BIAS
+      }
     }
 
     if (attrs.Shininess) {

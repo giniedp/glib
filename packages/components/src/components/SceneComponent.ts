@@ -279,10 +279,9 @@ export class SceneComponent implements GameComponent, InitializableComponent, Re
         continue
       }
 
-      const layer = mergeLayerMask(entity.layer, material.layer) ?? LayerMask.All
-      if (!(layer & this.visibilityMask)) {
-        continue
-      }
+      // an entity layer overrides the material layer, so entities can be hidden or shown as a group
+      // items are cached for all layers, the visibility mask is applied per frame when collecting
+      const layer = entity.layer ?? material.layer ?? LayerMask.All
 
       this.updateMaterial(material, transform)
 

@@ -314,6 +314,8 @@ export interface ViewerEntity {
   parentId?: string
   transform: Mat4Data
   components: ViewerComponent[]
+  /** The entity is not active when the slice is instantiated (isRuntimeActive = false) */
+  inactive?: boolean
 }
 
 export interface ViewerSlice {

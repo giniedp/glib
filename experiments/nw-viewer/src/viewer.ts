@@ -49,7 +49,7 @@ import { RangeActivationSystem } from './game/slice/RangeActivationSystem'
 import { SliceSystem } from './game/slice/SliceSystem'
 import { TerrainSystem } from './game/terrain/TerrainSystem'
 import { createRenderPipeline } from './graphics'
-import { InputSlots, NwMaterialExtension } from './material'
+import { InputSlots, MaterialLayerMasks, NwMaterialExtension } from './material'
 import { attachOverlay } from './ui/overlay'
 import { MouseListener } from '@gglib/game'
 
@@ -171,6 +171,8 @@ export class NwViewer extends EcsGame {
         new WASDComponent(),
       ],
     }).component(CameraComponent)
+    // runtime inactive entities are hidden by default, the layer can be toggled in the camera UI
+    this.camera.visibilityMask &= ~MaterialLayerMasks.Inactive
 
     this.selection = this.world.createEntity({
       name: 'Selection',
