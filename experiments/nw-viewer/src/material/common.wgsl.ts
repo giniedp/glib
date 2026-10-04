@@ -886,7 +886,7 @@ fn applyFog(
   let fog_color = global.volumetricFogColorGradientBase.rgb;
   return vec4f(
       mix(fog_color, color, factor),
-      mix(1.0,       alpha, factor),
+      alpha,
   );
 }
 
