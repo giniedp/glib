@@ -34,6 +34,13 @@ export class WebglSampler implements WebglResource<WebGLSampler> {
     gl.samplerParameteri(resource, gl.TEXTURE_MAX_LOD, state.maxLod)
     gl.samplerParameteri(resource, gl.TEXTURE_COMPARE_MODE, state.compare ? gl.COMPARE_REF_TO_TEXTURE : gl.NONE)
     gl.samplerParameteri(resource, gl.TEXTURE_COMPARE_FUNC, compareFunctionToWebGL(state.compareFunc))
+
+    // same rule as WebGPU: anisotropy only with linear min, mag and mip filter
+    const ext = this.device.capabilities.extension('EXT_texture_filter_anisotropic')
+    if (ext && state.minFilter === 'linear' && state.magFilter === 'linear' && state.mipFilter === 'linear') {
+      const anisotropy = Math.min(Math.max(1, state.maxAnisotropy), this.device.capabilities.maxAnisotropy)
+      gl.samplerParameterf(resource, ext.TEXTURE_MAX_ANISOTROPY_EXT, anisotropy)
+    }
   }
 
   public dispose(): void {

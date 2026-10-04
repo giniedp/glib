@@ -25,8 +25,9 @@ function getDescriptor(state: SamplerState): GPUSamplerDescriptor {
   switch (state.mipFilter) {
     case 'linear':
       descriptor.mipmapFilter = 'linear'
+      // WebGPU rejects anisotropy unless all filters are linear, values above the device limit are clamped
       if (descriptor.magFilter === 'linear' && descriptor.minFilter === 'linear') {
-        descriptor.maxAnisotropy = 8 // TODO: make it configurable
+        descriptor.maxAnisotropy = Math.max(1, Math.floor(state.maxAnisotropy))
       }
       break
     case 'nearest':

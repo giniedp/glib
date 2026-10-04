@@ -17,6 +17,14 @@ export interface SamplerStateOptions {
   wrapW: TextureWrapMode
   minLod: number
   maxLod: number
+  /**
+   * Maximum anisotropy for anisotropic filtering. A value of 1 disables it.
+   *
+   * @remarks
+   * Only applies when min, mag and mip filter are all 'linear'.
+   * Clamped to the maximum supported by the device.
+   */
+  maxAnisotropy: number
   compare: boolean
   compareFunc: CompareFunction
 }
@@ -25,6 +33,7 @@ const STATE = Symbol('Sampler State')
 const STATE_CACHE: Record<string, SamplerState> = {}
 const MIN_LOD = 0
 const MAX_LOD = 32
+const DEFAULT_ANISOTROPY = 8
 let idCounter = 1
 
 /**
@@ -43,6 +52,7 @@ export class SamplerState implements SamplerStateOptions {
     wrapW: 'clamp-to-edge',
     minLod: MIN_LOD,
     maxLod: MAX_LOD,
+    maxAnisotropy: DEFAULT_ANISOTROPY,
     compare: false,
     compareFunc: 'less-equal',
   })
@@ -59,6 +69,7 @@ export class SamplerState implements SamplerStateOptions {
     wrapW: 'clamp-to-edge',
     minLod: MIN_LOD,
     maxLod: MAX_LOD,
+    maxAnisotropy: DEFAULT_ANISOTROPY,
     compare: false,
     compareFunc: 'less-equal',
   })
@@ -75,6 +86,7 @@ export class SamplerState implements SamplerStateOptions {
     wrapW: 'repeat',
     minLod: MIN_LOD,
     maxLod: MAX_LOD,
+    maxAnisotropy: DEFAULT_ANISOTROPY,
     compare: false,
     compareFunc: 'less-equal',
   })
@@ -91,6 +103,7 @@ export class SamplerState implements SamplerStateOptions {
     wrapW: 'clamp-to-edge',
     minLod: MIN_LOD,
     maxLod: MAX_LOD,
+    maxAnisotropy: 1,
     compare: false,
     compareFunc: 'less-equal',
   })
@@ -107,6 +120,7 @@ export class SamplerState implements SamplerStateOptions {
     wrapW: 'repeat',
     minLod: MIN_LOD,
     maxLod: MAX_LOD,
+    maxAnisotropy: 1,
     compare: false,
     compareFunc: 'less-equal',
   })
@@ -123,6 +137,7 @@ export class SamplerState implements SamplerStateOptions {
     wrapW: 'clamp-to-edge',
     minLod: MIN_LOD,
     maxLod: MAX_LOD,
+    maxAnisotropy: 1,
     compare: false,
     compareFunc: 'less-equal',
   })
@@ -139,6 +154,7 @@ export class SamplerState implements SamplerStateOptions {
     wrapW: 'repeat',
     minLod: MIN_LOD,
     maxLod: MAX_LOD,
+    maxAnisotropy: 1,
     compare: false,
     compareFunc: 'less-equal',
   })
@@ -196,6 +212,9 @@ export class SamplerState implements SamplerStateOptions {
   public get maxLod(): number {
     return this[STATE].maxLod
   }
+  public get maxAnisotropy(): number {
+    return this[STATE].maxAnisotropy
+  }
   public get compare(): boolean {
     return this[STATE].compare
   }
@@ -205,15 +224,21 @@ export class SamplerState implements SamplerStateOptions {
 }
 
 function createOptions(options: Partial<SamplerStateOptions>): SamplerStateOptions {
+  const minFilter = options?.minFilter ?? 'linear'
+  const magFilter = options?.magFilter ?? 'linear'
+  const mipFilter = options?.mipFilter ?? 'linear'
+  // anisotropy is ignored unless all filters are linear, normalize it so equal states share the cache key
+  const isLinear = minFilter === 'linear' && magFilter === 'linear' && mipFilter === 'linear'
   return {
-    minFilter: options?.minFilter ?? 'linear',
-    magFilter: options?.magFilter ?? 'linear',
-    mipFilter: options?.mipFilter ?? 'linear',
+    minFilter,
+    magFilter,
+    mipFilter,
     wrapU: options?.wrapU ?? 'clamp-to-edge',
     wrapV: options?.wrapV ?? 'clamp-to-edge',
     wrapW: options?.wrapW ?? 'clamp-to-edge',
     minLod: options?.minLod ?? MIN_LOD,
     maxLod: options?.maxLod ?? MAX_LOD,
+    maxAnisotropy: isLinear ? Math.max(1, options?.maxAnisotropy ?? DEFAULT_ANISOTROPY) : 1,
     compare: !!options?.compare,
     compareFunc: options?.compare ? (options?.compareFunc ?? 'less-equal') : 'always',
   }
@@ -229,6 +254,7 @@ function createKey(options: SamplerStateOptions): string {
     options.wrapW,
     options.minLod,
     options.maxLod,
+    options.maxAnisotropy,
     options.compare,
     options.compareFunc,
   ].join(',')

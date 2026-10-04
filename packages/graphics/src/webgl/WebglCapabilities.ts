@@ -45,6 +45,14 @@ export class WebglCapabilities implements Capabilities {
   public get maxSampleCount() {
     return this.parameter('MAX_SAMPLES')
   }
+  public get maxAnisotropy(): number {
+    if (this.anisotropy == null) {
+      const ext = this.extension('EXT_texture_filter_anisotropic')
+      this.anisotropy = ext ? (this.gl.getParameter(ext.MAX_TEXTURE_MAX_ANISOTROPY_EXT) ?? 1) : 1
+    }
+    return this.anisotropy
+  }
+  private anisotropy: number = null
 
   public readonly canRenderR32F: boolean
   public readonly canRenderRG32F: boolean
