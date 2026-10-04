@@ -21,6 +21,8 @@ import {
   mat4CreateScaleUniform,
   mat4CreateScaleXYZ,
   mat4GetTranslation,
+  mat4Invert,
+  mat4Multiply,
   vec3,
   vec3Copy,
 } from '@gglib/math'
@@ -40,9 +42,9 @@ import { ContentService } from '../../content'
 import { DebugLayer, DebugShapeComponent } from '../debug/DebugShapeComponent'
 import { TimeOfDayComponent } from '../level/TimeOfDayComponent'
 import { LightComponent } from '../light/LightComponent'
+import type { RegionImpostorComponent } from '../region/RegionImpostorComponent'
 import { MeshLoaderComponent } from './MeshLoaderComponent'
 import { RangeActivationSystem } from './RangeActivationSystem'
-import type { RegionImpostorComponent } from '../region/RegionImpostorComponent'
 
 export interface SliceSpawnerComponentOptions {
   isChunk?: boolean
@@ -209,7 +211,17 @@ export class SliceSpawnerComponent implements GameComponent, ActivatableComponen
       return
     }
 
-    const parentWorld = this.entity.getTransform().world
+    let parentWorld = this.entity.getTransform().world
+    if (this.data.transform) {
+      // The slice root entity has its own transform (data.transform), e.g. a rotation.
+      // Entity transforms are stored relative to the slice origin, not relative to the root.
+      // The spawner places the root, not the origin. So we first undo the root transform
+      // (multiply by its inverse), then apply the spawner transform:
+      //   entityWorld = spawnerWorld * inverse(rootTransform) * entityTransform
+      // mat4Multiply returns a new matrix, the spawner world is not modified.
+      parentWorld = mat4Multiply(parentWorld, mat4Invert(mat4CreateFromArray(this.data.transform)))
+    }
+
     for (const item of this.data.entities) {
       let range = 0
       const rangeSources: string[] = []

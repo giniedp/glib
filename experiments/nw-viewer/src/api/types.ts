@@ -318,6 +318,12 @@ export interface ViewerEntity {
 
 export interface ViewerSlice {
   entities: ViewerEntity[]
+  /**
+   * Transform of the slice root entity, only set if it is not identity.
+   * Entity transforms are in slice space where the root sits at this transform. The spawner places the root:
+   * entityWorld = spawnerWorld * inverse(transform) * entityTransform
+   */
+  transform?: Mat4Data
   spawnRadius: number
   isStaticSlice: boolean
 }
