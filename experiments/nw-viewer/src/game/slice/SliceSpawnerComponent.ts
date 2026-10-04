@@ -35,6 +35,7 @@ import {
   type ChunkRuntimeData,
   type ViewerSlice,
 } from '../../api'
+import { ENABLE_CHUNK_RANGE_CLAMP, CHUNK_MESH_RANGE } from '../../constants'
 import { ContentService } from '../../content'
 import { DebugLayer, DebugShapeComponent } from '../debug/DebugShapeComponent'
 import { TimeOfDayComponent } from '../level/TimeOfDayComponent'
@@ -73,6 +74,27 @@ export function capitalSliceEntityOPtions(parent: GameEntity, data: CapitalRunti
 }
 
 export function chunkSliceEntityOptions(parent: GameEntity, data: ChunkRuntimeData): CreateEntityOptions {
+  const spawner = new SliceSpawnerComponent({
+    isChunk: true,
+    slice: data.slice,
+  })
+  const debug = new DebugShapeComponent({
+    type: 'bounds-box',
+    color: { x: 1, y: 1, z: 0 },
+    layer: DebugLayer.Slice,
+  })
+  debug
+    .addInfo('chunk size', () => data.size)
+    .addInfo('chunk spawnRadius', () => data.spawnRadius)
+    .addInfo('chunk type', () => data.chunkType)
+    .addInfo('viewer spawnRadius', () => spawner.spawnRadius)
+    .addInfo('spawned', () => !!spawner.isSpawned)
+    .addInfo('distance to center', () => {
+      const camera = debug.entity.world.getSystem(RangeActivationSystem).cameraPosition
+      const center = mat4GetTranslation(debug.entity.getTransform().world, vec3.$0)
+      return Math.hypot(center.x - camera.x, center.y - camera.y, center.z - camera.z).toFixed(1)
+    })
+  const half = data.size * 0.5
   return {
     name: data.slice.hint,
     parent,
@@ -82,18 +104,12 @@ export function chunkSliceEntityOptions(parent: GameEntity, data: ChunkRuntimeDa
       lifeCycle: LifeCycleFlags.Propagate, // is controlled by SliceSystem
     }),
     components: [
-      new DebugShapeComponent({
-        type: 'bounds-box',
-        color: { x: 1, y: 1, z: 0 },
-        layer: DebugLayer.Slice,
-      }),
+      debug,
       new BoundsComponent({
-        box: BoundingBox.create(0, 0, 0, data.size, data.size, data.size),
+        // chunk position is the cell center
+        box: BoundingBox.create(-half, -half, -half, half, half, half),
       }),
-      new SliceSpawnerComponent({
-        isChunk: true,
-        slice: data.slice,
-      }),
+      spawner,
     ],
   }
 }
@@ -173,13 +189,21 @@ export class SliceSpawnerComponent implements GameComponent, ActivatableComponen
     const parentWorld = this.entity.getTransform().world
     for (const item of this.data.entities) {
       let range = 0
+      const rangeSources: string[] = []
       const debug = new DebugShapeComponent()
       const components: GameComponent[] = [debug]
 
       for (const comp of item.components) {
         if (isViewerMeshComponent(comp)) {
           components.push(new MeshLoaderComponent(comp))
-          range = Math.max(range, comp.maxViewDistance * comp.viewDistanceMultiplier)
+          let meshRange = comp.maxViewDistance * comp.viewDistanceMultiplier
+          let meshSource = `mesh ${comp.mesh}: ${comp.maxViewDistance} x ${comp.viewDistanceMultiplier}`
+          if (ENABLE_CHUNK_RANGE_CLAMP && this.isChunk && meshRange > CHUNK_MESH_RANGE) {
+            meshRange = CHUNK_MESH_RANGE
+            meshSource += ` clamped to ${CHUNK_MESH_RANGE} (chunk)`
+          }
+          range = Math.max(range, meshRange)
+          rangeSources.push(meshSource)
           continue
         }
         if (isViewerPrefabSpawnerComponent(comp)) {
@@ -243,6 +267,7 @@ export class SliceSpawnerComponent implements GameComponent, ActivatableComponen
             case 'Point': {
               if (light.viewDistanceEnabled) {
                 range = Math.max(range, light.maxViewDistance)
+                rangeSources.push(`light ${light.type}: ${light.maxViewDistance}`)
               }
               debug.add({
                 type: 'sphere',
@@ -258,6 +283,7 @@ export class SliceSpawnerComponent implements GameComponent, ActivatableComponen
             case 'Area': {
               if (light.viewDistanceEnabled) {
                 range = Math.max(range, light.maxViewDistance)
+                rangeSources.push(`light ${light.type}: ${light.maxViewDistance}`)
               }
               debug.add({
                 type: 'box',
@@ -273,6 +299,7 @@ export class SliceSpawnerComponent implements GameComponent, ActivatableComponen
             case 'Projector': {
               if (light.viewDistanceEnabled) {
                 range = Math.max(range, light.maxViewDistance)
+                rangeSources.push(`light ${light.type}: ${light.maxViewDistance}`)
               }
 
               const proj = mat4CreatePerspectiveFieldOfView(
@@ -301,6 +328,7 @@ export class SliceSpawnerComponent implements GameComponent, ActivatableComponen
             case 'Probe': {
               if (light.viewDistanceEnabled) {
                 range = Math.max(range, light.maxViewDistance)
+                rangeSources.push(`light ${light.type}: ${light.maxViewDistance}`)
               }
               debug.add({
                 type: 'bounds-box',
@@ -343,6 +371,9 @@ export class SliceSpawnerComponent implements GameComponent, ActivatableComponen
       if (range) {
         this.rangeSystem.add(entity, mat4GetTranslation(entity.getTransform().world, vec3.$0), range)
         this.rangeEntities.push(entity)
+        addRangeDebugInfo(debug, this.rangeSystem, entity, range, rangeSources)
+      } else {
+        debug.addInfo('range', () => 'none, active with parent')
       }
 
       const spawner = entity.component(SliceSpawnerComponent, GetComponent.Optional)
@@ -362,4 +393,28 @@ export class SliceSpawnerComponent implements GameComponent, ActivatableComponen
     }
     this.rangeEntities.length = 0
   }
+}
+
+function addRangeDebugInfo(
+  debug: DebugShapeComponent,
+  rangeSystem: RangeActivationSystem,
+  entity: GameEntity,
+  range: number,
+  sources: string[],
+) {
+  const fmt = (value: number) => (value == null ? '-' : value.toFixed(1))
+  debug.addInfo('range', () => fmt(range))
+  sources.forEach((source, i) => debug.addInfo(`source ${i}`, () => source))
+  debug.addInfo('range class', () => rangeSystem.inspect(entity)?.cellSize)
+  debug.addInfo('deactivate at', () => fmt(rangeSystem.inspect(entity)?.deactivateRange))
+  debug.addInfo('queued', () => rangeSystem.inspect(entity)?.queued)
+  debug.addInfo('distance', () => {
+    const it = rangeSystem.inspect(entity)
+    if (!it) {
+      return 'not registered'
+    }
+    const camera = rangeSystem.cameraPosition
+    return fmt(Math.hypot(it.x - camera.x, it.y - camera.y, it.z - camera.z))
+  })
+  debug.addInfo('state', () => entity.stateName)
 }

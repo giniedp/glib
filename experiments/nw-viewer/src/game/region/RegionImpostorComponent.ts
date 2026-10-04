@@ -1,5 +1,6 @@
 import {
   BoundsComponent,
+  EcsGame,
   LifeCycleFlags,
   ModelComponent,
   PriorityLane,
@@ -11,9 +12,16 @@ import {
 import { GameEntity, type CreateEntityOptions, type GameComponent } from '@gglib/ecs'
 
 import { Color } from '@gglib/graphics'
-import { mat4CreateTranslation, vec3AddScalars, type IVec3 } from '@gglib/math'
+import { boxMat4DistanceSquared, mat4CreateTranslation, vec3AddScalars, type IVec3 } from '@gglib/math'
 import type { Model } from '@gglib/model'
-import { type LodSpan } from '../../constants'
+import {
+  IMPOSTOR_FADE_RANGE,
+  LOD_SPANS,
+  lodSpanStart,
+  lodSpanVisibleEnd,
+  POI_IMPOSTOR_FADE_LENGTH,
+  type LodSpan,
+} from '../../constants'
 import { ContentService } from '../../content'
 import { DebugLayer, DebugShapeComponent } from '../debug/DebugShapeComponent'
 
@@ -30,6 +38,28 @@ export interface ImpostorComponentOptions {
 }
 
 export function impostorEntityOptions(parent: GameEntity, options: ImpostorComponentOptions): CreateEntityOptions {
+  const isPoi = options.span === LOD_SPANS.impostorPoi
+  const impostor = new RegionImpostorComponent(options)
+  const debug = new DebugShapeComponent({
+    type: 'bounds-box',
+    layer: isPoi ? DebugLayer.Impostor_POI : DebugLayer.Impostor,
+    color: isPoi ? Color.Orange : Color.Lime,
+  })
+  const cameraWorld = () => debug.entity.world.getSystem(EcsGame).scene.getView(0).camera.world
+  debug
+    .addInfo('kind', () => (isPoi ? 'poi' : 'vegetation'))
+    .addInfo('model', () => options.model)
+    .addInfo('show at', () => lodSpanStart(options.span))
+    .addInfo('hide at', () => lodSpanVisibleEnd(options.span))
+    .addInfo('fade', () =>
+      isPoi
+        ? `in ${lodSpanStart(options.span)} -> ${lodSpanStart(options.span) + POI_IMPOSTOR_FADE_LENGTH}`
+        : `in ${lodSpanStart(options.span) - IMPOSTOR_FADE_RANGE} -> ${lodSpanStart(options.span)}`,
+    )
+    .addInfo('box distance', () =>
+      Math.sqrt(boxMat4DistanceSquared(impostor.min, impostor.max, cameraWorld())).toFixed(1),
+    )
+    .addInfo('state', () => debug.entity.stateName)
   return {
     parent: parent,
     name: options.name,
@@ -38,17 +68,7 @@ export function impostorEntityOptions(parent: GameEntity, options: ImpostorCompo
       world: mat4CreateTranslation(options.origin),
       lifeCycle: LifeCycleFlags.Propagate, // is controlled by RegionSystem
     }),
-    components: [
-      new DebugShapeComponent({
-        type: 'bounds-box',
-        layer: DebugLayer.BoundsImpostor,
-        color: Color.Red,
-      }),
-      new SpatialNodeComponent(),
-      new BoundsComponent(),
-      new ModelComponent(),
-      new RegionImpostorComponent(options),
-    ],
+    components: [debug, new SpatialNodeComponent(), new BoundsComponent(), new ModelComponent(), impostor],
   }
 }
 export class RegionImpostorComponent implements GameComponent {

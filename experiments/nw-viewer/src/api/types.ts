@@ -25,6 +25,7 @@ export interface LevelInfo {
   name: string
   regionSize: number
   regionCellSize: number
+  /** `streaming.regionChunksEnabled` from offlineoptions.json, the level streams region chunks */
   enableChunks: boolean
   enableVegetation: boolean
   enableDistribution: boolean
@@ -217,6 +218,10 @@ export interface ChunkRuntimeData {
   id: string
   transform: Mat4Data
   size: number
+  /** Stream margin input: the game uses margin = spawnRadius - size, clamped to >= 0 for mesh chunks smaller than 128, otherwise to >= 25 */
+  spawnRadius?: number
+  /** 0: static, 1: mesh, 2: collision */
+  chunkType?: number
   slice: AssetReference
 }
 

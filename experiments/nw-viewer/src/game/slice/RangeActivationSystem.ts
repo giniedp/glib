@@ -8,7 +8,7 @@ import {
   RANGE_HYSTERESIS,
   RANGE_UPDATE_DISTANCE_FACTOR,
 } from '../../constants'
-import { RangeGrid } from './RangeGrid'
+import { RangeGrid, type RangeGridEntry } from './RangeGrid'
 
 /**
  * Activates entities that are within their view distance of the camera and deactivates the others.
@@ -67,6 +67,26 @@ export class RangeActivationSystem extends GameSystem {
     range = Math.min(range, RANGE_CLASS_MAX)
     const index = Math.max(0, Math.ceil(Math.log2(range)) - this.minExponent)
     this.grids[Math.min(index, this.grids.length - 1)].add(entity, position.x, position.y, position.z, range)
+  }
+
+  /**
+   * Returns the registration of an entity for debugging, or null if the entity is not registered
+   */
+  public inspect(entity: GameEntity): RangeGridEntry | null {
+    for (const grid of this.grids) {
+      const entry = grid.inspect(entity)
+      if (entry) {
+        return entry
+      }
+    }
+    return null
+  }
+
+  /**
+   * Camera position of the last update
+   */
+  public get cameraPosition(): Readonly<IVec3> {
+    return this.camera
   }
 
   public remove(entity: GameEntity) {

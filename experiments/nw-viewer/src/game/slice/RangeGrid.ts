@@ -26,6 +26,28 @@ export interface RangeGridStats {
   evaluations: number
 }
 
+export interface RangeGridEntry {
+  /**
+   * Cell size of the grid, which is the range class
+   */
+  cellSize: number
+  x: number
+  y: number
+  z: number
+  /**
+   * Activation range
+   */
+  range: number
+  /**
+   * Range beyond which the entity is deactivated
+   */
+  deactivateRange: number
+  /**
+   * Entity is waiting for activation
+   */
+  queued: boolean
+}
+
 /**
  * Sparse 2D grid of range activatable entities of one range class.
  *
@@ -104,6 +126,26 @@ export class RangeGrid {
 
     if (Math.abs(ix - this.cellX) <= 1 && Math.abs(iy - this.cellY) <= 1) {
       this.dirty = true
+    }
+  }
+
+  /**
+   * Returns the registration of an entity for debugging, or null if the entity is not in this grid
+   */
+  public inspect(entity: GameEntity): RangeGridEntry | null {
+    const index = this.indices.get(entity)
+    if (index === undefined) {
+      return null
+    }
+    const range = Math.sqrt(this.rangeSq[index])
+    return {
+      cellSize: this.cellSize,
+      x: this.x[index],
+      y: this.y[index],
+      z: this.z[index],
+      range,
+      deactivateRange: range * Math.sqrt(this.hysteresisSq),
+      queued: !!this.queued[index],
     }
   }
 

@@ -87,6 +87,14 @@ export class RegionSystem extends GameSystem {
     const showAt = lodSpanStart(impostor.span)
     const hideAt = lodSpanVisibleEnd(impostor.span)
     let impostorShouldShow = showAt * showAt <= distance && distance <= hideAt * hideAt
+    if (impostor.span === LOD_SPANS.impostorPoi) {
+      // A POI cell covers many meshes, each activated by the distance to itself. Keep the cell visible as long as
+      // any part of it is beyond showAt, so it still covers the meshes that are not active yet.
+      // The shader discards impostor pixels closer than showAt, so the near part does not overlap.
+      impostorShouldShow =
+        boxFarthestDistanceSquared(impostor.min, impostor.max, camera.world) >= showAt * showAt &&
+        distance <= hideAt * hideAt
+    }
     if (impostor.span === LOD_SPANS.impostor) {
       // vegetation impostors crossfade with the distribution in [showAt - IMPOSTOR_FADE_RANGE, showAt].
       // A cell must be visible as soon as any part of it reaches into that range, the shader discards the closer pixels.

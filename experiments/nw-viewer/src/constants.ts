@@ -116,10 +116,12 @@ export const LOD_SPANS = {
     visibleFor: 9.5,
     keepAliveFor: 4,
   },
-  // rocks and structures, capitals hand over at the start of this span
+  // rocks and structures, capitals hand over at the start of this span.
+  // Starts one cell out (128), so chunk slices that spawn at 384 have time to load before their meshes are needed
+  // (chunk meshes are active up to CHUNK_MESH_RANGE = start + fade + one cell)
   impostorPoi: {
-    start: 2,
-    visibleFor: 8,
+    start: 1,
+    visibleFor: 9,
     keepAliveFor: 4,
   },
   // vegetation impostors take over beyond the visible span, so visible span must end where impostors start
@@ -153,3 +155,22 @@ export function lodSpanVisibleEnd(span: LodSpan) {
 export function lodSpanEnd(span: LodSpan) {
   return (span.start + span.visibleFor + span.keepAliveFor) * SEGMENT_SIZE
 }
+
+/**
+ * Caps the view distance of meshes in coatgen chunk slices at the POI impostor hand-over.
+ *
+ * Chunk slices carry the editor computed view distance (several km) and no impostor flag,
+ * the source slices of their content are flagged with impostorFarDistance in their .slice.meta.
+ */
+export const ENABLE_CHUNK_RANGE_CLAMP = true
+/**
+ * Distance at which POI impostors are fully faded in
+ */
+export const IMPOSTOR_POI_HANDOVER_RANGE = lodSpanStart(LOD_SPANS.impostorPoi) + POI_IMPOSTOR_FADE_LENGTH
+/**
+ * View distance cap of meshes in chunk slices.
+ *
+ * One impostor cell beyond the hand-over: a POI impostor cell covers many meshes and disappears per pixel
+ * at the start of its span, so the meshes of the whole cell must be active by then.
+ */
+export const CHUNK_MESH_RANGE = IMPOSTOR_POI_HANDOVER_RANGE + SEGMENT_SIZE

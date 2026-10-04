@@ -15,7 +15,6 @@ import {
   mat4CreateFromRTS,
   mat4Identity,
   mat4Multiply,
-  mat4Premultiply,
   vec3Add,
   vec3MultiplyScalar,
   vec3Subtract,
@@ -85,11 +84,13 @@ export class MeshLoaderComponent implements GameComponent {
               components: [
                 new BoundsComponent(),
                 this.data.alwaysRender ? null : new SpatialNodeComponent(),
-                new DebugShapeComponent({
-                  type: 'bounds-box',
-                  color: Color.LimeGreen,
-                  layer: DebugLayer.BoundsMeshInstance,
-                }),
+                this.addMeshDebugInfo(
+                  new DebugShapeComponent({
+                    type: 'bounds-box',
+                    color: Color.LimeGreen,
+                    layer: DebugLayer.MeshInstance,
+                  }),
+                ),
                 createModelComponent(model),
               ].filter((it) => !!it),
             })
@@ -122,7 +123,7 @@ export class MeshLoaderComponent implements GameComponent {
             const boxScale = vec3Subtract(box.max, box.min)
             const boxCenter = vec3MultiplyScalar(vec3Add(box.min, box.max), 0.5)
             const boxTransform = mat4CreateFromRTS(vec4(0, 0, 0, 1), boxCenter, boxScale)
-            boxTransforms.push(mat4Premultiply(node.world, boxTransform))
+            boxTransforms.push(mat4Multiply(node.world, boxTransform))
           }
 
           this.entity.world.createEntity({
@@ -133,12 +134,14 @@ export class MeshLoaderComponent implements GameComponent {
             components: [
               new BoundsComponent(),
               this.data.alwaysRender ? null : new SpatialNodeComponent(),
-              new DebugShapeComponent({
-                type: 'box',
-                color: color,
-                layer: DebugLayer.BoundsMesh,
-                instances: boxTransforms,
-              }),
+              this.addMeshDebugInfo(
+                new DebugShapeComponent({
+                  type: 'box',
+                  color: color,
+                  layer: DebugLayer.Mesh,
+                  instances: boxTransforms,
+                }),
+              ),
               createModelComponent(model),
             ].filter((it) => !!it),
           })
@@ -157,6 +160,18 @@ export class MeshLoaderComponent implements GameComponent {
 
   public deactivate(): void {
     //
+  }
+
+  private addMeshDebugInfo(debug: DebugShapeComponent) {
+    const data = this.data
+    return debug
+      .addInfo('mesh', () => data.mesh)
+      .addInfo('material', () => data.material)
+      .addInfo('maxViewDistance', () => data.maxViewDistance)
+      .addInfo('viewDistanceMultiplier', () => data.viewDistanceMultiplier)
+      .addInfo('instances', () => data.instances?.length ?? 0)
+      .addInfo('alwaysRender', () => !!data.alwaysRender)
+      .addInfo('visibilityOccluder', () => !!data.visibilityOccluder)
   }
 
   /**

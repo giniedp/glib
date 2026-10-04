@@ -5,6 +5,7 @@ import { Geometry, Material, Mesh, WebglDevice, WebGpuDevice } from '@gglib/grap
 import { BoundingBox, BoundingSphere } from '@gglib/math'
 import { Model } from '@gglib/model'
 import type { Type } from '@gglib/utils'
+import { DebugShapeComponent } from '../../game/debug/DebugShapeComponent'
 import { DebugShapeSystem } from '../../game/debug/DebugShapeSystem'
 import { LevelSystem } from '../../game/level/LevelSystem'
 import { TimeOfDay } from '../../game/level/TimeOfDay'
@@ -12,6 +13,7 @@ import type { UiAnnotation } from './types'
 import uiBoundingBox from './uiBoundingBox'
 import uiBoundingSphere from './uiBoundingSphere'
 import uiCameraComponent from './uiCameraComponent'
+import uiDebugShapeComponent from './uiDebugShapeComponent'
 import uiDebugShapeSystem from './uiDebugShapeSystem'
 import uiDevice from './uiDevice'
 import uiGameEntity from './uiGameEntity'
@@ -56,6 +58,7 @@ export function uiRegistry() {
   result.add(GameWorld, uiGameWorld)
   result.add(Geometry, uiGeometry)
   result.add(Mesh, uiMesh)
+  result.add(DebugShapeComponent, uiDebugShapeComponent)
   result.add(DebugShapeSystem, uiDebugShapeSystem)
   result.add(MeshComponent, uiMeshComponent)
   result.add(Model, uiModel)

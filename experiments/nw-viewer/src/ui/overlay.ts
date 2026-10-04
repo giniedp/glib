@@ -238,10 +238,10 @@ const OverlayComponent: ClosureComponent<OverlayComponentAttrs> = () => {
                         },
                       ],
                     }),
-                    uiGroup({ title: 'Camera', collapsible: true, collapsed: true }, [
+                    uiGroup({ title: 'Camera', collapsible: true, collapsed: false }, [
                       h(CameraComponentProps, { data: viewer.camera }),
                     ]),
-                    uiGroup({ title: 'Debug', collapsible: true, collapsed: true }, [
+                    uiGroup({ title: 'Debug', collapsible: true, collapsed: false }, [
                       uiSelect({
                         value: viewer,
                         field: 'debug',
@@ -254,7 +254,7 @@ const OverlayComponent: ClosureComponent<OverlayComponentAttrs> = () => {
                       h(TimeOfDayProps, { data: viewer.world.getSystem(SkyLightSystem).timeOfDay }),
                     ]),
                     uiGroup({ title: 'Lights' }, [h(LightSystemProps, { data: viewer.world.getSystem(LightSystem) })]),
-                    uiGroup({ title: 'Render Pipeline', collapsible: true }, [
+                    uiGroup({ title: 'Render Pipeline', collapsible: false }, [
                       h(RenderPipelineProps, { data: viewer.world.getSystem(Renderer).pipeline }),
                     ]),
                   ]),

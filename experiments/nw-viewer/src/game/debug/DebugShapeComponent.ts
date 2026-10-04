@@ -6,16 +6,17 @@ export type DebugShapeType = 'bounds-box' | 'bounds-sphere' | 'box' | 'sphere' |
 export type DebugLayer = number
 export const DebugLayer = {
   Selection: 1 << 0,
-  BoundsImpostor: 1 << 1,
-  BoundsMesh: 1 << 2,
-  BoundsMeshInstance: 1 << 3,
-  Slice: 1 << 4,
-  SliceSpawn: 1 << 5,
-  LightPoint: 1 << 6,
-  LightSpot: 1 << 7,
-  LightArea: 1 << 8,
-  LightProbe: 1 << 9,
-  TimeOfDay: 1 << 10,
+  Impostor: 1 << 1,
+  Impostor_POI: 1 << 2,
+  Mesh: 1 << 3,
+  MeshInstance: 1 << 4,
+  Slice: 1 << 5,
+  SliceSpawn: 1 << 6,
+  LightPoint: 1 << 7,
+  LightSpot: 1 << 8,
+  LightArea: 1 << 9,
+  LightProbe: 1 << 10,
+  TimeOfDay: 1 << 11,
 }
 
 export interface DebugShapeOptions {
@@ -46,9 +47,23 @@ export interface DebugShapeEntry {
   boundsSphere: boolean
 }
 
+export type DebugInfoValue = string | number | boolean | null | undefined
+
+export interface DebugInfoEntry {
+  label: string
+  /**
+   * Called lazily by the UI, may compute current state
+   */
+  get: () => DebugInfoValue
+}
+
 export class DebugShapeComponent implements GameComponent {
   public entity: GameEntity
   public entries: DebugShapeEntry[] = []
+  /**
+   * Inspectable state and configuration of the owning entity, shown in the UI
+   */
+  public info: DebugInfoEntry[] = []
 
   /**
    * Layer union of all entries
@@ -90,6 +105,11 @@ export class DebugShapeComponent implements GameComponent {
     this.entries.push(entry)
     this.layersUnion = null
     return entry
+  }
+
+  public addInfo(label: string, get: () => DebugInfoValue): this {
+    this.info.push({ label, get })
+    return this
   }
 
   private updateLayers() {
