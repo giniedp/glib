@@ -5,7 +5,7 @@ import { mat4$setScaleXYZ, mat4CreateTranslation, vec3, vec3$initFrom, vec4, vec
 import { removeItemUnordered } from '@gglib/utils'
 
 import type { LevelInfo } from '../../api'
-import { LOD_RANGE_FACTOR, QUAD_LEAF_SIZE } from '../../constants'
+import { TERRAIN_LOD_RANGE_FACTOR, QUAD_TREE_LEAF_SIZE } from '../../constants'
 import { ContentService } from '../../content'
 import { WaterPatchMaterial, type OceanAnimationParams } from '../../material'
 import { TerrainComponent } from './TerrainComponent'
@@ -98,7 +98,7 @@ export class TerrainSystem extends GameSystem {
 
   private updateTerrain(terrain: TerrainComponent) {
     if (!terrain.mesh) {
-      const mesh = new TerrainMesh(this.device, { size: QUAD_LEAF_SIZE })
+      const mesh = new TerrainMesh(this.device, { size: QUAD_TREE_LEAF_SIZE })
       mesh.TerrainMaterial.ColorMap1 = this.tiles.colorMap1
       mesh.TerrainMaterial.ColorMap2 = this.tiles.colorMap2
       mesh.TerrainMaterial.HeightMap = this.content.nullHeightmapArray
@@ -159,7 +159,7 @@ export class TerrainSystem extends GameSystem {
     }
 
     const camera = this.game.scene.getView(0).camera
-    region.traverseRequiredSet(camera, LOD_RANGE_FACTOR, (node) => {
+    region.traverseRequiredSet(camera, TERRAIN_LOD_RANGE_FACTOR, (node) => {
       this.updateQuadState(node, region)
     })
 
@@ -314,8 +314,8 @@ export class TerrainSystem extends GameSystem {
 
       const morphLod = Math.log2(renderNode.size / p.region.leafSize)
       mesh.writeParams1({
-        x: QUAD_LEAF_SIZE,
-        y: LOD_RANGE_FACTOR,
+        x: QUAD_TREE_LEAF_SIZE,
+        y: TERRAIN_LOD_RANGE_FACTOR,
         z: morphLod,
         w: 0,
       })

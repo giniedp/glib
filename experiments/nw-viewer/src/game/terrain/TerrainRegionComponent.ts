@@ -4,7 +4,7 @@ import { BoundingFrustum, mat4GetTranslation, vec3, type IVec2 } from '@gglib/ma
 import type { CameraData } from '@gglib/render'
 import { brand, lfmt, type Brand } from '@gglib/utils'
 import type { RegionMaterial } from '../../api'
-import { QUAD_LEAF_SIZE } from '../../constants'
+import { QUAD_TREE_LEAF_SIZE } from '../../constants'
 import type { TerrainCompositeMaterial } from '../../material'
 import type { TerrainTile } from './TerrainTileManager'
 
@@ -95,7 +95,7 @@ export class TerrainRegionComponent implements GameComponent {
     this.coatlicueName = options.coatlicueName
     this.size = options.regionSize
     this.origin = options.origin
-    this.leafSize = QUAD_LEAF_SIZE
+    this.leafSize = QUAD_TREE_LEAF_SIZE
     this.mountainHeight = options.mountainHeight
     this.materialData = options.regionMaterial
 

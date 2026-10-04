@@ -1,7 +1,7 @@
 import { Device } from '@gglib/graphics'
 import { vec4, vec4$init, type IVec4 } from '@gglib/math'
 import { addItemIfAbsent } from '@gglib/utils'
-import { MATERIAL_TEXTURE_SIZE } from '../../constants'
+import { TERRAIN_TILE_TEXTURE_MIP_COUNT, TERRAIN_TILE_TEXTURE_SIZE } from '../../constants'
 import { TileTexturManager, type TileSlotHandle } from '../../graphics'
 import type { TerrainCompositeMaterial } from '../../material'
 import { TerrainTileRenderer } from './TerrainTileRenderer'
@@ -35,16 +35,16 @@ export class TerrainTileManager {
 
     this.texture = new TileTexturManager(this.device, {
       capacity: 512,
-      width: MATERIAL_TEXTURE_SIZE,
-      height: MATERIAL_TEXTURE_SIZE,
+      width: TERRAIN_TILE_TEXTURE_SIZE,
+      height: TERRAIN_TILE_TEXTURE_SIZE,
       formats: ['bc3-rgba-unorm', 'bc3-rgba-unorm'],
       labels: ['TileMat1', 'TileMat2'],
       generateMipmap: false,
-      mipLevelCount: 1,
+      mipLevelCount: TERRAIN_TILE_TEXTURE_MIP_COUNT,
     })
     this.renderer = new TerrainTileRenderer(this.device, {
-      width: MATERIAL_TEXTURE_SIZE,
-      height: MATERIAL_TEXTURE_SIZE,
+      width: TERRAIN_TILE_TEXTURE_SIZE,
+      height: TERRAIN_TILE_TEXTURE_SIZE,
     })
 
     this.sharedSlot = this.texture.acquire(true)
@@ -96,10 +96,5 @@ export class TerrainTileManager {
     layerMaterials: TerrainCompositeMaterial[],
   ) {
     this.renderer.render(tile, this.texture.textures, baseMaterial, layerMaterials)
-  }
-
-  public dumpDds() {
-    debugger
-    this.renderer.dumpTexture('tile_dump.png', this.texture.textures[0])
   }
 }
