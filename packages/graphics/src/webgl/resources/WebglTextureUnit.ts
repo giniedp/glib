@@ -46,18 +46,17 @@ export class WebglTextureUnit {
 
     let glBaseLevel = 0
     let glMaxLevel = DEFAULT_MAX_LEVEL
-    if (texture instanceof Texture) {
-      glBaseLevel = texture.residentMipLevel
-      glMaxLevel = texture.mipLevelCount
-    } else if (texture instanceof TextureView) {
+    if (texture instanceof TextureView) {
       if (!texture.isFullRange) {
         glBaseLevel = texture.baseMipLevel
         glMaxLevel = texture.baseMipLevel + texture.mipLevelCount - 1
-      } else {
-        glBaseLevel = texture.texture.residentMipLevel
-        glMaxLevel = texture.texture.mipLevelCount
       }
       texture = texture.texture
+    }
+    if (glMaxLevel === DEFAULT_MAX_LEVEL) {
+      // full range, starting at the first level that holds data
+      glMaxLevel = texture.mipLevelCount - 1
+      glBaseLevel = Math.min(Math.max(0, texture.residentMipLevel), glMaxLevel)
     }
 
     const resource = texture as WebglTexture

@@ -279,8 +279,15 @@ export class WebglTexture extends Texture implements WebglResource<WebGLTexture 
       console.warn('WebglTexture: updateMipmaps is not supported for renderbuffers', new Error().stack)
       return
     }
-    this.device.textureUnits[0].activate(this, SamplerState.LinearClampNoMipMap)
-    this.device.context.generateMipmap(this.glType)
+    const gl = this.device.context
+    const unit = this.device.textureUnits[0]
+    unit.activate(this, SamplerState.LinearClampNoMipMap)
+    // ensure full mipmap chain is active
+    gl.texParameteri(this.glType, gl.TEXTURE_BASE_LEVEL, 0)
+    gl.texParameteri(this.glType, gl.TEXTURE_MAX_LEVEL, this.mipLevelCount - 1)
+    gl.generateMipmap(this.glType)
+    // restore previous state
+    unit.commit(true)
   }
 }
 
