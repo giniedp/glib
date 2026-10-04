@@ -61,7 +61,8 @@ const util = new MtlUtil('ParticleImposter', {
   knownFlags: ['NORMAL_MAP', 'SOFT_PARTICLE'],
 })
 export class ParticleImposterMaterial extends MaterialWithSchema(SCHEMA) {
-  private modDiffuse: TextureModifier | null = null
+  // declared without emit: assigned in configure(), which runs inside the base constructor before field initializers
+  declare private modDiffuse: TextureModifier | null
 
   protected override configure(options: Partial<MaterialOptions>): void {
     super.configure({

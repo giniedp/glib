@@ -148,7 +148,8 @@ export class DistanceCloudsMaterial extends MaterialWithSchema(Schema) {
     }
   }
 
-  private modDiffuse: TextureModifier | null = null
+  // declared without emit: assigned in configure(), which runs inside the base constructor before field initializers
+  declare private modDiffuse: TextureModifier | null
   private setModifiers(mods: NwMaterialProps['mods']) {
     if (TextureModifier.isModified(mods.Diffuse)) {
       this.modDiffuse = new TextureModifier(mods.Diffuse)

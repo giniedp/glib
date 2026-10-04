@@ -84,7 +84,8 @@ const util = new MtlUtil('Geometrybeam', {
   ],
 })
 export class GeometryBeamMaterial extends MaterialWithSchema(SCHEMA) {
-  private modDiffuse: TextureModifier | null = null
+  // declared without emit: assigned in configure(), which runs inside the base constructor before field initializers
+  declare private modDiffuse: TextureModifier | null
 
   protected override configure(options: Partial<MaterialOptions>): void {
     this.name = 'Geometry Beam Material'

@@ -73,11 +73,12 @@ const util = new MtlUtil('Vegetation', {
 })
 
 export class VegetationMaterial extends MaterialWithSchema(SCHEMA) {
-  private modDiffuse: TextureModifier | null = null
-  private modCustom: TextureModifier | null = null
-  private modDetail: TextureModifier | null = null
-  private modEmittance: TextureModifier | null = null
-  private modDecalEmissive: TextureModifier | null = null
+  // declared without emit: assigned in configure(), which runs inside the base constructor before field initializers
+  declare private modDiffuse: TextureModifier | null
+  declare private modCustom: TextureModifier | null
+  declare private modDetail: TextureModifier | null
+  declare private modEmittance: TextureModifier | null
+  declare private modDecalEmissive: TextureModifier | null
 
   protected override configure(options: Partial<MaterialOptions>): void {
     super.configure({

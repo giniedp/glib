@@ -73,7 +73,8 @@ const util = new MtlUtil('GeometryFog', {
 })
 
 export class GeometryFogMaterial extends MaterialWithSchema(SCHEMA) {
-  private mod1: TextureModifier | null = null
+  // declared without emit: assigned in configure(), which runs inside the base constructor before field initializers
+  declare private mod1: TextureModifier | null
 
   protected override configure(options: Partial<MaterialOptions>): void {
     super.configure({
