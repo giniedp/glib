@@ -63,6 +63,8 @@ export class SkyLightSystem extends GameSystem {
   }
 
   public override render(time: number, dt: number): void {
+    // intentionally rendered each frame
+    // TODO: review whether we should optimize this
     if (this.fxSky.isValid) {
       let latitude = Math.acos(-this.timeOfDay.sunDirection.z)
       let longitude = Math.atan2(-this.timeOfDay.sunDirection.y, -this.timeOfDay.sunDirection.x)
