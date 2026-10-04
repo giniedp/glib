@@ -15,6 +15,7 @@ import { TerrainCompositeMaterial } from './TerrainCompositeMaterial'
 import type { TexMod } from './TexMod'
 import { UnknownMaterial } from './UnknownMaterial'
 import { VegetationMaterial } from './VegetationMaterial'
+import { WaterPatchMaterial } from './WaterPatchMaterial'
 
 export interface NwMaterialExtensionData {
   attrs: NwMaterialAttrs
@@ -153,6 +154,10 @@ export const NwMaterialExtension: GLTF.GltfMaterialExtension = {
       }
       case 'particleimposter': {
         node.data.factory = (device, options) => new ParticleImposterMaterial(device, options)
+        break
+      }
+      case 'water': {
+        node.data.factory = (device, options) => new WaterPatchMaterial(device, options)
         break
       }
       default: {
