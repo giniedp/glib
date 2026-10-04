@@ -62,7 +62,7 @@ export default {
       for (const comp of entity.activeComponents) {
         yield comp
       }
-      for (const child of entity.getTransform().children) {
+      for (const child of entity.getTransform()?.children ?? []) {
         yield child.entity
       }
     })()

@@ -39,7 +39,7 @@ export const NwSceneBrowser: FactoryComponent<NwBrowserProps> = () => {
       return uiSection({}, [
         uiTree({
           adapter,
-          data: [world, scene],
+          data: [world, scene.entity],
           selectedId: selection ? adapter.nodeId(selection) : null,
           onSelect: (node) => {
             selection = node
