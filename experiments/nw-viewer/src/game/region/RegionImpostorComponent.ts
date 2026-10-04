@@ -13,6 +13,7 @@ import { GameEntity, type CreateEntityOptions, type GameComponent } from '@gglib
 import { Color } from '@gglib/graphics'
 import { mat4CreateTranslation, vec3AddScalars, type IVec3 } from '@gglib/math'
 import type { Model } from '@gglib/model'
+import { type LodSpan } from '../../constants'
 import { ContentService } from '../../content'
 import { DebugLayer, DebugShapeComponent } from '../debug/DebugShapeComponent'
 
@@ -22,6 +23,10 @@ export interface ImpostorComponentOptions {
   cellSize: number
   origin: IVec3
   model: string
+  /**
+   * Distance span in which the impostor is visible
+   */
+  span: LodSpan
 }
 
 export function impostorEntityOptions(parent: GameEntity, options: ImpostorComponentOptions): CreateEntityOptions {
@@ -53,13 +58,17 @@ export class RegionImpostorComponent implements GameComponent {
   public readonly entity: GameEntity
   public readonly min: IVec3
   public readonly max: IVec3
+  public readonly span: LodSpan
   private modelUrl: string
   private task: ScheduledTask
   private model: Model
 
   public constructor(data: ImpostorComponentOptions) {
-    this.min = data.origin
-    this.max = vec3AddScalars(data.origin, data.cellSize, data.cellSize, data.regionSize)
+    // impostor origin is the cell center
+    this.span = data.span
+    const half = data.cellSize * 0.5
+    this.min = vec3AddScalars(data.origin, -half, -half, 0)
+    this.max = vec3AddScalars(data.origin, half, half, data.regionSize)
     this.modelUrl = data.model
   }
 

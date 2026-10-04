@@ -12,13 +12,14 @@ import {
   TRUE,
 } from '@gglib/graphics'
 import { vec4 } from '@gglib/math'
+import { IMPOSTOR_FADE_RANGE, LOD_SPANS, lodSpanStart } from '../constants'
 import type { NwMaterialProps } from './GltfExtension'
 import { TextureModifier } from './TexMod'
 import SCHEMA from './VegetationMaterial.meta'
 import WGSL from './VegetationMaterial.wgsl'
-import { type FeatureFlag, getShaderConstants, InputBlocks, MaterialLayerMasks } from './common'
+import { type FeatureFlag, getShaderConstants, InputBlocks, MaterialLayerMasks, setDitherFadeConstants } from './common'
 import { MtlFlag } from './types'
-import { MtlUtil, paramValue, paramVec4, getWhiteTexture } from './utils'
+import { getWhiteTexture, MtlUtil, paramValue, paramVec4 } from './utils'
 
 export function vegetationShaderOptions(constants: Record<string, number>): ShaderModuleOptions {
   return {
@@ -90,6 +91,15 @@ export class VegetationMaterial extends MaterialWithSchema(SCHEMA) {
     )
     this.name = `${attrs.Shader} (${attrs.Name})`
     const shaderConst = getShaderConstants(shaderFlags)
+    if (shaderFlags.has('IS_GDE_IMPOSTOR')) {
+      // vegetation impostors crossfade with the distribution, which fades out in the same range
+      const end = lodSpanStart(LOD_SPANS.impostor)
+      setDitherFadeConstants(shaderConst, {
+        mode: 'in',
+        start: end - IMPOSTOR_FADE_RANGE,
+        end: end,
+      })
+    }
 
     this.effects[RenderVariant.Forward] = new Effect(this.device, vegetationEffectOptions(shaderConst))
     this.effect.cullState = CullState.CullBack

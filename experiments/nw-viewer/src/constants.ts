@@ -19,6 +19,7 @@ export const MAX_MIP_LEVELS = 8.0
 
 export const ENABLE_IMPOSTORS = true
 export const ENABLE_CAPITALS = true
+export const ENABLE_DISTRIBUTION = true
 
 export const REGION_VISIBILITY = 4 * SEGMENT_SIZE
 export const SEGMENT_VISIBILITY = 4 * SEGMENT_SIZE
@@ -35,17 +36,42 @@ export const LOD_SPANS = {
     visibleFor: 2,
     keepAliveFor: 1,
   },
+  // vegetation impostors, distribution hands over at the start of this span.
+  // The distribution culls instances by cell, an instance can be one cell diagonal further away than its cell.
+  // Instances must not reach their max view distance (trees 255, bushes 270) before the impostor shows,
+  // so start + cell diagonal (181) must stay below the max view distance of trees and bushes.
   impostor: {
-    start: 2,
-    visibleFor: 8,
+    start: 0.5,
+    visibleFor: 9.5,
     keepAliveFor: 4,
   },
+  // rocks and structures, capitals hand over at the start of this span
   impostorPoi: {
     start: 2,
     visibleFor: 8,
     keepAliveFor: 4,
   },
+  // vegetation impostors take over beyond the visible span, so visible span must end where impostors start
+  distribution: {
+    start: 0,
+    visibleFor: 0.5,
+    keepAliveFor: 0,
+  },
 }
+
+/**
+ * Width of the dithered crossfade between the distribution and the vegetation impostors.
+ * The band ends where the impostor span starts, impostor cells are activated early enough to cover it.
+ */
+export const IMPOSTOR_FADE_RANGE = 16
+/**
+ * Fade in distance of POI impostors after the start of their span (gImpostorsFadeDistance in illum.cfx)
+ */
+export const POI_IMPOSTOR_FADE_LENGTH = 20
+/**
+ * Fade out distance of the groundcover vegetation before VEGETATION_VISIBLE_DISTANCE
+ */
+export const VEGETATION_FADE_LENGTH = 24
 
 export function lodSpanStart(span: LodSpan) {
   return span.start * SEGMENT_SIZE

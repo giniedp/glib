@@ -267,16 +267,17 @@ export function getShaderFlags(genMask: string | null): Set<FeatureFlag> {
   return result
 }
 
-/**
- * Shader constants for the distance based dither fade (ditherFade in common.wgsl).
- * A fade 'in' and a fade 'out' with the same range blend without gaps.
- */
-export function ditherFadeConstants(mode: 'in' | 'out', start: number, end: number): Record<string, number> {
-  return {
-    DITHER_FADE_MODE: mode === 'in' ? 1 : 2,
-    DITHER_FADE_START: start,
-    DITHER_FADE_END: end,
-  }
+export function setDitherFadeConstants(
+  constants: Record<string, number>,
+  options: {
+    mode: 'in' | 'out'
+    start: number
+    end: number
+  },
+) {
+  constants['DITHER_FADE_MODE'] = options.mode === 'in' ? 1 : 2
+  constants['DITHER_FADE_START'] = options.start
+  constants['DITHER_FADE_END'] = options.end
 }
 
 export function getShaderConstants(flags: Set<FeatureFlag>) {

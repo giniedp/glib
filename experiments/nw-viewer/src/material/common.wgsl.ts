@@ -174,6 +174,13 @@ const DEBUG_SH_SPECULAR_AA:      u32 = 307u; // roughness added by specular anti
   override VERTCOLORS = false;
   override VERTICAL_GRADIENT = false;
   override WATER_TESSELLATION_DX11 = false;
+
+  // nw-viewer additional overrides
+  // Distance based dither fade, see ditherFade(). 0 = off, 1 = fade in, 2 = fade out
+  override DITHER_FADE_MODE: u32 = 0u;
+  // the fade happens between these camera distances
+  override DITHER_FADE_START: f32 = 0.0;
+  override DITHER_FADE_END: f32 = 0.0;
 // #endregion
 
 const MICRO_DETAIL_QUALITY_DEF: u32 = 0u; // default
@@ -758,6 +765,33 @@ fn linearToSrgb(c: vec3f) -> vec3f {
   let cutoff = vec3f(0.0031308);
   return select( 12.92 * c, 1.055 * pow(c, vec3f(1.0 / 2.4)) - 0.055, c > cutoff );
 }
+
+// #region Dither fade
+
+// 4x4 ordered dither threshold in [0, 1), same pattern as the impostor dissolve in illum.cfx
+fn ditherThreshold(pixel: vec2f) -> f32 {
+  const values = array<f32, 16>(9.0, 12.0, 7.0, 15.0, 2.0, 5.0, 13.0, 4.0, 16.0, 3.0, 14.0, 10.0, 6.0, 1.0, 8.0, 11.0);
+  let p = vec2u(pixel) % 4u;
+  return (values[p.x * 4u + p.y] - 0.5) / 16.0;
+}
+
+// Discards pixels to fade by camera distance between DITHER_FADE_START and DITHER_FADE_END.
+// Fade in and fade out use the same threshold, so two layers with the same range blend without gaps or overlap.
+fn ditherFade(pixel: vec2f, distance: f32) {
+  if (DITHER_FADE_MODE == 0u) {
+    return;
+  }
+  let fade = saturate((distance - DITHER_FADE_START) / max(DITHER_FADE_END - DITHER_FADE_START, 1e-3));
+  let threshold = ditherThreshold(pixel);
+  if (DITHER_FADE_MODE == 1u && threshold >= fade) {
+    discard;
+  }
+  if (DITHER_FADE_MODE == 2u && threshold < fade) {
+    discard;
+  }
+}
+
+// #endregion
 
 fn getLuminance(c: vec3f) -> f32 {
   return dot(c, vec3f(0.2126, 0.7152, 0.0722));

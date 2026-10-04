@@ -82,6 +82,8 @@ export class LevelComponent implements GameComponent {
       origin: vec3(location[0] * regionSize, location[1] * regionSize, 0),
       mountainHeight: this.data.mountainHeight,
       oceanLevel: this.data.oceanLevel,
+      enableDistribution: this.data.enableDistribution,
+      enableVegetation: this.data.enableVegetation,
     })
     this.entity.world.createEntity(options)
   }

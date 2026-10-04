@@ -1,14 +1,11 @@
 import { EcsGame } from '@gglib/components'
 import { GameEntity, GameQuery, GameSystem, GameWorld, GetComponent } from '@gglib/ecs'
-import { boxMat4DistanceSquared } from '@gglib/math'
-import { LOD_SPANS, lodSpanEnd, lodSpanStart, lodSpanVisibleEnd } from '../../constants'
+import { boxMat4DistanceSquared, type IVec3, type Mat4 } from '@gglib/math'
+import { IMPOSTOR_FADE_RANGE, LOD_SPANS, lodSpanStart, lodSpanVisibleEnd } from '../../constants'
 import type { ContentService } from '../../content'
 import { RegionComponent } from './RegionComponent'
 import { RegionImpostorComponent } from './RegionImpostorComponent'
 
-const IMPOSTOR_SHOW_AT = Math.pow(lodSpanStart(LOD_SPANS.impostor), 2)
-const IMPOSTOR_HIDE_AT = Math.pow(lodSpanVisibleEnd(LOD_SPANS.impostor), 2)
-const IMPOSTOR_UNLOAD_AT = Math.pow(lodSpanEnd(LOD_SPANS.impostor), 2)
 
 export class RegionSystem extends GameSystem {
   private allRegions: GameQuery
@@ -88,7 +85,17 @@ export class RegionSystem extends GameSystem {
     const impostor = entity.component(RegionImpostorComponent)
     const distance = boxMat4DistanceSquared(impostor.min, impostor.max, camera.world)
 
-    const impostorShouldShow = IMPOSTOR_SHOW_AT <= distance && distance <= IMPOSTOR_HIDE_AT
+    const showAt = lodSpanStart(impostor.span)
+    const hideAt = lodSpanVisibleEnd(impostor.span)
+    let impostorShouldShow = showAt * showAt <= distance && distance <= hideAt * hideAt
+    if (impostor.span === LOD_SPANS.impostor) {
+      // vegetation impostors crossfade with the distribution in [showAt - IMPOSTOR_FADE_RANGE, showAt].
+      // A cell must be visible as soon as any part of it reaches into that range, the shader discards the closer pixels.
+      const fadeStart = showAt - IMPOSTOR_FADE_RANGE
+      impostorShouldShow =
+        boxFarthestDistanceSquared(impostor.min, impostor.max, camera.world) >= fadeStart * fadeStart &&
+        distance <= hideAt * hideAt
+    }
 
     if (entity.isActive && !impostorShouldShow) {
       entity.deactivate()
@@ -117,4 +124,16 @@ export class RegionSystem extends GameSystem {
   private removeRegionTag = (entity: GameEntity) => {
     entity.removeComponentByType(RegionComponent.Tag)
   }
+}
+
+/**
+ * Squared horizontal distance from the camera position to the farthest point of the box.
+ * Impostor boxes span the whole region height, so the vertical axis is ignored.
+ */
+function boxFarthestDistanceSquared(min: IVec3, max: IVec3, world: Mat4) {
+  const x = mat4GetTranslationX(world)
+  const y = mat4GetTranslationY(world)
+  const dx = Math.max(Math.abs(x - min.x), Math.abs(x - max.x))
+  const dy = Math.max(Math.abs(y - min.y), Math.abs(y - max.y))
+  return dx * dx + dy * dy
 }

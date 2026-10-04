@@ -274,6 +274,8 @@ fn vs_main(input : VertexInput) -> FragmentInput {
 
 @fragment
 fn fs_main(input: FragmentInput) -> FragmentOutput {
+  // impostor fade in, distribution / vegetation fade out (DITHER_FADE_* constants)
+  ditherFade(input.position.xy, distance(view.cameraPosition, input.worldPos));
 
   let toEye = normalize(input.viewVec);
   let tbn = mat3x3f(
@@ -413,6 +415,9 @@ fn fs_main(input: FragmentInput) -> FragmentOutput {
 
   var albedo   = cDiffuseMap.rgb;
   var alpha    = cDiffuseMap.a; // * pPass.IN.Ambient.w;
+  if (IS_POI_IMPOSTOR) {
+    alpha = 1.0;
+  }
   var normal   = normalize(tbn * normalize(cBumpMap));
   var specular = vec3f(0.0);
   var gloss    = material.specularColor.a;

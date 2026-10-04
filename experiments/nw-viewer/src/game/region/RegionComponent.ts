@@ -22,7 +22,7 @@ import {
   type RegionCapitalsData,
   type RegionInfo,
 } from '../../api'
-import { ENABLE_CAPITALS, ENABLE_IMPOSTORS } from '../../constants'
+import { ENABLE_CAPITALS, ENABLE_DISTRIBUTION, ENABLE_IMPOSTORS, ENABLE_VEGETATION, LOD_SPANS } from '../../constants'
 import { ContentService } from '../../content'
 import {
   capitalSliceEntityOPtions,
@@ -40,6 +40,8 @@ export interface RegionComponentOptions {
   mountainHeight: number
   cellSize: number
   origin: IVec3
+  enableDistribution: boolean
+  enableVegetation: boolean
 }
 
 export function regionEntityOptions(parent: GameEntity, options: RegionComponentOptions): CreateEntityOptions {
@@ -95,6 +97,8 @@ export class RegionComponent implements GameComponent {
 
   public readonly oceanLevel: number
   public readonly mountainHeight: number
+  public readonly enableDistribution: boolean
+  public readonly enableVegetation: boolean
 
   private scheduler: SchedulerSystem
   private content: ContentService
@@ -102,6 +106,8 @@ export class RegionComponent implements GameComponent {
   public impostors: GameEntity | null
   public capitals: GameEntity | null
   public terrain: GameEntity | null
+  public distribution: GameEntity | null
+  public vegetation: GameEntity | null
 
   public regionInfo: RegionInfo | null
   public regionInfoTask: ScheduledTask | null
@@ -121,6 +127,8 @@ export class RegionComponent implements GameComponent {
     this.cellSize = data.cellSize
     this.oceanLevel = data.oceanLevel
     this.mountainHeight = data.mountainHeight
+    this.enableDistribution = data.enableDistribution
+    this.enableVegetation = data.enableVegetation
     this.min = vec3Copy(data.origin)
     this.max = vec3AddScalar(data.origin, data.regionSize)
   }
@@ -248,7 +256,10 @@ export class RegionComponent implements GameComponent {
   }
 
   public createImpostors(data: RegionInfo) {
-    const impostors = [...(data.impostors || []), ...(data.poiImpostors || [])]
+    const impostors = [
+      ...(data.impostors || []).map((it) => ({ ...it, span: LOD_SPANS.impostor })),
+      ...(data.poiImpostors || []).map((it) => ({ ...it, span: LOD_SPANS.impostorPoi })),
+    ]
     for (const item of impostors) {
       const options = impostorEntityOptions(this.impostors, {
         name: item.model,
@@ -256,6 +267,7 @@ export class RegionComponent implements GameComponent {
         origin: vec3(item.position.x, item.position.y, 0),
         regionSize: this.regionSize,
         cellSize: this.cellSize,
+        span: item.span,
       })
       this.entity.world.createEntity(options)
     }

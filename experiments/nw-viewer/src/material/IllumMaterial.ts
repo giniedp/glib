@@ -13,14 +13,15 @@ import {
   TRUE,
 } from '@gglib/graphics'
 import { mat4Identity, vec2, vec4 } from '@gglib/math'
+import { LOD_SPANS, lodSpanStart, POI_IMPOSTOR_FADE_LENGTH } from '../constants'
 import { type NwMaterialProps } from './GltfExtension'
 import SCHEMA from './IllumMaterial.meta'
 import WGSL from './IllumMaterial.wgsl'
 import { TextureModifier } from './TexMod'
-import { type FeatureFlag, getShaderConstants, InputBlocks, MaterialLayerMasks } from './common'
+import { type FeatureFlag, getShaderConstants, InputBlocks, MaterialLayerMasks, setDitherFadeConstants } from './common'
 
 import { MtlFlag } from './types'
-import { MtlUtil, paramValue, paramVec3, paramVec4 } from './utils'
+import { getWhiteTexture, MtlUtil, paramValue, paramVec3, paramVec4 } from './utils'
 
 export function illumShaderOptions(constants: Record<string, number>): ShaderModuleOptions {
   return {
@@ -163,6 +164,7 @@ const illum = new MtlUtil('Illum', {
     'OVERLAY_MASK',
     'PARALLAX_OCCLUSION_MAPPING',
     'SAA_FILTERING',
+    'ALLOW_SPECULAR_ANTIALIASING',
     'SPECULAR_MAP',
     'TRANSMITTANCE',
     'VERTCOLORS',
@@ -240,7 +242,24 @@ export class IllumMaterial extends MaterialWithSchema(SCHEMA) {
     // 	#undefine %TRANSMITTANCE
     // #endif
 
+    // SAA_FILTERING is a runtime flag of the engine (r_SpecularAntialiasing), materials opt in with ALLOW_SPECULAR_ANTIALIASING
+    // see illumvalidations.cfi
+    if (shaderFlags.has('ALLOW_SPECULAR_ANTIALIASING')) {
+      shaderFlags.add('SAA_FILTERING')
+    } else {
+      shaderFlags.delete('SAA_FILTERING')
+    }
+
     const shaderConst = getShaderConstants(shaderFlags)
+    if (shaderFlags.has('IS_POI_IMPOSTOR')) {
+      // impostors fade in after the start of their span, like the impostor dissolve in illum.cfx
+      const start = lodSpanStart(LOD_SPANS.impostorPoi)
+      setDitherFadeConstants(shaderConst, {
+        mode: 'in',
+        start: start,
+        end: start + POI_IMPOSTOR_FADE_LENGTH,
+      })
+    }
 
     this.effects[RenderVariant.Forward] = new Effect(this.device, illumEffectOptions(shaderConst))
     this.effect.cullState = CullState.CullBack
@@ -419,6 +438,8 @@ export class IllumMaterial extends MaterialWithSchema(SCHEMA) {
     // - smoothnessMap
     if (maps.Smoothness) {
       this.SmoothnessMap = maps.Smoothness as any
+    } else {
+      this.SmoothnessMap = getWhiteTexture(this.device)
     }
 
     // == EFTT_EMITTANCE
