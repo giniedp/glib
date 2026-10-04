@@ -230,6 +230,76 @@ export interface RegionCapitalsData {
 }
 
 // ---------------------------------------------------------------------------
+// Distribution
+// ---------------------------------------------------------------------------
+
+/**
+ * Header of a reduced region.distribution file.
+ *
+ * Instance data is served separately as binary, a structure of arrays with `count` entries each:
+ * - `uint16 type[count]` index into {@link RegionDistributionData.types}
+ * - `uint16 x[count]` region local x, 0..0xFFFF maps to 0..regionSize
+ * - `uint16 y[count]` region local y, 0..0xFFFF maps to 0..regionSize
+ */
+/**
+ * Header and resolved asset table of a region.vegetation file
+ */
+export interface RegionVegetationData {
+  tileSize: number
+  regionSize: number
+  maxInstancesPerCell: number
+  /**
+   * Total number of instances in the region
+   */
+  count: number
+  /**
+   * Indexed by the asset index of the instance groups in the file
+   */
+  assets: RegionVegetationAsset[]
+}
+
+export interface RegionVegetationAsset {
+  /**
+   * Model file, empty if the asset could not be resolved
+   */
+  model: string
+  /**
+   * Material override
+   */
+  material?: string
+  kind: number
+  flags: number
+  count: number
+}
+
+export interface RegionDistributionData {
+  region: [number, number]
+  /** Number of instances in the binary buffer */
+  count: number
+  /** Interned model paths */
+  models: string[]
+  /** Interned material paths */
+  materials: string[]
+  types: DistributionType[]
+}
+
+export interface DistributionType {
+  slice: string
+  variant?: string
+  meshes: DistributionMesh[]
+}
+
+export interface DistributionMesh {
+  /** Index into {@link RegionDistributionData.models} */
+  model: number
+  /** Index into {@link RegionDistributionData.materials} */
+  material: number
+  /** Slice local transform, omitted if identity */
+  transform?: Mat4Data
+  maxViewDistance?: number
+}
+
+// ---------------------------------------------------------------------------
 // Viewer / slice types
 // ---------------------------------------------------------------------------
 

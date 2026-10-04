@@ -20,6 +20,77 @@ export const MAX_MIP_LEVELS = 8.0
 export const ENABLE_IMPOSTORS = true
 export const ENABLE_CAPITALS = true
 export const ENABLE_DISTRIBUTION = true
+/**
+ * Loads only the smaller mips of split DDS material textures instead of the merged texture (merge=partial in nwbt).
+ * The textures are allocated with their full mip chain, only the loaded mips are sampled (Texture.residentMipLevel).
+ * Impostor and terrain textures are always loaded in full.
+ */
+export const PARTIAL_TEXTURES = false
+/**
+ * Largest mip size that is loaded for partial textures
+ */
+export const PARTIAL_TEXTURE_SIZE = 256
+/**
+ * Renders meshes with an instance array (InstancedMeshComponent) with GPU culling and indirect draws.
+ * Disabled: indirect draws are expensive per call and level objects have few instances per draw.
+ * Measured at x=5500 y=600: all level objects 82ms vs 37ms, instance arrays only 25ms vs 16.8ms (median frame).
+ * The regular render path already merges instances of the same mesh into instanced draws per frame.
+ */
+export const ENABLE_INSTANCED_LEVEL_OBJECTS = false
+/**
+ * Creates a single entity for all instances of an instance array (InstancedMeshComponent) instead of one entity per instance.
+ * Reduces the number of entities, spatial nodes and bounds, culling happens per instance array.
+ */
+export const COMBINE_INSTANCE_ARRAYS = true
+/**
+ * Scales the max view distance of distribution meshes, 0 ignores the view distance
+ */
+export const DISTRIBUTION_VIEW_DISTANCE_SCALE = 1
+
+/**
+ * Renders the baked vegetation of the region.vegetation files (mostly groundcover)
+ */
+export const ENABLE_VEGETATION = true
+/**
+ * Vegetation is rendered up to this distance. Lumberyard spawns a 13x13 grid of 16m sectors around the camera.
+ */
+export const VEGETATION_VISIBLE_DISTANCE = 104
+/**
+ * Cells within visible distance + margin are uploaded, so they are ready when they become visible
+ */
+export const VEGETATION_LOAD_MARGIN = 16
+/**
+ * Cells beyond visible distance + margin are released
+ */
+export const VEGETATION_UNLOAD_MARGIN = 32
+/**
+ * Number of cells a region can keep loaded at once (each cell holds up to 1024 instances)
+ */
+export const VEGETATION_SLOT_COUNT = 320
+export const VEGETATION_CELL_UPLOADS_PER_FRAME = 16
+
+/**
+ * Range activation of slice entities (meshes, lights with a view distance), see RangeActivationSystem.
+ * Smallest range class, also the cell size of the finest grid. Smaller ranges are rounded up.
+ * Ranges are bucketed into power of two classes, the cell size of a class equals its range.
+ */
+export const RANGE_CLASS_MIN = 32
+/**
+ * Largest range class, larger ranges are clamped (1.5% of the meshes, up to 80km).
+ */
+export const RANGE_CLASS_MAX = 4096
+/**
+ * Entities activate at their range and deactivate at range * hysteresis
+ */
+export const RANGE_HYSTERESIS = 1.1
+/**
+ * A range class is re-evaluated when the camera moved this fraction of its cell size
+ */
+export const RANGE_UPDATE_DISTANCE_FACTOR = 1 / 64
+/**
+ * Time budget for entity activations per frame
+ */
+export const RANGE_ACTIVATION_BUDGET_MS = 2
 
 export const REGION_VISIBILITY = 4 * SEGMENT_SIZE
 export const SEGMENT_VISIBILITY = 4 * SEGMENT_SIZE

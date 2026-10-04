@@ -14,6 +14,7 @@ import {
   mat4CreateFromArray,
   mat4CreateFromRTS,
   mat4Identity,
+  mat4Multiply,
   mat4Premultiply,
   vec3Add,
   vec3MultiplyScalar,
@@ -23,8 +24,11 @@ import {
 import { Model } from '@gglib/model'
 import { brand, type EventType } from '@gglib/utils'
 import type { ViewerMeshComponent } from '../../api'
+import { COMBINE_INSTANCE_ARRAYS, ENABLE_INSTANCED_LEVEL_OBJECTS } from '../../constants'
 import { ContentService } from '../../content'
 import { DebugLayer, DebugShapeComponent } from '../debug/DebugShapeComponent'
+import { InstancedModelComponent } from '../instancing/InstancedModelComponent'
+import { InstancedRenderSystem } from '../instancing/InstancedRenderSystem'
 
 export class MeshLoaderComponent implements GameComponent {
   public static onLoad = brand<EventType<GameEntity>>(Symbol('MeshLoaderComponent.onLoaded'))
@@ -64,7 +68,9 @@ export class MeshLoaderComponent implements GameComponent {
         task.context = await this.content.loadModel(this.data.mesh, this.data.material)
       },
       work: (task) => {
-        if (this.data.instances?.length > 0) {
+        const createModelComponent = this.modelComponentFactory(task.context)
+        const combineInstances = COMBINE_INSTANCE_ARRAYS && !task.context.skins?.length
+        if (this.data.instances?.length > 0 && !combineInstances) {
           for (const inst of this.data.instances) {
             const model = task.context.instantiate({
               meshes: false,
@@ -84,15 +90,18 @@ export class MeshLoaderComponent implements GameComponent {
                   color: Color.LimeGreen,
                   layer: DebugLayer.BoundsMeshInstance,
                 }),
-                new ModelComponent({ model }),
+                createModelComponent(model),
               ].filter((it) => !!it),
             })
           }
         } else {
-          const model = task.context.instantiate({
-            meshes: false,
-            materials: false,
-          })
+          const model =
+            this.data.instances?.length > 0
+              ? createInstanceArrayModel(task.context, this.data.instances)
+              : task.context.instantiate({
+                  meshes: false,
+                  materials: false,
+                })
           const color = { x: 0, y: 0, z: 1 }
           if (this.data.visibilityOccluder) {
             color.x = 1
@@ -130,9 +139,7 @@ export class MeshLoaderComponent implements GameComponent {
                 layer: DebugLayer.BoundsMesh,
                 instances: boxTransforms,
               }),
-              new ModelComponent({
-                model,
-              }),
+              createModelComponent(model),
             ].filter((it) => !!it),
           })
         }
@@ -151,4 +158,53 @@ export class MeshLoaderComponent implements GameComponent {
   public deactivate(): void {
     //
   }
+
+  /**
+   * Renders static models through the GPU instance batch, falls back to the scene render path otherwise
+   */
+  private modelComponentFactory(model: Model): (instance: Model) => GameComponent {
+    const system = ENABLE_INSTANCED_LEVEL_OBJECTS
+      ? this.entity.world.getSystem(InstancedRenderSystem, { optional: true })
+      : null
+    const canInstance =
+      !!system &&
+      this.data.instances?.length > 0 &&
+      !this.data.alwaysRender &&
+      InstancedModelComponent.canRender(system, model)
+    if (!canInstance) {
+      return (instance) => new ModelComponent({ model: instance })
+    }
+    const key = `${this.data.mesh}|${this.data.material || ''}`
+    const maxViewDistance = (this.data.maxViewDistance || 0) * (this.data.viewDistanceMultiplier || 1)
+    return (instance) => new InstancedModelComponent({ model: instance, key, maxViewDistance })
+  }
+}
+
+/**
+ * Creates a model that contains the mesh nodes of the source model once per instance.
+ * The meshes are shared with the source model, so all instances are rendered and culled as one model.
+ */
+function createInstanceArrayModel(source: Model, instances: ArrayLike<number>[]): Model {
+  const base = source.instantiate({ meshes: false, materials: false })
+  base.update(mat4Identity())
+  const meshNodes = base.sceneNodes.filter((node) => source.meshes[node.data?.mesh])
+  const nodes = []
+  for (const instance of instances) {
+    const instanceMatrix = mat4CreateFromArray(instance)
+    for (const node of meshNodes) {
+      nodes.push({
+        name: node.data.name,
+        mesh: node.data.mesh,
+        matrix: Array.from(mat4Multiply(instanceMatrix, node.world)),
+      })
+    }
+  }
+  return new Model(source.device, {
+    name: source.name,
+    meta: { ...source.meta },
+    meshes: source.meshes,
+    nodes,
+    scenes: [{ nodes: nodes.map((_, i) => i) }],
+    scene: 0,
+  })
 }

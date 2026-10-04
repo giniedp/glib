@@ -24,6 +24,8 @@ import {
 } from '../../api'
 import { ENABLE_CAPITALS, ENABLE_DISTRIBUTION, ENABLE_IMPOSTORS, ENABLE_VEGETATION, LOD_SPANS } from '../../constants'
 import { ContentService } from '../../content'
+import { DistributionComponent } from '../distribution/DistributionComponent'
+import { VegetationComponent } from '../vegetation/VegetationComponent'
 import {
   capitalSliceEntityOPtions,
   chunkSliceEntityOptions,
@@ -164,6 +166,44 @@ export class RegionComponent implements GameComponent {
         }),
       ],
     })
+
+    if (ENABLE_DISTRIBUTION && this.enableDistribution) {
+      this.distribution = this.entity.world.createEntity({
+        name: 'Distribution',
+        parent: this.entity,
+        transform: new TransformComponent(),
+        components: [
+          new MeshComponent(),
+          new DistributionComponent({
+            coatlicueName: this.coatlicueName,
+            regionName: this.regionName,
+            regionSize: this.regionSize,
+            cellSize: this.cellSize,
+            mountainHeight: this.mountainHeight,
+            origin: vec3Copy(this.min),
+            terrain: this.terrain.component(TerrainRegionComponent),
+          }),
+        ],
+      })
+    }
+
+    if (ENABLE_VEGETATION && this.enableVegetation) {
+      this.vegetation = this.entity.world.createEntity({
+        name: 'Vegetation',
+        parent: this.entity,
+        transform: new TransformComponent(),
+        components: [
+          new MeshComponent(),
+          new VegetationComponent({
+            coatlicueName: this.coatlicueName,
+            regionName: this.regionName,
+            regionSize: this.regionSize,
+            mountainHeight: this.mountainHeight,
+            origin: vec3Copy(this.min),
+          }),
+        ],
+      })
+    }
   }
 
   public destroy(): void {

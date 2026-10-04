@@ -41,5 +41,9 @@ async function bootViewer() {
     canvas,
   })
   await viewer.run()
+  if (import.meta.env.DEV) {
+    // handle for measurement scripts attached over CDP
+    ;(globalThis as any).nwViewer = viewer
+  }
   return viewer
 }

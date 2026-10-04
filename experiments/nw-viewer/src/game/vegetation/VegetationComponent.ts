@@ -1,0 +1,185 @@
+import {
+  MeshComponent,
+  PriorityLane,
+  SchedulerSystem,
+  TaskCancelledError,
+  type ScheduledTask,
+} from '@gglib/components'
+import { type GameComponent, type GameEntity } from '@gglib/ecs'
+import { Device } from '@gglib/graphics'
+import { type IVec3 } from '@gglib/math'
+import type { Model } from '@gglib/model'
+import { lfmt } from '@gglib/utils'
+import {
+  getRegionVegetationDataUrl,
+  getRegionVegetationUrl,
+  type RegionVegetationData,
+} from '../../api'
+import { VEGETATION_SLOT_COUNT } from '../../constants'
+import { ContentService } from '../../content'
+import { parseVegetation, type VegetationCell, type VegetationFile } from './parseVegetation'
+import { VegetationBatch, type VegetationGroup } from './VegetationBatch'
+
+export interface VegetationComponentOptions {
+  coatlicueName: string
+  regionName: string
+  regionSize: number
+  mountainHeight: number
+  origin: IVec3
+}
+
+/**
+ * Loads the region.vegetation file of a region and renders the cells around the camera with a {@link VegetationBatch}.
+ * Cells and models are requested by the VegetationSystem.
+ */
+export class VegetationComponent implements GameComponent {
+  public readonly entity: GameEntity
+  public readonly options: VegetationComponentOptions
+
+  public data: RegionVegetationData | null = null
+  public file: VegetationFile | null = null
+  public batch: VegetationBatch | null = null
+
+  private scheduler: SchedulerSystem
+  private content: ContentService
+  private task: ScheduledTask | null = null
+  private groupTasks = new Map<VegetationGroup, ScheduledTask>()
+  private logTag = lfmt.badge('#8CD17D', 'Vegetation')
+
+  public constructor(options: VegetationComponentOptions) {
+    this.options = options
+    this.logTag = lfmt.merge(this.logTag, lfmt.badge('#BAB0AC', options.regionName))
+  }
+
+  public initialize(): void {
+    this.scheduler = this.entity.service(SchedulerSystem)
+    this.content = this.entity.service(ContentService)
+  }
+
+  public activate(): void {
+    // loading is requested by the VegetationSystem, once the camera is close to the region
+  }
+
+  public get isLoadRequested() {
+    return !!(this.data || this.task)
+  }
+
+  /**
+   * Loads the region.vegetation file (whole file, 20-170 MB for populated regions)
+   */
+  public load(): void {
+    if (this.data || this.task) {
+      return
+    }
+    const { coatlicueName, regionName } = this.options
+    this.task = this.scheduler.schedule<[RegionVegetationData, ArrayBuffer]>({
+      lane: PriorityLane.Low,
+      label: `Load vegetation ${regionName}`,
+      entity: this.entity,
+      context: null,
+      load: async (task) => {
+        task.context = await Promise.all([
+          this.content.fetchTypedRequest(getRegionVegetationUrl(coatlicueName, regionName)),
+          this.content.fetchTypedRequest(getRegionVegetationDataUrl(coatlicueName, regionName)),
+        ])
+      },
+      work: (task) => {
+        const [data, buffer] = task.context
+        this.data = data
+        this.file = parseVegetation(buffer)
+        return true
+      },
+      finalize: (task, err) => {
+        this.task = null
+        if (err && !(err instanceof TaskCancelledError)) {
+          console.warn(...this.logTag, 'not loaded', err)
+        }
+      },
+    })
+  }
+
+  public deactivate(): void {
+    if (this.task) {
+      this.task.cancelled = true
+      this.task = null
+    }
+  }
+
+  public destroy(): void {
+    this.deactivate()
+    for (const task of this.groupTasks.values()) {
+      task.cancelled = true
+    }
+    this.groupTasks.clear()
+    this.batch?.dispose()
+    this.batch = null
+  }
+
+  /**
+   * Creates the batch once the data is available
+   */
+  public ensureBatch(): VegetationBatch | null {
+    if (this.batch || !this.file?.count || !this.data) {
+      return this.batch
+    }
+    const { origin, mountainHeight, regionName } = this.options
+    this.batch = new VegetationBatch(
+      this.entity.service(Device),
+      this.file,
+      this.data,
+      { originX: origin.x, originY: origin.y, mountainHeight },
+      VEGETATION_SLOT_COUNT,
+      `vegetation ${regionName}`,
+    )
+    this.batch.onMeshChanged = (mesh) => {
+      this.entity.component(MeshComponent).mesh = mesh
+    }
+    console.log(...this.logTag, 'ready', {
+      instances: this.file.count,
+      cells: this.file.cells.length,
+      assets: this.data.assets.length,
+    })
+    return this.batch
+  }
+
+  /**
+   * Loads the models of all groups in the given cell
+   */
+  public requestCellModels(cell: VegetationCell) {
+    if (!this.batch) {
+      return
+    }
+    for (const it of cell.groups) {
+      this.requestGroup(this.batch.groups[it.asset])
+    }
+  }
+
+  private requestGroup(group: VegetationGroup) {
+    if (!group || group.state !== 'idle') {
+      return
+    }
+    group.state = 'loading'
+    const batch = this.batch
+    const task = this.scheduler.schedule<Model | null>({
+      lane: PriorityLane.Low,
+      label: `Load vegetation model ${group.model}`,
+      entity: this.entity,
+      context: null,
+      load: async (task) => {
+        task.context = (await this.content.loadModel(group.model, group.material)?.catch(() => null)) ?? null
+      },
+      work: (task) => {
+        batch.enableGroup(group, task.context)
+        return true
+      },
+      finalize: (_, err) => {
+        this.groupTasks.delete(group)
+        if (err) {
+          // retry on next request
+          group.state = 'idle'
+        }
+      },
+    })
+    this.groupTasks.set(group, task)
+  }
+}

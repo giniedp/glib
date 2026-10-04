@@ -1,4 +1,11 @@
-import type { LevelIndex, LevelInfo, RegionCapitalsData, RegionInfo } from './types'
+import type {
+  LevelIndex,
+  LevelInfo,
+  RegionCapitalsData,
+  RegionDistributionData,
+  RegionInfo,
+  RegionVegetationData,
+} from './types'
 
 export type TypedRequest<T> = {
   url: string
@@ -71,6 +78,28 @@ export function getRegionInfoUrl(levelName: string, regionName: string): TypedRe
 
 export function getRegionCapitalsUrl(levelName: string, regionName: string): TypedRequest<RegionCapitalsData> {
   return { url: `/levels/${levelName}/${regionName}/capitals.json`, type: 'json' }
+}
+
+export function getRegionDistributionUrl(
+  levelName: string,
+  regionName: string,
+): TypedRequest<RegionDistributionData> {
+  return { url: `/levels/${levelName}/${regionName}/distribution.json`, type: 'json' }
+}
+
+export function getRegionDistributionDataUrl(levelName: string, regionName: string): TypedRequest<ArrayBuffer> {
+  return { url: `/levels/${levelName}/${regionName}/distribution.bin`, type: 'arraybuffer' }
+}
+
+export function getRegionVegetationUrl(levelName: string, regionName: string): TypedRequest<RegionVegetationData> {
+  return { url: `/levels/${levelName}/${regionName}/vegetation.json`, type: 'json' }
+}
+
+/**
+ * The original region.vegetation file
+ */
+export function getRegionVegetationDataUrl(levelName: string, regionName: string): TypedRequest<ArrayBuffer> {
+  return { url: `/levels/${levelName}/${regionName}/vegetation.bin`, type: 'arraybuffer' }
 }
 
 export function getRegionHeightmapUrl(levelName: string, regionName: string): TypedRequest<Float16Array> {

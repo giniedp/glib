@@ -37,11 +37,15 @@ import { ContentService } from './content'
 import { CapitalSystem } from './game/capital/CapitalSystem'
 import { DebugLayer, DebugShapeComponent } from './game/debug/DebugShapeComponent'
 import { DebugShapeSystem } from './game/debug/DebugShapeSystem'
+import { DistributionSystem } from './game/distribution/DistributionSystem'
+import { VegetationSystem } from './game/vegetation/VegetationSystem'
+import { InstancedRenderSystem } from './game/instancing/InstancedRenderSystem'
 import { RaycastSystem, type RaySelection } from './game/debug/RaycastSystem'
 import { LevelSystem } from './game/level/LevelSystem'
 import { SkyLightSystem } from './game/level/SkyLightSystem'
 import { LightSystem } from './game/light/LightSystem'
 import { RegionSystem } from './game/region/RegionSystem'
+import { RangeActivationSystem } from './game/slice/RangeActivationSystem'
 import { SliceSystem } from './game/slice/SliceSystem'
 import { TerrainSystem } from './game/terrain/TerrainSystem'
 import { createRenderPipeline } from './graphics'
@@ -116,8 +120,12 @@ export class NwViewer extends EcsGame {
     )
     this.world.addSystem(new TerrainSystem())
     this.world.addSystem(new RegionSystem())
+    this.world.addSystem(new DistributionSystem())
+    this.world.addSystem(new VegetationSystem())
+    this.world.addSystem(new InstancedRenderSystem())
     this.world.addSystem(new CapitalSystem())
     this.world.addSystem(new SliceSystem())
+    this.world.addSystem(new RangeActivationSystem())
     this.world.addSystem(new SkyLightSystem())
     this.world.addSystem(new LightSystem())
     this.world.addSystem(new LevelSystem())

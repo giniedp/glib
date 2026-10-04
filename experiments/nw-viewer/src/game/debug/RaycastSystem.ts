@@ -24,6 +24,7 @@ import {
   type Transform,
 } from '@gglib/math'
 import { brand, EventEmitter, type EventType } from '@gglib/utils'
+import { InstancedModelComponent } from '../instancing/InstancedModelComponent'
 
 export interface RaySelection {
   distance: number
@@ -98,7 +99,9 @@ export class RaycastSystem extends GameSystem {
     for (const entity of this.spatialQuery) {
       entity.component(SpatialComponent).index.traverseIntersection(ray, Intersection.rayBox, (node) => {
         for (const item of getSpatialEntries(node).values) {
-          const model = item.entity.component(ModelComponent, GetComponent.Optional)?.model
+          const model =
+            item.entity.component(ModelComponent, GetComponent.Optional)?.model ||
+            item.entity.component(InstancedModelComponent, GetComponent.Optional)?.model
           if (!model) {
             continue
           }

@@ -4,6 +4,7 @@ import { Color, Device, Material, Texture } from '@gglib/graphics'
 import { Model } from '@gglib/model'
 import { addItemIfAbsent, type Type } from '@gglib/utils'
 import { fetchTypedRequest, type TypedRequest, type ViewerSlice } from '../api'
+import { PARTIAL_TEXTURE_SIZE, PARTIAL_TEXTURES } from '../constants'
 
 // Global engine texture keys
 // TODO: this is a hack and needs proper solution
@@ -49,6 +50,12 @@ export class ContentService extends GameSystem {
     this.device = world.getSystem(Device)
     this.loader = world.getSystem(ContentLoader)
     this.loader.executor = new BoundedAsyncExecutor(10)
+    if (PARTIAL_TEXTURES) {
+      const resolveUrl = this.loader.resolveUrl.bind(this.loader)
+      this.loader.resolveUrl = (requestUri, assetUri, baseUri) => {
+        return toPartialTextureUrl(resolveUrl(requestUri, assetUri, baseUri))
+      }
+    }
 
     const device = world.getSystem(Device)
     this.whitePixel = device.createTexture({
@@ -295,4 +302,20 @@ function extName(url: string) {
     return null
   }
   return path.substring(index)
+}
+
+/**
+ * Textures that are always loaded in full: cubemaps (partial files are only supported for single images),
+ * impostors (region and POI impostors) and terrain materials.
+ */
+const FULL_TEXTURE_PATTERN = /cubemaps\/|_cm\.dds|impostors\/|(^|\/)terrain\//
+
+/**
+ * Requests only the mips up to PARTIAL_TEXTURE_SIZE of a split DDS texture, with the original header
+ */
+function toPartialTextureUrl(url: string) {
+  if (!url.includes('merge=true') || !/\.dds(\.a\.dds)?\?/.test(url) || FULL_TEXTURE_PATTERN.test(url)) {
+    return url
+  }
+  return url.replace('merge=true', 'merge=partial').replace(/([?&])size=\d+/, `$1size=${PARTIAL_TEXTURE_SIZE}`)
 }
