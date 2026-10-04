@@ -4,11 +4,11 @@ import { Device } from './Device'
 import type { RenderEncoder } from './RenderEncoder'
 import { bufferField, bufferLayout, bufferRecorder, BufferRecorder, ShaderModule, vertexLayout } from './resources'
 import { Buffer } from './resources/Buffer'
-import { Texture } from './resources/Texture'
+import { Texture, TextureView } from './resources/Texture'
 import { VertexBuffer } from './resources/VertexBuffer'
 import { SpriteBuilder } from './Sprite'
 import { spriteBatchShader } from './SpriteBatch.shader'
-import { CullState } from './states'
+import { CullState, SamplerState } from './states'
 import { Renderable } from './types'
 
 export enum SpriteMode {
@@ -31,7 +31,17 @@ function compareTexture(a: SpriteBuilder, b: SpriteBuilder): number {
   if (a.texture === b.texture) {
     return 0
   }
-  return a.texture.uid < b.texture.uid ? -1 : 1
+  const ta = a.texture instanceof TextureView ? a.texture.texture : a.texture
+  const tb = b.texture instanceof TextureView ? b.texture.texture : b.texture
+  if (ta !== tb) {
+    return ta.uid < tb.uid ? -1 : 1
+  }
+  // views of the same texture, keep them adjacent
+  return mipRangeKey(a.texture) - mipRangeKey(b.texture)
+}
+
+function mipRangeKey(texture: Texture | TextureView): number {
+  return texture instanceof TextureView ? texture.baseMipLevel * 32 + texture.mipLevelCount : -1
 }
 
 /**
@@ -88,6 +98,11 @@ export class SpriteBatch implements Renderable {
   public linearToSrgb: boolean = false
   public tonemap: boolean = false
   public exposure = 1.0
+
+  /**
+   * The sampler used to sample the sprite textures
+   */
+  public sampler: SamplerState = SamplerState.Default
 
   public constructor(device: Device, options: SpriteBatchOptions = {}) {
     this.device = device
@@ -160,10 +175,11 @@ export class SpriteBatch implements Renderable {
   /**
    * Starts a new sprite with the given texture and returns it for configuration.
    *
-   * @param texture - The texture to draw
+   * @param texture - The texture or texture view to draw. For a {@link TextureView}, the source rectangle
+   *  is given in pixels of the view's base mip level.
    */
   public next(
-    texture: Texture,
+    texture: Texture | TextureView,
     source?: IRect,
     dst?: IRect,
     depth?: number,
@@ -229,13 +245,15 @@ export class SpriteBatch implements Renderable {
     sprites: SpriteBuilder[],
     spriteOffset: number,
     spriteCount: number,
-    texture: Texture,
+    texture: Texture | TextureView,
   ) {
     if (spriteCount <= 0 || !this.shader.isCompiled) {
       return
     }
 
     this.shader.program.get('textureMap').setTexture(texture)
+    // GLSL combines texture and sampler in one uniform, WGSL has a separate binding
+    this.shader.program.get(this.device.isWebGL2 ? 'textureMap' : 'textureSampler').setSampler(this.sampler)
     this.shader.program.get('uniforms.viewProjection').setMat4x4(this.matrix)
     this.shader.program.get('uniforms.toSrgb').setScalar(this.linearToSrgb ? 1 : 0)
     this.shader.program.get('uniforms.tonemap').setScalar(this.tonemap ? 1 : 0)

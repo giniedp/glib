@@ -15,10 +15,10 @@ import {
   vec4$init,
   vec4$initFrom,
 } from '@gglib/math'
-import { type Texture } from './resources'
+import { type Texture, type TextureView } from './resources'
 
 export interface Sprite {
-  texture: Texture
+  texture: Texture | TextureView
   color?: IVec4
 
   source: IRect
@@ -38,12 +38,12 @@ export interface Sprite {
  * @public
  */
 export class SpriteBuilder {
-  public texture: Texture
+  public texture: Texture | TextureView
   public readonly color: IVec4 = vec4(1)
   public readonly transform = mat4Identity()
   public readonly uv: IVec4 = vec4(0, 0, 1, 1)
 
-  public reset(texture: Texture): this {
+  public reset(texture: Texture | TextureView): this {
     this.texture = texture
     vec4$init(this.color, 1, 1, 1, 1)
     vec4$init(this.uv, 0, 0, 1, 1)
