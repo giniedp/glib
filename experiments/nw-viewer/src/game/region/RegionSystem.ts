@@ -1,11 +1,10 @@
 import { EcsGame } from '@gglib/components'
 import { GameEntity, GameQuery, GameSystem, GameWorld, GetComponent } from '@gglib/ecs'
-import { boxMat4DistanceSquared, type IVec3, type Mat4 } from '@gglib/math'
+import { boxMat4DistanceSquared, mat4GetTranslationX, mat4GetTranslationY, type IVec3, type Mat4 } from '@gglib/math'
 import { IMPOSTOR_FADE_RANGE, LOD_SPANS, lodSpanStart, lodSpanVisibleEnd } from '../../constants'
 import type { ContentService } from '../../content'
 import { RegionComponent } from './RegionComponent'
 import { RegionImpostorComponent } from './RegionImpostorComponent'
-
 
 export class RegionSystem extends GameSystem {
   private allRegions: GameQuery
