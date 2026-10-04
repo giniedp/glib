@@ -191,7 +191,8 @@ fn vs_main(input : VertexInput) -> FragmentInput {
   // #else
   //   AmbObjectCol = AmbientObjectCol;
   // #endif
-  let flipN = min(dot(toEye, normal) + 0.1, 1.0);
+  // using sign gives a better visual result, but pops (vegetation.cfx)
+  let flipN = min(dot(normalize(toEye), normal) + 0.1, 1.0);
   if (LEAVES || GRASS) {
     normal     *= flipN;
     handedness *= flipN;
@@ -384,7 +385,8 @@ fn fs_main(input: FragmentInput) -> FragmentOutput {
   var albedo   = cDiffuseMap.rgb;
   var normal   = normalize(tbn * normalize(cBumpMap));
   var specular = vec3f(1.0);
-  var gloss    = material.specularColor.a;
+  // smoothness is the attached alpha of the normal map, served as a single channel texture (_ddna.dds.a)
+  var gloss    = material.specularColor.a * textureSample(smoothnessMap, samplerLinear, uvBase.xy).r;
   // pPass.fNdotE   = (dot(pPass.vView.xyz, pPass.vNormal.xyz));
   // pPass.vReflVec = (2.0 * pPass.fNdotE * pPass.vNormal.xyz) - pPass.vView.xyz;
   var cFilterColor    = vec3f(1.0);
@@ -393,6 +395,9 @@ fn fs_main(input: FragmentInput) -> FragmentOutput {
   vertCol = vec4f(1.0); // Vegetation has custom color ouput - override vtx color back to default
 
   if (LEAVES || GRASS) {
+    // orient normal of vegetation planes towards viewer to reduce fresnel gain and mimic some forward scattering
+    // (clusterforward_commonzpass.cfi)
+    normal = normalize(normal + normalize(input.toEye) * material.normalViewDependency);
     if (LEAVES) {
       cShadingBack = cBackLight.rgb * textureSample(opacityMap, samplerLinear, uvBase.xy).r;
     } else {
@@ -433,6 +438,18 @@ fn fs_main(input: FragmentInput) -> FragmentOutput {
     albedo += albedo * cDetailMap.z;
     gloss  += gloss  * cDetailMap.w;
   }
+
+  // -- Specular antialiasing, the game filters the gbuffer of all opaque surfaces (FilterGBufferPS)
+  let authoredGloss = gloss;
+  let saa = getNormalVarianceSmoothness(
+    normal,
+    vec2i(floor(input.position.xy)),
+    linearizeDepthReversedZ(input.position.z, view.near, view.far),
+    gloss,
+    specular,
+  );
+  gloss = saa.smoothness;
+  specular *= saa.specularScale;
 
 
 
@@ -578,6 +595,9 @@ fn fs_main(input: FragmentInput) -> FragmentOutput {
     }
     case DEBUG_MTL_ROUGHNESS: {
       out.color = vec4f(vec3f(surface.Roughness), 1.0);
+    }
+    case DEBUG_SH_SPECULAR_AA: {
+      out.color = vec4f((surface.Roughness - smoothnessToRoughness(authoredGloss)) * 4.0, smoothnessToRoughness(authoredGloss) * 0.25, 0.0, 1.0);
     }
     case DEBUG_MTL_IOR: {
       out.color = vec4f(vec3f(0.0), 1.0);

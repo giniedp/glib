@@ -50,6 +50,7 @@ const DEBUG_SH_AMBIENT:          u32 = 303u;
 const DEBUG_SH_REFLECTION:       u32 = 304u;
 const DEBUG_SH_FRESNEL:          u32 = 305u;
 const DEBUG_SH_COUNT:            u32 = 306u; // heatmap of overlapping lights/clusters
+const DEBUG_SH_SPECULAR_AA:      u32 = 307u; // roughness added by specular antialiasing
 
 // Misc / engine
 // const DEBUG_MIP_LEVEL:     u32 = 29u;
@@ -615,6 +616,68 @@ fn getKaplanyanRoughness(
 
   return sqrt(roughness * roughness + maxIsotropicEdge);
 }
+
+// #region Specular AA
+
+struct SpecularAA {
+  smoothness:    f32,
+  // scale for the specular color of dielectrics
+  specularScale: f32,
+};
+
+// Forward port of FilterGBufferPS (deferredshading.cfx), which the game runs on the gbuffer of all opaque surfaces.
+// Widens the specular lobe by the variance of the shading normal across neighbouring pixels.
+// The game averages a 4 pixel cross with depth weights, here the neighbours of the 2x2 quad are used.
+//
+// Must be called in uniform control flow (uses derivatives).
+//
+// normal    - normalized world space shading normal (after normal mapping)
+// viewDepth - linear view depth in world units
+fn getNormalVarianceSmoothness(
+  normal: vec3f,
+  pixelPos: vec2i,
+  viewDepth: f32,
+  smoothness: f32,
+  specular: vec3f,
+) -> SpecularAA {
+  let dnx = dpdxFine(normal);
+  let dny = dpdyFine(normal);
+  let ddx = dpdxFine(viewDepth);
+  let ddy = dpdyFine(viewDepth);
+
+  var result: SpecularAA;
+  result.smoothness = smoothness;
+  result.specularScale = 1.0;
+  if (smoothness <= 0.3) {
+    return result;
+  }
+
+  // the neighbour in the quad is to the right / bottom for even pixels, to the left / top for odd pixels
+  let sx = 1.0 - 2.0 * f32(pixelPos.x & 1);
+  let sy = 1.0 - 2.0 * f32(pixelPos.y & 1);
+  // reject neighbours across depth discontinuities, as in the game (0.25 world units)
+  let wx = 1.0 - saturate(abs(ddx) * 4.0);
+  let wy = 1.0 - saturate(abs(ddy) * 4.0);
+
+  let avgNormal = (normal + (normal + dnx * sx) * wx + (normal + dny * sy) * wy) / (1.0 + wx + wy);
+  let len = length(avgNormal);
+  if (len < 1.0) {
+    // derive new roughness based on normal variance
+    let roughness = smoothnessToRoughness(smoothness);
+    let kappa     = (3.0 * len - len * len * len) / (1.0 - len * len);
+    let variance  = 1.0 / (2.0 * kappa);
+    result.smoothness = roughnessToSmoothness(sqrt(roughness * roughness + variance));
+  }
+
+  // reduce specular intensity for dielectrics to reduce outline artifacts when fresnel gain is strong
+  if (getLuminance(specular) < 0.05) {
+    const epsilon = 0.0001;
+    result.specularScale = (result.smoothness + epsilon) / (smoothness + epsilon);
+  }
+  return result;
+}
+
+// #endregion
 
 fn getReflectColorRoughness(cubeMap: texture_cube<f32>, cubeSampler: sampler, reflection: vec3f, roughness: f32) -> vec3f {
   return getReflectColor(cubeMap, cubeSampler, reflection, roughnessToSmoothness(roughness));

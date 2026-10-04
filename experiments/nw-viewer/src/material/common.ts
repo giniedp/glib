@@ -125,7 +125,6 @@ export const DebugOptions = {
   DEBUG_SH_FRESNEL: 305,
   DEBUG_SH_COUNT: 306,
   DEBUG_SH_SPECULAR_AA: 307,
-  DEBUG_SH_NO_SPECULAR_AA: 308,
 } as const
 
 export const MaterialLayerMasks = {

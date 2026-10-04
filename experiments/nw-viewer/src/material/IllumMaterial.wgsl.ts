@@ -433,7 +433,8 @@ fn fs_main(input: FragmentInput) -> FragmentOutput {
     specular = textureSample(specularMap, samplerLinear, uvBase.xy).rgb;
   }
   specular *= material.specularColor.rgb;
-  gloss    *= textureSample(smoothnessMap, samplerLinear, uvBase.xy).a;
+  // smoothness is served as a single channel texture (_ddna.dds.a)
+  gloss    *= textureSample(smoothnessMap, samplerLinear, uvBase.xy).r;
 
   if (VERTCOLORS) {
     alpha *= input.vertexColor.a;
@@ -535,11 +536,19 @@ fn fs_main(input: FragmentInput) -> FragmentOutput {
     gloss  += gloss * cDetailMap.w;
   }
 
-  // if (SAA_FILTERING) {
-    let pixelPos = vec2i(floor(input.position.xy));
+  // --- Specular antialiasing
+  let authoredGloss = gloss;
+  let pixelPos  = vec2i(floor(input.position.xy));
+  let viewDepth = linearizeDepthReversedZ(input.position.z, view.near, view.far);
+  // only materials with %ALLOW_SPECULAR_ANTIALIASING, see illumvalidations.cfi
+  if (SAA_FILTERING) {
     let r = getKaplanyanRoughness(tbn, pixelPos, smoothnessToRoughness(gloss), material.roughnessBoost, material.roughnessMaxFootprint);
     gloss = roughnessToSmoothness(r);
-  // }
+  }
+  // the game filters the gbuffer of all opaque surfaces (FilterGBufferPS)
+  let saa = getNormalVarianceSmoothness(normal, pixelPos, viewDepth, gloss, specular);
+  gloss = saa.smoothness;
+  specular *= saa.specularScale;
 
   // --- Environment mapping
   let reflectVec = normalize(reflect(-toEye, normal));
@@ -633,6 +642,10 @@ fn fs_main(input: FragmentInput) -> FragmentOutput {
     }
     case DEBUG_MTL_ROUGHNESS: {
       out.color = vec4f(vec3f(surface.Roughness), 1.0);
+    }
+    case DEBUG_SH_SPECULAR_AA: {
+      // red = roughness added by specular AA, green = authored roughness
+      out.color = vec4f((surface.Roughness - smoothnessToRoughness(authoredGloss)) * 4.0, smoothnessToRoughness(authoredGloss) * 0.25, 0.0, 1.0);
     }
     case DEBUG_MTL_IOR: {
       out.color = vec4f(vec3f(0.0), 1.0);

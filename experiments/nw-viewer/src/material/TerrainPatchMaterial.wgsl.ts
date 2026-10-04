@@ -176,26 +176,37 @@ fn fs_main(input: VertexOutput) -> FragmentOutput {
   let viewTS = normalize(tbn * toEye);
   let pomUV = parallaxOcclusionMap(patchUv, patchLayer, viewTS, 8, 0.0078, 0.0);
 
-  var sample1       = textureSampleLevel(colorMap1, colorMapSampler, pomUV,         patchLayer,       0.0);
-  var sample2       = textureSampleLevel(colorMap2, colorMapSampler, pomUV,         patchLayer,       0.0);
-  var coarseSample1 = textureSampleLevel(colorMap1, colorMapSampler, patchUvCoarse, patchLayerCoarse, 0.0);
-  var coarseSample2 = textureSampleLevel(colorMap2, colorMapSampler, patchUvCoarse, patchLayerCoarse, 0.0);
+  // mip selection from the unparallaxed uv gradients, the parallax offset would add noise
+  let dUvX       = dpdx(patchUv);
+  let dUvY       = dpdy(patchUv);
+  let dUvCoarseX = dpdx(patchUvCoarse);
+  let dUvCoarseY = dpdy(patchUvCoarse);
+  var sample1       = textureSampleGrad(colorMap1, colorMapSampler, pomUV,         patchLayer,       dUvX,       dUvY);
+  var sample2       = textureSampleGrad(colorMap2, colorMapSampler, pomUV,         patchLayer,       dUvX,       dUvY);
+  var coarseSample1 = textureSampleGrad(colorMap1, colorMapSampler, patchUvCoarse, patchLayerCoarse, dUvCoarseX, dUvCoarseY);
+  var coarseSample2 = textureSampleGrad(colorMap2, colorMapSampler, patchUvCoarse, patchLayerCoarse, dUvCoarseX, dUvCoarseY);
 
   let fineParams = unpackParams(sample1, sample2);
   let coarseParams = unpackParams(coarseSample1, coarseSample2);
 
   // only blend when both fine and coarse are real distinct tiles
   let blend  = input.vMorph;
-  let normal = tbn * normalize(mix(fineParams.normal, coarseParams.normal, blend));
+  let normal = normalize(tbn * normalize(mix(fineParams.normal, coarseParams.normal, blend)));
   let albedo = vec3f(mix(fineParams.color, coarseParams.color, blend));
   let alpha = 1.0;
-  let specular = vec3f(mix(fineParams.specular, coarseParams.specular, blend));
-  let roughness = mix(fineParams.roughness, coarseParams.roughness, blend);
-  var gloss = roughnessToSmoothness(roughness);
-  // specular aliasing
-  let pixelPos = vec2i(floor(input.Position.xy));
-  let r = getKaplanyanRoughness(tbn, pixelPos, smoothnessToRoughness(gloss), 2.0, 0.3);
-  gloss = roughnessToSmoothness(r);
+  var specular = vec3f(mix(fineParams.specular, coarseParams.specular, blend));
+  let authoredRoughness = mix(fineParams.roughness, coarseParams.roughness, blend);
+  // specular antialiasing, the game filters the gbuffer of all opaque surfaces (FilterGBufferPS)
+  let saa = getNormalVarianceSmoothness(
+    normal,
+    vec2i(floor(input.Position.xy)),
+    linearizeDepthReversedZ(input.Position.z, view.near, view.far),
+    roughnessToSmoothness(authoredRoughness),
+    specular,
+  );
+  let gloss = saa.smoothness;
+  let roughness = smoothnessToRoughness(gloss);
+  specular *= saa.specularScale;
 
   let reflectVec = normalize(reflect(-toEye, normal));
   var reflectColor = getReflectColor(envMap, colorMapSampler, reflectVec, gloss).rgb;
@@ -231,6 +242,9 @@ fn fs_main(input: VertexOutput) -> FragmentOutput {
     }
     case DEBUG_MTL_ROUGHNESS: {
       out.color = vec4f(vec3f(surface.Roughness), 1.0);
+    }
+    case DEBUG_SH_SPECULAR_AA: {
+      out.color = vec4f((surface.Roughness - authoredRoughness) * 4.0, authoredRoughness * 0.25, 0.0, 1.0);
     }
     case DEBUG_MTL_IOR: {
       out.color = vec4f(vec3f(0.0), 1.0);
