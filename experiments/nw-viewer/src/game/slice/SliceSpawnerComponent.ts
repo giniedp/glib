@@ -23,8 +23,6 @@ import {
   mat4GetTranslation,
   vec3,
   vec3Copy,
-  vec3DistanceSquared,
-  type IVec3,
 } from '@gglib/math'
 import {
   isTimeOfDayComponent,
@@ -42,6 +40,7 @@ import { DebugLayer, DebugShapeComponent } from '../debug/DebugShapeComponent'
 import { TimeOfDayComponent } from '../level/TimeOfDayComponent'
 import { LightComponent } from '../light/LightComponent'
 import { MeshLoaderComponent } from './MeshLoaderComponent'
+import { RangeActivationSystem } from './RangeActivationSystem'
 
 export interface SliceSpawnerComponentOptions {
   isChunk?: boolean
@@ -104,20 +103,8 @@ export class SliceSpawnerComponent implements GameComponent, ActivatableComponen
   public slice: AssetReference
   private content: ContentService
   private bounds: BoundsComponent
-
-  private rangeActivatable: Array<{
-    entity: GameEntity
-    position: IVec3
-    rangeSq: number
-  }> = []
-  /**
-   * Box around all range activatable entities extended by their range.
-   * If the camera is outside, none of them can be in range.
-   */
-  private rangeMin = vec3(Infinity, Infinity, Infinity)
-  private rangeMax = vec3(-Infinity, -Infinity, -Infinity)
-  private rangeActiveCount = 0
-  private rangeBucketsRemaining = 0
+  private rangeSystem: RangeActivationSystem
+  private rangeEntities: GameEntity[] = []
 
   public data: ViewerSlice
   public spawnRadius: number
@@ -134,6 +121,7 @@ export class SliceSpawnerComponent implements GameComponent, ActivatableComponen
   public initialize(): void {
     this.content = this.entity.service(ContentService)
     this.bounds = this.entity.component(BoundsComponent)
+    this.rangeSystem = this.entity.world.getSystem(RangeActivationSystem)
   }
 
   public activate(): void {
@@ -254,7 +242,7 @@ export class SliceSpawnerComponent implements GameComponent, ActivatableComponen
           switch (light.type) {
             case 'Point': {
               if (light.viewDistanceEnabled) {
-                range = Math.max(range, light.maxViewDistance * light.viewDistanceMultiplier)
+                range = Math.max(range, light.maxViewDistance)
               }
               debug.add({
                 type: 'sphere',
@@ -269,7 +257,7 @@ export class SliceSpawnerComponent implements GameComponent, ActivatableComponen
             }
             case 'Area': {
               if (light.viewDistanceEnabled) {
-                range = Math.max(range, light.maxViewDistance * light.viewDistanceMultiplier)
+                range = Math.max(range, light.maxViewDistance)
               }
               debug.add({
                 type: 'box',
@@ -284,7 +272,7 @@ export class SliceSpawnerComponent implements GameComponent, ActivatableComponen
             }
             case 'Projector': {
               if (light.viewDistanceEnabled) {
-                range = Math.max(range, light.maxViewDistance * light.viewDistanceMultiplier)
+                range = Math.max(range, light.maxViewDistance)
               }
 
               const proj = mat4CreatePerspectiveFieldOfView(
@@ -312,7 +300,7 @@ export class SliceSpawnerComponent implements GameComponent, ActivatableComponen
             }
             case 'Probe': {
               if (light.viewDistanceEnabled) {
-                range = Math.max(range, light.maxViewDistance * light.viewDistanceMultiplier)
+                range = Math.max(range, light.maxViewDistance)
               }
               debug.add({
                 type: 'bounds-box',
@@ -353,14 +341,8 @@ export class SliceSpawnerComponent implements GameComponent, ActivatableComponen
       })
 
       if (range) {
-        const position = mat4GetTranslation(entity.getTransform().world, vec3())
-        this.rangeActivatable.push({ entity, position, rangeSq: range * range })
-        this.rangeMin.x = Math.min(this.rangeMin.x, position.x - range)
-        this.rangeMin.y = Math.min(this.rangeMin.y, position.y - range)
-        this.rangeMin.z = Math.min(this.rangeMin.z, position.z - range)
-        this.rangeMax.x = Math.max(this.rangeMax.x, position.x + range)
-        this.rangeMax.y = Math.max(this.rangeMax.y, position.y + range)
-        this.rangeMax.z = Math.max(this.rangeMax.z, position.z + range)
+        this.rangeSystem.add(entity, mat4GetTranslation(entity.getTransform().world, vec3.$0), range)
+        this.rangeEntities.push(entity)
       }
 
       const spawner = entity.component(SliceSpawnerComponent, GetComponent.Optional)
@@ -368,74 +350,6 @@ export class SliceSpawnerComponent implements GameComponent, ActivatableComponen
         this.slices.push(spawner)
       }
     }
-    // check all range activatable entities once, regardless of camera movement
-    this.rangeBucketsRemaining = Math.ceil(this.rangeActivatable.length / this.bucketSize)
-  }
-
-  private bucketSize = 50
-  private bucket = 0
-
-  /**
-   * Activates entities that are in range of the camera and deactivates the others.
-   * Large spawners are processed in buckets, one bucket per call.
-   *
-   * @param camera - camera position
-   * @param moved - whether the camera moved since the last call, restarts the bucket cycle
-   * @returns true if buckets are left to process
-   */
-  public updateRanges(camera: IVec3, moved: boolean): boolean {
-    const items = this.rangeActivatable
-    if (!items.length) {
-      return false
-    }
-
-    if (!isInsideBox(camera, this.rangeMin, this.rangeMax)) {
-      // nothing can be in range, deactivate what is left and skip the rest
-      if (this.rangeActiveCount > 0) {
-        for (const item of items) {
-          if (item.entity.isActive && item.entity.canDeactivate) {
-            item.entity.deactivate()
-          }
-        }
-        this.rangeActiveCount = 0
-      }
-      this.rangeBucketsRemaining = 0
-      return false
-    }
-
-    const bucketCount = Math.ceil(items.length / this.bucketSize)
-    if (moved) {
-      this.rangeBucketsRemaining = bucketCount
-    }
-    if (this.rangeBucketsRemaining <= 0) {
-      return false
-    }
-    this.rangeBucketsRemaining--
-
-    const start = this.bucket * this.bucketSize
-    const end = Math.min(start + this.bucketSize, items.length)
-    this.bucket = (this.bucket + 1) % bucketCount
-
-    for (let i = start; i < end; i++) {
-      const item = items[i]
-      const isInRange = vec3DistanceSquared(item.position, camera) <= item.rangeSq
-
-      if (isInRange && !item.entity.isActive) {
-        if (item.entity.canInitialize) {
-          item.entity.initialize()
-        }
-        if (item.entity.canActivate) {
-          item.entity.activate()
-          this.rangeActiveCount++
-        }
-      } else if (!isInRange && item.entity.isActive) {
-        if (item.entity.canDeactivate) {
-          item.entity.deactivate()
-          this.rangeActiveCount--
-        }
-      }
-    }
-    return this.rangeBucketsRemaining > 0
   }
 
   public deactivate(): void {
@@ -443,12 +357,9 @@ export class SliceSpawnerComponent implements GameComponent, ActivatableComponen
   }
 
   public destroy(): void {
-    //
+    for (const entity of this.rangeEntities) {
+      this.rangeSystem.remove(entity)
+    }
+    this.rangeEntities.length = 0
   }
-}
-
-function isInsideBox(point: IVec3, min: IVec3, max: IVec3) {
-  return (
-    point.x >= min.x && point.x <= max.x && point.y >= min.y && point.y <= max.y && point.z >= min.z && point.z <= max.z
-  )
 }

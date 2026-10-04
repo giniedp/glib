@@ -16,7 +16,7 @@ export class SliceSystem extends GameSystem {
   private camPosition = vec3()
   private lastPosition = vec3(Infinity, Infinity, Infinity)
   /**
-   * Set when the last pass left work behind, e.g. loaded or spawned slices or pending range buckets
+   * Set when the last pass left work behind, e.g. loaded or spawned slices
    */
   private hasPendingWork = true
   private topLevelCount = 0
@@ -48,11 +48,11 @@ export class SliceSystem extends GameSystem {
     this.hasPendingWork = false
 
     for (const entity of this.activeRegions) {
-      this.updateSlices(entity.component(RegionComponent).slices, this.camPosition, moved)
+      this.updateSlices(entity.component(RegionComponent).slices, this.camPosition)
     }
   }
 
-  private updateSlices(slices: SliceSpawnerComponent[], camera: IVec3, moved: boolean) {
+  private updateSlices(slices: SliceSpawnerComponent[], camera: IVec3) {
     for (const component of slices) {
       if (!component.entity.isActive) {
         if (component.entity.canInitialize) {
@@ -62,18 +62,15 @@ export class SliceSystem extends GameSystem {
           component.entity.activate()
         }
       }
-      this.updateSlice(component, camera, moved)
+      this.updateSlice(component, camera)
       if (component.slices.length) {
-        this.updateSlices(component.slices, camera, moved)
+        this.updateSlices(component.slices, camera)
       }
     }
   }
 
-  private updateSlice(component: SliceSpawnerComponent, camera: IVec3, moved: boolean) {
+  private updateSlice(component: SliceSpawnerComponent, camera: IVec3) {
     if (component.isSpawned) {
-      if (component.updateRanges(camera, moved)) {
-        this.hasPendingWork = true
-      }
       return
     }
     if (!component.isLoaded) {
@@ -86,7 +83,7 @@ export class SliceSystem extends GameSystem {
     const intersects = spherePointIntersects(position, component.spawnRadius, camera)
     if (intersects) {
       component.spawn()
-      // spawned slices may contain nested spawners and range activatable entities
+      // spawned slices may contain nested spawners
       this.hasPendingWork = true
     }
   }
