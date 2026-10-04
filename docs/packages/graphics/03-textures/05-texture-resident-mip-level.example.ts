@@ -10,6 +10,10 @@ import {
 } from '@gglib/math'
 import { mountUi } from 'tweak-ui'
 
+const settings = {
+  residentMipLevel: 0,
+}
+
 export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
   const device: Device = await createDevice({ canvas, platform, autosize: true }).ready
 
@@ -23,9 +27,6 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     source: '/textures/formats/uv_checker.png',
   })
 
-  const settings = {
-    residentMipLevel: 0,
-  }
   mountUi(tools, (ui) => {
     ui.scalar(settings, 'residentMipLevel', {
       label: 'Resident mip level',
