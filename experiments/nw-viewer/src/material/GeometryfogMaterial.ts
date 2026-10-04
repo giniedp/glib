@@ -59,6 +59,7 @@ type PublicParams = {
   SoftIntersectionFactor: string // 1
   StartColor: string // 4
   StartRadius: string // 1
+  SunColorInfluence: string // 1
   turbRatio: string //  1
   turbStrength: string //  1
   uvRot: string //  1
@@ -68,7 +69,7 @@ type PublicParams = {
 const util = new MtlUtil('GeometryFog', {
   knownMaps: ['Diffuse', 'Specular', 'Detail'],
   knownMods: ['Diffuse'],
-  knownFlags: ['NOISE', 'USE_AS_BEAMPROC'],
+  knownFlags: ['NOISE', 'USE_AS_BEAMPROC', 'APPLY_SUN_COLOR'],
 })
 
 export class GeometryFogMaterial extends MaterialWithSchema(SCHEMA) {
@@ -144,6 +145,7 @@ export class GeometryFogMaterial extends MaterialWithSchema(SCHEMA) {
     this.OrigWidth = 1.0
     this.StartRadius = 1.0
     this.EndRadius = 2.0
+    this.SunColorInfluence = 0.9
   }
 
   private setTextures(maps: NwMaterialProps['textures']) {
@@ -175,6 +177,13 @@ export class GeometryFogMaterial extends MaterialWithSchema(SCHEMA) {
     if (flags.has('USE_AS_BEAMPROC')) {
       this.EnabledUseAsBeamProc = TRUE
     }
+    // geometryfognovertalpha.cfx is a variant of geometryfog.cfx without vertex color and alpha
+    if (attrs.Shader?.toLowerCase() === 'geometryfognovertalpha') {
+      this.EnabledNoVertAlpha = TRUE
+      if (flags.has('APPLY_SUN_COLOR')) {
+        this.EnabledApplySunColor = TRUE
+      }
+    }
   }
 
   private setPublicParams(params: PublicParams) {
@@ -196,6 +205,7 @@ export class GeometryFogMaterial extends MaterialWithSchema(SCHEMA) {
     this.SoftIntersectionFactor = paramValue(params.SoftIntersectionFactor, this.SoftIntersectionFactor)
     this.StartColor = paramVec4(params.StartColor, this.StartColor)
     this.StartRadius = paramValue(params.StartRadius, this.StartRadius)
+    this.SunColorInfluence = paramValue(params.SunColorInfluence, this.SunColorInfluence)
     this.TurbRatio = paramValue(params.turbRatio, this.TurbRatio)
     this.TurbStrength = paramValue(params.turbStrength, this.TurbStrength)
     this.UvRot = paramValue(params.uvRot, this.UvRot)

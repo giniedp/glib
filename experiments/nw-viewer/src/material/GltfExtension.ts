@@ -136,7 +136,8 @@ export const NwMaterialExtension: GLTF.GltfMaterialExtension = {
         node.data.factory = (device, asset) => new GeometryBeamSimpleMaterial(device, asset)
         break
       }
-      case 'geometryfog': {
+      case 'geometryfog':
+      case 'geometryfognovertalpha': {
         node.data.factory = (device, asset) => new GeometryFogMaterial(device, asset)
         break
       }

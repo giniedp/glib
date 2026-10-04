@@ -56,6 +56,11 @@ struct MaterialBlock {
   enabledUvVignetting    : u32,   // %UV_VIGNETTING
   enabledUseAsBeamProc   : u32,   // %USE_AS_BEAMPROC
   enabledUvTransform1    : u32,
+
+  // -- GeometryFogNoVertAlpha (geometryfognovertalpha.cfx) --------------------
+  enabledNoVertAlpha     : u32,   // shader variant without vertex color/alpha
+  enabledApplySunColor   : u32,   // %APPLY_SUN_COLOR
+  sunColorInfluence      : f32,   // default 0.9 - amount of sun color applied
 }
 
 // ----------------------------------------------------------------------------
@@ -179,6 +184,17 @@ fn vertex_main(input: VertexInput) -> VertexOutput {
       output.color = material.finalMultiplier * vec4f(gradRGB * dc, 1.0) * d;
       output.cameraDistance = 0.0;
 
+  } else if (material.enabledNoVertAlpha != 0u) {
+      // GeometryFogNoVertAlpha: no vertex color, DiffuseColor is applied in the PS
+      let tcX = clamp(input.texcoord.x, 0.0, 1.0);
+      var rgb = material.finalMultiplier * d * mix(material.startColor.rgb, material.endColor.rgb, tcX);
+      if (material.enabledApplySunColor != 0u) {
+        // takes the sun luminance into account to ensure no over glow at night / too little during day
+        rgb *= mix(vec3f(1.0), global.sunColor.xyz, material.sunColorInfluence);
+      }
+      output.color = vec4f(rgb, material.finalMultiplier * d * (1.0 - tcX));
+      output.cameraDistance = length(worldPos4.xyz - view.cameraPosition.xyz);
+
   } else {
       // Fog-plane: vertex color tinted by DiffuseColor; gradient along UV.x
       let tcX      = clamp(input.texcoord.x, 0.0, 1.0);  // un-rotated tc for gradient
@@ -274,6 +290,30 @@ fn fragment_main(input: VertexOutput) -> FragmentOutput {
 
       dustFinal = mix(dust, dust2 * dust2Detail, material.turbRatio);
     }
+  }
+
+  // -- GeometryFogNoVertAlpha output (BeamPS in geometryfognovertalpha.cfx) ---
+  if (material.enabledNoVertAlpha != 0u) {
+    var alphaOut = baseTex.a;
+    if (material.enabledUvVignetting != 0u) {
+      let linearVig = length(fract(input.uvBase.xy * material.baseUVScale) * 2.0 - 1.0);
+      alphaOut     *= gaussianRemap(linearVig, material.uvVigFeaturing);
+    }
+    let nearFade = clamp((input.cameraDistance - material.nearFadeStart) / max(material.nearFadeSize, 1e-6), 0.0, 1.0);
+    let farFade  = clamp(1.0 - (input.cameraDistance - material.farFadeStart) / max(material.farFadeSize, 1e-6), 0.0, 1.0);
+    alphaOut    *= nearFade * nearFade * farFade * farFade;
+
+    // %RECEIVE_SHADOWS not supported, shadow occlusion is 1
+    let shadowOccl = 1.0;
+    let rgbOut = baseTex.rgb
+               * input.color.rgb
+               * dustFinal
+               * fadeBeam
+               * (shadowOccl + material.ambStrength)
+               * fNoise
+               * material.diffuseColor.rgb;
+    out.color = vec4f(rgbOut, alphaOut);
+    return out;
   }
 
   // -- Beam-proc output ------------------------------------------------------
