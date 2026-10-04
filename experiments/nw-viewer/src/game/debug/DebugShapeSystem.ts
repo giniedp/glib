@@ -34,14 +34,18 @@ export class DebugShapeSystem extends GameSystem {
   public update() {
     const root = this.getRootComponent()
     this.resetInstances(root)
-    if (!this.activeLayers) {
-      this.commitInstances(root)
-      return
+    if (this.activeLayers) {
+      this.updateByActiveQuery(root)
     }
+    this.commitInstances(root)
+  }
 
+  private updateByActiveQuery(root: DebugShapeRenderComponent) {
     for (const entity of this.activeShapes) {
       const comp = entity.component(DebugShapeComponent)
-      // const ref = entity.component(DebugShapeComponent)
+      if (!isLayerEnabled(this.activeLayers, comp.layers)) {
+        continue
+      }
       for (const ref of comp.entries) {
         if (!isLayerEnabled(this.activeLayers, ref.layer)) {
           continue
@@ -64,7 +68,7 @@ export class DebugShapeSystem extends GameSystem {
           const world = tmp1
           mat4$initScaleXYZ(world, sizeX, sizeY, sizeZ)
           mat4$setTranslationXYZ(world, box.min.x + sizeX * 0.5, box.min.y + sizeY * 0.5, box.min.z + sizeZ * 0.5)
-          this.pushShape(root, ref, world)
+          this.writeShapeInstance(root, ref, world)
         } else if (ref.boundsSphere) {
           const sphere = entity.component(BoundsComponent).world?.sphere
           if (!sphere) {
@@ -74,22 +78,20 @@ export class DebugShapeSystem extends GameSystem {
           const world = tmp1
           mat4$initScaleUniform(world, sphere.radius)
           mat4$setTranslation(world, sphere.center)
-          this.pushShape(root, ref, world)
+          this.writeShapeInstance(root, ref, world)
         } else {
           for (const instance of ref.transforms) {
             const world = tmp1
             mat4$initFrom(world, instance)
             mat4$premultiply(world, entity.getTransform().world)
-            this.pushShape(root, ref, world)
+            this.writeShapeInstance(root, ref, world)
           }
         }
       }
     }
-
-    this.commitInstances(root)
   }
 
-  private pushShape(root: DebugShapeRenderComponent, ref: DebugShapeEntry, world: Mat4) {
+  private writeShapeInstance(root: DebugShapeRenderComponent, ref: DebugShapeEntry, world: Mat4) {
     const shape = this.getShape(root, ref.type, ref.solid)
     const mesh = shape.mesh
     mesh.startInstance(mesh.getInstanceCount() + 1)

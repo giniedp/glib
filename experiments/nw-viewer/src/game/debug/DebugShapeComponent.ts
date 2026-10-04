@@ -1,5 +1,5 @@
 import type { GameComponent, GameEntity } from '@gglib/ecs'
-import { type Mat4, mat4CreateFromRTS, vec4, type IVec3, type IVec4 } from '@gglib/math'
+import { mat4CreateFromRTS, vec4, type IVec3, type IVec4, type Mat4 } from '@gglib/math'
 
 export type DebugShapeType = 'bounds-box' | 'bounds-sphere' | 'box' | 'sphere' | 'plane' | 'cylinder' | 'cone' | 'disc'
 
@@ -50,41 +50,22 @@ export class DebugShapeComponent implements GameComponent {
   public entity: GameEntity
   public entries: DebugShapeEntry[] = []
 
-  // public type: DebugShapeType
-  // public localTransforms: Mat4[]
+  /**
+   * Layer union of all entries
+   */
+  public get layers() {
+    if (this.layersUnion == null) {
+      this.updateLayers()
+    }
+    return this.layersUnion
+  }
 
-  // public solid: boolean
-  // public color: IVec4
-
-  // public layer: DebugLayer
-  // public visibleIf?: () => boolean
-
-  // public readonly boundsBox: boolean
-  // public readonly boundsSphere: boolean
+  private layersUnion: number = null
 
   public constructor(options?: DebugShapeOptions) {
     if (options) {
       this.add(options)
     }
-    // if (options?.instances?.length) {
-    //   this.localTransforms = options.instances
-    // } else {
-    //   const translation = options?.translation ?? { x: 0, y: 0, z: 0 }
-    //   const rotation = options?.rotation ?? { x: 0, y: 0, z: 0, w: 1 }
-    //   const scale = options?.scale ?? { x: 1, y: 1, z: 1 }
-    //   this.localTransforms = [mat4CreateFromRTS(rotation, translation, scale)]
-    // }
-
-    // const color = options?.color ?? { x: 1, y: 1, z: 1 }
-    // this.color = vec4(color.x, color.y, color.z, options?.alpha ?? 1)
-    // this.solid = options?.solid ?? false
-    // this.layer = options?.layer ?? DebugLayer.Selection
-
-    // this.visibleIf = options?.visibleIf
-
-    // this.type = options?.type ?? 'bounds-box'
-    // this.boundsBox = this.type === 'bounds-box'
-    // this.boundsSphere = this.type === 'bounds-sphere'
   }
 
   public add(options: DebugShapeOptions): DebugShapeEntry {
@@ -107,7 +88,16 @@ export class DebugShapeComponent implements GameComponent {
       entry.transforms = [mat4CreateFromRTS(rotation, translation, scale)]
     }
     this.entries.push(entry)
+    this.layersUnion = null
     return entry
+  }
+
+  private updateLayers() {
+    let layers = 0
+    for (const entry of this.entries) {
+      layers |= entry.layer
+    }
+    this.layersUnion = layers
   }
 
   public initialize(): void {
