@@ -4,6 +4,7 @@ import {
   PriorityLane,
   SchedulerSystem,
   SpatialNodeComponent,
+  TaskCancelledError,
   TransformComponent,
   type ScheduledTask,
 } from '@gglib/components'
@@ -29,6 +30,8 @@ import { DebugLayer, DebugShapeComponent } from '../debug/DebugShapeComponent'
 import { InstancedModelComponent } from '../instancing/InstancedModelComponent'
 import { InstancedRenderSystem } from '../instancing/InstancedRenderSystem'
 
+export type MeshLoadState = 'idle' | 'loading' | 'loaded' | 'failed'
+
 export class MeshLoaderComponent implements GameComponent {
   public static onLoad = brand<EventType<GameEntity>>(Symbol('MeshLoaderComponent.onLoaded'))
 
@@ -40,6 +43,15 @@ export class MeshLoaderComponent implements GameComponent {
 
   private isLoaded: boolean = false
   private task: ScheduledTask
+
+  /**
+   * Load state of the model, failed loads are not retried until the next activation
+   */
+  public state: MeshLoadState = 'idle'
+  /**
+   * Scheduler lane of the model load
+   */
+  public lane: PriorityLane = PriorityLane.Low
 
   public constructor(data: ViewerMeshComponent) {
     this.data = data
@@ -59,9 +71,10 @@ export class MeshLoaderComponent implements GameComponent {
       return
     }
 
+    this.state = 'loading'
     this.task = this.scheduler.schedule<Model>({
       entity: this.entity,
-      lane: PriorityLane.Low,
+      lane: this.lane,
       context: null,
       load: async (task) => {
         task.context = await this.content.loadModel(this.data.mesh, this.data.material)
@@ -150,6 +163,7 @@ export class MeshLoaderComponent implements GameComponent {
       },
       finalize: (task, err) => {
         this.isLoaded = !err
+        this.state = !err ? 'loaded' : err instanceof TaskCancelledError ? 'idle' : 'failed'
         if (this.task === task) {
           this.task = null
         }

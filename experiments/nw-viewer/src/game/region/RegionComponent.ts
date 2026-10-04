@@ -32,7 +32,7 @@ import {
   SliceSpawnerComponent,
 } from '../slice/SliceSpawnerComponent'
 import { TerrainRegionComponent } from '../terrain/TerrainRegionComponent'
-import { impostorEntityOptions } from './RegionImpostorComponent'
+import { impostorEntityOptions, RegionImpostorComponent } from './RegionImpostorComponent'
 
 export interface RegionComponentOptions {
   coatlicueName: string
@@ -44,6 +44,7 @@ export interface RegionComponentOptions {
   origin: IVec3
   enableDistribution: boolean
   enableVegetation: boolean
+  enableChunks: boolean
 }
 
 export function regionEntityOptions(parent: GameEntity, options: RegionComponentOptions): CreateEntityOptions {
@@ -101,6 +102,11 @@ export class RegionComponent implements GameComponent {
   public readonly mountainHeight: number
   public readonly enableDistribution: boolean
   public readonly enableVegetation: boolean
+  public readonly enableChunks: boolean
+  /**
+   * POI impostor cells by local cell index
+   */
+  private poiCells = new Map<number, RegionImpostorComponent>()
 
   private scheduler: SchedulerSystem
   private content: ContentService
@@ -131,6 +137,7 @@ export class RegionComponent implements GameComponent {
     this.mountainHeight = data.mountainHeight
     this.enableDistribution = data.enableDistribution
     this.enableVegetation = data.enableVegetation
+    this.enableChunks = !!data.enableChunks
     this.min = vec3Copy(data.origin)
     this.max = vec3AddScalar(data.origin, data.regionSize)
   }
@@ -309,8 +316,25 @@ export class RegionComponent implements GameComponent {
         cellSize: this.cellSize,
         span: item.span,
       })
-      this.entity.world.createEntity(options)
+      const entity = this.entity.world.createEntity(options)
+      if (item.span === LOD_SPANS.impostorPoi) {
+        this.poiCells.set(this.cellIndex(item.position.x, item.position.y), entity.component(RegionImpostorComponent))
+      }
     }
+  }
+
+  private cellIndex(x: number, y: number) {
+    const count = Math.round(this.regionSize / this.cellSize)
+    const ix = Math.floor((x - this.min.x) / this.cellSize)
+    const iy = Math.floor((y - this.min.y) / this.cellSize)
+    return ix + iy * count
+  }
+
+  /**
+   * The POI impostor cell at a world position, if the cell has a POI impostor
+   */
+  public poiCellAt(x: number, y: number): RegionImpostorComponent | null {
+    return this.poiCells.get(this.cellIndex(x, y)) || null
   }
 
   public createCapitals(layers: Record<string, CapitalRuntimeData[]>) {
@@ -328,9 +352,22 @@ export class RegionComponent implements GameComponent {
     for (const key in layers) {
       const parent = this.getCapitalLayerEntity(key)
       for (const item of layers[key]) {
-        const options = chunkSliceEntityOptions(parent, item)
+        if (item.chunkType === 2) {
+          // collision chunks have no entities
+          continue
+        }
+        // chunks that fit into one impostor cell are spawned by that cell
+        const cell =
+          this.enableChunks && item.size <= this.cellSize
+            ? this.poiCellAt(item.transform[12], item.transform[13])
+            : null
+        const options = chunkSliceEntityOptions(parent, item, cell)
         const entity = this.entity.world.createEntity(options)
-        this.slices.push(entity.component(SliceSpawnerComponent))
+        const spawner = entity.component(SliceSpawnerComponent)
+        this.slices.push(spawner)
+        if (cell) {
+          cell.chunks.push(spawner)
+        }
       }
     }
   }

@@ -70,7 +70,8 @@ export class SliceSystem extends GameSystem {
   }
 
   private updateSlice(component: SliceSpawnerComponent, camera: IVec3) {
-    if (component.isSpawned) {
+    if (component.isSpawned || component.cell) {
+      // cell owned chunks are spawned by their impostor cell
       return
     }
     if (!component.isLoaded) {

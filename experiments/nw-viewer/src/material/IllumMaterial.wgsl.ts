@@ -415,9 +415,6 @@ fn fs_main(input: FragmentInput) -> FragmentOutput {
 
   var albedo   = cDiffuseMap.rgb;
   var alpha    = cDiffuseMap.a; // * pPass.IN.Ambient.w;
-  if (IS_POI_IMPOSTOR) {
-    alpha = 1.0;
-  }
   var normal   = normalize(tbn * normalize(cBumpMap));
   var specular = vec3f(0.0);
   var gloss    = material.specularColor.a;

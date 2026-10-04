@@ -35,16 +35,25 @@ import {
   type ChunkRuntimeData,
   type ViewerSlice,
 } from '../../api'
-import { ENABLE_CHUNK_RANGE_CLAMP, CHUNK_MESH_RANGE } from '../../constants'
+import { CHUNK_MESH_RANGE, ENABLE_CHUNK_RANGE_CLAMP, IMPOSTOR_HOLD_CHUNK_SIZES } from '../../constants'
 import { ContentService } from '../../content'
 import { DebugLayer, DebugShapeComponent } from '../debug/DebugShapeComponent'
 import { TimeOfDayComponent } from '../level/TimeOfDayComponent'
 import { LightComponent } from '../light/LightComponent'
 import { MeshLoaderComponent } from './MeshLoaderComponent'
 import { RangeActivationSystem } from './RangeActivationSystem'
+import type { RegionImpostorComponent } from '../region/RegionImpostorComponent'
 
 export interface SliceSpawnerComponentOptions {
   isChunk?: boolean
+  /**
+   * Size of the chunk, if this is a chunk slice
+   */
+  chunkSize?: number
+  /**
+   * Impostor cell that spawns this chunk and activates its mesh entities
+   */
+  cell?: RegionImpostorComponent | null
   slice: AssetReference
 }
 
@@ -73,9 +82,15 @@ export function capitalSliceEntityOPtions(parent: GameEntity, data: CapitalRunti
   }
 }
 
-export function chunkSliceEntityOptions(parent: GameEntity, data: ChunkRuntimeData): CreateEntityOptions {
+export function chunkSliceEntityOptions(
+  parent: GameEntity,
+  data: ChunkRuntimeData,
+  cell: RegionImpostorComponent | null,
+): CreateEntityOptions {
   const spawner = new SliceSpawnerComponent({
     isChunk: true,
+    chunkSize: data.size,
+    cell,
     slice: data.slice,
   })
   const debug = new DebugShapeComponent({
@@ -89,6 +104,7 @@ export function chunkSliceEntityOptions(parent: GameEntity, data: ChunkRuntimeDa
     .addInfo('chunk type', () => data.chunkType)
     .addInfo('viewer spawnRadius', () => spawner.spawnRadius)
     .addInfo('spawned', () => !!spawner.isSpawned)
+    .addInfo('cell', () => (cell ? `${cell.entity?.name} (${cell.cellState})` : 'none, spawned by distance'))
     .addInfo('distance to center', () => {
       const camera = debug.entity.world.getSystem(RangeActivationSystem).cameraPosition
       const center = mat4GetTranslation(debug.entity.getTransform().world, vec3.$0)
@@ -127,10 +143,17 @@ export class SliceSpawnerComponent implements GameComponent, ActivatableComponen
   public isLoaded: boolean
   public isSpawned: boolean
   private isChunk: boolean
+  private chunkSize: number
+  /**
+   * Impostor cell that spawns this chunk, the SliceSystem does not spawn it by distance
+   */
+  public readonly cell: RegionImpostorComponent | null
   public readonly slices: SliceSpawnerComponent[] = []
   public constructor(data: SliceSpawnerComponentOptions) {
     this.slice = data.slice
     this.isChunk = !!data.isChunk
+    this.chunkSize = data.chunkSize ?? 0
+    this.cell = data.cell ?? null
     this.spawnRadius = 0
   }
 
@@ -192,10 +215,13 @@ export class SliceSpawnerComponent implements GameComponent, ActivatableComponen
       const rangeSources: string[] = []
       const debug = new DebugShapeComponent()
       const components: GameComponent[] = [debug]
+      const loaders: MeshLoaderComponent[] = []
 
       for (const comp of item.components) {
         if (isViewerMeshComponent(comp)) {
-          components.push(new MeshLoaderComponent(comp))
+          const loader = new MeshLoaderComponent(comp)
+          loaders.push(loader)
+          components.push(loader)
           let meshRange = comp.maxViewDistance * comp.viewDistanceMultiplier
           let meshSource = `mesh ${comp.mesh}: ${comp.maxViewDistance} x ${comp.viewDistanceMultiplier}`
           if (ENABLE_CHUNK_RANGE_CLAMP && this.isChunk && meshRange > CHUNK_MESH_RANGE) {
@@ -357,6 +383,9 @@ export class SliceSpawnerComponent implements GameComponent, ActivatableComponen
         console.log('Component not implemented', comp)
       }
 
+      // Mesh entities of cell owned chunks that hold the impostor are activated by the cell, as a group.
+      // Everything else keeps its own range, the small chunks hold most of the props with short view distances.
+      const cellMember = !!this.cell && loaders.length > 0 && IMPOSTOR_HOLD_CHUNK_SIZES.includes(this.chunkSize)
       const entity = this.entity.world.createEntity({
         parent: this.entity,
         name: item.name,
@@ -364,11 +393,17 @@ export class SliceSpawnerComponent implements GameComponent, ActivatableComponen
         transform: new TransformComponent({
           keepWorld: true,
           world: mat4$premultiply(mat4CreateFromArray(item.transform), parentWorld),
-          lifeCycle: range ? LifeCycleFlags.Propagate : LifeCycleFlags.Full,
+          lifeCycle: range || cellMember ? LifeCycleFlags.Propagate : LifeCycleFlags.Full,
         }),
       })
 
-      if (range) {
+      if (cellMember) {
+        this.cell.addMember({ entity, loaders })
+        debug.addInfo('range', () => 'cell member, holds impostor')
+        debug.addInfo('cell state', () => this.cell.cellState)
+        debug.addInfo('mesh state', () => loaders.map((it) => it.state).join(', '))
+        debug.addInfo('state', () => entity.stateName)
+      } else if (range) {
         this.rangeSystem.add(entity, mat4GetTranslation(entity.getTransform().world, vec3.$0), range)
         this.rangeEntities.push(entity)
         addRangeDebugInfo(debug, this.rangeSystem, entity, range, rangeSources)
@@ -392,6 +427,7 @@ export class SliceSpawnerComponent implements GameComponent, ActivatableComponen
       this.rangeSystem.remove(entity)
     }
     this.rangeEntities.length = 0
+    this.cell?.removeMembers(this.entity)
   }
 }
 

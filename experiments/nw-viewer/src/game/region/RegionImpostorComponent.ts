@@ -24,6 +24,8 @@ import {
 } from '../../constants'
 import { ContentService } from '../../content'
 import { DebugLayer, DebugShapeComponent } from '../debug/DebugShapeComponent'
+import type { MeshLoaderComponent } from '../slice/MeshLoaderComponent'
+import type { SliceSpawnerComponent } from '../slice/SliceSpawnerComponent'
 
 export interface ImpostorComponentOptions {
   name: string
@@ -60,6 +62,13 @@ export function impostorEntityOptions(parent: GameEntity, options: ImpostorCompo
       Math.sqrt(boxMat4DistanceSquared(impostor.min, impostor.max, cameraWorld())).toFixed(1),
     )
     .addInfo('state', () => debug.entity.stateName)
+  if (isPoi) {
+    debug
+      .addInfo('cell state', () => impostor.cellState)
+      .addInfo('cell chunks', () => impostor.chunks.length)
+      .addInfo('cell members', () => impostor.members.length)
+      .addInfo('cell pending', () => impostor.pending)
+  }
   return {
     parent: parent,
     name: options.name,
@@ -71,6 +80,18 @@ export function impostorEntityOptions(parent: GameEntity, options: ImpostorCompo
     components: [debug, new SpatialNodeComponent(), new BoundsComponent(), new ModelComponent(), impostor],
   }
 }
+/**
+ * - far: chunk content is inactive, the impostor is shown
+ * - loading: chunks are spawned and their meshes are activated, the impostor is shown
+ * - ready: all members are active and loaded, the impostor may hide
+ */
+export type ImpostorCellState = 'far' | 'loading' | 'ready'
+
+export interface ImpostorCellMember {
+  entity: GameEntity
+  loaders: MeshLoaderComponent[]
+}
+
 export class RegionImpostorComponent implements GameComponent {
   private content: ContentService
   private scheduler: SchedulerSystem
@@ -82,6 +103,108 @@ export class RegionImpostorComponent implements GameComponent {
   private modelUrl: string
   private task: ScheduledTask
   private model: Model
+
+  /**
+   * Chunk slices owned by this cell, spawned when the cell starts loading (POI cells in chunk worlds only)
+   */
+  public readonly chunks: SliceSpawnerComponent[] = []
+  /**
+   * Mesh entities of the owned chunks with a size in IMPOSTOR_HOLD_CHUNK_SIZES, activated by the cell instead of the
+   * range system. The cell waits for them before it is ready.
+   */
+  public readonly members: ImpostorCellMember[] = []
+  public cellState: ImpostorCellState = 'far'
+  /**
+   * Number of members activated since the cell started loading
+   */
+  private activated = 0
+
+  public get hasChunks() {
+    return this.chunks.length > 0
+  }
+
+  public setCellState(state: ImpostorCellState) {
+    if (this.cellState === state) {
+      return
+    }
+    this.cellState = state
+    const shape = this.entity.component(DebugShapeComponent).entries[0]
+    const color = state === 'loading' ? Color.Red : state === 'ready' ? Color.DeepSkyBlue : Color.Orange
+    shape.color.x = color.x
+    shape.color.y = color.y
+    shape.color.z = color.z
+  }
+
+  public addMember(member: ImpostorCellMember) {
+    for (const loader of member.loaders) {
+      loader.lane = PriorityLane.High
+    }
+    this.members.push(member)
+  }
+
+  public removeMembers(parent: GameEntity) {
+    for (let i = this.members.length - 1; i >= 0; i--) {
+      if (this.members[i].entity.parent === parent) {
+        this.members.splice(i, 1)
+      }
+    }
+    this.activated = Math.min(this.activated, this.members.length)
+  }
+
+  /**
+   * Number of members whose meshes are not loaded yet
+   */
+  public get pending() {
+    let result = 0
+    for (const member of this.members) {
+      if (!isMemberDone(member)) {
+        result++
+      }
+    }
+    return result
+  }
+
+  /**
+   * Spawns the owned chunks and activates members until the deadline. Returns true when the cell is ready.
+   */
+  public updateLoading(deadline: number): boolean {
+    let spawned = true
+    for (const chunk of this.chunks) {
+      if (chunk.isSpawned) {
+        continue
+      }
+      // the chunk entity is initialized by the SliceSystem
+      if (!chunk.entity.isInitialized) {
+        spawned = false
+        continue
+      }
+      chunk.load()
+      chunk.spawn()
+    }
+    while (this.activated < this.members.length) {
+      const entity = this.members[this.activated].entity
+      if (entity.canInitialize) {
+        entity.initialize()
+      }
+      if (entity.canActivate) {
+        entity.activate()
+      }
+      this.activated++
+      if ((this.activated & 7) === 0 && performance.now() > deadline) {
+        return false
+      }
+    }
+    return spawned && this.pending === 0
+  }
+
+  public deactivateMembers() {
+    for (const member of this.members) {
+      if (member.entity.canDeactivate) {
+        member.entity.deactivate()
+      }
+    }
+    this.activated = 0
+  }
 
   public constructor(data: ImpostorComponentOptions) {
     // impostor origin is the cell center
@@ -135,4 +258,13 @@ export class RegionImpostorComponent implements GameComponent {
       this.task = null
     }
   }
+}
+
+function isMemberDone(member: ImpostorCellMember) {
+  for (const loader of member.loaders) {
+    if (loader.state !== 'loaded' && loader.state !== 'failed') {
+      return false
+    }
+  }
+  return true
 }

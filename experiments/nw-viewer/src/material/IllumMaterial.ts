@@ -13,7 +13,7 @@ import {
   TRUE,
 } from '@gglib/graphics'
 import { mat4Identity, vec2, vec4 } from '@gglib/math'
-import { LOD_SPANS, lodSpanStart, POI_IMPOSTOR_FADE_LENGTH } from '../constants'
+import { ENABLE_POI_IMPOSTOR_DITHER, LOD_SPANS, lodSpanStart, POI_IMPOSTOR_FADE_LENGTH } from '../constants'
 import { type NwMaterialProps } from './GltfExtension'
 import SCHEMA from './IllumMaterial.meta'
 import WGSL from './IllumMaterial.wgsl'
@@ -251,7 +251,7 @@ export class IllumMaterial extends MaterialWithSchema(SCHEMA) {
     }
 
     const shaderConst = getShaderConstants(shaderFlags)
-    if (shaderFlags.has('IS_POI_IMPOSTOR')) {
+    if (ENABLE_POI_IMPOSTOR_DITHER && shaderFlags.has('IS_POI_IMPOSTOR')) {
       // impostors fade in after the start of their span, like the impostor dissolve in illum.cfx
       const start = lodSpanStart(LOD_SPANS.impostorPoi)
       setDitherFadeConstants(shaderConst, {
@@ -499,11 +499,12 @@ export class IllumMaterial extends MaterialWithSchema(SCHEMA) {
 
   private setAttributes(attrs: NwMaterialProps['attrs'], flags: Set<FeatureFlag>) {
     if (attrs.Diffuse) {
-      this.DiffuseColor = paramVec4(attrs.Diffuse)
+      // older mtl files store colors with 3 components, w must default to 1 (opacity)
+      this.DiffuseColor = paramVec4(attrs.Diffuse, vec4.One)
     }
 
     if (attrs.Specular) {
-      this.SpecularColor = paramVec4(attrs.Specular)
+      this.SpecularColor = paramVec4(attrs.Specular, vec4.One)
     }
 
     if (attrs.Emissive) {

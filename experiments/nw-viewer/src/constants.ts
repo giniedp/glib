@@ -104,7 +104,7 @@ export type LodSpan = {
 export const LOD_SPANS = {
   capital: {
     start: 0,
-    visibleFor: 2,
+    visibleFor: 1,
     keepAliveFor: 1,
   },
   // vegetation impostors, distribution hands over at the start of this span.
@@ -120,8 +120,8 @@ export const LOD_SPANS = {
   // Starts one cell out (128), so chunk slices that spawn at 384 have time to load before their meshes are needed
   // (chunk meshes are active up to CHUNK_MESH_RANGE = start + fade + one cell)
   impostorPoi: {
-    start: 1,
-    visibleFor: 9,
+    start: 0.5,
+    visibleFor: 9.5,
     keepAliveFor: 4,
   },
   // vegetation impostors take over beyond the visible span, so visible span must end where impostors start
@@ -174,3 +174,15 @@ export const IMPOSTOR_POI_HANDOVER_RANGE = lodSpanStart(LOD_SPANS.impostorPoi) +
  * at the start of its span, so the meshes of the whole cell must be active by then.
  */
 export const CHUNK_MESH_RANGE = IMPOSTOR_POI_HANDOVER_RANGE + SEGMENT_SIZE
+/**
+ * Mesh chunk sizes whose loading holds their cell's POI impostor (see RegionImpostorComponent cell state).
+ * Chunks of other sizes are activated with their cell but do not delay it.
+ */
+export const IMPOSTOR_HOLD_CHUNK_SIZES: number[] = [128]
+/**
+ * Dither fade-in of POI impostors (start of their span + POI_IMPOSTOR_FADE_LENGTH).
+ *
+ * TODO: disabled until the impostor dither can be switched per cell. A cell that holds its impostor while its
+ * chunk meshes load must not discard its near pixels.
+ */
+export const ENABLE_POI_IMPOSTOR_DITHER = true

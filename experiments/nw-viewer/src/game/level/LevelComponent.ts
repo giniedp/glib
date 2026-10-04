@@ -84,6 +84,7 @@ export class LevelComponent implements GameComponent {
       oceanLevel: this.data.oceanLevel,
       enableDistribution: this.data.enableDistribution,
       enableVegetation: this.data.enableVegetation,
+      enableChunks: this.data.enableChunks,
     })
     this.entity.world.createEntity(options)
   }
