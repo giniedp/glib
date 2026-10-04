@@ -17,6 +17,8 @@ export interface LightSystemOptions extends LightClusterShaderOptions {}
  * - light clustering is done by the {@link LightClusterShader}
  * - the buffers and cluster parameters are fed into the renderer inputs as the shared `lights` block
  */
+const DEFAULT_COLOR = [1, 1, 1, 1]
+
 export class LightSystem extends GameSystem {
   public intensityScale = 1.0
   public enabled = true
@@ -32,7 +34,7 @@ export class LightSystem extends GameSystem {
   private query: GameQuery
   private shader: LightClusterShader
 
-  private light: LightClusterLight = {
+  private light: Required<LightClusterLight> = {
     type: 'point',
     position: vec3(),
     direction: vec3(),
@@ -41,6 +43,10 @@ export class LightSystem extends GameSystem {
     range: 0,
     specular: 0,
     bulbSize: 0,
+    width: 0,
+    height: 0,
+    coneAngle: 0,
+    coneAngleInner: 0,
   }
 
   public constructor(options?: LightSystemOptions) {
@@ -115,16 +121,17 @@ export class LightSystem extends GameSystem {
     vec3$normalize(mat4GetRight(world, out.direction))
     vec3$normalize(mat4GetUp(world, out.tangent))
 
-    const color = config.color || [1, 1, 1, 1]
+    const color = config.color || DEFAULT_COLOR
     out.color.x = (color[0] ?? 1) * diffuse
     out.color.y = (color[1] ?? 1) * diffuse
     out.color.z = (color[2] ?? 1) * diffuse
     out.specular = specular
     out.range = config.range || 0
     out.bulbSize = config.attenuation || 0.05
-    out.width = undefined
-    out.height = undefined
-    out.coneAngle = undefined
+    out.width = 0
+    out.height = 0
+    out.coneAngle = 0
+    out.coneAngleInner = 0
 
     switch (component.type) {
       case 'Point': {
