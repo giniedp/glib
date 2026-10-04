@@ -18,7 +18,7 @@ import SCHEMA from './VegetationMaterial.meta'
 import WGSL from './VegetationMaterial.wgsl'
 import { type FeatureFlag, getShaderConstants, InputBlocks, MaterialLayerMasks } from './common'
 import { MtlFlag } from './types'
-import { MtlUtil, paramValue, paramVec4 } from './utils'
+import { MtlUtil, paramValue, paramVec4, getWhiteTexture } from './utils'
 
 export function vegetationShaderOptions(constants: Record<string, number>): ShaderModuleOptions {
   return {
@@ -219,6 +219,8 @@ export class VegetationMaterial extends MaterialWithSchema(SCHEMA) {
     // - smoothnessMap
     if (maps.Smoothness) {
       this.SmoothnessMap = maps.Smoothness as any
+    } else {
+      this.SmoothnessMap = getWhiteTexture(this.device)
     }
 
     // == EFTT_EMITTANCE

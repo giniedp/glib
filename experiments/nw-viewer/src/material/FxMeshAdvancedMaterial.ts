@@ -18,7 +18,7 @@ import WGSL from './FxMeshAdvancedMaterial.wgsl'
 import type { NwMaterialProps } from './GltfExtension'
 import { TextureModifier } from './TexMod'
 import { getShaderConstants, InputBlocks, MaterialLayerMasks, type FeatureFlag } from './common'
-import { MtlUtil, paramValue, paramVec4 } from './utils'
+import { MtlUtil, paramValue, paramVec4, getWhiteTexture } from './utils'
 
 export function fxMeshAdvancedShaderOptions(constants: Record<string, number>): ShaderModuleOptions {
   return {
@@ -304,6 +304,8 @@ export class FxMeshAdvancedMaterial extends MaterialWithSchema(SCHEMA) {
     // - smoothnessMap
     if (maps.Smoothness) {
       this.SmoothnessMap = maps.Smoothness as any
+    } else {
+      this.SmoothnessMap = getWhiteTexture(this.device)
     }
 
     // == EFTT_EMITTANCE

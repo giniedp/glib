@@ -16,7 +16,7 @@ import WGSL from './GlassMaterial.wgsl'
 import { type NwMaterialProps } from './GltfExtension'
 import { TextureModifier } from './TexMod'
 import { MtlFlag } from './types'
-import { MtlUtil, paramValue, paramVec4 } from './utils'
+import { MtlUtil, paramValue, paramVec4, getWhiteTexture } from './utils'
 
 export function glassShaderOptions(): ShaderModuleOptions {
   return {
@@ -236,6 +236,8 @@ export class GlassMaterial extends MaterialWithSchema(SCHEMA) {
     // - smoothnessMap
     if (maps.Smoothness) {
       this.SmoothnessMap = maps.Smoothness as any
+    } else {
+      this.SmoothnessMap = getWhiteTexture(this.device)
     }
 
     // == EFTT_EMITTANCE

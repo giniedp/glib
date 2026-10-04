@@ -12,6 +12,7 @@ export const Noise2DKey = Symbol('noise2d')
 export const FoamMapKey = Symbol('FoamMap')
 export const FoamNormalMapKey = Symbol('FoamNormalMap')
 export const GlossMapKey = Symbol('GlossMap')
+export const WhiteTextureKey = Symbol('WhiteTexture')
 
 export class ContentService extends GameSystem {
   public loader: ContentLoader
@@ -57,6 +58,8 @@ export class ContentService extends GameSystem {
       format: 'rgba8unorm',
       source: Color.toByteArray(Color.White),
     })
+    device[WhiteTextureKey] = this.whitePixel
+
     this.blackPixel = device.createTexture({
       name: 'blackPixel',
       width: 1,

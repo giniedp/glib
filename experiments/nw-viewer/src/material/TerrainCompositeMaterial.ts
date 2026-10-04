@@ -12,7 +12,7 @@ import { smoothnessToRoughness } from './common.wgsl'
 import type { NwMaterialProps } from './GltfExtension'
 import Schema from './TerrainCompositeMaterial.meta'
 import WGSL from './TerrainCompositeMaterial.wgsl'
-import { MtlUtil, paramValue, paramVec4 } from './utils'
+import { MtlUtil, paramValue, paramVec4, getWhiteTexture } from './utils'
 
 export function splatComposeShaderOptions(): ShaderModuleOptions {
   return {
@@ -92,6 +92,8 @@ export class TerrainCompositeMaterial extends MaterialWithSchema(Schema) {
     }
     if (maps.Smoothness) {
       this.SmoothnessMap = maps.Smoothness as Texture
+    } else {
+      this.SmoothnessMap = getWhiteTexture(this.device)
     }
     if (maps.Heightmap) {
       this.HeightMap = maps.Heightmap as Texture

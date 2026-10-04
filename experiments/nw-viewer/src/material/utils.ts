@@ -1,6 +1,7 @@
-import type { MaterialProperties } from '@gglib/graphics'
+import type { Device, MaterialProperties, Texture } from '@gglib/graphics'
 import { vec3, vec4, vec4$init, type IVec3, type IVec4 } from '@gglib/math'
 import { lfmt } from '@gglib/utils'
+import { WhiteTextureKey } from '../content'
 import type { NwMaterialProps } from './GltfExtension'
 import { getShaderFlags } from './common'
 
@@ -87,6 +88,7 @@ export class MtlUtil {
   }
 
   public resolve<T>(properites: MaterialProperties) {
+    properites ||= {}
     const props = properites as NwMaterialProps
     const attrs = props?.attrs || {}
     const params = (props?.params || {}) as unknown as T
@@ -148,4 +150,8 @@ export class MtlUtil {
       deformWave1,
     }
   }
+}
+
+export function getWhiteTexture(device: Device): Texture {
+  return device[WhiteTextureKey]
 }
