@@ -103,6 +103,9 @@ export class GlassMaterial extends MaterialWithSchema(SCHEMA) {
     this.setAttributes(attrs, shaderFlags)
     this.setPublicParams(params)
 
+    // glass composes the refracted scene color itself, which is only available in the transparent pass
+    this.isTransparent = true
+
     this.effect.cullState = CullState.CullBack
     this.effect.depthState = DepthState.GreaterEqualNoWrite
     this.effect.blendState = BlendState.Alpha
@@ -354,22 +357,22 @@ export class GlassMaterial extends MaterialWithSchema(SCHEMA) {
 
   private setPublicParams(para: PublicParams) {
     this.BumpMapTile = paramValue(para.BumpMapTile, this.BumpMapTile)
-    this.BumpScale = paramValue(para.BumpMapTile, this.BumpScale)
-    this.TintColor = paramVec4(para.BumpMapTile, this.TintColor)
-    this.BackLightScale = paramValue(para.BumpMapTile, this.BackLightScale)
-    this.TintCloudiness = paramValue(para.BumpMapTile, this.TintCloudiness)
-    this.IndirectColor = paramVec4(para.BumpMapTile, this.IndirectColor)
-    this.CloudinessReducesGloss = paramValue(para.BumpMapTile, this.CloudinessReducesGloss)
-    this.RoughnessBoost = paramValue(para.BumpMapTile, this.RoughnessBoost)
-    this.BlurAmount = paramValue(para.BumpMapTile, this.BlurAmount)
-    this.RoughnessMaxFootprint = paramValue(para.BumpMapTile, this.RoughnessMaxFootprint)
-    this.FogDensity = paramValue(para.BumpMapTile, this.FogDensity)
-    this.FogCutoffEnd = paramValue(para.BumpMapTile, this.FogCutoffEnd)
-    this.FogColor = paramVec4(para.BumpMapTile, this.FogColor)
-    this.DepthFixupThreshold = paramValue(para.BumpMapTile, this.DepthFixupThreshold)
-    this.CloudinessMasksBlur = paramValue(para.BumpMapTile, this.CloudinessMasksBlur)
-    // this.FresnelBias = paramValue(para.BumpMapTile, this.FresnelBias)
-    // this.FresnelScale = paramValue(para.BumpMapTile, this.FresnelScale)
+    this.BumpScale = paramValue(para.BumpScale, this.BumpScale)
+    this.TintColor = paramVec4(para.TintColor, this.TintColor)
+    this.BackLightScale = paramValue(para.BackLightScale, this.BackLightScale)
+    this.TintCloudiness = paramValue(para.TintCloudiness, this.TintCloudiness)
+    this.IndirectColor = paramVec4(para.IndirectColor, this.IndirectColor)
+    this.CloudinessReducesGloss = paramValue(para.CloudinessReducesGloss, this.CloudinessReducesGloss)
+    this.RoughnessBoost = paramValue(para.RoughnessBoost, this.RoughnessBoost)
+    this.BlurAmount = paramValue(para.BlurAmount, this.BlurAmount)
+    this.RoughnessMaxFootprint = paramValue(para.RoughnessMaxFootprint, this.RoughnessMaxFootprint)
+    this.FogDensity = paramValue(para.FogDensity, this.FogDensity)
+    this.FogCutoffEnd = paramValue(para.FogCutoffEnd, this.FogCutoffEnd)
+    this.FogColor = paramVec4(para.FogColor, this.FogColor)
+    this.DepthFixupThreshold = paramValue(para.DepthFixupThreshold, this.DepthFixupThreshold)
+    this.CloudinessMasksBlur = paramValue(para.CloudinessMasksBlur, this.CloudinessMasksBlur)
+    // this.FresnelBias = paramValue(para.FresnelBias, this.FresnelBias)
+    // this.FresnelScale = paramValue(para.FresnelScale, this.FresnelScale)
   }
 
   private frame: number

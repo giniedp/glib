@@ -237,6 +237,7 @@ fn vs_main(input: VertexInput) -> FragmentInput {
   output.worldTangent   = vec4f(tangent, handedness);
   output.worldBitangent = bitangent;
   output.color          = input.color;
+  output.vertexColor    = input.color;
   output.toEye          = toEye;
   output.uvBase         = uvBaseMod;
   output.uvBlend        = uvBlend;
@@ -344,11 +345,12 @@ fn fs_main(input: FragmentInput, @builtin(front_facing) isFront: bool) -> Fragme
 
   var albedo   = cDiffuseMap.rgb;
   var alpha    = cDiffuseMap.a; // * pPass.IN.Ambient.w;
-  var fNdotE = dot(viewVec, normal);
-  // pPass.vReflVec = (2.0 * fNdotE * normal.xyz) - viewVec.xyz;
   normal   = tbn * normalize(cBumpMap);
   normal.x+= 1e-6;
   normal   = normalize(normal);
+  // from the bumped normal (frag_custom_begin recomputes it after the bump lookup)
+  // pPass.vView points from the surface to the eye
+  let fNdotE = dot(toEye, normal);
 
   // --- frag_custom_begin
 
@@ -361,11 +363,13 @@ fn fs_main(input: FragmentInput, @builtin(front_facing) isFront: bool) -> Fragme
   // --- Dirt Map
   if (material.enabledDirtMap == TRUE) {
     albedo *= material.diffuseColor.rgb;
-    specular = mix(albedo, vec3f(0.03), alpha);
+    specular = mix(material.specularColor.rgb, vec3f(0.03), alpha);
   } else {
     albedo = vec3f(0.0);
     alpha = 0.0;
   }
+  // diffuse (dirt) coverage, blends between the tinted background and the lit dirt
+  let diffuseAlpha = alpha;
 
   // --- Specular Map / Tint Map
   if (material.enabledSpecularMap == TRUE) {
@@ -395,19 +399,19 @@ fn fs_main(input: FragmentInput, @builtin(front_facing) isFront: bool) -> Fragme
   // pPass.fNdotE = dot(pPass.vView.xyz, pPass.vNormal.xyz);
   // pPass.vReflVec = (2.0 * pPass.fNdotE * pPass.vNormal.xyz) - pPass.vView.xyz;
 
-  let dims = textureDimensions(sceneColorMap, 0);
+  let depthDims = vec2f(textureDimensions(sceneDepthMap, 0));
   let newNormal = normalize(vec3f(cBumpMap.xy * material.bumpScale * holes, 1.0));
-  let uvRefractionOffset = newNormal.xy * 0.1 * vec2f(dims);
+  // refractionNormScale = 0.1 * PerView_HPosScale.xy, offset in screen uv
+  let uvRefractionOffset = newNormal.xy * 0.1;
   var cBackbuffer = vec3f(0.0);
   var cRefraction = vec3f(0.0);
 
   // Get current pixel screen space coordinates
   var uvProj = input.uvScreen.xy / input.uvScreen.w;
-  var fFarPlaneScale = view.far;
-  // #if %_RT_NEAREST
-  //   fFarPlaneScale /= PerView_NearFarClipDist.z;
-  // #endif
-  var fZBufferRefrac = textureLoad(sceneDepthMap, vec2i((uvProj + uvRefractionOffset) * vec2f(dims)), 0).r * fFarPlaneScale;
+  // sceneDepthMap holds linear view depth in world units (GetLinearDepth * far in the original)
+  let refracPx = clamp(vec2i((uvProj + uvRefractionOffset) * depthDims), vec2i(0), vec2i(depthDims) - 1);
+  let fZBufferRefrac = textureLoad(sceneDepthMap, refracPx, 0).r;
+  // do not refract what is in front of the glass
   uvProj += uvRefractionOffset * saturate(fZBufferRefrac - viewDepth);
 
   // --- BLUR_REFRACTION
@@ -486,10 +490,13 @@ fn fs_main(input: FragmentInput, @builtin(front_facing) isFront: bool) -> Fragme
     cBackbuffer = textureSample(sceneColorMap, samplerLinear, uvProj).rgb;
   }
 
-  // #if %DEPTH_FOG
-  //     float fFogLevel = ComputeDepthFog(pPass.pCustom.fDepth, fZBufferRefrac, FogDensity); // Compute fog
-  //     cBackbuffer = lerp(FogColor, cBackbuffer, fFogLevel); // Colorize fog and mix it with backbuffer
-  // #endif
+  // --- DEPTH_FOG
+  if (material.enabledDepthFog == TRUE) {
+    // ComputeDepthFog: background depth relative to the glass, clamped to fade out against far away objects
+    let backgroundZ = min(fZBufferRefrac - viewDepth, material.fogCutoffEnd);
+    let fogLevel = saturate(exp2(-backgroundZ * material.fogDensity));
+    cBackbuffer = mix(material.fogColor.rgb, cBackbuffer, fogLevel);
+  }
 
   cRefraction = cBackbuffer;
 
@@ -570,7 +577,8 @@ fn fs_main(input: FragmentInput, @builtin(front_facing) isFront: bool) -> Fragme
   var litDiffuse = vec3f(0.0);
   const decalWhiteTint = 0.45;
   const decalCloudiness = 0.45;
-  var vertColor = input.vertexColor;
+  // vertex colors only apply with %_RT_SAMPLE0 (impact decals)
+  let vertColor = vec4f(1.0);
 
   if (material.enabledTintColorMap == TRUE) {
     tintColor *= textureSample(diffuseMap2, samplerLinear, uvBase.xy).rgb;
@@ -598,12 +606,13 @@ fn fs_main(input: FragmentInput, @builtin(front_facing) isFront: bool) -> Fragme
   tintBackground = cRefraction.rgb * tintColor.rgb;
 
   let tintBlend = mix(tintBackground, tintDiffuse, tintCloudiness);
-  var color = mix(tintBlend, litDiffuse, alpha);
-  color = mix(color, shade.specular, alpha);
+  let cDiffuse = mix(tintBlend, litDiffuse, diffuseAlpha);
+  let color = mix(cDiffuse, shade.specular, fresnel);
 
   // pPass.fAlpha = pPass.pCustom.fHoles * pPass.IN.Ambient.w;
   // pPass.fAlpha *= vertColor.a;
-  alpha = holes * input.color.a;
+  // the refracted background is part of the color, the output replaces the scene (SrcBlend ONE, DestBlend ZERO)
+  alpha = holes * vertColor.a;
 
   var out: FragmentOutput;
   out.color = applyFog(color, alpha, input.worldPos, view.cameraPosition);
