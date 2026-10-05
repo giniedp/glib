@@ -666,7 +666,13 @@ export class WebGpuRenderEncoder extends RenderEncoder {
       return
     }
     if ('multiDrawIndirect' in pass) {
-      ;(pass as any).multiDrawIndirect(buffer, offset, maxDrawCount, drawCountBuffer, drawCountOffset)
+      ;(pass as any).multiDrawIndirect(
+        (buffer as WebGpuBuffer).resource,
+        offset,
+        maxDrawCount,
+        (drawCountBuffer as WebGpuBuffer)?.resource,
+        drawCountOffset,
+      )
     } else {
       throw new Error(`multiDrawIndirect not supported`)
     }
@@ -679,12 +685,21 @@ export class WebGpuRenderEncoder extends RenderEncoder {
     drawCountBuffer?: Buffer,
     drawCountOffset?: number,
   ) {
+    if (!this.indexBuffer) {
+      throw new Error('indexBuffer not set but required for multiDrawIndexedIndirect')
+    }
     const pass = this.getPass()
     if (!pass) {
       return
     }
     if ('multiDrawIndexedIndirect' in pass) {
-      ;(pass as any).multiDrawIndexedIndirect(buffer, offset, maxDrawCount, drawCountBuffer, drawCountOffset)
+      ;(pass as any).multiDrawIndexedIndirect(
+        (buffer as WebGpuBuffer).resource,
+        offset,
+        maxDrawCount,
+        (drawCountBuffer as WebGpuBuffer)?.resource,
+        drawCountOffset,
+      )
     } else {
       throw new Error(`multiDrawIndexedIndirect not supported`)
     }

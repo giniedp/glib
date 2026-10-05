@@ -121,6 +121,16 @@ export class WebGpuDevice extends Device<GPUCanvasContext> {
     return this.gpu.queue
   }
 
+  /**
+   * Whether multiDrawIndirect and multiDrawIndexedIndirect are available on render encoders
+   *
+   * @remarks
+   * Requires chrome://flags/#enable-unsafe-webgpu, see {@link RenderEncoder.multiDrawIndexedIndirect}
+   */
+  public get supportsMultiDrawIndirect() {
+    return this.gpu.features.has('chromium-experimental-multi-draw-indirect' as GPUFeatureName)
+  }
+
   private getAdapterOptions: () => GPURequestAdapterOptions = null
   private getDeviceOptions: (adapter: GPUAdapter) => GPUDeviceDescriptor = null
   private mipmapPass: WebGpuRenderEncoder
