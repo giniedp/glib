@@ -265,11 +265,12 @@ export class AsyncScheduler {
         break
       }
 
+      const id = taskIds.get(task)
+
       if (task.cancelled) {
+        this.dropCancelled(task, id)
         continue
       }
-
-      const id = taskIds.get(task)
 
       if (!task.load) {
         task.phase = TaskPhase.Ready
@@ -288,6 +289,7 @@ export class AsyncScheduler {
           task._abortController = undefined
 
           if (task.cancelled) {
+            this.dropCancelled(task, id)
             return
           }
 
@@ -299,6 +301,7 @@ export class AsyncScheduler {
           task._abortController = undefined
 
           if (task.cancelled) {
+            this.dropCancelled(task, id)
             return
           }
 
@@ -327,11 +330,12 @@ export class AsyncScheduler {
           break
         }
 
+        const id = taskIds.get(task)
         if (task.cancelled) {
+          this.dropCancelled(task, id)
           continue
         }
 
-        const id = taskIds.get(task)
         task.phase = TaskPhase.Finalizing
 
         const remaining = laneBudget - (performance.now() - laneStart)
@@ -373,6 +377,21 @@ export class AsyncScheduler {
       )
     }
     return queue
+  }
+
+  /**
+   * Releases a task that was cancelled by setting `task.cancelled` instead of calling {@link cancel}.
+   * No-op for tasks that are no longer tracked, e.g. cancelled with {@link cancel}.
+   */
+  private dropCancelled(task: ScheduledTask, id: number): void {
+    if (!this.tasks.has(id)) {
+      return
+    }
+    this.tasks.delete(id)
+    task.phase = TaskPhase.Cancelled
+    task._abortController?.abort()
+    task._abortController = undefined
+    this.invokeFinalize(task, new TaskCancelledError())
   }
 
   private finaliseTask(task: ScheduledTask, id: number, error: Error | undefined): void {

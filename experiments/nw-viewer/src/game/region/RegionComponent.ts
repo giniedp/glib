@@ -259,6 +259,9 @@ export class RegionComponent implements GameComponent {
         return true
       },
       finalize: (task, err) => {
+        if (this.regionInfoTask !== task) {
+          return
+        }
         this.regionInfoTask = null
 
         if (err instanceof TaskCancelledError) {
@@ -297,7 +300,9 @@ export class RegionComponent implements GameComponent {
         return true
       },
       finalize: (task, err) => {
-        this.capitalDataTask = null
+        if (this.capitalDataTask === task) {
+          this.capitalDataTask = null
+        }
       },
     })
   }

@@ -84,7 +84,9 @@ export class DistributionComponent implements GameComponent {
         return true
       },
       finalize: (task, err) => {
-        this.task = null
+        if (this.task === task) {
+          this.task = null
+        }
         if (err && !(err instanceof TaskCancelledError)) {
           console.warn(...this.logTag, 'not loaded', err)
         }

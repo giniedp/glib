@@ -484,7 +484,11 @@ export class TerrainSystem extends GameSystem {
         this.tiles.renderTile(tile, baseMaterial, layerMaterials)
         return true
       },
-      finalize: (_, err) => {
+      finalize: (task, err) => {
+        if (p.materialRenderTask !== task) {
+          // replaced or cancelled
+          return
+        }
         // TODO: handle error case
         p.state = TerraQuadState.MaterialReady
         p.materialRenderTask = null
