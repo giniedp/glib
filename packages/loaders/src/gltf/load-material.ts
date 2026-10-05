@@ -1,5 +1,5 @@
 import { ResourceNode } from '@gglib/content'
-import { CommonMaterialProps, MaterialOptions } from '@gglib/graphics'
+import { CommonMaterialProps, Material, MaterialOptions } from '@gglib/graphics'
 import type { GltfAssetContainer } from './asset'
 import { getTextureUvInfo } from './load-texture'
 
@@ -22,6 +22,16 @@ export function loadMaterial(container: GltfAssetContainer, index: number) {
   if (!gltf) {
     throw new Error(`Material with index ${index} not found in document`)
   }
+
+  // an extension may take over the whole material, e.g. to load a shared instance
+  const resolve = container.resolveExtensions<MaterialOptions | Material>(gltf)
+  if (resolve) {
+    const resolved = graph.node<MaterialOptions>(key)
+    // meshes accept Material instances in place of options
+    resolved.buildAsync = (context) => resolve(context) as Promise<MaterialOptions>
+    return resolved
+  }
+
   const node = graph.node<MaterialOptions>(key, {
     properties: {},
   })

@@ -49,7 +49,7 @@ import { RangeActivationSystem } from './game/slice/RangeActivationSystem'
 import { SliceSystem } from './game/slice/SliceSystem'
 import { TerrainSystem } from './game/terrain/TerrainSystem'
 import { createRenderPipeline } from './graphics'
-import { InputSlots, MaterialLayerMasks, NwMaterialExtension } from './material'
+import { InputSlots, MaterialLayerMasks, NwMaterialExtension, NwMaterialRefExtension } from './material'
 import { attachOverlay } from './ui/overlay'
 import { MouseListener } from '@gglib/game'
 
@@ -145,6 +145,7 @@ export class NwViewer extends EcsGame {
     super.onInitialize()
 
     GLTF.Loader.registerExtension(NwMaterialExtension)
+    GLTF.Loader.registerExtension(NwMaterialRefExtension)
     GLTF.Loader.registerExtension(GLTF.KhrMaterialsSpecular)
 
     this.content.registerLoader(GLTF.Loader)

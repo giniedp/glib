@@ -1,6 +1,7 @@
 import { AssetContainer, AssetType, ColorSpace, LoadContext, ResourceGraph, ResourceNode } from '@gglib/content'
 import {
   CommonMaterialProps,
+  Material as GraphicsMaterial,
   magFilterFromWebGL,
   MaterialOptions,
   MeshOptions,
@@ -21,12 +22,27 @@ import { loadMesh } from './load-mesh'
 import { loadSkin } from './load-skin'
 import { loadTexture } from './load-texture'
 
-export type GltfExtension<T, N> = {
+export type GltfExtension<T, N, R = N> = {
   name: string
-  handler: (asset: GltfAssetContainer, node: ResourceNode<N>, data: T) => void
+  /**
+   * Replaces the loading of the whole object.
+   *
+   * @remarks
+   * Called before the object is processed. Return a load function to take over the object:
+   * the object data is then not processed and no other extension is applied to it.
+   * Return nothing to load the object as usual.
+   */
+  resolve?: (asset: GltfAssetContainer, data: T) => ((context: LoadContext) => Promise<R>) | undefined
+  /**
+   * Applies the extension to the resource node of the object
+   */
+  handler?: (asset: GltfAssetContainer, node: ResourceNode<N>, data: T) => void
 }
 
-export type GltfMaterialExtension = GltfExtension<Material, MaterialOptions>
+/**
+ * Material extension, a resolved material may be an instance, it is then shared by all meshes that reference it
+ */
+export type GltfMaterialExtension = GltfExtension<Material, MaterialOptions, MaterialOptions | GraphicsMaterial>
 export type GltfTextureExtension = GltfExtension<Texture, TextureOptions & { gltf: Record<string, any> }>
 
 export class GltfAssetContainer implements AssetContainer {
@@ -151,13 +167,26 @@ export class GltfAssetContainer implements AssetContainer {
     for (const extName in gltf.extensions) {
       const extension = this.extensions[extName]
       if (extension) {
-        extension.handler(this, node, gltf)
+        extension.handler?.(this, node, gltf)
         continue
       }
       if (this.document.extensionsRequired?.includes(extName)) {
         console.warn(`Required glTF extension ${extName} is not supported by the loader`)
       }
     }
+  }
+
+  /**
+   * Returns the load function of the first extension that resolves the object, see {@link GltfExtension.resolve}
+   */
+  public resolveExtensions<R>(gltf: Property): ((context: LoadContext) => Promise<R>) | undefined {
+    for (const extName in gltf.extensions) {
+      const load = this.extensions[extName]?.resolve?.(this, gltf)
+      if (load) {
+        return load
+      }
+    }
+    return undefined
   }
 
   public materialNode(index: number): ResourceNode<MaterialOptions> {

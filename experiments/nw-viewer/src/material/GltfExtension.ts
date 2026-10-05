@@ -64,6 +64,45 @@ export interface WaveX {
 
 export const EXT_nw_mtl = 'EXT_nw_mtl'
 export const EXT_nw_tex = 'EXT_nw_tex'
+export const EXT_nw_mtl_ref = 'EXT_nw_mtl_ref'
+
+export interface NwMaterialRefExtensionData {
+  /**
+   * Path of the .mtl file
+   */
+  file: string
+  /**
+   * Index of the sub material in the material collection of the file
+   */
+  index: number
+}
+
+function isSameFile(containerUrl: string, file: string) {
+  const a = containerUrl.split('?')[0].toLowerCase()
+  const b = file.toLowerCase()
+  return a.endsWith('/' + b) || a === b
+}
+
+/**
+ * Loads the material by its source instead of building it from the embedded material data.
+ *
+ * @remarks
+ * The material is loaded with the content loader, which caches by url. All models that reference
+ * the same sub material get the same Material instance.
+ * Resolves the whole material, so the embedded material data is not loaded.
+ */
+export const NwMaterialRefExtension: GLTF.GltfMaterialExtension = {
+  name: EXT_nw_mtl_ref,
+  resolve: (container, mtl) => {
+    const ref = mtl.extensions[EXT_nw_mtl_ref] as NwMaterialRefExtensionData
+    const url = `${ref.file}.glb`
+    // the material document itself carries the references, it uses the embedded materials
+    if (isSameFile(container.url, url)) {
+      return undefined
+    }
+    return (context) => context.content.loadMaterial(url, { baseUrl: context.baseUrl, index: ref.index })
+  },
+}
 
 export const NwMaterialExtension: GLTF.GltfMaterialExtension = {
   name: EXT_nw_mtl,

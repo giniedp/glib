@@ -56,14 +56,39 @@ export interface LoadContext {
 }
 
 export type ColorSpace = 'srgb' | 'linear'
-export type LoadOptions = Omit<LoadContext, 'content'>
+export type LoadOptions = Omit<LoadContext, 'content'> & {
+  /**
+   * Index of the asset in the container, default is 0
+   *
+   * @remarks
+   * Only used by {@link ContentLoader.load}, it is not passed on to the load context.
+   */
+  index?: number
+}
 export type AssetCreator<Options = any, Instance = any> = (content: ContentLoader, options: Options) => Instance
+
+/**
+ * Returns the key under which {@link ContentLoader.load} caches an asset
+ */
+export type AssetCacheKey = (type: AssetType<any, any>, url: string, options?: LoadOptions) => string
+
+/**
+ * The default {@link AssetCacheKey}: the url, and the asset index if it is not 0
+ */
+export const defaultAssetCacheKey: AssetCacheKey = (_type, url, options) => {
+  return options?.index ? `${url}#${options.index}` : url
+}
 
 export interface ContentLoaderOptions {
   http?: HttpClient
   executor?: AsyncExecutor
   registry?: AssetLoaderRegistry
   disableCache?: boolean
+  /**
+   * Custom cache key for assets, e.g. to share assets with the same content across urls.
+   * Default is {@link defaultAssetCacheKey}
+   */
+  cacheKey?: AssetCacheKey
 }
 
 export class ContentLoader {
@@ -147,6 +172,7 @@ export class ContentLoader {
   protected disableCache = false
   protected containerCache: Map<string, Promise<AssetContainer>> = new Map()
   protected assetCache: Map<string, Map<string, Promise<any>>> = new Map()
+  protected cacheKey: AssetCacheKey
 
   public constructor(device: Device, options?: ContentLoaderOptions) {
     this.device = device
@@ -154,6 +180,7 @@ export class ContentLoader {
     this.loaders = options?.registry || new AssetLoaderRegistry()
     this.executor = options?.executor || new NaiveAsyncExecutor()
     this.disableCache = !!options?.disableCache
+    this.cacheKey = options?.cacheKey || defaultAssetCacheKey
   }
 
   public async fetch(url: string, options: HttpOptions<'blob'>): Promise<HttpResponse<Blob>>
@@ -197,19 +224,29 @@ export class ContentLoader {
     return promise
   }
 
+  /**
+   * Loads an asset from the container at the given URL and creates an instance.
+   *
+   * @remarks
+   * Loads the asset at `options.index` (default 0) of the container. The instance is cached,
+   * the key is given by the `cacheKey` option of the loader (url and index by default).
+   * Repeating calls with the same key return the same instance.
+   */
   public async load<T>(type: AssetType<any, T>, url: string, options?: LoadOptions): Promise<T> {
     if (!this.assetCache.has(type)) {
       this.assetCache.set(type, new Map())
     }
 
-    if (!this.disableCache && this.assetCache.get(type)?.has(url)) {
-      return this.assetCache.get(type).get(url)
+    const key = this.cacheKey(type, url, options)
+    if (!this.disableCache && this.assetCache.get(type)?.has(key)) {
+      return this.assetCache.get(type).get(key)
     }
 
-    const promise = this.loadContainer(url, options)
+    const { index, ...context } = options || {}
+    const promise = this.loadContainer(url, context)
       .then((container): Promise<T> => {
-        return container.load(type, 0, {
-          ...(options || {}),
+        return container.load(type, index ?? 0, {
+          ...context,
           content: this,
         })
       })
@@ -218,7 +255,7 @@ export class ContentLoader {
       })
 
     if (!this.disableCache) {
-      this.assetCache.get(type).set(url, promise)
+      this.assetCache.get(type).set(key, promise)
     }
 
     return promise
