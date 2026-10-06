@@ -53,8 +53,9 @@ export class Loader implements AssetLoader {
     }
     options.source = new TextureSource({
       levels,
-      width: dds.width,
-      height: dds.height,
+      width: options.width,
+      height: options.height,
+      depth: options.depth,
     })
 
     return new TextureAssetContainer([options])

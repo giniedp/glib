@@ -248,7 +248,8 @@ export class WebGpuTexture extends Texture implements GpuResource<GPUTexture>, R
     }
     // leading levels may be empty when only the smaller mips are loaded
     const solidLevel = source.levels.find((level) => level?.length) ?? source.levels[0]
-    this.resize(source.width, source.height, this.type === 'cube' ? 6 : solidLevel.length)
+    const packedDepth = this.type === '3d' ? source.depth : undefined
+    this.resize(source.width, source.height, this.type === 'cube' ? 6 : (packedDepth ?? solidLevel.length))
     switch (this.type) {
       case 'cube': {
         setData(source, this, 6)
@@ -364,10 +365,15 @@ function setData(source: TextureSource, image: WebGpuTexture, faceCount: number 
   const gpu = image.device.gpu
   const queue = gpu.queue
 
+  // 3D data with all slices of a level packed into one element, see TextureSource.depth
+  const packedDepth = image.type === '3d' ? source.depth : undefined
+
   for (let mipIndex = 0; mipIndex < source.levels.length; mipIndex++) {
     const level = source.levels[mipIndex]
     const width = Math.max(1, source.width >> mipIndex)
     const height = Math.max(1, source.height >> mipIndex)
+    // slices per element
+    const layers = packedDepth ? Math.max(1, packedDepth >> mipIndex) : 1
     for (let faceIndex = 0; faceIndex < Math.min(level.length, faceCount ?? level.length); faceIndex++) {
       const data = level[faceIndex]
       if (ArrayBuffer.isView(data)) {
@@ -386,13 +392,13 @@ function setData(source: TextureSource, image: WebGpuTexture, faceCount: number 
           data.buffer,
           {
             offset: data.byteOffset,
-            bytesPerRow: width * (data.byteLength / (width * height)),
+            bytesPerRow: width * (data.byteLength / (width * height * layers)),
             rowsPerImage: height,
           },
           {
             width,
             height,
-            depthOrArrayLayers: 1,
+            depthOrArrayLayers: layers,
           },
         )
       } else if (isCompressedFaceData(data)) {
@@ -412,7 +418,7 @@ function setData(source: TextureSource, image: WebGpuTexture, faceCount: number 
           {
             width: padToBlock(width, info.blockWidth),
             height: padToBlock(height, info.blockHeight),
-            depthOrArrayLayers: 1,
+            depthOrArrayLayers: layers,
           },
         )
       } else {
