@@ -214,7 +214,7 @@ export class SceneComponent implements GameComponent, InitializableComponent, Re
       comp['cache'] = comp.version
       comp['cacheItems'] ||= []
       comp['cacheItems'].length = 0
-      this.pushMesh(entity, mesh, transform.world, comp['cacheItems'])
+      this.pushMesh(entity, mesh, transform.world, comp['cacheItems'], comp.instanceData)
     }
 
     for (const item of comp['cacheItems'] as MeshPartRenderItem[]) {
@@ -249,7 +249,7 @@ export class SceneComponent implements GameComponent, InitializableComponent, Re
       for (const node of model.sceneNodes) {
         const mesh = model.meshes[node.data.mesh]
         if (mesh) {
-          this.pushMesh(entity, mesh, node.world, comp['cacheItems'])
+          this.pushMesh(entity, mesh, node.world, comp['cacheItems'], comp.instanceData)
         }
       }
     }
@@ -263,7 +263,13 @@ export class SceneComponent implements GameComponent, InitializableComponent, Re
     }
   }
 
-  private pushMesh(entity: GameEntity, mesh: Mesh, transform: Mat4, out: RenderItem[]) {
+  private pushMesh(
+    entity: GameEntity,
+    mesh: Mesh,
+    transform: Mat4,
+    out: RenderItem[],
+    instance?: Float32Array<ArrayBuffer> | null,
+  ) {
     for (const part of mesh.parts) {
       // const item = this.meshParts.next()
       const item: MeshPartRenderItem = {
@@ -289,6 +295,7 @@ export class SceneComponent implements GameComponent, InitializableComponent, Re
       item.data.material = material
       item.transform = transform
       item.layer = layer
+      item.instance = instance
 
       if (material.isTransparent) {
         item.flags = RenderItemFlags.Transparent

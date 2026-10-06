@@ -4,6 +4,7 @@ import { BoundsComponent } from './BoundsComponent'
 
 export interface ModelComponentOptions {
   model?: Model
+  instanceData?: Float32Array<ArrayBuffer>
 }
 
 /**
@@ -26,11 +27,17 @@ export class ModelComponent implements GameComponent, InitializableComponent {
     this.handleMeshChanged()
   }
 
+  /**
+   * Per instance data that is passed to the render items of the model.
+   */
+  public readonly instanceData: Float32Array<ArrayBuffer> | null
+
   public version: number = 0
   protected value: Model
   protected bounds: BoundsComponent
 
   public constructor(options?: ModelComponentOptions) {
+    this.instanceData = options?.instanceData ?? null
     this.model = options?.model
   }
 

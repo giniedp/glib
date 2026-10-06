@@ -4,6 +4,7 @@ import { BoundsComponent } from './BoundsComponent'
 
 export interface MeshComponentOptions<MESH extends Mesh = Mesh> {
   mesh?: MESH
+  instanceData?: Float32Array<ArrayBuffer>
 }
 
 /**
@@ -29,11 +30,13 @@ export class MeshComponent<MESH extends Mesh = Mesh> implements GameComponent, I
   public version: number = 0
   protected value: MESH
   protected bounds: BoundsComponent
-
+  /**
+   * Per instance data that is passed to the render items of the model.
+   */
+  public readonly instanceData: Float32Array<ArrayBuffer> | null
   public constructor(options?: MeshComponentOptions<MESH>) {
-    if (options?.mesh) {
-      this.mesh = options.mesh
-    }
+    this.instanceData = options?.instanceData ?? null
+    this.mesh = options?.mesh
   }
 
   public initialize(): void {
