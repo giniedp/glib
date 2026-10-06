@@ -51,9 +51,9 @@ export class ContentService extends GameSystem {
     this.loader.executor = new BoundedAsyncExecutor(10)
 
     if (PARTIAL_TEXTURES) {
-      const resolveUrl = this.loader.resolveUrl.bind(this.loader)
-      this.loader.resolveUrl = (requestUri, assetUri, baseUri) => {
-        return toPartialTextureUrl(resolveUrl(requestUri, assetUri, baseUri))
+      const resolve = this.loader.uriResolver
+      this.loader.uriResolver = (uri, options) => {
+        return toPartialTextureUrl(resolve(uri, options))
       }
     }
 

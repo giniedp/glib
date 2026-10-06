@@ -79,6 +79,48 @@ export const defaultAssetCacheKey: AssetCacheKey = (_type, url, options) => {
   return options?.index ? `${url}#${options.index}` : url
 }
 
+export interface ResolveUriOptions {
+  /**
+   * The asset whose content references the URI (e.g. the .gltf referencing a texture), if any.
+   *
+   * @remarks
+   * Acts like the document URL of an HTML page: relative URIs resolve against its directory,
+   * unless a {@link ResolveUriOptions.baseUri} is given.
+   */
+  parentUri?: string
+  /**
+   * Acts like the `<base href>` of an HTML page.
+   *
+   * @remarks
+   * When set, relative URIs resolve against it instead of the {@link ResolveUriOptions.parentUri}.
+   * Like `<base href>`, it resolves against its directory (`/foo/` vs `/foo`), root-absolute URIs
+   * keep only its origin, and a relative base itself resolves against the `parentUri`.
+   */
+  baseUri?: string
+}
+
+/**
+ * Resolves an asset URI to the URL that is loaded
+ */
+export type UriResolver = (assetUri: string, options: ResolveUriOptions) => string
+
+/**
+ * The default {@link UriResolver}: resolves `assetUri` like a browser resolves a link,
+ * with `parentUri` as the document URL and `baseUri` as its `<base href>`
+ */
+export const defaultUriResolver: UriResolver = (assetUri, { parentUri, baseUri }) => {
+  let base = parentUri || ''
+  if (baseUri) {
+    const isDirectory = baseUri.endsWith('/')
+    base = mergeUri(base, baseUri)
+    // mergeUri drops the trailing slash, but it decides which directory the base points to
+    if (isDirectory && !base.endsWith('/')) {
+      base += '/'
+    }
+  }
+  return mergeUri(base, assetUri)
+}
+
 export interface ContentLoaderOptions {
   http?: HttpClient
   executor?: AsyncExecutor
@@ -89,6 +131,11 @@ export interface ContentLoaderOptions {
    * Default is {@link defaultAssetCacheKey}
    */
   cacheKey?: AssetCacheKey
+  /**
+   * Custom URI resolver, e.g. to rewrite or redirect asset URLs.
+   * Default is {@link defaultUriResolver}
+   */
+  resolveUri?: UriResolver
 }
 
 export class ContentLoader {
@@ -160,13 +207,19 @@ export class ContentLoader {
   }
 
   /**
-   * Resolves a request uri relative to the resource uri
+   * The URI resolver used by {@link ContentLoader.resolveUri}
+   *
+   * @remarks
+   * Replace or wrap it to customize how asset URIs are resolved.
+   * Default is {@link defaultUriResolver}
    */
-  public resolveUrl(requestUri: string, assetUri: string, baseUri?: string) {
-    if (baseUri) {
-      return mergeUri('', requestUri, baseUri)
-    }
-    return mergeUri(assetUri || '', requestUri)
+  public uriResolver: UriResolver
+
+  /**
+   * Resolves an asset URI to the URL that is loaded
+   */
+  public resolveUri(assetUri: string, options?: ResolveUriOptions): string {
+    return this.uriResolver(assetUri, options || {})
   }
 
   protected disableCache = false
@@ -181,6 +234,7 @@ export class ContentLoader {
     this.executor = options?.executor || new NaiveAsyncExecutor()
     this.disableCache = !!options?.disableCache
     this.cacheKey = options?.cacheKey || defaultAssetCacheKey
+    this.uriResolver = options?.resolveUri || defaultUriResolver
   }
 
   public async fetch(url: string, options: HttpOptions<'blob'>): Promise<HttpResponse<Blob>>
@@ -200,7 +254,7 @@ export class ContentLoader {
    * different `options.type` don't change the result.
    */
   public async loadContainer(url: string, options?: LoadOptions): Promise<AssetContainer> {
-    url = this.resolveUrl(url, options?.baseUrl)
+    url = this.resolveUri(url, { baseUri: options?.baseUrl })
 
     if (!this.disableCache && this.containerCache.has(url)) {
       return this.containerCache.get(url)

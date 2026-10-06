@@ -28,7 +28,10 @@ export function loadBuffer(asset: GltfAssetContainer, index: number): ResourceNo
 
   // external buffer
   node.buildAsync = async (ctx): Promise<ArrayBuffer> => {
-    const url = ctx.content.resolveUrl(gltf.uri, asset.url, ctx.baseUrl)
+    const url = ctx.content.resolveUri(gltf.uri, {
+      baseUri: ctx.baseUrl,
+      parentUri: asset.url,
+    })
     const response = await ctx.content.fetch(url, {
       responseType: 'arraybuffer',
     })

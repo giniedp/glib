@@ -59,7 +59,10 @@ function loadImage(asset: GltfAssetContainer, index: number, color: ColorSpace):
         color,
       }
 
-      const url = ctx.content.resolveUrl(gltf.uri, asset.url, ctx.baseUrl)
+      const url = ctx.content.resolveUri(gltf.uri, {
+        baseUri: ctx.baseUrl,
+        parentUri: asset.url,
+      })
       const container = await ctx.content.loadContainer(url, ctx)
       return container.load(AssetType.Texture, 0, ctx)
     }

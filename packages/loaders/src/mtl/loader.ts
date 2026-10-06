@@ -189,7 +189,10 @@ export class MtlAsset implements AssetContainer {
         ...context,
         color,
       }
-      const url = context.content.resolveUrl(map.file, this.url)
+      const url = context.content.resolveUri(map.file, {
+        baseUri: context.baseUrl,
+        parentUri: this.url,
+      })
       const asset = await context.content.loadContainer(url, context)
       return asset.load(AssetType.Texture, 0, context)
     }

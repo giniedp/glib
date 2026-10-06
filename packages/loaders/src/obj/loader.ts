@@ -63,7 +63,10 @@ export class Container implements AssetContainer {
 
     const node = this.graph.node<MaterialOptions[]>(key, null)
     node.buildAsync = async (context) => {
-      const url = context.content.resolveUrl(lib, this.document.source)
+      const url = context.content.resolveUri(lib, {
+        baseUri: context.baseUrl,
+        parentUri: this.document.source,
+      })
       const asset = await context.content.loadContainer(url, {
         ...context,
         type: null,
