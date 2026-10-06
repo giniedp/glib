@@ -22,7 +22,7 @@ import { TextureModifier } from './TexMod'
 import { type FeatureFlag, getShaderConstants, InputBlocks, MaterialLayerMasks, setDitherFadeConstants } from './common'
 
 import { MtlFlag } from './types'
-import { getWhiteTexture, MtlUtil, paramValue, paramVec3, paramVec4 } from './utils'
+import { getGrayTexture, getWhiteTexture, MtlUtil, paramValue, paramVec3, paramVec4 } from './utils'
 
 export function illumShaderOptions(constants: Record<string, number>): ShaderModuleOptions {
   return {
@@ -414,6 +414,9 @@ export class IllumMaterial extends MaterialWithSchema(SCHEMA) {
     // - emissiveIntensity
     if (maps.Decal) {
       this.DecalEmissiveMap = maps.Decal as any
+    } else {
+      // engine default of the slot is gray (TextureManager.cpp), the emissive intensity then is 0.5
+      this.DecalEmissiveMap = getGrayTexture(this.device)
     }
 
     // == EFTT_SUBSURFACE
@@ -455,6 +458,9 @@ export class IllumMaterial extends MaterialWithSchema(SCHEMA) {
     // - emittanceMap
     if (maps.Emittance) {
       this.EmittanceMap = maps.Emittance as any
+    } else {
+      // engine default of the slot is white (TextureManager.cpp)
+      this.EmittanceMap = getWhiteTexture(this.device)
     }
 
     // == EFTT_OCCLUSION

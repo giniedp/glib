@@ -203,9 +203,12 @@ export class NwViewer extends EcsGame {
   }
 
   override onBeginRun() {
-    super.onBeginRun()
-    this.loadLevelLoadOptions()
-    this.attachRoutes()
+    this.world.initialize()
+    this.world.getSystem(ContentService).whenLoaded.then(() => {
+      this.scene.entity.activate()
+      this.loadLevelLoadOptions()
+      this.attachRoutes()
+    })
   }
 
   override onBeginUpdate(time: number, dt: number): void {
@@ -252,9 +255,10 @@ export class NwViewer extends EcsGame {
     this.onRaySelection.emit(selection.entity)
   }
 
-  public loadLevel(name: string) {
+  public async loadLevel(name: string) {
     this.mode = 'level'
     this.levelSelection = name
+    await this.world.getSystem(ContentService).whenLoaded
     this.world.getSystem(LevelSystem).loadLevel(name)
     redrawUi()
   }

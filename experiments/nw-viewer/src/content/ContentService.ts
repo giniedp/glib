@@ -1,19 +1,20 @@
-import { BoundedAsyncExecutor, ContentLoader } from '@gglib/content'
+import { AssetType, BoundedAsyncExecutor, ContentLoader } from '@gglib/content'
 import { GameEntity, GameSystem, GameWorld } from '@gglib/ecs'
-import { Color, Device, Material, Texture } from '@gglib/graphics'
+import { Device, Material, Texture } from '@gglib/graphics'
 import { Model } from '@gglib/model'
 import { addItemIfAbsent, type Type } from '@gglib/utils'
 import { fetchTypedRequest, type TypedRequest, type ViewerSlice } from '../api'
 import { PARTIAL_TEXTURE_SIZE, PARTIAL_TEXTURES } from '../constants'
 
 // Global engine texture keys
-// TODO: this is a hack and needs proper solution
 export const Noise3DKey = Symbol('noise3d')
 export const Noise2DKey = Symbol('noise2d')
 export const FoamMapKey = Symbol('FoamMap')
 export const FoamNormalMapKey = Symbol('FoamNormalMap')
 export const GlossMapKey = Symbol('GlossMap')
 export const WhiteTextureKey = Symbol('WhiteTexture')
+export const GrayTextureKey = Symbol('GrayTexture')
+export const BlackTextureKey = Symbol('BlackTexture')
 
 export class ContentService extends GameSystem {
   public loader: ContentLoader
@@ -21,35 +22,34 @@ export class ContentService extends GameSystem {
 
   private modelCache = new Map<string, Promise<Model>>()
 
-  public nwbtUrl: string = '' // window.location.origin
+  public nwbtUrl: string = ''
 
   public get nwbtFileUrl() {
     return `${this.nwbtUrl}/files/`
   }
 
   public slices = new Map<string, ViewerSlice>()
+
   public whitePixel: Texture
+  public grayPixel: Texture
   public blackPixel: Texture
-  public nullHeightmap: Texture
-  public nullHeightmapArray: Texture
-  public nullBaseMap: Texture
-  public nullNormalMap: Texture
-  public nullSpecularMap: Texture
-  public nullSmoothnessMap: Texture
-
-  public nullPathMap1: Texture
-  public nullPathMap2: Texture
-  public noise3d: Texture
   public noise2d: Texture
-
+  public noise3d: Texture
   public waterFoamMap: Texture
   public waterFoamNormalMap: Texture
   public waterGlossMap: Texture
+  public nullHeightmapArray: Texture
+
+  private engineAssets = Promise.withResolvers()
+  public get whenLoaded() {
+    return this.engineAssets.promise
+  }
 
   public initialize(world: GameWorld): void {
     this.device = world.getSystem(Device)
     this.loader = world.getSystem(ContentLoader)
     this.loader.executor = new BoundedAsyncExecutor(10)
+
     if (PARTIAL_TEXTURES) {
       const resolveUrl = this.loader.resolveUrl.bind(this.loader)
       this.loader.resolveUrl = (requestUri, assetUri, baseUri) => {
@@ -57,61 +57,39 @@ export class ContentService extends GameSystem {
       }
     }
 
-    const device = world.getSystem(Device)
-    this.whitePixel = device.createTexture({
+    this.loadEngineTextures().then(this.engineAssets.resolve).catch(this.engineAssets.reject)
+  }
+
+  private async loadEngineTextures() {
+    const device = this.device
+
+    this.whitePixel = device.acquireTexture({
+      key: WhiteTextureKey,
       name: 'whitePixel',
       width: 1,
       height: 1,
       format: 'rgba8unorm',
-      source: Color.toByteArray(Color.White),
+      source: new Uint8Array([255, 255, 255, 255]),
     })
-    device[WhiteTextureKey] = this.whitePixel
 
-    this.blackPixel = device.createTexture({
+    this.grayPixel = device.acquireTexture({
+      key: GrayTextureKey,
+      name: 'grayPixel',
+      width: 1,
+      height: 1,
+      format: 'rgba8unorm',
+      source: new Uint8Array([128, 128, 128, 255]),
+    })
+
+    this.blackPixel = device.acquireTexture({
+      key: BlackTextureKey,
       name: 'blackPixel',
       width: 1,
       height: 1,
       format: 'rgba8unorm',
-      source: Color.toByteArray(Color.TransparentBlack),
+      source: new Uint8Array([0, 0, 0, 0]),
     })
 
-    this.nullBaseMap = device.createTexture({
-      name: 'nullBaseMap',
-      width: 1,
-      height: 1,
-      format: 'rgba8unorm',
-      source: Color.toByteArray(Color.Black),
-    })
-    this.nullNormalMap = device.createTexture({
-      name: 'nullNormalMap',
-      width: 1,
-      height: 1,
-      format: 'rgba8unorm',
-      source: Color.toByteArray(Color.LimeGreen),
-    })
-    this.nullSpecularMap = this.whitePixel
-    this.nullSmoothnessMap = this.whitePixel
-
-    this.nullPathMap1 = device.createTexture({
-      name: 'nullPathMap1',
-      width: 1,
-      height: 1,
-      format: 'rgba8unorm',
-      source: Color.toByteArray(Color.fromBytes(255, 255, 255, 0)),
-    })
-    this.nullPathMap2 = device.createTexture({
-      name: 'nullPathMap2',
-      width: 1,
-      height: 1,
-      format: 'rgba8unorm',
-      source: Color.toByteArray(Color.fromBytes(0, 0, 0, 0)),
-    })
-    this.nullHeightmap = device.createTexture({
-      name: 'nullHeightmap',
-      width: 1,
-      height: 1,
-      format: 'r16float',
-    })
     this.nullHeightmapArray = device.createTexture({
       name: 'nullHeightmap',
       width: 1,
@@ -122,70 +100,38 @@ export class ContentService extends GameSystem {
       mipLevelCount: 1,
     })
 
-    this.noise3d = device.createTexture({
-      name: 'noise3d',
-      width: 4,
-      height: 4,
-      depth: 4,
-      format: 'rgba8unorm',
-    })
-    this.device[Noise3DKey] = this.noise3d
-    this.loadTexture(`engineassets/textures/noise3d.dds`).then((texture) => {
-      this.noise3d = texture
-      this.device[Noise3DKey] = this.noise3d
-      console.log('Loaded noise3d texture', texture)
+    const loads: Array<() => Promise<void>> = []
+
+    const loadEngineTexture = async (key: any, path: string) => {
+      const asset = await this.loadAsset(path)
+      const options = await asset.load(AssetType.Texture, 0, { content: this.loader })
+      return this.device.acquireTexture({
+        ...options,
+        key: key,
+      })
+    }
+
+    loads.push(async () => {
+      this.noise3d = await loadEngineTexture(Noise3DKey, `engineassets/textures/noise3d.dds`)
     })
 
-    this.noise2d = device.createTexture({
-      name: 'noise2d',
-      width: 4,
-      height: 4,
-      depth: 1,
-      format: 'rgba8unorm',
-    })
-    this.device[Noise2DKey] = this.noise2d
-    this.loadTexture(`engineassets/textures/perlinnoise2d.dds`).then((texture) => {
-      this.noise2d = texture
-      this.device[Noise2DKey] = this.noise2d
-      console.log('Loaded noise2d texture', texture)
+    loads.push(async () => {
+      this.noise2d = await loadEngineTexture(Noise2DKey, `engineassets/textures/perlinnoise2d.dds`)
     })
 
-    this.waterFoamMap = device.createTexture({
-      name: 'waterFoamMap',
-      width: 4,
-      height: 4,
-      depth: 1,
-      format: 'rgba8unorm',
+    loads.push(async () => {
+      this.waterFoamMap = await loadEngineTexture(FoamMapKey, `engineassets/shading/waterfoam.dds`)
     })
-    this.device[FoamMapKey] = this.waterFoamMap
-    this.loadTexture(`engineassets/shading/waterfoam.dds`).then((texture) => {
-      this.waterFoamMap = texture
-      this.device[FoamMapKey] = this.waterFoamMap
+
+    loads.push(async () => {
+      this.waterFoamNormalMap = await loadEngineTexture(FoamNormalMapKey, `engineassets/shading/waterfoam2_ddn.dds`)
     })
-    this.waterFoamNormalMap = device.createTexture({
-      name: 'waterFoamNormalMap',
-      width: 4,
-      height: 4,
-      depth: 1,
-      format: 'rgba8unorm',
+
+    loads.push(async () => {
+      this.waterGlossMap = await loadEngineTexture(GlossMapKey, `engineassets/textures/water_gloss.dds`)
     })
-    this.device[FoamNormalMapKey] = this.waterFoamNormalMap
-    this.loadTexture(`engineassets/shading/waterfoam2_ddn.dds`).then((texture) => {
-      this.waterFoamNormalMap = texture
-      this.device[FoamNormalMapKey] = this.waterFoamNormalMap
-    })
-    this.waterGlossMap = device.createTexture({
-      name: 'waterGlossMap',
-      width: 4,
-      height: 4,
-      depth: 1,
-      format: 'rgba8unorm',
-    })
-    this.device[GlossMapKey] = this.waterGlossMap
-    this.loadTexture(`engineassets/textures/water_gloss.dds`).then((texture) => {
-      this.waterGlossMap = texture
-      this.device[GlossMapKey] = this.waterGlossMap
-    })
+
+    await Promise.all(loads.map((it) => it()))
   }
 
   public loadModel(model: string, material: string) {

@@ -125,9 +125,9 @@ export class WaterPatchMaterial extends MaterialWithSchema(SCHEMA) {
     this.WaterHeight = 40
     this.SpecularColor = vec4(0.42, 0.42, 0.42, 1.0)
     this.FoamScrollSpeed = 0.15
-    this.FoamMap = this.device[FoamMapKey]
-    this.GlossMap = this.device[GlossMapKey]
-    this.FoamNormalMap = this.device[FoamNormalMapKey]
+    this.FoamMap = this.device.acquireTexture({ key: FoamMapKey, throwIfMissing: true, transient: true })
+    this.GlossMap = this.device.acquireTexture({ key: GlossMapKey, throwIfMissing: true, transient: true })
+    this.FoamNormalMap = this.device.acquireTexture({ key: FoamNormalMapKey, throwIfMissing: true, transient: true })
 
     // this.AnimAmplitudeWav0 = 0.0
     // this.AnimAmplitudeWav2 = 0.0

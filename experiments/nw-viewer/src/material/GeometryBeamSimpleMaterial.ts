@@ -109,16 +109,7 @@ export class GeometryBeamSimpleMaterial extends MaterialWithSchema(SCHEMA) {
   }
 
   private setDefaults() {
-    this.Noise3DTex =
-      this.device[Noise3DKey] ||
-      this.device.createTexture({
-        name: 'noise3D',
-        type: '3d',
-        width: 16,
-        height: 16,
-        depth: 16,
-        format: 'rgba8unorm',
-      })
+    this.Noise3DTex = this.device.acquireTexture({ key: Noise3DKey, throwIfMissing: true, transient: true })
     this.DiffuseColor = vec4(1, 1, 1, 1)
     this.SamplerLinear = SamplerState.LinearWrap
 

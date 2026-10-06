@@ -93,16 +93,7 @@ export class DistanceCloudsMaterial extends MaterialWithSchema(Schema) {
   }
 
   private setDefaults() {
-    this.Noise2DTex =
-      this.device[Noise2DKey] ||
-      this.device.createTexture({
-        name: 'noise2D',
-        type: '2d',
-        width: 16,
-        height: 16,
-        format: 'rgba8unorm',
-      })
-
+    this.Noise2DTex = this.device.acquireTexture({ key: Noise2DKey, throwIfMissing: true, transient: true })
     this.SamplerLinear = SamplerState.LinearWrap
 
     // EngineAssets/Textures/perlinNoise2D.dds

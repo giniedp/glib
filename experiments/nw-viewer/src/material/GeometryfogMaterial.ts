@@ -104,17 +104,7 @@ export class GeometryFogMaterial extends MaterialWithSchema(SCHEMA) {
   }
 
   private setDefaults() {
-    this.NoiseMap3D =
-      this.device[Noise3DKey] ||
-      this.device.createTexture({
-        name: 'noise3D',
-        type: '3d',
-        width: 16,
-        height: 16,
-        depth: 16,
-        format: 'rgba8unorm',
-      })
-
+    this.NoiseMap3D = this.device.acquireTexture({ key: Noise3DKey, throwIfMissing: true, transient: true })
     this.TextureSampler = SamplerState.LinearWrap
 
     this.UvTransform1 = mat4Identity()

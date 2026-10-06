@@ -1,7 +1,7 @@
 import type { Device, MaterialProperties, Texture } from '@gglib/graphics'
 import { vec3, vec4, vec4$init, type IVec3, type IVec4 } from '@gglib/math'
 import { lfmt } from '@gglib/utils'
-import { WhiteTextureKey } from '../content'
+import { GrayTextureKey, WhiteTextureKey } from '../content'
 import type { NwMaterialProps } from './GltfExtension'
 import { getShaderFlags } from './common'
 
@@ -153,5 +153,9 @@ export class MtlUtil {
 }
 
 export function getWhiteTexture(device: Device): Texture {
-  return device[WhiteTextureKey]
+  return device.acquireTexture({ key: WhiteTextureKey, throwIfMissing: true, transient: true })
+}
+
+export function getGrayTexture(device: Device): Texture {
+  return device.acquireTexture({ key: GrayTextureKey, throwIfMissing: true, transient: true })
 }
