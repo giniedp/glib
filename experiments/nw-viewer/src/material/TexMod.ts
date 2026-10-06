@@ -263,39 +263,44 @@ export class TextureModifier {
     const amp = mod.TexMod_UOscillatorAmplitude || 0
     const phase = mod.TexMod_UOscillatorPhase || 0
 
-    let value = m[12]
+    // ShaderCore.cpp: Pan, Fixed, Constant and Jitter set the translation (TexMatrix(3, 0)),
+    // Stretch and StretchRepeat set the scale (TexMatrix(0, 0)). The phase is part of the sine argument.
+
+    let translate = m[12]
+    let scale = m[0]
 
     switch (mod.TexMod_UOscillatorType) {
       case OscillatorType.Disabled:
         break
       case OscillatorType.Fixed:
-        value = rate
+        translate = rate
         break
       case OscillatorType.Constant:
-        value = t * amp
+        translate = t * amp
         break
       case OscillatorType.Pan:
-        value = amp * Math.sin(2 * Math.PI * (t - Math.floor(t))) + 2 * Math.PI * phase
+        translate = amp * Math.sin(2 * Math.PI * (t - Math.floor(t)) + 2 * Math.PI * phase)
         break
       case OscillatorType.Stretch:
-        value = 1 + amp * Math.sin(2 * Math.PI * (t - Math.floor(t))) + 2 * Math.PI * phase
+        scale = 1 + amp * Math.sin(2 * Math.PI * (t - Math.floor(t)) + 2 * Math.PI * phase)
         break
       case OscillatorType.StretchRepeat:
-        value = 1 + amp * Math.sin(0.5 * Math.PI * (t - Math.floor(t))) + 2 * Math.PI * phase
+        scale = 1 + amp * Math.sin(0.5 * Math.PI * (t - Math.floor(t)) + 2 * Math.PI * phase)
         break
       case OscillatorType.Jitter:
         if (this.jitterTimeU < 1 || this.jitterTimeU > t + 1) {
           this.jitterTimeU = phase + Math.floor(t)
         }
-        if (this.jitterTimeU > 1) {
+        if (t - this.jitterTimeU > 1) {
           this.jitterU = Math.random() * amp
           this.jitterTimeU = phase + Math.floor(t)
         }
-        value = this.jitterU
+        translate = this.jitterU
         break
     }
 
-    m[12] = value
+    m[12] = translate
+    m[0] = scale
   }
 
   private applyOscillatorV(m: Mat4, seconds: number): void {
@@ -305,38 +310,40 @@ export class TextureModifier {
     const amp = mod.TexMod_VOscillatorAmplitude || 0
     const phase = mod.TexMod_VOscillatorPhase || 0
 
-    let value = m[13]
+    let translate = m[13]
+    let scale = m[5]
 
     switch (mod.TexMod_VOscillatorType) {
       case OscillatorType.Disabled:
         break
       case OscillatorType.Fixed:
-        value = rate
+        translate = rate
         break
       case OscillatorType.Constant:
-        value = t * amp
+        translate = t * amp
         break
       case OscillatorType.Pan:
-        value = amp * Math.sin(2 * Math.PI * (t - Math.floor(t))) + 2 * Math.PI * phase
+        translate = amp * Math.sin(2 * Math.PI * (t - Math.floor(t)) + 2 * Math.PI * phase)
         break
       case OscillatorType.Stretch:
-        value = 1 + amp * Math.sin(2 * Math.PI * (t - Math.floor(t))) + 2 * Math.PI * phase
+        scale = 1 + amp * Math.sin(2 * Math.PI * (t - Math.floor(t)) + 2 * Math.PI * phase)
         break
       case OscillatorType.StretchRepeat:
-        value = 1 + amp * Math.sin(0.5 * Math.PI * (t - Math.floor(t))) + 2 * Math.PI * phase
+        scale = 1 + amp * Math.sin(0.5 * Math.PI * (t - Math.floor(t)) + 2 * Math.PI * phase)
         break
       case OscillatorType.Jitter:
         if (this.jitterTimeV < 1 || this.jitterTimeV > t + 1) {
           this.jitterTimeV = phase + Math.floor(t)
         }
-        if (this.jitterTimeV > 1) {
+        if (t - this.jitterTimeV > 1) {
           this.jitterV = Math.random() * amp
           this.jitterTimeV = phase + Math.floor(t)
         }
-        value = this.jitterV
+        translate = this.jitterV
         break
     }
 
-    m[13] = value
+    m[13] = translate
+    m[5] = scale
   }
 }
