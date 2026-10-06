@@ -38,7 +38,14 @@ import {
 import { Model } from '@gglib/model'
 import { Renderer } from '@gglib/render'
 import { lfmt } from '@gglib/utils'
-import { fetchTypedRequest, getLevelInfoUrl } from '../../api'
+import {
+  fetchTypedRequest,
+  getLevelInfoUrl,
+  isTimeOfDayComponent,
+  isViewerMeshComponent,
+  type ViewerMeshComponent,
+  type ViewerSlice,
+} from '../../api'
 import { ContentService } from '../../content'
 import { InputSlots, SkyMaterial } from '../../material'
 import { ShapeMaterial } from '../../material/ShapeMaterial'
@@ -46,6 +53,7 @@ import { MeshLoaderComponent } from '../slice/MeshLoaderComponent'
 import { TerrainSystem } from '../terrain/TerrainSystem'
 import { levelEntityOptions } from './LevelComponent'
 import { SkyLightSystem } from './SkyLightSystem'
+import { TimeOfDayComponent } from './TimeOfDayComponent'
 
 export class LevelSystem extends GameSystem {
   private content: ContentService
@@ -60,6 +68,10 @@ export class LevelSystem extends GameSystem {
   private renderer: Renderer
   private skyEntity: GameEntity
   private cloudsEntity: GameEntity
+  /**
+   * Key of the skybox slice the clouds dome is spawned from, null for the default dome
+   */
+  private cloudsKey: string | null = null
   private gizmoEntity: GameEntity
   private oceanLevel = -1000
 
@@ -117,6 +129,31 @@ export class LevelSystem extends GameSystem {
     }
 
     this.renderer.inputs.set(InputSlots.Global.OceanLevel, this.oceanLevel)
+    this.updateCloudsDome()
+  }
+
+  /**
+   * Swaps the cloud dome to the skybox slice of the active TimeOfDay POI
+   */
+  private updateCloudsDome() {
+    if (!this.entity) {
+      return
+    }
+    const sky = this.sky.activeSky
+    const key = sky ? `${sky.guid}_${sky.subId}` : null
+    if (key === this.cloudsKey) {
+      return
+    }
+    this.cloudsKey = key
+    if (this.cloudsEntity) {
+      this.cloudsEntity.destroy()
+      this.cloudsEntity.setParent(null)
+    }
+    const mesh = key ? findSkyMesh(this.content.slices.get(key)) : null
+    if (key && !mesh) {
+      console.warn(...this.logTag, `Skybox mesh not found in ${sky.hint || key}, using default clouds`)
+    }
+    this.cloudsEntity = this.game.createEntity(createCloudsDome(this.entity, mesh))
   }
 
   public async loadLevel(name: string) {
@@ -138,6 +175,10 @@ export class LevelSystem extends GameSystem {
     this.entity = this.game.createEntity(levelEntityOptions(this.game.scene.entity, levelInfo))
     this.skyEntity = this.game.createEntity(createSkySphere(this.entity, this.renderer.device))
     this.cloudsEntity = this.game.createEntity(createCloudsDome(this.entity))
+    this.content.updateSlices(levelInfo.slices ?? {})
+    for (const options of createSkyboxSystem(this.entity, levelInfo.skyboxSystem)) {
+      this.game.createEntity(options)
+    }
 
     this.oceanLevel = levelInfo.oceanLevel
     this.timeOfDay.setLevelInfo(levelInfo, {
@@ -328,6 +369,7 @@ export class LevelSystem extends GameSystem {
     this.skyEntity = null
     this.gizmoEntity = null
     this.cloudsEntity = null
+    this.cloudsKey = null
     if (this.entity) {
       this.entity.destroy()
       this.entity.setParent(null)
@@ -386,26 +428,63 @@ function createGizmoGrid(parent: GameEntity, device: Device): CreateEntityOption
 }
 
 /**
- * Cloud layer of the default skybox.
+ * Cloud layer of the sky.
  *
  * The game spawns slices/system/skyboxsystem (not referenced by the level data). Its TimeOfDayPOIComponent
- * (radius 12000 around 7000,7000, libs/timeofday/default.xml) spawns slices/sky/newworld01_skybox_a, a mesh component
+ * (radius 12000 around 7000,7000, libs/timeofday/default.xml) references slices/sky/newworld01_skybox_a, a mesh component
  * with this dome and no material override (uses the cgf material objects/sky/testclouds_sky_a_mtl.mtl, DistanceClouds).
- * Other POIs (dungeons, storms) swap in other skybox slices, those are not implemented.
+ * Other POIs (zones, events, dungeons) reference other skybox slices, the SkyLightSystem picks the active one.
+ *
+ * Without a mesh (model / material preview, missing slice data) the default dome is used.
  */
 const CLOUDS_DOME_CGF = 'objects/sky/skydome_a.cgf'
-function createCloudsDome(parent: GameEntity): CreateEntityOptions {
+function createCloudsDome(parent: GameEntity, mesh?: ViewerMeshComponent | null): CreateEntityOptions {
+  mesh ||= {
+    type: 'Mesh',
+    mesh: CLOUDS_DOME_CGF,
+    alwaysRender: true,
+  }
   return {
     name: `Clouds`,
     parent: parent,
-    components: [
-      new MeshLoaderComponent({
-        type: 'Mesh',
-        mesh: CLOUDS_DOME_CGF,
-        alwaysRender: true,
-      }),
-    ],
+    components: [new MeshLoaderComponent(mesh)],
   }
+}
+
+/**
+ * The mesh of a skybox slice (slices/sky/*), each slice holds a single dome mesh
+ */
+function findSkyMesh(slice: ViewerSlice | undefined): ViewerMeshComponent | null {
+  for (const entity of slice?.entities ?? []) {
+    const mesh = entity.components.find(isViewerMeshComponent)
+    if (mesh) {
+      return mesh
+    }
+  }
+  return null
+}
+
+/**
+ * TimeOfDay POIs of the skybox system slice, the default TimeOfDay and skybox of the open world
+ */
+function createSkyboxSystem(parent: GameEntity, slice: ViewerSlice | null | undefined): CreateEntityOptions[] {
+  const result: CreateEntityOptions[] = []
+  for (const item of slice?.entities ?? []) {
+    const tod = item.components.find(isTimeOfDayComponent)
+    if (!tod) {
+      continue
+    }
+    result.push({
+      name: item.name,
+      parent,
+      transform: new TransformComponent({
+        keepWorld: true,
+        world: mat4CreateFromArray(item.transform),
+      }),
+      components: [new TimeOfDayComponent(tod)],
+    })
+  }
+  return result
 }
 
 function createSkySphere(parent: GameEntity, device: Device): CreateEntityOptions {

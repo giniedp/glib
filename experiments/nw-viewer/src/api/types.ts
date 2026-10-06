@@ -38,6 +38,10 @@ export interface LevelInfo {
   gameModeMaps: GameModeMap[]
   mission: MissionInfo | null
   missionEntities: ViewerEntity[]
+  /** slices/system/skyboxsystem, spawned by the game for every level. Holds the default TimeOfDay POI and its skybox */
+  skyboxSystem: ViewerSlice | null
+  /** slices referenced by skyboxSystem, keyed by `${guid}_${subId}` */
+  slices?: Record<string, ViewerSlice> | null
 }
 
 export interface GameModeMap {
@@ -466,6 +470,8 @@ export interface ViewerTimeOfDayComponent {
   override: number
   file: string
   preset: TimeOfDay
+  /** skybox slice (slices/sky/*), its mesh is the cloud dome */
+  sky?: AssetReference
 }
 
 export interface ViewerUnknownComponent {

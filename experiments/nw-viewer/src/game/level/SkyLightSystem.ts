@@ -4,6 +4,7 @@ import { IblSampler, NishitaSkyEffect } from '@gglib/effects'
 import { Device, getMipmapCount, Texture, TextureUsage } from '@gglib/graphics'
 import { mat4GetTranslation, vec3, vec4 } from '@gglib/math'
 import { Renderer } from '@gglib/render'
+import type { AssetReference } from '../../api'
 import { ENABLE_VOLUMETRIC_FOG_2 } from '../../constants'
 import { InputSlots } from '../../material'
 import { TimeOfDay } from './TimeOfDay'
@@ -19,6 +20,10 @@ export class SkyLightSystem extends GameSystem {
   public fxSky: NishitaSkyEffect
   public fxIbl: IblSampler
   public skyDomeTexture: Texture
+  /**
+   * Skybox slice of the highest priority TimeOfDay POI that contains the camera
+   */
+  public activeSky: AssetReference | null = null
 
   public get mieScatteringMap() {
     return this.fxSky.mieScatteringMap
@@ -55,14 +60,20 @@ export class SkyLightSystem extends GameSystem {
     const view = this.game.scene.getView(0).camera
     const cam = mat4GetTranslation(view.world)
 
+    let sky: TimeOfDayComponent = null
     for (const entity of this.todQuery) {
       const it = entity.component(TimeOfDayComponent)
       if (it.isPointInside(cam)) {
         this.timeOfDay.scheduleAdd(it.preset, it.config.priority, it.config.blendTime)
+        // POIs without a skybox keep the sky of a lower priority POI (assumption, not verified against the game)
+        if (it.config.sky && (!sky || (it.config.priority ?? 0) > (sky.config.priority ?? 0))) {
+          sky = it
+        }
       } else {
         this.timeOfDay.scheduleRemove(it.preset)
       }
     }
+    this.activeSky = sky?.config.sky ?? null
 
     this.timeOfDay.update(time, dt, view)
   }
