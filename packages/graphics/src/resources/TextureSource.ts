@@ -26,6 +26,11 @@ export class TextureSource<T extends TextureFaceData = TextureFaceData> {
   public height: number
 
   /**
+   * The depth or array layers
+   */
+  public depth?: number
+
+  /**
    * The texture data for each mipmap level.
    *
    * @remarks
@@ -37,9 +42,10 @@ export class TextureSource<T extends TextureFaceData = TextureFaceData> {
    */
   public levels: Array<Array<T>>
 
-  public constructor(options: { width: number; height: number; levels: Array<Array<T>> }) {
+  public constructor(options: { width: number; height: number; depth?: number; levels: Array<Array<T>> }) {
     this.width = options.width
     this.height = options.height
+    this.depth = options.depth
     this.levels = options.levels
   }
 }

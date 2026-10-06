@@ -10,7 +10,6 @@ import {
   RefCounterKey,
   referenceCounter,
   ShaderModule,
-  Texture,
   TextureUsage,
   type AcquireTextureOptions,
   type BufferOptions,
@@ -293,18 +292,27 @@ export class WebglDevice extends Device<WebGL2RenderingContext> {
     })
   }
 
-  public acquireTexture(options: AcquireTextureOptions): Texture {
+  public acquireTexture(options: AcquireTextureOptions): WebglTexture {
     const key = options.key
     if (!key) {
       throw new Error('key is required for acquiring texture from pool')
     }
 
-    return this.textures.retainOrCreate(key, (ref) => {
-      return this.createTexture({
-        ...options,
-        ...{ [RefCounterKey]: ref },
+    let result: WebglTexture
+    if (options.throwIfMissing) {
+      result = this.textures.retainOrThrow(key)
+    } else {
+      result = this.textures.retainOrCreate(key, (ref) => {
+        return this.createTexture({
+          ...options,
+          ...{ [RefCounterKey]: ref },
+        })
       })
-    })
+    }
+    if (options.transient) {
+      result.ref.release()
+    }
+    return result
   }
 
   public stats<T>(out?: T): T & DeviceStats {

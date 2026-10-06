@@ -350,12 +350,21 @@ export class WebGpuDevice extends Device<GPUCanvasContext> {
       throw new Error('key is required for acquiring texture from pool')
     }
 
-    return this.textures.retainOrCreate(key, (ref) => {
-      return this.createTexture({
-        ...options,
-        ...{ [RefCounterKey]: ref },
+    let result: WebGpuTexture
+    if (options.throwIfMissing) {
+      result = this.textures.retainOrThrow(key)
+    } else {
+      result = this.textures.retainOrCreate(key, (ref) => {
+        return this.createTexture({
+          ...options,
+          ...{ [RefCounterKey]: ref },
+        })
       })
-    })
+    }
+    if (options.transient) {
+      result.ref.release()
+    }
+    return result
   }
 
   public stats<T>(out?: T): T & DeviceStats {

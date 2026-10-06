@@ -24,6 +24,13 @@ export interface ResourceTracker<T extends ReferenceCounted> {
   retainOrCreate(key: ResourceKey, factory: (ref: ReferenceCounter) => T): T
 
   /**
+   * Retains a resource from the collection if it exists, otherwise throws an exception
+   *
+   * @param key
+   */
+  retainOrThrow(key: ResourceKey): T
+
+  /**
    * The number of tracked resources
    */
   readonly count: number
@@ -53,6 +60,14 @@ export function createResourceTracker<T extends ReferenceCounted>(): ResourceTra
         set.delete(resource)
         stale.delete(resource.ref)
       })
+    },
+    retainOrThrow(key: ResourceKey): T {
+      if (shared.has(key)) {
+        const result = shared.get(key)
+        result.ref.retain()
+        return result
+      }
+      throw new Error(`Resources not found for key: ${getKeyName(key)}`)
     },
     retainOrCreate(key: ResourceKey, factory: (ref: ReferenceCounter) => T): T | null {
       if (shared.has(key)) {
@@ -100,5 +115,15 @@ export function createResourceTracker<T extends ReferenceCounted>(): ResourceTra
     get staleCount() {
       return stale.size
     },
+  }
+}
+
+function getKeyName(key: any): string {
+  if (typeof key === 'function') {
+    return key.name || '(anonymous)'
+  } else if (typeof key === 'string') {
+    return key
+  } else {
+    return String(key)
   }
 }

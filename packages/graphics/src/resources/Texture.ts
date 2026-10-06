@@ -25,7 +25,24 @@ export type TextureSourceOption = string | string[] | TexImageSource | TextureDa
 export type TextyreUsage = number
 
 export type AcquireTextureOptions = TextureOptions & {
+  /**
+   * The key for the texture lookup
+   */
   key: any
+
+  /**
+   * How to handle a missing texture. Default is `create`
+   */
+  throwIfMissing?: boolean
+
+  /**
+   * If true, ref counter will be released immediatley
+   *
+   * @remarks
+   * Allows to acquire a texture without holding a reference.
+   * Useful when it is passed to The next owner instantly, e.g. material
+   */
+  transient?: boolean
 }
 
 export interface TextureDescriptor {
