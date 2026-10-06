@@ -126,6 +126,12 @@ export const TodParams = {
   CLOUDSHADING_SUNLIGHT_CUSTOM_COLOR_MULTIPLIER: value("Cloud Shading", "Sun custom color multiplier", "Cloud shading: Sun custom color multiplier", 1.0, 0.0, 16.0),
   CLOUDSHADING_SUNLIGHT_CUSTOM_COLOR_INFLUENCE: value("Cloud Shading", "Sun custom color influence", "Cloud shading: Sun custom color influence", 0.0,  0.0, 1.0),
 
+  SUN_SHAFTS_VISIBILITY: value("Sun Rays Effect", "", "Sun shafts visibility", 0.25, 0.0, 1.0),
+  SUN_RAYS_VISIBILITY: value("Sun Rays Effect", "", "Sun rays visibility", 1.0, 0.0, 10.0),
+  SUN_RAYS_ATTENUATION: value("Sun Rays Effect", "", "Sun rays attenuation", 5.0, 0.0, 10.0),
+  SUN_RAYS_SUNCOLORINFLUENCE: value("Sun Rays Effect", "", "Sun rays suncolor influence", 1.0, 0.0, 1.0),
+  SUN_RAYS_CUSTOMCOLOR: color("Sun Rays Effect", "", "Sun rays custom color", vec3(1.0)),
+
 
   COLORGRADING_FILTERS_GRAIN: value("Filters", "Grain", "Filters: grain", 0.0, 0.0, 8.0),
   COLORGRADING_FILTERS_PHOTOFILTER_COLOR: color("Filters", "Photofilter color", "Filters: photofilter color", vec3([0.952, 0.517, 0.09])),

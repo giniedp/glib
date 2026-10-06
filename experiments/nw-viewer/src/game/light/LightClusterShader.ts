@@ -16,6 +16,8 @@ import { LIGHT_CLUSTER_WGSL } from './LightClusterShader.wgsl'
 const LIGHT_TYPE_POINT = 2
 const LIGHT_TYPE_SPOT = 3
 const LIGHT_TYPE_AREA = 4
+// added to the light type of ambient only lights
+const LIGHT_TYPE_AMBIENT = 8
 const LIGHT_CLUSTER_WORKGROUP_SIZE = 64
 
 export type LightClusterLightType = 'point' | 'spot' | 'area'
@@ -39,6 +41,8 @@ export interface LightClusterLight {
   specular: number
   /** Attenuation bulb size */
   bulbSize: number
+  /** Ambient only light, multiplies the ambient lighting instead of adding direct light */
+  ambient?: boolean
   /** Area light width */
   width?: number
   /** Area light height */
@@ -240,6 +244,9 @@ export class LightClusterShader {
       default: {
         return false
       }
+    }
+    if (light.ambient) {
+      type += LIGHT_TYPE_AMBIENT
     }
 
     this.lightData

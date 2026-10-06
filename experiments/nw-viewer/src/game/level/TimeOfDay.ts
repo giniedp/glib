@@ -25,6 +25,7 @@ import {
 import type { CameraData } from '@gglib/render'
 import { removeItemUnordered } from '@gglib/utils'
 import type { LevelInfo, TimeOfDay as TimeOfDayData } from '../../api'
+import { FOG_DISTANCE_SCALE } from '../../constants'
 import type { ContentService } from '../../content'
 import { TodParams, type TodParam } from './TimeOfDayParams'
 import { TimeOfDayPreset } from './TimeOfDayPreset'
@@ -41,6 +42,15 @@ const MAX_TIME = (24 * 60 - 1) / 60.0
 export class TimeOfDay {
   public sunColor = vec3(1, 0.71085715, 0.5335781)
   public sunDirection = vec3Normalize(vec3(-1, -1, -10))
+  /**
+   * Direction of the actual sun for the sky (same convention as sunDirection).
+   * Unlike sunDirection it does not switch to the moon at night (sunPosOrig in CTimeOfDay::UpdateEnvLighting).
+   */
+  public skySunDirection = vec3Normalize(vec3(-1, -1, -10))
+  /**
+   * Sun intensity of the sky scattering (SKYLIGHT_SUN_INTENSITY * SKYLIGHT_SUN_INTENSITY_MULTIPLIER)
+   */
+  public skySunIntensity = vec3(20, 20, 20)
   public sunMultiplier = 1.0
   public sunSpecularMultiplier = 1.0
   public sunIsMoon = false
@@ -48,6 +58,17 @@ export class TimeOfDay {
   public cloudshadingCustomSkyColor = vec3(0)
   public cloudshadingCustomSunColor = vec3(0)
   public cloudshadingCustomColor = vec3(0)
+
+  /**
+   * Sun shafts (Sun Rays Effect, TimeOfDay.cpp and CSunShafts):
+   * x = active, y = rays attenuation, z = shafts amount, w = rays amount
+   */
+  public sunShaftsParams = vec4(0)
+  /**
+   * SunShafts_SunCol of the HDR final pass: lerp(custom color, normalized sun color, influence) * rays amount
+   */
+  public sunShaftsColor = vec4(0)
+  private sunRaysCustomColor = vec3(1)
 
   public skyKM = 0.0025
   public skyKR = 0.0025
@@ -83,6 +104,15 @@ export class TimeOfDay {
   public fogColGradDelta = vec4(0) // base color - end color
   public fogColGradParams = vec4(0)
   public fogColGradRadial = vec4(0)
+
+  // volumetric fog 2, see VolFog2Params in material/volumetricFog2.wgsl.ts
+  public volFog2HeightDensity = vec4(0)
+  public volFog2Ramp = vec4(0)
+  public volFog2Scattering = vec4(0)
+  public volFog2Blend = vec4(0)
+  public volFog2ScatteringColor = vec4(0)
+  public volFog2ScatteringSecondaryColor = vec4(0)
+  private volFog2Albedo = vec3()
 
   public fogHeightOffset = 0.5
 
@@ -193,6 +223,31 @@ export class TimeOfDay {
     }
     value = clamp(value, param.min, param.max)
     return value
+  }
+
+  private updateSunShaftsParams() {
+    const shaftsAmount = clamp(this.getParamValue(TodParams.SUN_SHAFTS_VISIBILITY), 0.0, 0.3)
+    const raysAmount = this.getParamValue(TodParams.SUN_RAYS_VISIBILITY)
+    const raysAttenuation = this.getParamValue(TodParams.SUN_RAYS_ATTENUATION)
+    const sunColorInfluence = this.getParamValue(TodParams.SUN_RAYS_SUNCOLORINFLUENCE)
+    this.getParamColor(TodParams.SUN_RAYS_CUSTOMCOLOR, this.sunRaysCustomColor)
+
+    // SunShafts_Active, CSunShafts::IsVisible also requires a sun color
+    const sunColorLen = Math.hypot(this.sunColor.x, this.sunColor.y, this.sunColor.z)
+    const isActive = (shaftsAmount > 0.05 || raysAmount > 0.05) && sunColorLen * sunColorLen >= 0.01
+
+    this.sunShaftsParams.x = isActive ? 1 : 0
+    this.sunShaftsParams.y = clamp(raysAttenuation, 0.0, 10.0)
+    this.sunShaftsParams.z = shaftsAmount
+    this.sunShaftsParams.w = clamp(raysAmount, 0.0, 10.0)
+
+    const invLen = sunColorLen > 0 ? 1 / sunColorLen : 0
+    const custom = this.sunRaysCustomColor
+    const color = this.sunShaftsColor
+    color.x = lerp(custom.x, this.sunColor.x * invLen, sunColorInfluence) * raysAmount
+    color.y = lerp(custom.y, this.sunColor.y * invLen, sunColorInfluence) * raysAmount
+    color.z = lerp(custom.z, this.sunColor.z * invLen, sunColorInfluence) * raysAmount
+    color.w = 1
   }
 
   public getParamColor(param: TodParam<IVec3>, out: IVec3) {
@@ -376,6 +431,8 @@ export class TimeOfDay {
     sunPos.z = sunPos.y
     sunPos.y = -h
     vec3$negate(sunPos)
+    // the sky always uses the actual sun position, the light switches to the moon at night
+    vec3$initFrom(this.skySunDirection, sunPos)
 
     if (this.sunIsMoon) {
       vec3Copy(this.moonDirection, this.sunDirection)
@@ -405,6 +462,13 @@ export class TimeOfDay {
     convertIlluminanceToLightColor(this.sunColor, sunIntensity)
     this.sunSpecularMultiplier = this.getParamValue(TodParams.SUN_SPECULAR_MULTIPLIER)
 
+    // HDR sky lighting, independent of the sun light fading at dawn and dusk
+    this.getParamColor(TodParams.SKYLIGHT_SUN_INTENSITY, this.skySunIntensity)
+    vec3$multiplyScalar(
+      this.skySunIntensity,
+      Math.max(this.getParamValue(TodParams.SKYLIGHT_SUN_INTENSITY_MULTIPLIER), 0),
+    )
+
     this.skyKM = this.getParamValue(TodParams.SKYLIGHT_KM) * 1e-4 // downscaling from ui friendly value
     this.skyKR = this.getParamValue(TodParams.SKYLIGHT_KR) * 1e-4 // downscaling from ui friendly value
     this.skyG = this.getParamValue(TodParams.SKYLIGHT_G)
@@ -428,9 +492,10 @@ export class TimeOfDay {
       this.nightSkyZenithColor.z *= scale
     }
 
-    this.nightSkyColorDelta.x = this.nightSkyHorizonColor.x - this.nightSkyZenithColor.x
-    this.nightSkyColorDelta.y = this.nightSkyHorizonColor.y - this.nightSkyZenithColor.y
-    this.nightSkyColorDelta.z = this.nightSkyHorizonColor.z - this.nightSkyZenithColor.z
+    // the night sky gradient is horizon color + delta * gradient, the gradient increases towards the zenith (D3DRenderRE.cpp)
+    this.nightSkyColorDelta.x = this.nightSkyZenithColor.x - this.nightSkyHorizonColor.x
+    this.nightSkyColorDelta.y = this.nightSkyZenithColor.y - this.nightSkyHorizonColor.y
+    this.nightSkyColorDelta.z = this.nightSkyZenithColor.z - this.nightSkyHorizonColor.z
 
     const nightSkyZenithColorShift = this.getParamValue(TodParams.NIGHSKY_ZENITH_SHIFT)
     const nightSkyZenithGradient = -0.1
@@ -440,10 +505,19 @@ export class TimeOfDay {
     this.getParamColor(TodParams.NIGHSKY_MOON_COLOR, this.nightSkyMoonColor)
     vec3$multiplyScalar(this.nightSkyMoonColor, this.getParamValue(TodParams.NIGHSKY_MOON_COLOR_MULTIPLIER))
 
+    // corona colors are scaled by their multipliers (TimeOfDay.cpp), the scale is converted as in D3DRenderRE.cpp
     this.getParamColor(TodParams.NIGHSKY_MOON_INNERCORONA_COLOR, this.nightSkyMoonInnerCorona)
+    vec3$multiplyScalar(
+      this.nightSkyMoonInnerCorona,
+      this.getParamValue(TodParams.NIGHSKY_MOON_INNERCORONA_COLOR_MULTIPLIER),
+    )
     this.nightSkyMoonInnerCorona.w = 1.0 + 1000.0 * this.getParamValue(TodParams.NIGHSKY_MOON_INNERCORONA_SCALE)
 
     this.getParamColor(TodParams.NIGHSKY_MOON_OUTERCORONA_COLOR, this.nightSkyMoonOuterCorona)
+    vec3$multiplyScalar(
+      this.nightSkyMoonOuterCorona,
+      this.getParamValue(TodParams.NIGHSKY_MOON_OUTERCORONA_COLOR_MULTIPLIER),
+    )
     this.nightSkyMoonOuterCorona.w = 1.0 + 1000.0 * this.getParamValue(TodParams.NIGHSKY_MOON_OUTERCORONA_SCALE)
 
     this.getParamColor(TodParams.CLOUDSHADING_SUNLIGHT_CUSTOM_COLOR, this.cloudshadingCustomColor)
@@ -461,7 +535,10 @@ export class TimeOfDay {
       this.cloudshadingCustomSunColor,
     )
 
+    this.updateSunShaftsParams()
+
     this.updateVolumetricFogParams(view)
+    this.updateVolumetricFog2Params(view)
     this.updateVolumetricFogRampParams()
     this.updateFogColorGradientConstants()
     this.updateFogColorGradientParams()
@@ -544,6 +621,73 @@ export class TimeOfDay {
     this.fogColGradDelta.z = this.fogTopColor.z * this.fogTopMultiplier - this.fogColGradBase.z
   }
 
+  /**
+   * Volumetric fog 2 parameters, see sGetVolumetricFog* in D3DHWShader.cpp
+   */
+  private updateVolumetricFog2Params(view: CameraData) {
+    // sGetVolumetricFogHeightDensityParams
+    let globalDensity = this.getParamValue(TodParams.VOLFOG2_GLOBAL_DENSITY)
+    const finalDensityClamp = this.getParamValue(TodParams.VOLFOG2_FINAL_DENSITY_CLAMP)
+    const clampTransmittance = finalDensityClamp > 0.9999999 ? 1.0 : finalDensityClamp
+    const visibility = this.getParamValue(TodParams.VOLFOG2_GLOBAL_FOG_VISIBILITY)
+
+    const ha = this.getParamValue(TodParams.VOLFOG2_HEIGHT)
+    let hb = this.getParamValue(TodParams.VOLFOG2_HEIGHT2)
+    hb = hb < ha + 1.0 ? ha + 1.0 : hb
+    const db = clamp(this.getParamValue(TodParams.VOLFOG2_DENSITY2), 1e-5, 1.0)
+    let da = clamp(this.getParamValue(TodParams.VOLFOG2_DENSITY), 1e-5, 1.0)
+    da = Math.abs(db - da) < 0.00001 ? da + 0.00001 : da
+
+    const ga = Math.log(da)
+    const gb = Math.log(db)
+    const c = (gb - ga) / (hb - ha)
+    const o = ga - c * ha
+    const viewHeight = mat4GetTranslationZ(view.world)
+    const co = clamp(c * viewHeight + o, -50.0, 50.0)
+    globalDensity *= 0.01
+
+    this.volFog2HeightDensity.x = c
+    this.volFog2HeightDensity.y = 1.44269502 * globalDensity * Math.exp(co)
+    this.volFog2HeightDensity.z = visibility
+    this.volFog2HeightDensity.w = 1.0 - clamp(clampTransmittance, 0.0, 1.0)
+
+    // sGetVolumetricFogHeightDensityRampParams
+    const rampStart = Math.max(0, this.getParamValue(TodParams.VOLFOG2_RAMP_START))
+    let rampEnd = this.getParamValue(TodParams.VOLFOG2_RAMP_END)
+    rampEnd = rampEnd < rampStart + 0.1 ? rampStart + 0.1 : rampEnd
+    const t0 = 1.0 / (rampEnd - rampStart)
+    this.volFog2Ramp.x = rampStart
+    this.volFog2Ramp.y = rampEnd
+    this.volFog2Ramp.z = t0
+    this.volFog2Ramp.w = rampStart * t0
+
+    // sGetVolumetricFogScatteringParams, anisotropy of the atmosphere
+    const k1 = clampAnisotropy(this.getParamValue(TodParams.VOLFOG2_ANISOTROPIC1))
+    this.volFog2Scattering.x = this.getParamValue(TodParams.VOLFOG2_INSCATTER)
+    this.volFog2Scattering.y = Math.max(this.getParamValue(TodParams.VOLFOG2_EXTINCTION), 0.0001)
+    this.volFog2Scattering.z = k1
+    this.volFog2Scattering.w = 1.0 - k1 * k1
+
+    // sGetVolumetricFogScatteringBlendParams
+    this.volFog2Blend.x = this.getParamValue(TodParams.VOLFOG2_BLEND_FACTOR)
+    this.volFog2Blend.y = this.getParamValue(TodParams.VOLFOG2_BLEND_MODE)
+    // PerFrame_FogDistanceScale.x, temporary constant until the runtime source is known
+    this.volFog2Blend.z = FOG_DISTANCE_SCALE
+
+    // sGetVolumetricFogScatteringColor / SecondaryColor: sun color * albedo, anisotropy of the sun radial lobe
+    const k2 = clampAnisotropy(this.getParamValue(TodParams.VOLFOG2_ANISOTROPIC2))
+    this.getParamColor(TodParams.VOLFOG2_COLOR1, this.volFog2Albedo)
+    this.volFog2ScatteringColor.x = this.sunColor.x * this.volFog2Albedo.x
+    this.volFog2ScatteringColor.y = this.sunColor.y * this.volFog2Albedo.y
+    this.volFog2ScatteringColor.z = this.sunColor.z * this.volFog2Albedo.z
+    this.volFog2ScatteringColor.w = k2
+    this.getParamColor(TodParams.VOLFOG2_COLOR2, this.volFog2Albedo)
+    this.volFog2ScatteringSecondaryColor.x = this.sunColor.x * this.volFog2Albedo.x
+    this.volFog2ScatteringSecondaryColor.y = this.sunColor.y * this.volFog2Albedo.y
+    this.volFog2ScatteringSecondaryColor.z = this.sunColor.z * this.volFog2Albedo.z
+    this.volFog2ScatteringSecondaryColor.w = 1.0 - k2 * k2
+  }
+
   private updateFogColorGradientParams() {
     const fogHeight = this.getParamValue(TodParams.VOLFOG_HEIGHT)
     let fogTopHeight = this.getParamValue(TodParams.VOLFOG_HEIGHT2)
@@ -591,4 +735,11 @@ function convertIlluminanceToLightColor(colorRGB: IVec3, illuminance: number) {
   const scale = lum > 0 ? illuminance / lum : 1
   vec3$multiplyScalar(colorRGB, scale)
   vec3$multiplyScalar(colorRGB, 1 / Math.PI)
+}
+
+/**
+ * Keeps the Schlick anisotropy within (-1, 1), see sGetVolumetricFogScatteringParams
+ */
+function clampAnisotropy(k: number) {
+  return Math.abs(k) > 0.99999 ? (k < 0 ? -0.99999 : 0.99999) : k
 }

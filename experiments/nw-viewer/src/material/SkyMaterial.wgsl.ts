@@ -14,6 +14,8 @@ struct MaterialBlock {
 
   waveLengthInv     : vec3f, // pow(waveLength * 0.001, -4.0)
   sunIntensity      : vec3f,
+  // direction of the actual sun (not the moon at night), same convention as global.sunDirection
+  sunDirection      : vec3f,
   mieScattering     : f32, // km
   rayleighScattering: f32, // kr
   phaseAsymmetry    : f32, // g
@@ -73,14 +75,15 @@ fn vs_main(in: VertexInput) -> FragmentInput {
 
     var skyDir = normalize(in.position.xyz);
     var uvBase = dirToUV(skyDir).xy;
+    // the original sky dome is a unit sphere, use the direction so the moon size does not depend on the mesh radius
     var uvMoon = vec2f(
-      dot(material.nightMoonTexGenRight.xyz, vPos.xyz),
-      dot(material.nightMoonTexGenUp.xyz,    vPos.xyz),
-    ) * (1.0 / material.nightMoonDirSize.w) + 0.5;
+      dot(material.nightMoonTexGenRight.xyz, skyDir),
+      dot(material.nightMoonTexGenUp.xyz,    skyDir),
+    ) * material.nightMoonDirSize.w + 0.5;
 
     // Suppress duplicate moon on the opposite hemisphere
     let moonCross = cross(material.nightMoonTexGenRight, material.nightMoonTexGenUp);
-    if (dot(moonCross, vPos.xyz) < 0.0) {
+    if (dot(moonCross, skyDir) < 0.0) {
       uvMoon *= 1.0e11;
     }
 
@@ -128,7 +131,8 @@ fn dirToUV(dir: vec3<f32>) -> vec2<f32> {
 fn fs_main(in: FragmentInput) -> FragmentOutput {
 
   let skyDir = normalize(in.skyDir);
-  let sunDir = global.sunDirection;
+  // the sky scatters the actual sun, global.sunDirection is the moon at night
+  let sunDir = material.sunDirection;
   let uvBase = in.uvPacked.xy;
   let uvMoon = in.uvPacked.zw;
 
@@ -175,8 +179,8 @@ fn fs_main(in: FragmentInput) -> FragmentOutput {
 
   // ---- fog ----
   let worldPos = reconstructWorldPos(in.position.xy);
-  let fogColor = getVolumetricFogColor(worldPos);
-  color = mix(fogColor.xyz, color, fogColor.w);
+  let fog = getSceneFog(worldPos);
+  color = color * fog.a + fog.rgb;
 
 
   var out: FragmentOutput;

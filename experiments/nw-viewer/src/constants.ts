@@ -17,6 +17,39 @@ export const ALBEDO_MULTIPLIER = 8.0
 export const MAX_ANISOTROPY = 4.0
 export const MAX_MIP_LEVELS = 8.0
 
+/**
+ * How ambient only lights (light component flag Ambient) are rendered.
+ *
+ * Ambient lights do not emit light, they multiply the ambient lighting of the environment probes
+ * (lerp(1, color, attenuation), TiledShading.cfi).
+ *
+ * - `fake-probe`: like modulate, and adds FAKE_PROBE_AMBIENT within the range of the ambient lights as a stand-in
+ *   for the missing probe ambient. Designers place ambient lights where probes are, so indoor areas get a base ambient
+ *   while open terrain is not affected.
+ * - `modulate`: multiply the ambient lighting we have (sky IBL), as the original does with the probe ambient
+ * - `skip`: ignore them
+ * - `direct`: render them as regular direct lights, adds light the original does not have
+ */
+export const AMBIENT_LIGHT_MODE: 'fake-probe' | 'modulate' | 'skip' | 'direct' = 'fake-probe'
+/**
+ * Base ambient (linear rgb) within the range of ambient lights, see AMBIENT_LIGHT_MODE `fake-probe`.
+ * Not taken from the game data, tuned by eye.
+ */
+export const FAKE_PROBE_AMBIENT: [number, number, number] = [0.5, 0.5, 0.5]
+
+/**
+ * Fog with the analytical volumetric fog 2 (VOLFOG2_* time of day parameters), like the game.
+ * When disabled the legacy fog (VOLFOG_* and FOG_COLOR* parameters) is used, which New World does not tune.
+ */
+export const ENABLE_VOLUMETRIC_FOG_2 = true
+/**
+ * Scales the distance in the volumetric fog 2 (PerFrame_FogDistanceScale.x in the shader).
+ *
+ * TEMPORARY: the game renders thinner fog than the time of day parameters give with a scale of 1.
+ * The source of the runtime value is unknown (not in the slices, possibly the weather system). Tuned by eye.
+ */
+export const FOG_DISTANCE_SCALE = 0.5
+
 export const ENABLE_IMPOSTORS = true
 export const ENABLE_CAPITALS = true
 export const ENABLE_DISTRIBUTION = true

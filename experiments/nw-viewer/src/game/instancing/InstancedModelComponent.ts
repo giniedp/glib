@@ -44,10 +44,9 @@ export class InstancedModelComponent implements GameComponent {
   public initialize(): void {
     this.system = this.entity.world.getSystem(InstancedRenderSystem)
     this.transform = this.entity.getTransform<TransformComponent>()
-    this.entity.component(BoundsComponent, GetComponent.Optional)?.setLocalBounds(
-      this.model.boundingSphere,
-      this.model.boundingBox,
-    )
+    this.entity
+      .component(BoundsComponent, GetComponent.Optional)
+      ?.setLocalBounds(this.model.boundingSphere, this.model.boundingBox)
   }
 
   public activate(): void {
@@ -89,22 +88,5 @@ export class InstancedModelComponent implements GameComponent {
       }
       batch.updateInstance(this.handles[h++], nodes[i].world)
     }
-  }
-
-  /**
-   * Checks whether the model can be rendered by the instance batch
-   */
-  public static canRender(system: InstancedRenderSystem, model: Model) {
-    if (model.skins?.length) {
-      return false
-    }
-    const batch = system.getBatch()
-    for (const node of model.sceneNodes) {
-      const mesh = model.meshes[node.data?.mesh]
-      if (mesh && !batch.canRender(mesh)) {
-        return false
-      }
-    }
-    return true
   }
 }

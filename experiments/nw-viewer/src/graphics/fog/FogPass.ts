@@ -1,5 +1,6 @@
 import { BlendState, type Device, type InputValueType, type Program } from '@gglib/graphics'
 import { FrameGraph, RenderChannel, type FrameResource, type RenderContext, type RenderPass } from '@gglib/render'
+import { ENABLE_VOLUMETRIC_FOG_2 } from '../../constants'
 import { InputSlots } from '../../material/common'
 import { FOG_MSAA_WGSL, FOG_WGSL } from './FogPass.wgsl'
 
@@ -152,7 +153,40 @@ export class FogPass implements RenderPass {
       'params.volumetricFogColorGradientBase',
       inputs.get(InputSlots.Global.VolumetricFogColorGradientBase),
     )
+    // height gradient and radial lobe, so geometry fog matches the fog applied to the sky
+    setIfPresent(
+      program,
+      'params.volumetricFogColorGradientParams',
+      inputs.get(InputSlots.Global.VolumetricFogColorGradientParams),
+    )
+    setIfPresent(
+      program,
+      'params.volumetricFogColorGradientDelta',
+      inputs.get(InputSlots.Global.VolumetricFogColorGradientDelta),
+    )
+    setIfPresent(
+      program,
+      'params.volumetricFogColorGradientRadial',
+      inputs.get(InputSlots.Global.VolumetricFogColorGradientRadial),
+    )
+    setIfPresent(program, 'params.sunDirection', inputs.get(InputSlots.Global.SunDirection))
+    // volumetric fog 2
+    setIfPresent(program, 'params.volFog2HeightDensity', inputs.get(InputSlots.Global.VolFog2HeightDensity))
+    setIfPresent(program, 'params.volFog2Ramp', inputs.get(InputSlots.Global.VolFog2Ramp))
+    setIfPresent(program, 'params.volFog2Scattering', inputs.get(InputSlots.Global.VolFog2Scattering))
+    setIfPresent(program, 'params.volFog2Blend', inputs.get(InputSlots.Global.VolFog2Blend))
+    setIfPresent(program, 'params.volFog2Ambient', inputs.get(InputSlots.Global.VolFog2Ambient))
+    setIfPresent(program, 'params.fogScatteringColor', inputs.get(InputSlots.Global.FogScatteringColor))
+    setIfPresent(
+      program,
+      'params.fogScatteringSecondaryColor',
+      inputs.get(InputSlots.Global.FogScatteringSecondaryColor),
+    )
+    this.volFog2Enabled[0] = ENABLE_VOLUMETRIC_FOG_2 ? 1 : 0
+    program.set('params.volFog2Enabled', this.volFog2Enabled)
   }
+
+  private volFog2Enabled = new Float32Array(4)
 }
 
 function setIfPresent(program: Program, path: string, value: InputValueType | null) {

@@ -40,7 +40,7 @@ import { Renderer } from '@gglib/render'
 import { lfmt } from '@gglib/utils'
 import { fetchTypedRequest, getLevelInfoUrl } from '../../api'
 import { ContentService } from '../../content'
-import { SkyMaterial } from '../../material'
+import { InputSlots, SkyMaterial } from '../../material'
 import { ShapeMaterial } from '../../material/ShapeMaterial'
 import { MeshLoaderComponent } from '../slice/MeshLoaderComponent'
 import { TerrainSystem } from '../terrain/TerrainSystem'
@@ -59,7 +59,9 @@ export class LevelSystem extends GameSystem {
 
   private renderer: Renderer
   private skyEntity: GameEntity
+  private cloudsEntity: GameEntity
   private gizmoEntity: GameEntity
+  private oceanLevel = -1000
 
   private logTag = lfmt.badge('#FF9DA7', 'LevelSystem')
   private get timeOfDay() {
@@ -109,9 +111,12 @@ export class LevelSystem extends GameSystem {
         this.timeOfDay.skyWaveR,
         this.timeOfDay.skyWaveG,
         this.timeOfDay.skyWaveB,
-        this.timeOfDay.sunColor,
+        this.timeOfDay.skySunIntensity,
       )
+      material.SunDirection = this.timeOfDay.skySunDirection
     }
+
+    this.renderer.inputs.set(InputSlots.Global.OceanLevel, this.oceanLevel)
   }
 
   public async loadLevel(name: string) {
@@ -132,7 +137,9 @@ export class LevelSystem extends GameSystem {
 
     this.entity = this.game.createEntity(levelEntityOptions(this.game.scene.entity, levelInfo))
     this.skyEntity = this.game.createEntity(createSkySphere(this.entity, this.renderer.device))
+    this.cloudsEntity = this.game.createEntity(createCloudsDome(this.entity))
 
+    this.oceanLevel = levelInfo.oceanLevel
     this.timeOfDay.setLevelInfo(levelInfo, {
       content: this.content,
       signal: loadSignal,
@@ -189,7 +196,7 @@ export class LevelSystem extends GameSystem {
     })
 
     this.skyEntity = this.game.createEntity(createSkySphere(this.entity, this.renderer.device))
-    // this.skyEntity = this.game.createEntity(skyEntity(this.entity))
+    this.cloudsEntity = this.game.createEntity(createCloudsDome(this.entity))
     this.gizmoEntity = this.game.createEntity(createGizmoGrid(this.entity, this.renderer.device))
   }
 
@@ -298,7 +305,7 @@ export class LevelSystem extends GameSystem {
     })
 
     this.skyEntity = this.game.createEntity(createSkySphere(this.entity, this.renderer.device))
-    // this.skyEntity = this.game.createEntity(skyEntity(this.entity))
+    this.cloudsEntity = this.game.createEntity(createCloudsDome(this.entity))
     this.gizmoEntity = this.game.createEntity(createGizmoGrid(this.entity, this.renderer.device))
   }
 
@@ -320,6 +327,7 @@ export class LevelSystem extends GameSystem {
   private unload() {
     this.skyEntity = null
     this.gizmoEntity = null
+    this.cloudsEntity = null
     if (this.entity) {
       this.entity.destroy()
       this.entity.setParent(null)
@@ -377,18 +385,23 @@ function createGizmoGrid(parent: GameEntity, device: Device): CreateEntityOption
   }
 }
 
-const SKY_DOME_CGF = 'objects/sky/skydome_a.cgf'
-const SKY_MATERIAL = 'objects/sky/sky_cutlass_b.mtl'
-// const SKY_MATERIAL = 'objects/sky/sky_isabella_darkcrossing.mtl'
-function skyEntity(parent: GameEntity): CreateEntityOptions {
+/**
+ * Cloud layer of the default skybox.
+ *
+ * The game spawns slices/system/skyboxsystem (not referenced by the level data). Its TimeOfDayPOIComponent
+ * (radius 12000 around 7000,7000, libs/timeofday/default.xml) spawns slices/sky/newworld01_skybox_a, a mesh component
+ * with this dome and no material override (uses the cgf material objects/sky/testclouds_sky_a_mtl.mtl, DistanceClouds).
+ * Other POIs (dungeons, storms) swap in other skybox slices, those are not implemented.
+ */
+const CLOUDS_DOME_CGF = 'objects/sky/skydome_a.cgf'
+function createCloudsDome(parent: GameEntity): CreateEntityOptions {
   return {
-    name: `Sky`,
+    name: `Clouds`,
     parent: parent,
     components: [
       new MeshLoaderComponent({
         type: 'Mesh',
-        mesh: SKY_DOME_CGF,
-        material: SKY_MATERIAL,
+        mesh: CLOUDS_DOME_CGF,
         alwaysRender: true,
       }),
     ],

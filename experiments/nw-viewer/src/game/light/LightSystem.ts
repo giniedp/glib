@@ -3,6 +3,7 @@ import { GameQuery, GameSystem, GameWorld } from '@gglib/ecs'
 import { Device, type WebGpuDevice } from '@gglib/graphics'
 import { DEGREE_TO_RAD, mat4GetRight, mat4GetTranslation, mat4GetUp, vec3, vec3$normalize } from '@gglib/math'
 import { Renderer } from '@gglib/render'
+import { AMBIENT_LIGHT_MODE, FAKE_PROBE_AMBIENT } from '../../constants'
 import { InputBlocks, InputSlots } from '../../material'
 import { LightClusterShader, type LightClusterLight, type LightClusterShaderOptions } from './LightClusterShader'
 import { LightComponent } from './LightComponent'
@@ -47,6 +48,7 @@ export class LightSystem extends GameSystem {
     height: 0,
     coneAngle: 0,
     coneAngleInner: 0,
+    ambient: false,
   }
 
   public constructor(options?: LightSystemOptions) {
@@ -95,11 +97,17 @@ export class LightSystem extends GameSystem {
   private updateClusterInputs() {
     this.renderer.inputs.set(InputSlots.Lights.ClusterGrid, this.shader.clusterGrid)
     this.renderer.inputs.set(InputSlots.Lights.ClusterDepth, this.shader.clusterDepth)
+    this.renderer.inputs.set(InputSlots.Global.FakeProbeAmbient, this.fakeProbeAmbient)
   }
+
+  private fakeProbeAmbient = AMBIENT_LIGHT_MODE === 'fake-probe' ? vec3(FAKE_PROBE_AMBIENT) : vec3(0)
 
   private addLights() {
     for (const entity of this.query) {
       const component = entity.component(LightComponent)
+      if (component.config.ambient && AMBIENT_LIGHT_MODE === 'skip') {
+        continue
+      }
       if (component.enabled && this.writeLight(component, this.light)) {
         this.shader.addLight(this.light)
       }
@@ -108,7 +116,9 @@ export class LightSystem extends GameSystem {
 
   private writeLight(component: LightComponent, out: LightClusterLight): boolean {
     const config = component.config
-    const diffuse = (config.diffuseMultiplier ?? 1) * this.intensityScale
+    const ambient = !!config.ambient && (AMBIENT_LIGHT_MODE === 'modulate' || AMBIENT_LIGHT_MODE === 'fake-probe')
+    // the color of ambient lights is a multiplier, the viewer intensity scale does not apply
+    const diffuse = (config.diffuseMultiplier ?? 1) * (ambient ? 1 : this.intensityScale)
     const specular = config.specMultiplier ?? 1
     if (!(diffuse > 0) && !(specular > 0)) {
       return false
@@ -132,6 +142,7 @@ export class LightSystem extends GameSystem {
     out.height = 0
     out.coneAngle = 0
     out.coneAngleInner = 0
+    out.ambient = ambient
 
     switch (component.type) {
       case 'Point': {

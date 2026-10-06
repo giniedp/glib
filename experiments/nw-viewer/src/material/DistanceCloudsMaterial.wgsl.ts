@@ -2,7 +2,8 @@ import { COMMON_WGSL } from './common.wgsl'
 
 export default /* wgsl */ `
 
-const LOCAL_WEATHER : bool = true;
+// DistanceClouds.cfx: DistanceCloudsVS, DistanceCloudsPS (default) and DistanceCloudsAdvancedPS (%ADVANCED)
+// %LOCAL_WEATHER and %ADVANCED are gen mask flags (shader constants)
 const NUM_SAMPLES : i32 = 32;
 
 struct MaterialBlock {
@@ -20,7 +21,7 @@ struct MaterialBlock {
   exposure                      : f32, // default 1.0
   maxShadowDensity              : f32, // default 1.0
   minShadowDensity              : f32, // default 0.0
-  opacity                       : f32, // default 1.0
+  opacity                       : f32, // default 1.0, material opacity (GetInstance_Opacity)
   shadowFadingInclinationFactor : f32, // default 10
   shadowFadingRadiusFactor      : f32, // default 10
   shadowPower                   : f32, // default 1.0
@@ -49,7 +50,7 @@ struct MaterialBlock {
 // @private
 @group(0) @binding(3) var<uniform> lights  : LightBlock;
 // @private
-@group(1) @binding(0) var<uniform> object  : ObjectBlock;
+@group(1) @binding(0) var<storage, read> object  : array<ObjectBlock, 1>; // per instance data
 
 @group(2) @binding(0) var<uniform> material: MaterialBlock;
 @group(2) @binding(1) var samplerLinear  : sampler;
@@ -75,6 +76,7 @@ struct MaterialBlock {
 @group(3) @binding(4) var noise2DTex         : texture_2d<f32>;
 
 struct VertexInput {
+  @builtin(instance_index) id : u32,
   @location(0) position : vec3f,
   @location(1) normal   : vec3f,
   @location(2) texture  : vec2f,
@@ -97,23 +99,25 @@ struct FragmentInput {
 
 @vertex
 fn vs_main(input: VertexInput) -> FragmentInput {
+  let modelMatrix = object[input.id].modelMatrix;
 
-  let modelMatrix = object.modelMatrix;
-  var vPos = vec4f(input.position.xyz, 1.0);
+  // The dome is rendered around the camera: in game the skybox follows the camera (the dome is only ~150m wide)
+  // and the depth is pushed to the far plane, so only the rotation of the instance is used.
+  let worldDir = (modelMatrix * vec4f(input.position.xyz, 0.0)).xyz;
   var viewRot = view.viewMatrix;
   viewRot[3]  = vec4f(0.0, 0.0, 0.0, 1.0);
+  var clipPos = view.projectionMatrix * viewRot * vec4f(worldDir, 1.0);
+  clipPos.z = 0.0; // reversed depth, far plane
 
-  var clipPos   = view.projectionMatrix * viewRot * vPos;
-      clipPos.z = 0;// output.position.w; // push to far plane
-
-  let n = normalize(input.normal.xyz);
-  let t = normalize(input.tangent.xyz - n * dot(n, input.tangent.xyz));
+  // sun direction in tangent space: objToTangentSpace = (Tangent, Binormal, cross(Tangent, Binormal) * Tangent.w)
+  // computed in world space, so the instance rotation is respected.
+  let n = normalize((modelMatrix * vec4f(input.normal.xyz, 0.0)).xyz);
+  var t = normalize((modelMatrix * vec4f(input.tangent.xyz, 0.0)).xyz);
+  t = normalize(t - n * dot(n, t));
   let b = cross(n, t) * input.tangent.w;
-  let toSun = normalize(vec3f(
-    dot(t, global.sunDirection),
-    dot(b, global.sunDirection),
-    dot(n, global.sunDirection),
-  ));
+  // PerFrame_SunDirection points towards the sun, global.sunDirection points away from it
+  let sunDir = -global.sunDirection;
+  let toSun = vec3f(dot(t, sunDir), dot(b, sunDir), dot(n, sunDir));
 
   var uvBase = vec4f(input.texture.xy, 0.0, 1.0);
   if (material.enabledUvModDiffuse == TRUE) {
@@ -128,60 +132,61 @@ fn vs_main(input: VertexInput) -> FragmentInput {
   output.localPos      = input.position.xyz;
   output.localNrm      = input.normal.xyz;
   output.localTan      = input.tangent.xyz;
-  // TODO: use model matrix as weather
-  output.weatherCenter = view.cameraPosition.xyz;// input.position.xyz;
-  // output.weatherCenter = vec3f(
-  //   modelMatrix[0].w,
-  //   modelMatrix[1].w,
-  //   modelMatrix[2].w,
-  // );
-
-
+  // the original uses the instance position, the skybox is centered at the camera
+  output.weatherCenter = view.cameraPosition.xyz;
   return output;
 }
 
 @fragment
 fn fs_main(input: FragmentInput) -> FragmentOutput {
+  if (ADVANCED) {
+    return psAdvanced(input);
+  }
   return psBasic(input);
 }
 
+fn getCloudTexture(uv: vec2f, scaleOffset: vec4f) -> vec4f {
+  if (SPRITESHEET_MATERIAL) {
+    // frac(uv) applies the uv wrap
+    return textureSample(diffuseMap, samplerLinear, fract(uv) * scaleOffset.xy + scaleOffset.zw);
+  }
+  return textureSample(diffuseMap, samplerLinear, uv);
+}
+
 fn psBasic(input: FragmentInput) -> FragmentOutput {
-  // ---- Sprite Sheet OFfset
-  var scaleOffset = getSpriteScaleOffset();
+  let scaleOffset = getSpriteScaleOffset();
 
-	const c_numSamples = 8;
+  const c_numSamples = 8;
 
-	let toSun = normalize(input.toSun.xyz);
-	let sampleDir = toSun.xy * material.stepSize;
-	let uv = input.uvBase.xy;
+  let toSun = normalize(input.toSun.xyz);
+  let sampleDir = toSun.xy * material.stepSize;
+  let uv = input.uvBase.xy;
 
-  var opacity = textureSample(diffuseMap, samplerLinear, uv).r * input.color.a;
+  var opacity = getCloudTexture(uv, scaleOffset).r * input.color.a;
   if (LOCAL_WEATHER) {
     opacity *= getLocalWeatherAlpha(input);
   }
 
-	if (opacity < 0.001) {
-		discard;
-	}
-
   var density = 0.0;
-  for(var i = 0; i < c_numSamples; i++) {
-    let suv = (uv + f32(i) * sampleDir) * scaleOffset.xy + scaleOffset.zw;
-		let t = textureSample(diffuseMap, samplerLinear, suv).r;
-		density += t;
-	}
+  for (var i = 0; i < c_numSamples; i++) {
+    density += getCloudTexture(uv + f32(i) * sampleDir, scaleOffset).r;
+  }
 
-	let c = exp2( -material.attenuation * density );
-	var a = pow( opacity, material.alphaSaturation );
-	let col = mix(
+  if (opacity < 0.001) {
+    discard;
+  }
+
+  let c = exp2(-material.attenuation * density);
+  var a = pow(opacity, material.alphaSaturation);
+  let col = mix(
     material.skyColorMultiplier * global.cloudShadingCustomSkyColor.xyz,
     material.sunColorMultiplier * global.cloudShadingCustomSunColor.xyz,
     c
   );
 
-	let materialOpacity = 1.0;// GetInstance_Opacity(); //AmbientOp.a * PerMaterial_DiffuseColor.a;
-	a = pow(a, 1.0f / (materialOpacity + 0.01f)) * sqrt(materialOpacity) - (1 - materialOpacity) * 0.01;
-	a = saturate(a);
+  let materialOpacity = material.opacity;
+  a = pow(a, 1.0 / (materialOpacity + 0.01)) * sqrt(materialOpacity) - (1.0 - materialOpacity) * 0.01;
+  a = saturate(a);
 
   var out: FragmentOutput;
   out.color = vec4f(col * input.color.rgb, a);
@@ -194,8 +199,7 @@ fn psAdvanced(input: FragmentInput) -> FragmentOutput {
   var scaleOffset = getSpriteScaleOffset();
 
   // ---- Clouds Texture
-  var uvBase = input.uvBase * scaleOffset.xy + scaleOffset.zw;
-  var height = textureSample(diffuseMap, samplerLinear, uvBase).r;
+  var height = getCloudTexture(input.uvBase, scaleOffset).r;
 
   // ---- Local Weather
   if (LOCAL_WEATHER) {
@@ -224,8 +228,7 @@ fn psAdvanced(input: FragmentInput) -> FragmentOutput {
 
 	for(var i = 0; i < NUM_SAMPLES; i++) {
 		curTracePos += sampleDir;
-    let uv = fract(curTracePos.xy) * scaleOffset.xy + scaleOffset.zw;
-    let height2 = textureSample(diffuseMap, samplerLinear, uv).r * material.cloudHeight;
+    let height2 = getCloudTexture(curTracePos.xy, scaleOffset).r * material.cloudHeight;
     if (abs( curTracePos.z ) < height2) {
       density += height2;
     }

@@ -2,6 +2,7 @@ import { inputSlot } from '@gglib/graphics'
 export default {
   WaveLengthInv: inputSlot('material', 'wavelengthinv', 'vec3'),
   SunIntensity: inputSlot('material', 'sunintensity', 'vec3'),
+  SunDirection: inputSlot('material', 'sundirection', 'vec3'),
   MieScattering: inputSlot('material', 'miescattering', 'scalar'),
   RayleighScattering: inputSlot('material', 'rayleighscattering', 'scalar'),
   PhaseAsymmetry: inputSlot('material', 'phaseasymmetry', 'scalar'),

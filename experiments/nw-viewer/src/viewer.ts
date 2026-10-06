@@ -11,6 +11,7 @@ import {
   type SchedulerStats,
 } from '@gglib/components'
 import { type GameEntity } from '@gglib/ecs'
+import { MouseListener } from '@gglib/game'
 import { Color, type DeviceStats } from '@gglib/graphics'
 import { DDS, GLTF, HDR } from '@gglib/loaders'
 import {
@@ -37,10 +38,9 @@ import { ContentService } from './content'
 import { CapitalSystem } from './game/capital/CapitalSystem'
 import { DebugLayer, DebugShapeComponent } from './game/debug/DebugShapeComponent'
 import { DebugShapeSystem } from './game/debug/DebugShapeSystem'
-import { DistributionSystem } from './game/distribution/DistributionSystem'
-import { VegetationSystem } from './game/vegetation/VegetationSystem'
-import { InstancedRenderSystem } from './game/instancing/InstancedRenderSystem'
 import { RaycastSystem, type RaySelection } from './game/debug/RaycastSystem'
+import { DistributionSystem } from './game/distribution/DistributionSystem'
+import { InstancedRenderSystem } from './game/instancing/InstancedRenderSystem'
 import { LevelSystem } from './game/level/LevelSystem'
 import { SkyLightSystem } from './game/level/SkyLightSystem'
 import { LightSystem } from './game/light/LightSystem'
@@ -48,10 +48,10 @@ import { RegionSystem } from './game/region/RegionSystem'
 import { RangeActivationSystem } from './game/slice/RangeActivationSystem'
 import { SliceSystem } from './game/slice/SliceSystem'
 import { TerrainSystem } from './game/terrain/TerrainSystem'
+import { VegetationSystem } from './game/vegetation/VegetationSystem'
 import { createRenderPipeline } from './graphics'
 import { InputSlots, MaterialLayerMasks, NwMaterialExtension, NwMaterialRefExtension } from './material'
 import { attachOverlay } from './ui/overlay'
-import { MouseListener } from '@gglib/game'
 
 export interface NwViewerOptions {
   element: HTMLDivElement

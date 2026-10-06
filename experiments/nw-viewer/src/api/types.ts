@@ -429,6 +429,7 @@ export interface ViewerLightConfig {
   diffuseMultiplier: number
   attenuation: number
   range: number
+  ambient: boolean
   // type 0: point light
 
   // type 1: area light

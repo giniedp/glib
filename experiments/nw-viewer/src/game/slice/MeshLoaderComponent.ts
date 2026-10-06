@@ -11,7 +11,6 @@ import {
 import type { GameComponent, GameEntity } from '@gglib/ecs'
 import { Color } from '@gglib/graphics'
 import {
-  type Mat4,
   mat4CreateFromArray,
   mat4CreateFromRTS,
   mat4Identity,
@@ -20,12 +19,14 @@ import {
   vec3MultiplyScalar,
   vec3Subtract,
   vec4,
+  type Mat4,
 } from '@gglib/math'
 import { Model } from '@gglib/model'
 import { brand, type EventType } from '@gglib/utils'
 import type { ViewerMeshComponent } from '../../api'
 import { COMBINE_INSTANCE_ARRAYS, ENABLE_INSTANCED_LEVEL_OBJECTS } from '../../constants'
 import { ContentService } from '../../content'
+import { createInstanceData } from '../../material/common'
 import { DebugLayer, DebugShapeComponent } from '../debug/DebugShapeComponent'
 import { InstancedModelComponent } from '../instancing/InstancedModelComponent'
 import { InstancedRenderSystem } from '../instancing/InstancedRenderSystem'
@@ -196,20 +197,38 @@ export class MeshLoaderComponent implements GameComponent {
    * Renders static models through the GPU instance batch, falls back to the scene render path otherwise
    */
   private modelComponentFactory(model: Model): (instance: Model) => GameComponent {
-    const system = ENABLE_INSTANCED_LEVEL_OBJECTS
-      ? this.entity.world.getSystem(InstancedRenderSystem, { optional: true })
-      : null
-    const canInstance =
-      !!system &&
-      this.data.instances?.length > 0 &&
-      !this.data.alwaysRender &&
-      InstancedModelComponent.canRender(system, model)
-    if (!canInstance) {
-      return (instance) => new ModelComponent({ model: instance })
-    }
-    const key = `${this.data.mesh}|${this.data.material || ''}`
     const maxViewDistance = (this.data.maxViewDistance || 0) * (this.data.viewDistanceMultiplier || 1)
-    return (instance) => new InstancedModelComponent({ model: instance, key, maxViewDistance })
+    const instanceSystem = this.entity.world.getSystem(InstancedRenderSystem, { optional: true })
+    let canInstance = ENABLE_INSTANCED_LEVEL_OBJECTS
+
+    if (!instanceSystem || !instanceSystem.canRender(model)) {
+      canInstance = false
+    }
+    if (this.data.alwaysRender) {
+      canInstance = false
+    }
+    if (!this.data.instances?.length) {
+      canInstance = false
+    }
+
+    if (!canInstance) {
+      // shaders fade out by the relative distance to the max view distance (e.g. GeometryBeam %ENABLE_FADEOUT)
+      return (instance) => {
+        return new ModelComponent({
+          model: instance,
+          instanceData: createInstanceData(maxViewDistance),
+        })
+      }
+    }
+
+    const key = `${this.data.mesh}|${this.data.material || ''}`
+    return (instance) => {
+      return new InstancedModelComponent({
+        model: instance,
+        key,
+        maxViewDistance,
+      })
+    }
   }
 }
 

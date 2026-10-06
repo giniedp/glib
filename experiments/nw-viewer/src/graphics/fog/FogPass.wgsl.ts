@@ -1,4 +1,5 @@
 import { FULLSCREEN_WGSL_VS } from '@gglib/effects'
+import { VOLUMETRIC_FOG_2_WGSL } from '../../material/volumetricFog2.wgsl'
 
 /**
  * Deferred volumetric fog, matches `applyFog` in material/common.wgsl.ts
@@ -21,7 +22,26 @@ struct FogParams {
   volumetricFogParams            : vec4f,
   volumetricFogRampParams        : vec4f,
   volumetricFogColorGradientBase : vec4f,
+  // x = height gradient scale, y = height gradient offset, z = radial size, w = radial lobe
+  volumetricFogColorGradientParams: vec4f,
+  volumetricFogColorGradientDelta : vec4f,
+  // xyz = radial color, w = 1 / far
+  volumetricFogColorGradientRadial: vec4f,
+  // xyz = sun direction (light direction, global.sunDirection)
+  sunDirection                   : vec4f,
+  // volumetric fog 2, see VolFog2Params
+  volFog2HeightDensity           : vec4f,
+  volFog2Ramp                    : vec4f,
+  volFog2Scattering              : vec4f,
+  volFog2Blend                   : vec4f,
+  fogScatteringColor             : vec4f,
+  fogScatteringSecondaryColor    : vec4f,
+  volFog2Ambient                 : vec4f,
+  // x = 1 when volumetric fog 2 is enabled
+  volFog2Enabled                 : vec4f,
 };
+
+${VOLUMETRIC_FOG_2_WGSL}
 
 @group(0) @binding(0) var<uniform> params: FogParams;
 
@@ -56,8 +76,39 @@ fn computeFog(position: vec2f, depth: f32) -> vec4f {
   let uv = (floor(position) + 0.5) * params.viewport.zw;
   let viewPos = vec3f((params.ndcToView.xy * uv + params.ndcToView.zw) * depth, -depth);
   let cameraToWorldPos = (params.cameraWorld * vec4f(viewPos, 0.0)).xyz;
+  let worldPos = (params.cameraWorld * vec4f(viewPos, 1.0)).xyz;
+  if (params.volFog2Enabled.x > 0.5) {
+    var p: VolFog2Params;
+    p.heightDensity = params.volFog2HeightDensity;
+    p.ramp          = params.volFog2Ramp;
+    p.scattering    = params.volFog2Scattering;
+    p.blend         = params.volFog2Blend;
+    p.color1        = params.fogScatteringColor;
+    p.color2        = params.fogScatteringSecondaryColor;
+    p.ambient       = params.volFog2Ambient;
+    // in-scattering and transmittance, matches the blending dst = src.rgb + dst.rgb * src.a
+    return volFog2Analytical(p, cameraToWorldPos, -params.sunDirection.xyz);
+  }
   let factor = computeVolumetricFogInternal(cameraToWorldPos);
-  return vec4f(params.volumetricFogColorGradientBase.rgb * (1.0 - factor), factor);
+  return vec4f(computeFogColor(worldPos, cameraToWorldPos) * (1.0 - factor), factor);
+}
+
+// GetVolumetricFogColorInternal: height gradient and radial lobe around the sun, same as the sky
+fn computeFogColor(worldPos: vec3f, cameraToWorldPos: vec3f) -> vec3f {
+  let heightGradScale  = params.volumetricFogColorGradientParams.x;
+  let heightGradOffset = params.volumetricFogColorGradientParams.y;
+  let radialSizeCtrl   = params.volumetricFogColorGradientParams.z;
+  let radialLobeCtrl   = params.volumetricFogColorGradientParams.w;
+
+  var h = saturate(worldPos.z * heightGradScale + heightGradOffset);
+  h = h * (2.0 - h);
+  var fogColor = params.volumetricFogColorGradientBase.rgb + h * params.volumetricFogColorGradientDelta.rgb;
+
+  let l = saturate(length(cameraToWorldPos) * params.volumetricFogColorGradientRadial.w);
+  let radialLobe = pow(l, radialLobeCtrl);
+  let radialSize = exp2(dot(normalize(cameraToWorldPos), -params.sunDirection.xyz) * -radialSizeCtrl + radialSizeCtrl);
+  fogColor += radialLobe * radialSize * params.volumetricFogColorGradientRadial.rgb;
+  return fogColor;
 }
 `
 

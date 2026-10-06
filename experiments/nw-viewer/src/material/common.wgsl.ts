@@ -1,4 +1,7 @@
+import { VOLUMETRIC_FOG_2_WGSL } from './volumetricFog2.wgsl'
+
 export const COMMON_WGSL = /* wgsl */ `
+${VOLUMETRIC_FOG_2_WGSL}
 
 const TRUE: u32 = 1u;
 const FALSE: u32 = 0u;
@@ -7,6 +10,8 @@ const LIGHT_TYPE_DIRECTIONAL: u32 = 1u;
 const LIGHT_TYPE_POINT:       u32 = 2u;
 const LIGHT_TYPE_SPOT:        u32 = 3u;
 const LIGHT_TYPE_AREA:        u32 = 4u;
+// added to the type of ambient only lights, they multiply the ambient lighting (TiledShading.cfi)
+const LIGHT_TYPE_AMBIENT:     u32 = 8u;
 const FLOAT_EPSILON = 1e-10;
 const MIN_ROUGHNESS = 0.05;// 0.001;
 
@@ -64,7 +69,7 @@ const DEBUG_SH_SPECULAR_AA:      u32 = 307u; // roughness added by specular anti
 // #endregion
 
 // #region --- Feature toggles ---
-
+  override ADVANCED = false;
   override ALLOW_SILHOUETTE_POM = false;
   override ALLOW_SPECULAR_ANTIALIASING = false;
   override ALLOW_TESSELATION = false;
@@ -114,6 +119,7 @@ const DEBUG_SH_SPECULAR_AA:      u32 = 307u; // roughness added by specular anti
   override IS_GDE_IMPOSTOR = false;
   override IS_POI_IMPOSTOR = false;
   override LEAVES = false;
+  override LOCAL_WEATHER = false;
   override NOISE = false;
   override NORMAL_MAP = false;
   override OCCLUSION_MAP = false;
@@ -181,6 +187,7 @@ const DEBUG_SH_SPECULAR_AA:      u32 = 307u; // roughness added by specular anti
   // the fade happens between these camera distances
   override DITHER_FADE_START: f32 = 0.0;
   override DITHER_FADE_END: f32 = 0.0;
+
 // #endregion
 
 const MICRO_DETAIL_QUALITY_DEF: u32 = 0u; // default
@@ -219,12 +226,44 @@ struct GlobalBlock {
 
   // xyz = ocean fog color (sun tinted), w = density (log2 base)
   oceanFogColorDensity : vec4f,
+  // ocean water level (PerFrame_WaterLevel.z), far below the terrain when the level has no ocean
+  oceanLevel           : f32,
+  // stand-in for the probe ambient within the range of ambient lights, zero when disabled
+  fakeProbeAmbient     : vec3f,
+  // PerFrame_VolumetricFogScatteringColor, xyz = sun color times the atmosphere fog albedo
+  fogScatteringColor   : vec4f,
+  // volumetric fog 2 (analytical), see VolFog2Params, enabled when volFog2Enabled != 0
+  volFog2HeightDensity : vec4f,
+  volFog2Ramp          : vec4f,
+  volFog2Scattering    : vec4f,
+  volFog2Blend         : vec4f,
+  // rgb = sun color * fog albedo (sun radial), w = 1 - k * k (sun radial)
+  fogScatteringSecondaryColor : vec4f,
+  // rgb = ambient in-scattering, stand-in for the global environment probe
+  volFog2Ambient       : vec4f,
+  volFog2Enabled       : u32,
 
 };
 
 struct ObjectBlock {
   modelMatrix: mat4x4f,
 };
+
+// per instance data of level meshes, see createInstanceData
+struct InstanceDataBlock {
+  // x = max view distance of the entity, 0 = unlimited
+  viewDistance: vec4f,
+};
+
+// distance of the instance to the camera relative to its max view distance (GetInstance_RelativeDistance)
+// 0 when the instance has no max view distance
+fn instanceRelativeDistance(data: InstanceDataBlock, modelMatrix: mat4x4f) -> f32 {
+  let maxViewDistance = data.viewDistance.x;
+  if (maxViewDistance <= 0.0) {
+    return 0.0;
+  }
+  return distance(modelMatrix[3].xyz, view.cameraPosition) / maxViewDistance;
+}
 
 struct ViewBlock {
   viewMatrix:       mat4x4f,
@@ -300,6 +339,8 @@ struct ShadeParams {
 
 struct ShadeOutput {
   ambient: vec3f,
+  // product of the ambient lights, applies to ambient diffuse and environment specular
+  ambientScale: vec3f,
   diffuse: vec3f,
   specular: vec3f,
   diffuseBack: vec3f, // transmittance
@@ -364,7 +405,7 @@ fn closestPointOnRect(p: vec3f, center: vec3f, axisX: vec3f, axisY: vec3f, halfW
 
 fn getClusterLight(light: Light, position: vec3f, reflectDir: vec3f) -> LightResult {
   var result: LightResult;
-  let lightType = u32(light.direction.w);
+  let lightType = u32(light.direction.w) % LIGHT_TYPE_AMBIENT;
   let range = max(light.position.w, 0.0001);
   let bulb = light.tangent.w;
   let dir = light.direction.xyz;
@@ -483,8 +524,28 @@ fn accumulateLight(lights: LightBlock, env: GlobalBlock, surface: SurfaceParams,
   return composeShade(surface, shade);
 }
 
+// Multiplies the ambient scale with an ambient only light (TiledShading.cfi, "Ambient lights")
+fn shadeAmbientLight(output: ptr<function, ShadeOutput>, surface: SurfaceParams, light: Light, result: LightResult) {
+  let baseType = u32(light.direction.w) % LIGHT_TYPE_AMBIENT;
+  var attenuation = result.falloff;
+  // point and area attenuation is squared, projectors use the cone (the original samples the projector texture)
+  if (baseType != LIGHT_TYPE_SPOT) {
+    attenuation *= attenuation;
+  }
+  let NdotL = saturate(dot(surface.Normal.xyz, result.direction));
+  var PdotL = 1.0;
+  if (baseType == LIGHT_TYPE_AREA) {
+    PdotL = saturate(dot(-result.direction, light.direction.xyz));
+  }
+  // brightening lights (color > 1) use the surface orientation, darkening lights have no directionality
+  let color = light.color.rgb;
+  let dirFactor = select(vec3f(PdotL), vec3f(NdotL), color > vec3f(1.0));
+  (*output).ambientScale *= mix(vec3f(1.0), color, attenuation * dirFactor);
+}
+
 fn accumulateLightShade(lights: LightBlock, env: GlobalBlock, surface: SurfaceParams, toEye: vec3f, worldPos: vec3f) -> ShadeOutput {
   var output: ShadeOutput;
+  output.ambientScale = vec3f(1.0);
 
   // --- sun
   var sun: LightParams;
@@ -500,19 +561,31 @@ fn accumulateLightShade(lights: LightBlock, env: GlobalBlock, surface: SurfacePa
   }
   let cluster = lightClusters[clusterIndex];
   let reflectDir = reflect(-toEye, surface.Normal.xyz);
+  // coverage of the ambient lights, places a stand-in for the probe ambient
+  var probeCoverage = 0.0;
   for (var i = 0u; i < cluster.count; i++) {
     let light = lightList[lightIndices[cluster.offset + i].light];
     let result = getClusterLight(light, worldPos, reflectDir);
     if (result.falloff > 0.0) {
-      shadeLight(&output, surface, toEye, result);
+      if (u32(light.direction.w) >= LIGHT_TYPE_AMBIENT) {
+        shadeAmbientLight(&output, surface, light, result);
+        // probes are roughly uniform within their volume, use a smooth window over the light range
+        let d = distance(worldPos, light.position.xyz) / max(light.position.w, 0.0001);
+        let window = saturate(1.0 - d * d);
+        probeCoverage = max(probeCoverage, window * window);
+      } else {
+        shadeLight(&output, surface, toEye, result);
+      }
     }
   }
+  // no probes: within the range of ambient lights add a base ambient for them to modulate (AMBIENT_LIGHT_MODE fake-probe)
+  output.ambient += env.fakeProbeAmbient * probeCoverage;
 
   return output;
 }
 
 fn composeShade(surface: SurfaceParams, shade: ShadeOutput) -> vec3f {
-  var diffuse = (shade.ambient + shade.diffuse) * surface.Diffuse.rgb;
+  var diffuse = (shade.ambient * shade.ambientScale + shade.diffuse) * surface.Diffuse.rgb;
   diffuse *= saturate(vec3f(1.0) - getLuminance(surface.Specular.rgb));
 
   // TODO: reflection
@@ -882,15 +955,40 @@ fn applyFog(
   if (global.skipFog != 0u) {
     return vec4f(color, alpha);
   }
-  let factor    = getVolumetricFogDensity(worldPos);
-  let fog_color = global.volumetricFogColorGradientBase.rgb;
-  return vec4f(
-      mix(fog_color, color, factor),
-      alpha,
-  );
+  // same fog as the fog pass and the sky
+  let fog = getSceneFog(worldPos);
+  return vec4f(color * fog.a + fog.rgb, alpha);
 }
 
+fn globalVolFog2Params() -> VolFog2Params {
+  var p: VolFog2Params;
+  p.heightDensity = global.volFog2HeightDensity;
+  p.ramp          = global.volFog2Ramp;
+  p.scattering    = global.volFog2Scattering;
+  p.blend         = global.volFog2Blend;
+  p.color1        = global.fogScatteringColor;
+  p.color2        = global.fogScatteringSecondaryColor;
+  p.ambient       = global.volFog2Ambient;
+  return p;
+}
+
+// Fog towards a world position, rgb = premultiplied fog color (in-scattering), a = transmittance.
+// Apply as color * fog.a + fog.rgb
+fn getSceneFog(worldPos: vec3f) -> vec4f {
+  let cameraToWorldPos = worldPos - view.cameraPosition.xyz;
+  if (global.volFog2Enabled != 0u) {
+    // global.sunDirection points away from the light
+    return volFog2Analytical(globalVolFog2Params(), cameraToWorldPos, -global.sunDirection);
+  }
+  let legacy = getVolumetricFogColor(worldPos);
+  return vec4f(legacy.rgb * (1.0 - legacy.w), legacy.w);
+}
+
+// fog transmittance towards a world position
 fn getVolumetricFogDensity(worldPos: vec3f) -> f32 {
+  if (global.volFog2Enabled != 0u) {
+    return getSceneFog(worldPos).a;
+  }
   return computeVolumetricFogInternal(worldPos - view.cameraPosition.xyz);
 }
 

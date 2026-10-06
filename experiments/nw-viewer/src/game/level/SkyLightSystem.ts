@@ -4,6 +4,7 @@ import { IblSampler, NishitaSkyEffect } from '@gglib/effects'
 import { Device, getMipmapCount, Texture, TextureUsage } from '@gglib/graphics'
 import { mat4GetTranslation, vec3, vec4 } from '@gglib/math'
 import { Renderer } from '@gglib/render'
+import { ENABLE_VOLUMETRIC_FOG_2 } from '../../constants'
 import { InputSlots } from '../../material'
 import { TimeOfDay } from './TimeOfDay'
 import { TimeOfDayComponent } from './TimeOfDayComponent'
@@ -36,6 +37,10 @@ export class SkyLightSystem extends GameSystem {
     this.todQuery = world.query({ scope: 'active', required: [TimeOfDayComponent] })
     this.device = world.getSystem(Device)
     this.renderer = world.getSystem(Renderer)
+    // read by the SunShaftsPass, not bound by materials
+    if (!this.renderer.inputs.hasBlock('sunShafts')) {
+      this.renderer.inputs.createBlock('sunShafts')
+    }
     this.fxSky = new NishitaSkyEffect(this.device, {})
     this.fxIbl = new IblSampler(this.device, {})
     this.skyDomeTexture = this.device.createRenderTarget({
@@ -66,11 +71,12 @@ export class SkyLightSystem extends GameSystem {
     // intentionally rendered each frame
     // TODO: review whether we should optimize this
     if (this.fxSky.isValid) {
-      let latitude = Math.acos(-this.timeOfDay.sunDirection.z)
-      let longitude = Math.atan2(-this.timeOfDay.sunDirection.y, -this.timeOfDay.sunDirection.x)
+      // the sky scatters the actual sun, also at night when the sun light is the moon (sunPosOrig in TimeOfDay.cpp)
+      const skySun = this.timeOfDay.skySunDirection
+      let latitude = Math.acos(-skySun.z)
+      let longitude = Math.atan2(-skySun.y, -skySun.x)
 
       this.fxSky.textureOut = this.skyDomeTexture
-      this.timeOfDay.sunDirection
       this.fxSky.sunLatitude = latitude
       this.fxSky.sunLongitude = longitude
       this.fxSky.mieScattering = this.timeOfDay.skyKM
@@ -79,10 +85,10 @@ export class SkyLightSystem extends GameSystem {
       this.fxSky.waveLength.x = this.timeOfDay.skyWaveR
       this.fxSky.waveLength.y = this.timeOfDay.skyWaveG
       this.fxSky.waveLength.z = this.timeOfDay.skyWaveB
-      this.fxSky.sunIntensity.x = this.timeOfDay.sunColor.x
-      this.fxSky.sunIntensity.y = this.timeOfDay.sunColor.y
-      this.fxSky.sunIntensity.z = this.timeOfDay.sunColor.z
-      this.fxSky.nightSkyColorBase = this.timeOfDay.nightSkyZenithColor
+      this.fxSky.sunIntensity.x = this.timeOfDay.skySunIntensity.x
+      this.fxSky.sunIntensity.y = this.timeOfDay.skySunIntensity.y
+      this.fxSky.sunIntensity.z = this.timeOfDay.skySunIntensity.z
+      this.fxSky.nightSkyColorBase = this.timeOfDay.nightSkyHorizonColor
       this.fxSky.nightSkyColorDelta = this.timeOfDay.nightSkyColorDelta
       this.fxSky.nightSkyColorShift = this.timeOfDay.nightSkyZenithColorShift
       this.fxSky.groundColor = this.timeOfDay.fogColor
@@ -124,6 +130,9 @@ export class SkyLightSystem extends GameSystem {
     inputs.set(InputSlots.Global.CloudShadingSunColor, tod.cloudshadingCustomSunColor)
     inputs.set(InputSlots.Global.CloudShadingSkyColor, tod.cloudshadingCustomSkyColor)
 
+    inputs.set(InputSlots.SunShafts.Params, tod.sunShaftsParams)
+    inputs.set(InputSlots.SunShafts.Color, tod.sunShaftsColor)
+
     inputs.set(InputSlots.Global.VolumetricFogParams, tod.fogParams)
     inputs.set(InputSlots.Global.VolumetricFogRampParams, tod.fogRampParams)
     inputs.set(InputSlots.Global.VolumetricFogColorGradientParams, tod.fogColGradParams)
@@ -140,6 +149,18 @@ export class SkyLightSystem extends GameSystem {
     oceanFog.z = tod.sunColor.z * tod.oceanFogColor.z
     oceanFog.w = tod.oceanFogDensity * Math.LOG2E
     inputs.set(InputSlots.Global.OceanFogColorDensity, oceanFog)
+
+    // volumetric fog 2 (sGetVolumetricFog* in D3DHWShader.cpp)
+    // the scattering color is the sun color times the atmosphere fog albedo, also used by APPLY_FOG_COLOR
+    inputs.set(InputSlots.Global.FogScatteringColor, tod.volFog2ScatteringColor)
+    inputs.set(InputSlots.Global.FogScatteringSecondaryColor, tod.volFog2ScatteringSecondaryColor)
+    inputs.set(InputSlots.Global.VolFog2HeightDensity, tod.volFog2HeightDensity)
+    inputs.set(InputSlots.Global.VolFog2Ramp, tod.volFog2Ramp)
+    inputs.set(InputSlots.Global.VolFog2Scattering, tod.volFog2Scattering)
+    inputs.set(InputSlots.Global.VolFog2Blend, tod.volFog2Blend)
+    // no environment probes: the fog color of the time of day stands in for the probe in-scattering
+    inputs.set(InputSlots.Global.VolFog2Ambient, tod.fogColGradBase)
+    inputs.set(InputSlots.Global.VolFog2Enabled, ENABLE_VOLUMETRIC_FOG_2 ? 1 : 0)
   }
 
   public destroy(): void {

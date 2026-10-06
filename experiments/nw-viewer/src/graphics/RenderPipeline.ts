@@ -14,9 +14,11 @@ import { InputSlots } from '../material'
 import { DepthResolveEffect } from './DepthResolveEffect'
 import { FogPass } from './fog/FogPass'
 import { AmbientOcclusionApplyPass } from './ssao/AmbientOcclusionApplyPass'
+import { SunShaftsPass } from './sunshafts/SunShaftsPass'
 import { XeGtaoPass } from './ssao/XeGtaoPass'
 
 export function createRenderPipeline(device: Device): RenderPipelineOptions {
+  const sunShafts = new SunShaftsPass(device)
   return {
     passes: [
       renderInputsPass({
@@ -85,6 +87,8 @@ export function createRenderPipeline(device: Device): RenderPipelineOptions {
           },
         ],
       }),
+      // mask and blur from the HDR scene
+      sunShafts.generate,
       bloomPass(device, {
         enabled: true,
         threshold: 1.5,
@@ -100,6 +104,8 @@ export function createRenderPipeline(device: Device): RenderPipelineOptions {
         whitePoint: 10.0,
         srgb: true,
       }),
+      // blended into the tone mapped image, like the HDR final pass of the original
+      sunShafts.apply,
     ],
   }
 }

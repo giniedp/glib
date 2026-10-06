@@ -39,6 +39,7 @@ export function distanceCloudsEffectOptions(constants: Record<string, number>): 
     program: {
       shader: distanceCloudsOptions(constants),
       sharedBlocks: [InputBlocks.Global, InputBlocks.View, InputBlocks.Frame, InputBlocks.Lights],
+      perInstanceTransformBlock: 'object',
     },
   }
 }
@@ -81,7 +82,8 @@ export class DistanceCloudsMaterial extends MaterialWithSchema(Schema) {
     this.effects[RenderVariant.Forward] = new Effect(this.device, distanceCloudsEffectOptions(shaderConst))
     this.effect.depthState = DepthState.GreaterEqualNoWrite
     this.effect.cullState = CullState.None
-    this.effect.blendState = BlendState.AdditiveAlpha
+    // SrcBlend = SrcAlpha, DestBlend = InvSrcAlpha
+    this.effect.blendState = BlendState.Alpha
     this.isTransparent = true
 
     this.layer = MaterialLayerMasks.DistanceClouds
@@ -150,7 +152,10 @@ export class DistanceCloudsMaterial extends MaterialWithSchema(Schema) {
   }
 
   private setAttributes(attrs: NwMaterialProps['attrs'], flags: Set<FeatureFlag>) {
-    //
+    // GetInstance_Opacity: PerMaterial_DiffuseColor.w, the material opacity
+    if (attrs.Opacity != null) {
+      this.Opacity = Number(attrs.Opacity)
+    }
   }
 
   private setPublicParams(params: PublicParams) {

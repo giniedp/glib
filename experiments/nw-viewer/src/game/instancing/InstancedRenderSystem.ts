@@ -4,6 +4,7 @@ import { Device } from '@gglib/graphics'
 import { mat4GetTranslation, vec3 } from '@gglib/math'
 import { Renderer, type RenderContext } from '@gglib/render'
 import { GpuInstanceBatch } from '../../graphics/instancing/GpuInstanceBatch'
+import type { Model } from '@gglib/model'
 
 const cameraPosition = vec3()
 
@@ -26,6 +27,23 @@ export class InstancedRenderSystem extends GameSystem {
   public initialize(world: GameWorld): void {
     this.world = world
     this.game = world.getSystem(EcsGame)
+  }
+
+  /**
+   * Checks whether the model can be rendered by the instance batch
+   */
+  public canRender(model: Model) {
+    if (model.skins?.length) {
+      return false
+    }
+    const batch = this.getBatch()
+    for (const node of model.sceneNodes) {
+      const mesh = model.meshes[node.data?.mesh]
+      if (mesh && !batch.canRender(mesh)) {
+        return false
+      }
+    }
+    return true
   }
 
   /**

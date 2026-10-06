@@ -75,7 +75,8 @@ export class SkyMaterial extends MaterialWithSchema(SkyMaterialSchema) {
     this.NightMoonTexGenUp = up
 
     const dirSize = this.NightMoonDirSize || vec4()
-    vec4$init(dirSize, direction.x, direction.y, direction.z, 25 - clamp(24 * size, 0, 1))
+    // texgen scale of the moon, larger values make the moon smaller (CRESky.cpp)
+    vec4$init(dirSize, direction.x, direction.y, direction.z, 25 - 24 * clamp(size, 0, 1))
     vec3$normalize(dirSize)
     this.NightMoonDirSize = dirSize
   }

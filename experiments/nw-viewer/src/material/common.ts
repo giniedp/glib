@@ -43,6 +43,19 @@ export const InputSlots = {
      */
     LightIndices: inputSlotBuffer('lights', 'lightIndices'),
   },
+  /**
+   * Sun shafts post process (SunShaftsPass), not bound by materials
+   */
+  SunShafts: {
+    /**
+     * x = active, y = rays attenuation, z = shafts amount, w = rays amount
+     */
+    Params: inputSlotVec4('sunShafts', 'params'),
+    /**
+     * rgb = rays color (SunShafts_SunCol), already scaled by the rays amount
+     */
+    Color: inputSlotVec4('sunShafts', 'color'),
+  },
   View: {
     ViewMatrix: CommonInputs.View.ViewMatrix,
     ProjectionMatrix: CommonInputs.View.ProjectionMatrix,
@@ -74,6 +87,31 @@ export const InputSlots = {
      * xyz = ocean fog color (sun tinted), w = density (log2 base)
      */
     OceanFogColorDensity: inputSlotVec4('global', 'oceanFogColorDensity'),
+    /**
+     * Ocean water level (PerFrame_WaterLevel.z), {@link NO_OCEAN_LEVEL} when the level has no ocean
+     */
+    OceanLevel: inputSlotScalar('global', 'oceanLevel'),
+    /**
+     * Stand-in for the probe ambient within the range of ambient lights, zero when disabled (AMBIENT_LIGHT_MODE)
+     */
+    FakeProbeAmbient: inputSlotVec3('global', 'fakeProbeAmbient'),
+    /**
+     * PerFrame_VolumetricFogScatteringColor, xyz = sun color times the atmosphere fog albedo
+     */
+    FogScatteringColor: inputSlotVec4('global', 'fogScatteringColor'),
+    /**
+     * Volumetric fog 2 parameters, see VolFog2Params in volumetricFog2.wgsl.ts
+     */
+    VolFog2HeightDensity: inputSlotVec4('global', 'volFog2HeightDensity'),
+    VolFog2Ramp: inputSlotVec4('global', 'volFog2Ramp'),
+    VolFog2Scattering: inputSlotVec4('global', 'volFog2Scattering'),
+    VolFog2Blend: inputSlotVec4('global', 'volFog2Blend'),
+    FogScatteringSecondaryColor: inputSlotVec4('global', 'fogScatteringSecondaryColor'),
+    /**
+     * Ambient in-scattering of the volumetric fog 2, stand-in for the global environment probe
+     */
+    VolFog2Ambient: inputSlotVec4('global', 'volFog2Ambient'),
+    VolFog2Enabled: inputSlotScalar('global', 'volFog2Enabled'),
 
     Debug: inputSlotScalar('global', 'debug'),
     /**
@@ -147,6 +185,7 @@ export const MaterialLayerMasks = {
 }
 
 const FLAGS_ARRAY = [
+  'ADVANCED',
   'ALLOW_SILHOUETTE_POM',
   'ALLOW_SPECULAR_ANTIALIASING',
   'ALLOW_TESSELATION',
@@ -196,6 +235,7 @@ const FLAGS_ARRAY = [
   'IS_GDE_IMPOSTOR',
   'IS_POI_IMPOSTOR',
   'LEAVES',
+  'LOCAL_WEATHER',
   'NOISE',
   'NORMAL_MAP',
   'OCCLUSION_MAP',
@@ -283,6 +323,16 @@ export function setDitherFadeConstants(
   constants['DITHER_FADE_MODE'] = options.mode === 'in' ? 1 : 2
   constants['DITHER_FADE_START'] = options.start
   constants['DITHER_FADE_END'] = options.end
+}
+
+/**
+ * Creates the per instance data of a level mesh (ModelComponent.instanceData), see InstanceDataBlock in common.wgsl.
+ * Effects read it with `perInstanceDataBlock: 'instanceData'`.
+ *
+ * @param maxViewDistance - max view distance of the entity, 0 for unlimited
+ */
+export function createInstanceData(maxViewDistance: number) {
+  return new Float32Array([maxViewDistance || 0, 0, 0, 0])
 }
 
 export function getShaderConstants(flags: Set<FeatureFlag>) {
