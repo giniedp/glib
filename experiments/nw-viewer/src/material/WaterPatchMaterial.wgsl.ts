@@ -121,6 +121,10 @@ struct Varyings {
   // wave compression at crests, 0 = none, 1 = breaking (vPosWS.w in water.cfx)
   @location(2) crest          : f32,
   @location(3) @interpolate(flat) iid:  u32,
+  // water level of the surface without waves
+  @location(4) level          : f32,
+  // see InstanceBlock.params3
+  @location(5) @interpolate(flat) params3: vec4f,
 };
 
 struct VertexIn {
@@ -155,13 +159,16 @@ fn vsMain(input: VertexIn) -> Varyings {
   var uv = vec2f(input.texture.x, 1.0 - input.texture.y);
   uv = uvScaleOffset(uv + uvDelta, instance.heightUvTransform);
   // x = highest water level of the 4 nearest texels, y = 1 if any of them is dry
-  let water = readWaterHeight(uv, instance.params3);
+  var water = readWaterHeight(uv, instance.params3);
+  if (water.x <= DRY_WATER_HEIGHT && morphLod > 0.0) {
+    // coarse cells span several texels, look for water within the cell footprint
+    water = vec2f(readWaterHeightAround(uv, instance.params3, exp2(morphLod) * 0.5), 1.0);
+  }
   let waterHeight = water.x;
   let amplitude = waveAmplitude();
   var dispZ = waveSumZ(worldPos.xy, amplitude, frame.elapsedTime);
   if (waterHeight <= DRY_WATER_HEIGHT) {
-    // Dry cells of the water quadtree are stored with height 0. Cap them at the terrain height (slightly below),
-    // so the surface between a wet and a dry vertex follows the terrain instead of dropping into a wall.
+    // No water around. Hide the vertex below the terrain, the depth test then rejects fully dry patches.
     worldPos.z = readGroundHeight(uv, instance.params3) - DRY_GROUND_OFFSET;
     dispZ = 0.0;
   } else {
@@ -176,7 +183,9 @@ fn vsMain(input: VertexIn) -> Varyings {
   out.position = view.projectionMatrix * view.viewMatrix * worldPos;
   out.worldPos = worldPos.xyz;
   out.uv       = uv;
-  out.crest    = saturate(waveCompression(worldPos.xy, amplitude, frame.elapsedTime) * WAVE_COMPRESSION_SCALE);
+  out.level    = waterHeight;
+  out.params3  = instance.params3;
+  out.crest   = saturate(waveCompression(worldPos.xy, amplitude, frame.elapsedTime) * WAVE_COMPRESSION_SCALE);
   out.iid      = input.instanceIndex;
   return out;
 }
@@ -185,6 +194,13 @@ fn vsMain(input: VertexIn) -> Varyings {
 
 @fragment
 fn fsMain(in: Varyings) -> FragmentOutput {
+  // The game builds flat water quads per wet quadtree cell, so the surface ends at the cell edge.
+  // The grid here interpolates between vertices, cut away everything that is not over a wet texel at this level.
+  let texelLevel = readWaterTexel(in.uv, in.params3);
+  if (texelLevel <= DRY_WATER_HEIGHT || in.level > texelLevel + LEVEL_STEP_TOLERANCE) {
+    discard;
+  }
+
   let mat     = material;
   let timeSec = frame.elapsedTime;
   let sunDir  = normalize(global.sunDirection);
@@ -586,8 +602,10 @@ fn remapaUV(params3: vec4f, uv: vec2f) -> vec3f {
 
 // water heights at or below this are dry cells of the water quadtree
 const DRY_WATER_HEIGHT : f32 = 0.0;
-// dry vertices are placed this far below the terrain
+// vertices without any water around are placed this far below the terrain
 const DRY_GROUND_OFFSET : f32 = 0.05;
+// fragments above the level of their texel by more than this belong to a higher neighbour cell (water step)
+const LEVEL_STEP_TOLERANCE : f32 = 0.25;
 
 fn readGroundHeight(uv: vec2f, params3: vec4f) -> f32 {
   let remapped = remapaUV(params3, uv);
@@ -603,5 +621,24 @@ fn readWaterHeight(uv: vec2f, params3: vec4f) -> vec2f {
   let level = max(max(texels.x, texels.y), max(texels.z, texels.w));
   let anyDry = min(min(texels.x, texels.y), min(texels.z, texels.w)) <= DRY_WATER_HEIGHT;
   return vec2f(level, select(0.0, 1.0, anyDry));
+}
+
+// Highest water level of 4 texel quads, offset by radius texels diagonally. Used by coarse LOD vertices.
+fn readWaterHeightAround(uv: vec2f, params3: vec4f, radius: f32) -> f32 {
+  let d = radius / f32(textureDimensions(waterMap).x);
+  var level = DRY_WATER_HEIGHT;
+  level = max(level, readWaterHeight(uv + vec2f(-d, -d), params3).x);
+  level = max(level, readWaterHeight(uv + vec2f( d, -d), params3).x);
+  level = max(level, readWaterHeight(uv + vec2f(-d,  d), params3).x);
+  level = max(level, readWaterHeight(uv + vec2f( d,  d), params3).x);
+  return level;
+}
+
+// Unfiltered water level of the texel that contains uv
+fn readWaterTexel(uv: vec2f, params3: vec4f) -> f32 {
+  let remapped = remapaUV(params3, uv);
+  let size = vec2i(textureDimensions(waterMap));
+  let texel = clamp(vec2i(floor(remapped.xy * vec2f(size))), vec2i(0), size - 1);
+  return textureLoad(waterMap, texel, i32(remapped.z), 0).r;
 }
 `
