@@ -222,7 +222,7 @@ fn fs_main(input: VertexOutput) -> FragmentOutput {
 
   let ambient = vec3f(1.0);
   shade.ambient += getReflectColor(envMap, colorMapSampler, normal, 0.0).xyz * ambient;
-  shade.specular += reflectColor * ambient * surface.Specular.rgb;
+  shade.specular += reflectColor * ambient * surface.Specular.rgb * shade.ambientScale;
   var color = composeShade(surface, shade);
 
   var out: FragmentOutput;

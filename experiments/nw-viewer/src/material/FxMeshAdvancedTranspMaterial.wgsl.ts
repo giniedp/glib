@@ -284,7 +284,8 @@ fn fs_main(input: FragmentInput) -> FragmentOutput {
     let beamDepth    = input.uvScreen.w; // clip.w = view-space Z from VS
     let depth        = sceneDepth - beamDepth;
 
-    interFade = depth / material.intersectFadeDist;
+    // CalculateDepthFade
+    interFade = saturate(depth / material.intersectFadeDist);
     interFade = mix(interFade, 1.0 - saturate(interFade), material.intersectFadeInv);
     interFade = pow(interFade, material.intersectFadeFalloff);
   }
@@ -395,7 +396,8 @@ fn fs_main(input: FragmentInput) -> FragmentOutput {
     let beamDepth    = input.uvScreen.w; // clip.w = view-space Z from VS
     let depth        = sceneDepth - beamDepth;
 
-    interFadeGlow = depth / material.intersectGlowDist;
+    // CalculateDepthFade
+    interFadeGlow = saturate(depth / material.intersectGlowDist);
     interFadeGlow = mix(interFadeGlow, 1.0 - saturate(interFadeGlow), material.intersectGlowInv);
     interFadeGlow = pow(interFadeGlow, material.intersectGlowFalloff);
   }

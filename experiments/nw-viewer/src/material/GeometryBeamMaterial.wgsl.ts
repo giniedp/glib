@@ -52,6 +52,7 @@ struct MaterialBlock {
 @group(0) @binding(3) var<uniform>       lights  : LightBlock;
 
 @group(1) @binding(0) var<storage, read> object  : array<ObjectBlock, 1>; // per instance data
+@group(1) @binding(1) var<storage, read> instanceData : array<InstanceDataBlock, 1>; // per instance data
 @group(2) @binding(0) var<uniform>       material: MaterialBlock;
 @group(2) @binding(1) var samplerLinear  : sampler;
 @group(2) @binding(2) var samplerPoint   : sampler;
@@ -81,6 +82,8 @@ struct FragmentInput {
   @location(2)       uvNoise   : vec3f,
   @location(3)       uvScreen  : vec4f,
   @location(4)       color     : vec4f,
+  // instance distance relative to its max view distance (GetInstance_RelativeDistance)
+  @location(5) @interpolate(flat) relDistance : f32,
 };
 
 @vertex
@@ -170,6 +173,10 @@ fn vs_main(input: VertexInput) -> FragmentInput {
   output.uvNoise  = uvNoise;
   output.uvScreen = clipPosToSceenUv(clipPos);
   output.color    = color;
+  output.relDistance = 0.0;
+  if (ENABLE_FADEOUT) {
+    output.relDistance = instanceRelativeDistance(instanceData[input.id], modelMatrix);
+  }
 
   return output;
 }
@@ -219,11 +226,11 @@ fn fragment_main(input: FragmentInput) -> FragmentOutput {
 
   // ---- Fadeout
   var fadeOut = material.fadingFeaturing;
-  // TODO:
-  // if (ENABLE_FADEOUT) {
-  //   fadeOut *= saturate((1.0 - GetInstance_RelativeDistance()) / material.fadeOutDistance);
-  // }
-  // fadeOut *= CalculateLodSmoothFade(IN.DissolveRef.xy);
+  if (ENABLE_FADEOUT) {
+    // CalculateVisibilityFade
+    fadeOut *= saturate((1.0 - input.relDistance) / material.fadeOutDistande);
+  }
+  // fadeOut *= CalculateLodSmoothFade(IN.DissolveRef.xy); LOD crossfade, the viewer does not load LODs
 
   color.a *= 1.0 - gaussianRemap(input.color.a, fadeOut);
 
@@ -231,8 +238,8 @@ fn fragment_main(input: FragmentInput) -> FragmentOutput {
   // ---- Soft scene intersection
   let sceneDepth   = sampleSceneDepth(input.uvScreen, sceneDepthMap);
   let beamDepth    = input.uvScreen.w; // clip.w = view-space Z from VS
-  let depth        = sceneDepth - beamDepth;
-  // depth = min(depth, IN.objPos.z-PerFrame_WaterLevel.z);
+  // fade out at the ocean surface as well
+  let depth        = min(sceneDepth - beamDepth, input.worldPos.z - global.oceanLevel);
 
   let softIntersect = saturate(material.softIntersectionFactor * min(depth, beamDepth));
   let nearClamp     = saturate(material.softIntersectionFactor * (beamDepth - view.near));
@@ -244,13 +251,20 @@ fn fragment_main(input: FragmentInput) -> FragmentOutput {
     effectColor *= mix(vec3f(1.0), global.sunColor.xyz, material.sunColorInfluence);
   }
   if (APPLY_FOG_COLOR) {
-    // effectColor.rgb *= lerp(1, PerFrame_VolumetricFogScatteringColor.rgb/max(0.0001,GetLuminance(PerFrame_VolumetricFogScatteringColor.rgb)), FogColorInfluence);
+    // blend in the hue of the fog scattering color (normalized by its luminance)
+    let scattering = global.fogScatteringColor.rgb;
+    effectColor *= mix(vec3f(1.0), scattering / max(0.0001, luminance(scattering)), material.fogColorInfluence);
   }
 
   color = vec4f(
     color.rgb * effectColor * dustFinal * fadeBeam * (shadowOccl + material.ambStrength) * fNoise,
     color.a,
   );
+
+  // ApplyFog: additive blending only attenuates by the fog transmittance, the scene behind carries the in-scattering
+  if (global.skipFog == 0u) {
+    color = vec4f(color.rgb * getVolumetricFogDensity(input.worldPos), color.a);
+  }
 
   var out: FragmentOutput;
   out.color = color;

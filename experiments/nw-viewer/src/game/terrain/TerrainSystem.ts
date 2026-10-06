@@ -5,7 +5,7 @@ import { mat4$setScaleXYZ, mat4CreateTranslation, vec3, vec3$initFrom, vec4, vec
 import { removeItemUnordered } from '@gglib/utils'
 
 import type { LevelInfo } from '../../api'
-import { TERRAIN_LOD_RANGE_FACTOR, QUAD_TREE_LEAF_SIZE } from '../../constants'
+import { QUAD_TREE_LEAF_SIZE, TERRAIN_LOD_RANGE_FACTOR } from '../../constants'
 import { ContentService } from '../../content'
 import { WaterPatchMaterial, type OceanAnimationParams } from '../../material'
 import { TerrainComponent } from './TerrainComponent'

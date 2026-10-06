@@ -41,6 +41,7 @@ export function geometryBeamEffectOptions(constants: Record<string, number>): Ef
       shader: geometryBeamShaderOptions(constants),
       sharedBlocks: [InputBlocks.Global, InputBlocks.View, InputBlocks.Frame, InputBlocks.Lights],
       perInstanceTransformBlock: 'object',
+      perInstanceDataBlock: 'instanceData',
     },
   }
 }
@@ -170,7 +171,7 @@ export class GeometryBeamMaterial extends MaterialWithSchema(SCHEMA) {
     }
 
     if (maps.Smoothness) {
-      this.SmoothnessMap = maps.Bumpmap as any
+      this.SmoothnessMap = maps.Smoothness as any
     }
   }
 
@@ -233,6 +234,9 @@ export class GeometryBeamMaterial extends MaterialWithSchema(SCHEMA) {
     this.TurbStrength = paramValue(params.turbStrength, this.TurbStrength)
     this.UvRot = paramValue(params.uvRot, this.UvRot)
     this.ViewDependencyFactor = paramValue(params.viewDependencyFactor, this.ViewDependencyFactor)
+    this.UvVigFeaturing = paramValue(params.uvVigFeaturing, this.UvVigFeaturing)
+    this.VolumetricScale = paramValue(params.VolumetricScale, this.VolumetricScale)
+    this.FogColorInfluence = paramValue(params.FogColorInfluence, this.FogColorInfluence)
   }
 
   private frame: number

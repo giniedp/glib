@@ -592,7 +592,7 @@ fn fs_main(input: FragmentInput) -> FragmentOutput {
   let ambient = vec3f(ao);
   var shade = accumulateLightShade(lights, global, surface, toEye, input.worldPos);
   shade.ambient += getReflectColor(envMap, samplerLinear, normal, 0.0).xyz * ambient;
-  shade.specular += reflectColor * ambient * surface.Specular.rgb;
+  shade.specular += reflectColor * ambient * surface.Specular.rgb * shade.ambientScale;
   var color = composeShade(surface, shade);
 
   // --- Ambient / Environment --------------------------------
