@@ -83,6 +83,12 @@ export interface LaneConfig {
    * Frame budget ratio for this lane (0–1).
    */
   budgetRatio: number
+  /**
+   * A load of this lane is started only while fewer than this many loads (of any lane) are in flight.
+   * Lower lanes use smaller values to keep connection slots free for higher lanes.
+   * Defaults to {@link SchedulerConfig.maxConcurrent}.
+   */
+  maxConcurrent?: number
 }
 
 export interface SchedulerConfig {
@@ -121,7 +127,10 @@ function effectivePriority(task: ScheduledTask): number {
 }
 
 export class AsyncScheduler {
-  private readonly pending = new PriorityQueue<number, ScheduledTask<any>>()
+  /**
+   * Pending tasks by lane. Loads are started lane by lane, so a higher lane always goes first.
+   */
+  private readonly pendingQueues = new Map<PriorityLane, PriorityQueue<number, ScheduledTask<any>>>()
   private readonly readyQueues = new Map<PriorityLane, PriorityQueue<number, ScheduledTask<any>>>()
   private readonly inFlight = new Map<number, ScheduledTask<any>>()
   private readonly tasks = new Map<number, ScheduledTask<any>>()
@@ -139,12 +148,21 @@ export class AsyncScheduler {
       .sort((a, b) => a - b)
 
     for (const lane of this.laneOrder) {
+      this.pendingQueues.set(lane, new PriorityQueue<number, ScheduledTask>())
       this.readyQueues.set(lane, new PriorityQueue<number, ScheduledTask>())
     }
   }
 
-  public get pendingEntries(): ReadonlyArray<Readonly<{ value: ScheduledTask }>> {
-    return this.pending.entries
+  /**
+   * Iterates all pending tasks. The queues must not be modified during iteration.
+   */
+  public *pendingTasks(): Iterable<ScheduledTask> {
+    // TODO: this is called every frame. don't use a generator function to avoid GC work
+    for (const queue of this.pendingQueues.values()) {
+      for (const entry of queue.entries) {
+        yield entry.value
+      }
+    }
   }
 
   public enqueue<T = unknown>(task: ScheduledTask<T>): void {
@@ -164,7 +182,7 @@ export class AsyncScheduler {
     }
 
     this.tasks.set(id, task)
-    this.pending.push(id, effectivePriority(task), task)
+    this.pendingQueues.get(task.lane)!.push(id, effectivePriority(task), task)
   }
 
   public cancel(task: ScheduledTask<any>): void {
@@ -184,8 +202,10 @@ export class AsyncScheduler {
     task.cancelled = true
     task.phase = TaskPhase.Cancelled
 
-    this.pending.remove(id)
     this.inFlight.delete(id)
+    for (const queue of this.pendingQueues.values()) {
+      queue.remove(id)
+    }
     for (const queue of this.readyQueues.values()) {
       queue.remove(id)
     }
@@ -222,23 +242,43 @@ export class AsyncScheduler {
         throw new Error(`Unknown lane ${newLane}. Add it to SchedulerConfig.lanes.`)
       }
 
-      const oldQueue = this.readyQueues.get(task.lane)
-      const newQueue = this.readyQueues.get(newLane)!
-
-      if (oldQueue?.remove(id)) {
-        newQueue.push(id, newPriority, task)
-      }
-
+      const oldLane = task.lane
       task.lane = newLane
+      if (this.pendingQueues.get(oldLane)?.remove(id)) {
+        this.pendingQueues.get(newLane)!.push(id, effectivePriority(task), task)
+      } else if (this.readyQueues.get(oldLane)?.remove(id)) {
+        this.readyQueues.get(newLane)!.push(id, effectivePriority(task), task)
+      }
     }
 
     task.dynamicPriority = newPriority
     const priority = effectivePriority(task)
 
-    if (this.pending.has(id)) {
-      this.pending.updatePriority(id, priority)
+    const pending = this.pendingQueues.get(task.lane)
+    if (pending?.has(id)) {
+      pending.updatePriority(id, priority)
     } else {
       this.readyQueues.get(task.lane)?.updatePriority(id, priority)
+    }
+  }
+
+  /**
+   * Releases pending tasks that were cancelled by setting `task.cancelled`.
+   * Lower lanes may not be pumped for a long time, so their cancelled tasks would linger otherwise.
+   */
+  public releaseCancelled(): void {
+    let cancelled: ScheduledTask[] | null = null
+    for (const task of this.pendingTasks()) {
+      if (task.cancelled) {
+        cancelled ??= []
+        cancelled.push(task)
+      }
+    }
+    if (!cancelled) {
+      return
+    }
+    for (const task of cancelled) {
+      this.cancel(task)
     }
   }
 
@@ -252,63 +292,85 @@ export class AsyncScheduler {
 
   public getStats(stats?: SchedulerStats): SchedulerStats {
     stats ??= {} as SchedulerStats
-    stats.pending = this.pending.size()
+    stats.pending = 0
+    for (const queue of this.pendingQueues.values()) {
+      stats.pending += queue.size()
+    }
     stats.inFlight = this.inFlight.size
     stats.total = this.tasks.size
     return stats
   }
 
   protected pumpAsync(): void {
-    while (this.inFlight.size < this.config.maxConcurrent && this.pending.size() > 0) {
-      const task = this.pending.pop()
-      if (!task) {
-        break
-      }
-
-      const id = taskIds.get(task)
-
+    // Loads cancelled by flag are aborted right away, so they do not hold a slot until the load settles
+    for (const [id, task] of this.inFlight) {
       if (task.cancelled) {
+        this.inFlight.delete(id)
         this.dropCancelled(task, id)
-        continue
       }
+    }
 
-      if (!task.load) {
-        task.phase = TaskPhase.Ready
-        this.getReadyQueue(task.lane).push(id, effectivePriority(task), task)
-        continue
-      }
+    for (const lane of this.laneOrder) {
+      const queue = this.pendingQueues.get(lane)!
+      const limit = Math.min(this.config.maxConcurrent, this.config.lanes[lane].maxConcurrent ?? Infinity)
+      while (queue.size() > 0) {
+        const task = queue.peek()!
+        const id = taskIds.get(task)
 
-      const controller = new AbortController()
-      task._abortController = controller
-      task.phase = TaskPhase.Loading
-      this.inFlight.set(id, task)
+        if (task.cancelled) {
+          queue.pop()
+          this.dropCancelled(task, id)
+          continue
+        }
 
-      Promise.resolve(task.load(task, controller.signal))
-        .then(() => {
-          this.inFlight.delete(id)
-          task._abortController = undefined
-
-          if (task.cancelled) {
-            this.dropCancelled(task, id)
-            return
-          }
-
+        if (!task.load) {
+          // nothing to load, does not need a slot
+          queue.pop()
           task.phase = TaskPhase.Ready
           this.getReadyQueue(task.lane).push(id, effectivePriority(task), task)
-        })
-        .catch((err) => {
-          this.inFlight.delete(id)
-          task._abortController = undefined
+          continue
+        }
 
-          if (task.cancelled) {
-            this.dropCancelled(task, id)
-            return
-          }
-
-          console.error('[AsyncScheduler] Error in task load function', err)
-          this.finaliseTask(task, id, err instanceof Error ? err : new Error(String(err)))
-        })
+        if (this.inFlight.size >= limit) {
+          break
+        }
+        queue.pop()
+        this.startLoad(task, id)
+      }
     }
+  }
+
+  private startLoad(task: ScheduledTask, id: number): void {
+    const controller = new AbortController()
+    task._abortController = controller
+    task.phase = TaskPhase.Loading
+    this.inFlight.set(id, task)
+
+    Promise.resolve(task.load(task, controller.signal))
+      .then(() => {
+        this.inFlight.delete(id)
+        task._abortController = undefined
+
+        if (task.cancelled) {
+          this.dropCancelled(task, id)
+          return
+        }
+
+        task.phase = TaskPhase.Ready
+        this.getReadyQueue(task.lane).push(id, effectivePriority(task), task)
+      })
+      .catch((err) => {
+        this.inFlight.delete(id)
+        task._abortController = undefined
+
+        if (task.cancelled) {
+          this.dropCancelled(task, id)
+          return
+        }
+
+        console.error('[AsyncScheduler] Error in task load function', err)
+        this.finaliseTask(task, id, err instanceof Error ? err : new Error(String(err)))
+      })
   }
 
   protected runReady(): void {

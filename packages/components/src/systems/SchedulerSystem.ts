@@ -19,20 +19,25 @@ export class SchedulerSystem extends GameSystem {
     config ||= {}
     this.instance = new AsyncScheduler({
       frameBudgetMs: 4,
-      maxConcurrent: 10,
+      maxConcurrent: 12,
       maxReadyTasksPerTick: 10,
+      // Lower lanes start loads only while few loads are in flight, so higher lanes always find a free slot.
+      // Browsers allow ~6 connections per host over HTTP/1.1, lower lanes must not occupy all of them.
       lanes: {
         [PriorityLane.Critical]: {
           budgetRatio: 0.5,
         },
         [PriorityLane.High]: {
           budgetRatio: 0.5,
+          maxConcurrent: 6,
         },
         [PriorityLane.Medium]: {
           budgetRatio: 0.3,
+          maxConcurrent: 4,
         },
         [PriorityLane.Low]: {
           budgetRatio: 0.2,
+          maxConcurrent: 3,
         },
       },
       ...config,
@@ -52,9 +57,18 @@ export class SchedulerSystem extends GameSystem {
   }
 
   public updatePriorities(camera: CameraData, frame: number) {
-    for (const entry of this.instance.pendingEntries) {
-      const task = entry.value
+    this.instance.releaseCancelled()
+    for (const task of this.instance.pendingTasks()) {
       this.updatePriority(task, camera, frame)
+    }
+  }
+
+  /**
+   * Cancels the task, aborts its load if in flight and finalizes it with a {@link TaskCancelledError}
+   */
+  public cancel(task: ScheduledTask | null | undefined): void {
+    if (task) {
+      this.instance.cancel(task)
     }
   }
 
@@ -85,6 +99,11 @@ export class SchedulerSystem extends GameSystem {
   private _v1 = vec3()
   private _v2 = vec3()
   private _v3 = vec3()
+  private _v4 = vec3()
+  /**
+   * Orders a pending task within its lane by distance to the camera, things in front of the camera first.
+   * The lane is chosen by the task owner and is not changed here.
+   */
   public updatePriority(task: ScheduledTask, camera: CameraData, frame: number): void {
     if (!task.entity) {
       return
@@ -96,55 +115,12 @@ export class SchedulerSystem extends GameSystem {
 
     const objPos = mat4GetTranslation(transform.world, this._v1)
     const camPos = mat4GetTranslation(camera.world, this._v2)
-    const toObj = vec3Subtract(objPos, camPos, this._v3)
-    vec3$normalize(toObj)
+    const dist = vec3Distance(objPos, camPos)
+    const toObj = vec3$normalize(vec3Subtract(objPos, camPos, this._v3))
+    const alignment = dist > 0 ? vec3Dot(toObj, mat4GetForward(camera.world, this._v4)) : 1 // [-1, 1]
 
-    const distSq = vec3Distance(objPos, camPos)
-    const dist = Math.sqrt(distSq)
-    const alignment = vec3Dot(toObj, mat4GetForward(camera.world, camPos)) // [-1, 1]
-
-    // TODO: add visibility test
-    const visible = false // intersectsFrustum(spatial.position, spatial.boundingRadius, camera.frustumPlanes)
-
-    // --- Scoring ---
-
-    let score = 0
-
-    // Visibility dominates everything
-    if (visible) {
-      score -= 1000
-      // spatial.lastVisibleFrame = frame
-    }
-
-    // Distance falloff (quadratic is smoother than linear)
-    score += distSq * 0.01
-
-    // Forward bias (prefer what's in front of camera)
-    score += (1 - alignment) * 50
-
-    // recently visible gets stickiness
-    // if (spatial.lastVisibleFrame !== undefined) {
-    //   const framesAgo = frame - spatial.lastVisibleFrame
-    //   if (framesAgo < 30) {
-    //     score -= 200 * (1 - framesAgo / 30)
-    //   }
-    // }
-
-    const priority = task.basePriority + score
-    const lane = this.classifyLane(visible, dist)
-    this.instance.reprioritize(task, priority, lane)
-  }
-
-  public classifyLane(visible: boolean, dist: number): PriorityLane {
-    if (visible && dist < 32) {
-      return PriorityLane.Critical
-    }
-    if (visible) {
-      return PriorityLane.High
-    }
-    if (dist < 64) {
-      return PriorityLane.Medium
-    }
-    return PriorityLane.Low
+    // objects behind the camera count up to 3 times as far
+    const score = dist * (2 - alignment)
+    this.instance.reprioritize(task, score)
   }
 }
