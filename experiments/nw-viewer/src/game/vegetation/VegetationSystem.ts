@@ -1,7 +1,6 @@
 import { EcsGame } from '@gglib/components'
 import { GameQuery, GameSystem, GameWorld } from '@gglib/ecs'
 import { mat4GetTranslation, vec3 } from '@gglib/math'
-import { Renderer, type RenderContext } from '@gglib/render'
 import {
   VEGETATION_CELL_UPLOADS_PER_FRAME,
   VEGETATION_LOAD_MARGIN,
@@ -22,27 +21,20 @@ const cameraPosition = vec3()
 export class VegetationSystem extends GameSystem {
   private allVegetation: GameQuery
   private game: EcsGame
-  private world: GameWorld
-  private renderer: Renderer | null = null
   private pending: Array<{ cell: VegetationCell; distance: number }> = []
 
   public initialize(world: GameWorld): void {
-    this.world = world
     this.allVegetation = world.query({ scope: 'active', required: [VegetationComponent] })
     this.game = world.getSystem(EcsGame)
   }
 
   public update() {
-    if (!this.renderer) {
-      this.renderer = this.world.getSystem(Renderer, { optional: true })
-      this.renderer?.onContextReady.add(this.cull)
-    }
-
     const camera = this.game.scene.getView(0).camera
     mat4GetTranslation(camera.world, cameraPosition)
     for (const entity of this.allVegetation) {
       this.updateCells(entity.component(VegetationComponent))
     }
+    this.cull()
   }
 
   private updateCells(vegetation: VegetationComponent) {
@@ -108,15 +100,10 @@ export class VegetationSystem extends GameSystem {
     }
   }
 
-  public destroy(): void {
-    this.renderer?.onContextReady.remove(this.cull)
-  }
+  public destroy(): void {}
 
-  private cull = (context: RenderContext) => {
-    const camera = context.view.camera
-    if (camera !== this.game.scene.getView(0).camera) {
-      return
-    }
+  private cull() {
+    const camera = this.game.scene.getView(0).camera
     mat4GetTranslation(camera.world, cameraPosition)
     for (const entity of this.allVegetation) {
       entity.component(VegetationComponent).batch?.cull({

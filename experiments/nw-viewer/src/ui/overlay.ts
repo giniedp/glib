@@ -17,6 +17,7 @@ import {
   uiSectionHeader,
   uiSelect,
   uiSplit,
+  uiTabs,
 } from 'tweak-ui'
 import { DebugShapeSystem } from '../game/debug/DebugShapeSystem'
 import { SkyLightSystem } from '../game/level/SkyLightSystem'
@@ -238,23 +239,23 @@ const OverlayComponent: ClosureComponent<OverlayComponentAttrs> = () => {
                         },
                       ],
                     }),
-                    uiGroup({ title: 'Camera', collapsible: true, collapsed: false }, [
-                      h(CameraComponentProps, { data: viewer.camera }),
-                    ]),
-                    uiGroup({ title: 'Debug', collapsible: true, collapsed: false }, [
-                      uiSelect({
-                        value: viewer,
-                        field: 'debug',
-                        label: 'Output',
-                        options: DebugOptions,
-                      }),
-                      h(DebugShapeSystemProps, { data: viewer.world.getSystem(DebugShapeSystem) }),
-                    ]),
-                    uiGroup({ title: 'Time of Day', collapsible: true, collapsed: true }, [
-                      h(TimeOfDayProps, { data: viewer.world.getSystem(SkyLightSystem).timeOfDay }),
+                    uiTabs({}, [
+                      uiGroup({ title: 'Camera' }, [h(CameraComponentProps, { data: viewer.camera })]),
+                      uiGroup({ title: 'Debug' }, [
+                        uiSelect({
+                          value: viewer,
+                          field: 'debug',
+                          label: 'Output',
+                          options: DebugOptions,
+                        }),
+                        h(DebugShapeSystemProps, { data: viewer.world.getSystem(DebugShapeSystem) }),
+                      ]),
+                      uiGroup({ title: 'Time of day', collapsible: true }, [
+                        h(TimeOfDayProps, { data: viewer.world.getSystem(SkyLightSystem).timeOfDay }),
+                      ]),
                     ]),
                     uiGroup({ title: 'Lights' }, [h(LightSystemProps, { data: viewer.world.getSystem(LightSystem) })]),
-                    uiGroup({ title: 'Render Pipeline', collapsible: false }, [
+                    uiGroup({ title: 'Render Pipeline', collapsible: true }, [
                       h(RenderPipelineProps, { data: viewer.world.getSystem(Renderer).pipeline }),
                     ]),
                   ]),

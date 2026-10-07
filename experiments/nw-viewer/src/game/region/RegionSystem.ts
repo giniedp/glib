@@ -1,6 +1,16 @@
 import { EcsGame } from '@gglib/components'
 import { GameEntity, GameQuery, GameSystem, GameWorld, GetComponent } from '@gglib/ecs'
-import { boxMat4DistanceSquared, mat4GetTranslationX, mat4GetTranslationY, type IVec3, type Mat4 } from '@gglib/math'
+import {
+  BoundingFrustum,
+  boxMat4DistanceSquared,
+  frustumBoxIntersects,
+  mat4GetTranslationX,
+  mat4GetTranslationY,
+  vec3,
+  vec3$initFrom,
+  type IVec3,
+  type Mat4,
+} from '@gglib/math'
 import {
   CHUNK_MESH_RANGE,
   ENABLE_POI_IMPOSTOR_DITHER,
@@ -31,8 +41,17 @@ export class RegionSystem extends GameSystem {
     this.world.eventBus.on(GameEntity.onDestroyed, this.removeRegionTag)
   }
 
+  /**
+   * Camera frustum of this frame, impostor models are loaded only for cells in view
+   */
+  private frustum = new BoundingFrustum()
+  private loadMin = vec3()
+  private loadMax = vec3()
+
   public update() {
     const start = performance.now()
+    const camera = this.game.scene.getView(0).camera
+    this.frustum.updateFromViewProjection(camera.view, camera.projection)
     this.loadingCells.length = 0
     for (const entity of this.allRegions) {
       const region = entity.component(RegionComponent)
@@ -178,6 +197,24 @@ export class RegionSystem extends GameSystem {
       }
       entity.activate()
     }
+
+    if (entity.isActive) {
+      impostor.updateLoad(this.isCellInView(impostor, region.cellSize))
+    }
+  }
+
+  /**
+   * Whether the cell box, grown by one cell horizontally, intersects the camera frustum.
+   * The margin loads cells shortly before they turn into view.
+   */
+  private isCellInView(impostor: RegionImpostorComponent, margin: number) {
+    vec3$initFrom(this.loadMin, impostor.min)
+    vec3$initFrom(this.loadMax, impostor.max)
+    this.loadMin.x -= margin
+    this.loadMin.y -= margin
+    this.loadMax.x += margin
+    this.loadMax.y += margin
+    return frustumBoxIntersects(this.frustum, this.loadMin, this.loadMax)
   }
 
   private addRegionTag = (entity: GameEntity) => {

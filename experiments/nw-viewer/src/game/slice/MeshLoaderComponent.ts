@@ -64,12 +64,17 @@ export class MeshLoaderComponent implements GameComponent {
   }
 
   public destroy(): void {
-    //
+    this.cancelLoad()
   }
 
   public activate(): void {
     if (this.task || this.isLoaded) {
       return
+    }
+    if (this.data.loadOnActivate) {
+      // console.count('loadOnActivate')
+    } else {
+      console.count("don't load")
     }
 
     this.state = 'loading'
@@ -167,18 +172,35 @@ export class MeshLoaderComponent implements GameComponent {
         return true
       },
       finalize: (task, err) => {
-        this.isLoaded = !err
-        this.state = !err ? 'loaded' : err instanceof TaskCancelledError ? 'idle' : 'failed'
         if (this.task === task) {
           this.task = null
         }
-        this.entity.events.emit(MeshLoaderComponent.onLoad, this.entity)
+
+        if (!err) {
+          this.state = 'loaded'
+          this.isLoaded = true
+          this.entity.events.emit(MeshLoaderComponent.onLoad, this.entity)
+        } else if (err instanceof TaskCancelledError) {
+          this.state = 'idle'
+        } else {
+          this.state = 'failed'
+        }
       },
     })
   }
 
+  /**
+   * Out of range, a pending load is no longer needed. It is scheduled again on the next activation.
+   */
   public deactivate(): void {
-    //
+    this.cancelLoad()
+  }
+
+  private cancelLoad() {
+    if (this.task) {
+      // finalize resets the state to 'idle' and clears the task
+      this.scheduler.cancel(this.task)
+    }
   }
 
   private addMeshDebugInfo(debug: DebugShapeComponent) {

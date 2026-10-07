@@ -57,7 +57,6 @@ const QUALITY_PRESETS: Record<XeGtaoQuality, [number, number]> = {
 }
 
 export interface XeGtaoPassOptions {
-  enabled?: boolean
   quality?: XeGtaoQuality
   /**
    * Number of denoise passes. 0 disables denoising
@@ -96,7 +95,6 @@ export interface XeGtaoPassOptions {
  */
 export class XeGtaoPass implements RenderPass {
   public name: string = 'XeGTAO'
-  public enabled = true
 
   public quality: XeGtaoQuality = 'medium'
   public denoisePasses = 1
@@ -159,7 +157,6 @@ export class XeGtaoPass implements RenderPass {
 
   public constructor(device: Device, options?: XeGtaoPassOptions) {
     this.device = device
-    this.enabled = options?.enabled ?? this.enabled
     this.quality = options?.quality ?? this.quality
     this.denoisePasses = options?.denoisePasses ?? this.denoisePasses
     this.radius = options?.radius ?? this.radius
@@ -183,7 +180,7 @@ export class XeGtaoPass implements RenderPass {
   }
 
   public setup(frame: FrameGraph<RenderPass>, ctx: RenderContext): void {
-    this.isActive = this.enabled && this.isReady
+    this.isActive = this.isReady
     if (!this.isActive) {
       this.source = null
       this.target = null

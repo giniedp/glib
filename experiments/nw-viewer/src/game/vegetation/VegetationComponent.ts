@@ -1,20 +1,10 @@
-import {
-  MeshComponent,
-  PriorityLane,
-  SchedulerSystem,
-  TaskCancelledError,
-  type ScheduledTask,
-} from '@gglib/components'
+import { MeshComponent, PriorityLane, SchedulerSystem, TaskCancelledError, type ScheduledTask } from '@gglib/components'
 import { type GameComponent, type GameEntity } from '@gglib/ecs'
 import { Device } from '@gglib/graphics'
 import { type IVec3 } from '@gglib/math'
 import type { Model } from '@gglib/model'
 import { lfmt } from '@gglib/utils'
-import {
-  getRegionVegetationDataUrl,
-  getRegionVegetationUrl,
-  type RegionVegetationData,
-} from '../../api'
+import { getRegionVegetationDataUrl, getRegionVegetationUrl, type RegionVegetationData } from '../../api'
 import { VEGETATION_SLOT_COUNT } from '../../constants'
 import { ContentService } from '../../content'
 import { parseVegetation, type VegetationCell, type VegetationFile } from './parseVegetation'
@@ -45,6 +35,7 @@ export class VegetationComponent implements GameComponent {
   private task: ScheduledTask | null = null
   private groupTasks = new Map<VegetationGroup, ScheduledTask>()
   private logTag = lfmt.badge('#8CD17D', 'Vegetation')
+  private isLoaded = false
 
   public constructor(options: VegetationComponentOptions) {
     this.options = options
@@ -68,7 +59,7 @@ export class VegetationComponent implements GameComponent {
    * Loads the region.vegetation file (whole file, 20-170 MB for populated regions)
    */
   public load(): void {
-    if (this.data || this.task) {
+    if (this.data || this.task || this.isLoaded) {
       return
     }
     const { coatlicueName, regionName } = this.options
@@ -92,6 +83,7 @@ export class VegetationComponent implements GameComponent {
       finalize: (task, err) => {
         if (this.task === task) {
           this.task = null
+          this.isLoaded = true
         }
         if (err && !(err instanceof TaskCancelledError)) {
           console.warn(...this.logTag, 'not loaded', err)

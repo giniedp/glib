@@ -99,14 +99,15 @@ export class DistributionComponent implements GameComponent {
       this.task.cancelled = true
       this.task = null
     }
+    // pending model loads are not needed while the region is inactive.
+    // finalize resets the groups to idle and forgets their cells, so they are requested again
+    for (const task of [...this.groupTasks.values()]) {
+      this.scheduler.cancel(task)
+    }
   }
 
   public destroy(): void {
     this.deactivate()
-    for (const task of this.groupTasks.values()) {
-      task.cancelled = true
-    }
-    this.groupTasks.clear()
     this.batch?.dispose()
     this.batch = null
   }

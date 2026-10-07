@@ -239,7 +239,8 @@ export class RegionComponent implements GameComponent {
     }
     console.log(...this.logTag, 'Loading info')
     this.regionInfoTask = this.scheduler.schedule<RegionInfo>({
-      lane: PriorityLane.Medium,
+      // terrain materials and impostors depend on the region info
+      lane: PriorityLane.Critical,
       label: `Load region info ${this.regionName}`,
       entity: this.entity,
       context: null,
@@ -279,7 +280,7 @@ export class RegionComponent implements GameComponent {
     }
     console.log(...this.logTag, `Loading capitals`)
     this.capitalDataTask = this.scheduler.schedule<RegionCapitalsData>({
-      lane: PriorityLane.Medium,
+      lane: PriorityLane.High,
       label: `Load capital data ${this.regionName}`,
       entity: this.entity,
       context: null,

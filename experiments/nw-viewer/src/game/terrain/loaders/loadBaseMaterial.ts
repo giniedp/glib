@@ -16,7 +16,7 @@ export function loadBaseMaterial(
   let material: TerrainCompositeMaterial
 
   return scheduler.schedule({
-    lane: PriorityLane.High,
+    lane: PriorityLane.Critical,
     load: async (_, signal) => {
       signal.throwIfAborted()
 

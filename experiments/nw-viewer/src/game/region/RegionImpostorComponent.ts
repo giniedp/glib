@@ -6,6 +6,7 @@ import {
   PriorityLane,
   SchedulerSystem,
   SpatialNodeComponent,
+  TaskPhase,
   TransformComponent,
   type ScheduledTask,
 } from '@gglib/components'
@@ -221,11 +222,28 @@ export class RegionImpostorComponent implements GameComponent {
   }
 
   public activate(): void {
-    if (this.task || this.model) {
+    // the model is requested by the RegionSystem with updateLoad(), once the cell is in view
+  }
+
+  /**
+   * Requests the model while the cell is in view. A queued load of a cell that left the view is cancelled,
+   * a load in flight is kept, it is likely needed again soon and most of the work is done.
+   */
+  public updateLoad(inView: boolean): void {
+    if (this.model) {
+      return
+    }
+    if (!inView) {
+      if (this.task?.phase === TaskPhase.Idle) {
+        this.scheduler.cancel(this.task)
+      }
+      return
+    }
+    if (this.task) {
       return
     }
     this.task = this.scheduler.schedule<Model>({
-      lane: PriorityLane.High,
+      lane: PriorityLane.Critical,
       entity: this.entity,
       label: this.modelUrl,
       context: null,
@@ -246,17 +264,12 @@ export class RegionImpostorComponent implements GameComponent {
   }
 
   public deactivate(): void {
-    if (this.task) {
-      this.task.cancelled = true
-      this.task = null
-    }
+    // finalize clears the task
+    this.scheduler.cancel(this.task)
   }
 
   public destroy(): void {
-    if (this.task) {
-      this.task.cancelled = true
-      this.task = null
-    }
+    this.scheduler.cancel(this.task)
   }
 }
 

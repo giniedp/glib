@@ -10,7 +10,7 @@ export function loadLayerMaterials(
   done: (result: TerrainCompositeMaterial[]) => void,
 ): ScheduledTask {
   return scheduler.schedule<TerrainCompositeMaterial[]>({
-    lane: PriorityLane.Medium,
+    lane: PriorityLane.Critical,
     context: [],
     load: async (task, signal) => {
       for (const layer of data.layers || []) {

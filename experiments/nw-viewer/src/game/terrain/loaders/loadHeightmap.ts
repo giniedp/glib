@@ -10,7 +10,7 @@ export function loadHeightmap(
   done: (result: Float16Array) => void,
 ): ScheduledTask {
   return scheduler.schedule<Float16Array>({
-    lane: PriorityLane.Medium,
+    lane: PriorityLane.Critical,
     context: null,
     load: async (task) => {
       const request = getRegionHeightmapUrl(level, regionName)
@@ -30,7 +30,7 @@ export function loadWatermap(
   done: (result: Float16Array) => void,
 ): ScheduledTask {
   return scheduler.schedule<Float16Array>({
-    lane: PriorityLane.Medium,
+    lane: PriorityLane.Critical,
     context: null,
     load: async (task) => {
       const request = getRegionWatermapUrl(level, regionName)
