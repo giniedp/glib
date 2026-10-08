@@ -250,11 +250,14 @@ struct ObjectBlock {
 };
 
 // per instance data of level meshes, see createInstanceData
+// The record size must match the instance data stride of the RenderInstanceWriter: 16 floats (64 bytes).
 struct InstanceDataBlock {
   // x = max view distance of the entity, 0 = unlimited
   viewDistance: f32,
-  // impostor dissolve amount
+  // dissolve amount of the distance fade, 0 = fully visible, 1 = fully dissolved (see ditherFade)
   dissolveAmount: f32,
+  _pad0: vec2f,
+  _pad1: array<vec4f, 3>,
 };
 
 // distance of the instance to the camera relative to its max view distance (GetInstance_RelativeDistance)
@@ -852,18 +855,23 @@ fn ditherThreshold(pixel: vec2f) -> f32 {
 
 // Discards pixels to fade by camera distance between DITHER_FADE_START and DITHER_FADE_END.
 // Fade in and fade out use the same threshold, so two layers with the same range blend without gaps or overlap.
+//
+// dissolveAmount is how far the distance fade is applied:
+// - 0: fully visible, no pixel is discarded
+// - 1: the distance fade is fully applied, pixels on the faded side are fully dissolved
 fn ditherFade(pixel: vec2f, distance: f32, dissolveAmount: f32) {
   if (DITHER_FADE_MODE == 0u) {
     return;
   }
-  var fade = saturate((distance - DITHER_FADE_START) / max(DITHER_FADE_END - DITHER_FADE_START, 1e-3));
-  fade = mix(fade, 1.0, dissolveAmount);
+  let fade = saturate((distance - DITHER_FADE_START) / max(DITHER_FADE_END - DITHER_FADE_START, 1e-3));
 
   let threshold = ditherThreshold(pixel);
-  if (DITHER_FADE_MODE == 1u && threshold >= fade) {
+  // fade in: invisible before the range, visible after it
+  if (DITHER_FADE_MODE == 1u && threshold >= mix(1.0, fade, dissolveAmount)) {
     discard;
   }
-  if (DITHER_FADE_MODE == 2u && threshold < fade) {
+  // fade out: visible before the range, invisible after it
+  if (DITHER_FADE_MODE == 2u && threshold < fade * dissolveAmount) {
     discard;
   }
 }

@@ -258,7 +258,7 @@ fn vs_main(input : VertexInput) -> FragmentInput {
 @fragment
 fn fs_main(input: FragmentInput) -> FragmentOutput {
   // impostor fade in, distribution / vegetation fade out (DITHER_FADE_* constants)
-  ditherFade(input.position.xy, distance(view.cameraPosition, input.worldPos), 0.0);
+  ditherFade(input.position.xy, distance(view.cameraPosition, input.worldPos), 1.0);
 
   var wTangent = normalize(input.worldTangent.xyz);
   var wBitangent = normalize(input.worldBitangent.xyz);
