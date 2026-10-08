@@ -1,10 +1,10 @@
 import { type GameComponent, GameEntity, GetComponent, InitializableComponent } from '@gglib/ecs'
 import { Model } from '@gglib/model'
 import { BoundsComponent } from './BoundsComponent'
+import { InstanceDataComponent } from './InstanceDataComponent'
 
 export interface ModelComponentOptions {
   model?: Model
-  instanceData?: Float32Array<ArrayBuffer>
 }
 
 /**
@@ -30,19 +30,22 @@ export class ModelComponent implements GameComponent, InitializableComponent {
   /**
    * Per instance data that is passed to the render items of the model.
    */
-  public readonly instanceData: Float32Array<ArrayBuffer> | null
+  public get instanceData(): Float32Array<ArrayBuffer> | null {
+    return this.instance?.data
+  }
 
   public version: number = 0
   protected value: Model
   protected bounds: BoundsComponent
+  protected instance: InstanceDataComponent
 
   public constructor(options?: ModelComponentOptions) {
-    this.instanceData = options?.instanceData ?? null
     this.model = options?.model
   }
 
   public initialize(): void {
     this.bounds = this.entity.component(BoundsComponent, GetComponent.Optional)
+    this.instance = this.entity.component(InstanceDataComponent, GetComponent.Optional)
     this.handleMeshChanged()
   }
 

@@ -1,6 +1,5 @@
 import {
   BlendState,
-  BufferRecorder,
   CullState,
   DepthBiasState,
   DepthState,
@@ -20,6 +19,7 @@ import {
   mat4GetTranslationY,
   mat4GetTranslationZ,
 } from '@gglib/math'
+import { RenderInstanceWriter } from './RenderInstanceWriter'
 import { compareSortKey, RenderListMode, Sortable, SortKey } from './RenderListMode'
 import { RenderView } from './Types'
 
@@ -69,7 +69,7 @@ export class RenderList {
   protected items: Renderable[] = []
   protected effect: Effect[] = []
   protected transforms: Mat4[] = []
-  protected instances: Array<Float32Array<ArrayBuffer>> = []
+  protected instanceData: Array<Float32Array<ArrayBuffer>> = []
   protected inputs: Array<Record<string, ProgramInputBlock>> = []
 
   protected item: Sortable = {
@@ -88,23 +88,20 @@ export class RenderList {
   protected viewForward: IVec4
   protected viewInputs: Record<string, ProgramInputBlock>
   protected viewRange: number
-
-  protected perInstanceTransforms: BufferRecorder
-  protected perInstanceData: BufferRecorder
+  protected instances: RenderInstanceWriter
 
   public begin(
     mode: RenderListMode,
     view: RenderView,
     viewInputs: Record<string, ProgramInputBlock>,
-    transformBuffer: BufferRecorder,
-    instanceBuffer: BufferRecorder,
+    instances: RenderInstanceWriter,
   ): void {
     this.mode = mode
     this.viewForward = mat4GetRow(view.camera.view, 2, this.viewForward)
     this.viewInputs = viewInputs
     this.viewRange = view.camera.far - view.camera.near
-    this.perInstanceTransforms = transformBuffer
-    this.perInstanceData = instanceBuffer
+    this.instances = instances
+    this.instances.begin() // creates buffers if
     this.clear()
   }
 
@@ -162,7 +159,7 @@ export class RenderList {
     effect: Effect | null,
     inputs: Record<string, ProgramInputBlock>,
     transform: Mat4,
-    instance: Float32Array<ArrayBuffer>,
+    instanceData: Float32Array<ArrayBuffer>,
   ): void {
     if (effect && !effect.isReady) {
       // effect is not ready, skip this item for now. It will be added in the next frame when the effect is ready.
@@ -176,7 +173,7 @@ export class RenderList {
     this.keysLo[index] = key.lo
     this.indices[index] = index
     this.transforms[index] = transform
-    this.instances[index] = instance
+    this.instanceData[index] = instanceData
   }
 
   public end(): void {
@@ -208,7 +205,7 @@ export class RenderList {
     let instanceItem: Geometry
     let instanceEffect: Effect
 
-    let instanceOffset = this.perInstanceTransforms.recordIndex
+    let instanceOffset = this.instances.index
     this.drawCount = 0
 
     for (let i = 0; i < this.size; i++) {
@@ -217,7 +214,7 @@ export class RenderList {
       effect = this.effect[index]
       inputs = this.inputs[index]
       transform = this.transforms[index]
-      instance = this.instances[index]
+      instance = this.instanceData[index]
       if (!effect) {
         // item is self-renderable and does not participate in batching
         instanceItem = null
@@ -272,32 +269,15 @@ export class RenderList {
         this.drawInstanceOffset[this.drawCount] = instanceOffset
         this.drawCount++
 
-        program.mustGet(program.perInstanceTransformBlock).setBuffer(this.perInstanceTransforms.gpuBuffer)
-        if (program.perInstanceDataBlock) {
-          effect.program.mustGet(program.perInstanceDataBlock).setBuffer(this.perInstanceData.gpuBuffer)
-        }
+        this.instances.apply(program)
       }
 
       this.drawInstanceCount[this.drawCount - 1] += 1
-      this.writeInstance(instanceOffset, transform, instance)
+      this.instances.write(instanceOffset, transform, instance)
       instanceOffset += 1
     }
 
-    this.perInstanceData.commit()
-    this.perInstanceTransforms.commit()
-  }
-
-  private writeInstance(index: number, transform: Mat4, instance: Float32Array<ArrayBuffer>) {
-    this.perInstanceTransforms.seek(index)
-    this.perInstanceTransforms.writeMat4(transform)
-
-    if (instance) {
-      this.perInstanceData.seek(index)
-      this.perInstanceData.writeFloat32Array(instance)
-    } else {
-      this.perInstanceData.seek(index)
-      this.perInstanceData.clearRecord(index)
-    }
+    this.instances.commit()
   }
 
   public render(pass: RenderEncoder): void {
@@ -352,10 +332,9 @@ export class RenderList {
     const result = new Array<string>(this.size)
     for (let i = 0; i < this.size; i++) {
       const index = this.indices[i]
-      result[i] = this.keysHi[index].toString(2).padStart(53, '0') + ':' + this.keysLo[index].toString(2).padStart(53, '0')
+      result[i] =
+        this.keysHi[index].toString(2).padStart(53, '0') + ':' + this.keysLo[index].toString(2).padStart(53, '0')
     }
     return result
   }
 }
-
-

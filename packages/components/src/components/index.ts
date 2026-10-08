@@ -1,5 +1,6 @@
 export * from './BoundsComponent'
 export * from './CameraComponent'
+export * from './InstanceDataComponent'
 export * from './LightComponent'
 export * from './MeshComponent'
 export * from './ModelComponent'

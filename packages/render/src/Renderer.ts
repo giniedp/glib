@@ -1,6 +1,4 @@
 import {
-  BufferRecorder,
-  BufferUsage,
   Color,
   CommonBlocks,
   CommonInputs,
@@ -15,7 +13,6 @@ import {
   surfaceFormatIsSrgb,
   Texture,
   TextureDescriptor,
-  WebglDevice,
 } from '@gglib/graphics'
 
 import {
@@ -38,6 +35,7 @@ import {
   RenderCollectorRegistry,
   SpriteRenderCollector,
 } from './RenderCollector'
+import { RenderInstanceWriter } from './RenderInstanceWriter'
 import { RenderList, RenderListCache } from './RenderList'
 import { RenderListMode } from './RenderListMode'
 import { RenderPipeline, RenderPipelineOptions } from './RenderPipeline'
@@ -88,8 +86,6 @@ export class Renderer {
    */
   public inputs: ProgramInputBlockCollection
 
-  public perInstanceTransforms: BufferRecorder
-  public perInstanceData: BufferRecorder
   public channelDescriptors: Record<string, TextureDescriptor>
 
   public lastInstanceCount = 0
@@ -98,6 +94,7 @@ export class Renderer {
   protected collectors: RenderCollectorRegistry
   protected spriteBatch: SpriteBatch
   protected resources: RenderTargetManager
+  protected instances: RenderInstanceWriter
   protected frameInfo: FrameInfo = {
     id: 0,
     time: 0,
@@ -152,12 +149,7 @@ export class Renderer {
     this.collectors.register(RenderItemType.Sprite, new SpriteRenderCollector())
     this.resources = new RenderTargetManager(device)
     this.channelDescriptors = createRenderChannelSchema(device)
-
-    if (device.isReady) {
-      this.createInstanceBuffers()
-    } else {
-      device.ready.then(() => this.createInstanceBuffers())
-    }
+    this.instances = new RenderInstanceWriter(device)
 
     this.context = {
       device: this.device,
@@ -179,62 +171,6 @@ export class Renderer {
     out ||= { drawCount: 0 } as RendererStats
     out.drawCount = this.renderLists.sumDrawCount()
     return out
-  }
-
-  protected createInstanceBuffers() {
-    if (this.device.isWebGPU) {
-      this.createInstanceBuffersWebGpu()
-    } else {
-      this.createInstanceBuffersWebGL()
-    }
-  }
-
-  protected createInstanceBuffersWebGpu() {
-    const device = this.device
-    const capacity = 512 // arbitrary initial capacity, will be automatically resized if needed
-    const strideInBytes = 16 * Float32Array.BYTES_PER_ELEMENT // Mat4 or 4 vec4s for unknown data
-    this.perInstanceTransforms = new BufferRecorder({
-      capacity,
-      autosize: true,
-      recordByteSize: strideInBytes,
-      gpuBuffer: device.createBuffer({
-        size: capacity * strideInBytes,
-        usage: BufferUsage.STORAGE,
-      }),
-    })
-    this.perInstanceData = new BufferRecorder({
-      capacity,
-      autosize: true,
-      recordByteSize: strideInBytes, // unknown data, using 4 vec4s just in case
-      gpuBuffer: device.createBuffer({
-        size: capacity * strideInBytes,
-        usage: BufferUsage.STORAGE,
-      }),
-    })
-  }
-
-  protected createInstanceBuffersWebGL() {
-    const device = this.device as WebglDevice
-    const strideInBytes = 16 * Float32Array.BYTES_PER_ELEMENT // Mat4
-    const instanceCount = device.capabilities.maxUniformBlockSize / strideInBytes
-    this.perInstanceTransforms = new BufferRecorder({
-      autosize: false,
-      capacity: instanceCount,
-      recordByteSize: strideInBytes,
-      gpuBuffer: device.createBuffer({
-        size: instanceCount * strideInBytes,
-        usage: BufferUsage.UNIFORM,
-      }),
-    })
-    this.perInstanceData = new BufferRecorder({
-      autosize: false,
-      capacity: instanceCount,
-      recordByteSize: strideInBytes,
-      gpuBuffer: device.createBuffer({
-        size: instanceCount * strideInBytes,
-        usage: BufferUsage.UNIFORM,
-      }),
-    })
   }
 
   public createView(options: Partial<RenderView>): RenderView {
@@ -269,14 +205,13 @@ export class Renderer {
    * Should be called once per frame before rendering.
    */
   public update(time: number) {
-    this.lastInstanceCount = this.perInstanceTransforms.count
+    this.lastInstanceCount = this.instances.count
     this.frameInfo.time ||= time
     this.frameInfo.delta = time - this.frameInfo.time
     this.frameInfo.time = time
     this.frameInfo.id++
     this.resources.update()
-    this.perInstanceData.reset()
-    this.perInstanceTransforms.reset()
+    this.instances.reset()
   }
 
   /**
@@ -369,7 +304,7 @@ export class Renderer {
     if (list.isSorted) {
       return list
     }
-    list.begin(mode, ctx.view, ctx.renderInputs.blocks, this.perInstanceTransforms, this.perInstanceData)
+    list.begin(mode, ctx.view, ctx.renderInputs.blocks, this.instances)
     this.collectors.begin(ctx, list)
     for (const item of ctx.view.items) {
       if (!(item.flags & mode.mask)) {
