@@ -1,7 +1,8 @@
 import { inputSlot } from '@gglib/graphics'
 export default {
   ModelMatrix: inputSlot('object', 'modelmatrix', 'mat4x4'),
-  ViewDistance: inputSlot('instancedata', 'viewdistance', 'vec4'),
+  ViewDistance: inputSlot('instancedata', 'viewdistance', 'scalar'),
+  DissolveAmount: inputSlot('instancedata', 'dissolveamount', 'scalar'),
   DiffuseColor: inputSlot('material', 'diffusecolor', 'vec4'),
   StartColor: inputSlot('material', 'startcolor', 'vec4'),
   EndColor: inputSlot('material', 'endcolor', 'vec4'),

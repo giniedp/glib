@@ -12,7 +12,7 @@ import {
   TRUE,
 } from '@gglib/graphics'
 import { vec4 } from '@gglib/math'
-import { IMPOSTOR_FADE_RANGE, LOD_SPANS, lodSpanStart } from '../constants'
+import { IMPOSTOR_FADE_RANGE, IMPOSTOR_VISIBILITY_START } from '../constants'
 import type { NwMaterialProps } from './GltfExtension'
 import { TextureModifier } from './TexMod'
 import SCHEMA from './VegetationMaterial.meta'
@@ -93,12 +93,10 @@ export class VegetationMaterial extends MaterialWithSchema(SCHEMA) {
     this.name = `${attrs.Shader} (${attrs.Name})`
     const shaderConst = getShaderConstants(shaderFlags)
     if (shaderFlags.has('IS_GDE_IMPOSTOR')) {
-      // vegetation impostors crossfade with the distribution, which fades out in the same range
-      const end = lodSpanStart(LOD_SPANS.impostor)
       setDitherFadeConstants(shaderConst, {
         mode: 'in',
-        start: end - IMPOSTOR_FADE_RANGE,
-        end: end,
+        start: IMPOSTOR_VISIBILITY_START - IMPOSTOR_FADE_RANGE,
+        end: IMPOSTOR_VISIBILITY_START,
       })
     }
 

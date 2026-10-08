@@ -1,10 +1,4 @@
-import {
-  MeshComponent,
-  PriorityLane,
-  SchedulerSystem,
-  TaskCancelledError,
-  type ScheduledTask,
-} from '@gglib/components'
+import { MeshComponent, PriorityLane, SchedulerSystem, TaskCancelledError, type ScheduledTask } from '@gglib/components'
 import { type GameComponent, type GameEntity } from '@gglib/ecs'
 import { Device } from '@gglib/graphics'
 import { type IVec3 } from '@gglib/math'
@@ -80,7 +74,10 @@ export class DistributionComponent implements GameComponent {
       work: (task) => {
         const [header, buffer] = task.context
         const cellsPerAxis = this.options.regionSize / this.options.cellSize
+        const now = performance.now()
         this.data = parseDistribution(header, buffer, cellsPerAxis)
+        const t = performance.now() - now
+        console.log(...this.logTag, 'parseDistribution', t, 'ms')
         return true
       },
       finalize: (task, err) => {

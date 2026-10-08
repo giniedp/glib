@@ -252,13 +252,15 @@ struct ObjectBlock {
 // per instance data of level meshes, see createInstanceData
 struct InstanceDataBlock {
   // x = max view distance of the entity, 0 = unlimited
-  viewDistance: vec4f,
+  viewDistance: f32,
+  // impostor dissolve amount
+  dissolveAmount: f32,
 };
 
 // distance of the instance to the camera relative to its max view distance (GetInstance_RelativeDistance)
 // 0 when the instance has no max view distance
 fn instanceRelativeDistance(data: InstanceDataBlock, modelMatrix: mat4x4f) -> f32 {
-  let maxViewDistance = data.viewDistance.x;
+  let maxViewDistance = data.viewDistance;
   if (maxViewDistance <= 0.0) {
     return 0.0;
   }
@@ -850,11 +852,13 @@ fn ditherThreshold(pixel: vec2f) -> f32 {
 
 // Discards pixels to fade by camera distance between DITHER_FADE_START and DITHER_FADE_END.
 // Fade in and fade out use the same threshold, so two layers with the same range blend without gaps or overlap.
-fn ditherFade(pixel: vec2f, distance: f32) {
+fn ditherFade(pixel: vec2f, distance: f32, dissolveAmount: f32) {
   if (DITHER_FADE_MODE == 0u) {
     return;
   }
-  let fade = saturate((distance - DITHER_FADE_START) / max(DITHER_FADE_END - DITHER_FADE_START, 1e-3));
+  var fade = saturate((distance - DITHER_FADE_START) / max(DITHER_FADE_END - DITHER_FADE_START, 1e-3));
+  fade = mix(fade, 1.0, dissolveAmount);
+
   let threshold = ditherThreshold(pixel);
   if (DITHER_FADE_MODE == 1u && threshold >= fade) {
     discard;

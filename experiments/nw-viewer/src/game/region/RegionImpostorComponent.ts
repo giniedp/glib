@@ -1,6 +1,6 @@
 import {
   BoundsComponent,
-  EcsGame,
+  InstanceDataComponent,
   LifeCycleFlags,
   ModelComponent,
   PriorityLane,
@@ -13,17 +13,10 @@ import {
 import { GameEntity, type CreateEntityOptions, type GameComponent } from '@gglib/ecs'
 
 import { Color } from '@gglib/graphics'
-import { boxMat4DistanceSquared, mat4CreateTranslation, vec3AddScalars, type IVec3 } from '@gglib/math'
+import { mat4CreateTranslation, vec3AddScalars, vec4$initFrom, type IVec3 } from '@gglib/math'
 import type { Model } from '@gglib/model'
-import {
-  IMPOSTOR_FADE_RANGE,
-  LOD_SPANS,
-  lodSpanStart,
-  lodSpanVisibleEnd,
-  POI_IMPOSTOR_FADE_LENGTH,
-  type LodSpan,
-} from '../../constants'
 import { ContentService } from '../../content'
+import { setInstanceDissolveAmount } from '../../material'
 import { DebugLayer, DebugShapeComponent } from '../debug/DebugShapeComponent'
 import type { MeshLoaderComponent } from '../slice/MeshLoaderComponent'
 import type { SliceSpawnerComponent } from '../slice/SliceSpawnerComponent'
@@ -34,42 +27,10 @@ export interface ImpostorComponentOptions {
   cellSize: number
   origin: IVec3
   model: string
-  /**
-   * Distance span in which the impostor is visible
-   */
-  span: LodSpan
+  isPOI: boolean
 }
 
 export function impostorEntityOptions(parent: GameEntity, options: ImpostorComponentOptions): CreateEntityOptions {
-  const isPoi = options.span === LOD_SPANS.impostorPoi
-  const impostor = new RegionImpostorComponent(options)
-  const debug = new DebugShapeComponent({
-    type: 'bounds-box',
-    layer: isPoi ? DebugLayer.Impostor_POI : DebugLayer.Impostor,
-    color: isPoi ? Color.Orange : Color.Lime,
-  })
-  const cameraWorld = () => debug.entity.world.getSystem(EcsGame).scene.getView(0).camera.world
-  debug
-    .addInfo('kind', () => (isPoi ? 'poi' : 'vegetation'))
-    .addInfo('model', () => options.model)
-    .addInfo('show at', () => lodSpanStart(options.span))
-    .addInfo('hide at', () => lodSpanVisibleEnd(options.span))
-    .addInfo('fade', () =>
-      isPoi
-        ? `in ${lodSpanStart(options.span)} -> ${lodSpanStart(options.span) + POI_IMPOSTOR_FADE_LENGTH}`
-        : `in ${lodSpanStart(options.span) - IMPOSTOR_FADE_RANGE} -> ${lodSpanStart(options.span)}`,
-    )
-    .addInfo('box distance', () =>
-      Math.sqrt(boxMat4DistanceSquared(impostor.min, impostor.max, cameraWorld())).toFixed(1),
-    )
-    .addInfo('state', () => debug.entity.stateName)
-  if (isPoi) {
-    debug
-      .addInfo('cell state', () => impostor.cellState)
-      .addInfo('cell chunks', () => impostor.chunks.length)
-      .addInfo('cell members', () => impostor.members.length)
-      .addInfo('cell pending', () => impostor.pending)
-  }
   return {
     parent: parent,
     name: options.name,
@@ -78,7 +39,18 @@ export function impostorEntityOptions(parent: GameEntity, options: ImpostorCompo
       world: mat4CreateTranslation(options.origin),
       lifeCycle: LifeCycleFlags.Propagate, // is controlled by RegionSystem
     }),
-    components: [debug, new SpatialNodeComponent(), new BoundsComponent(), new ModelComponent(), impostor],
+    components: [
+      new DebugShapeComponent({
+        type: 'bounds-box',
+        layer: options.isPOI ? DebugLayer.Impostor_POI : DebugLayer.Impostor_VEG,
+        color: options.isPOI ? Color.Orange : Color.Lime,
+      }),
+      new SpatialNodeComponent(),
+      new BoundsComponent(),
+      new ModelComponent(),
+      new InstanceDataComponent(),
+      new RegionImpostorComponent(options),
+    ],
   }
 }
 /**
@@ -100,10 +72,11 @@ export class RegionImpostorComponent implements GameComponent {
   public readonly entity: GameEntity
   public readonly min: IVec3
   public readonly max: IVec3
-  public readonly span: LodSpan
+  public readonly isPoi: boolean
   private modelUrl: string
   private task: ScheduledTask
   private model: Model
+  private instance: InstanceDataComponent
 
   /**
    * Chunk slices owned by this cell, spawned when the cell starts loading (POI cells in chunk worlds only)
@@ -125,15 +98,24 @@ export class RegionImpostorComponent implements GameComponent {
   }
 
   public setCellState(state: ImpostorCellState) {
-    if (this.cellState === state) {
-      return
-    }
     this.cellState = state
     const shape = this.entity.component(DebugShapeComponent).entries[0]
-    const color = state === 'loading' ? Color.Red : state === 'ready' ? Color.DeepSkyBlue : Color.Orange
-    shape.color.x = color.x
-    shape.color.y = color.y
-    shape.color.z = color.z
+
+    switch (state) {
+      case 'loading': {
+        vec4$initFrom(shape.color, Color.Red)
+        break
+      }
+      case 'ready': {
+        vec4$initFrom(shape.color, Color.DeepSkyBlue)
+        setInstanceDissolveAmount(this.instance.data, 1)
+        break
+      }
+      default: {
+        vec4$initFrom(shape.color, Color.Orange)
+        break
+      }
+    }
   }
 
   public addMember(member: ImpostorCellMember) {
@@ -155,7 +137,7 @@ export class RegionImpostorComponent implements GameComponent {
   /**
    * Number of members whose meshes are not loaded yet
    */
-  public get pending() {
+  public countPending() {
     let result = 0
     for (const member of this.members) {
       if (!isMemberDone(member)) {
@@ -195,7 +177,8 @@ export class RegionImpostorComponent implements GameComponent {
         return false
       }
     }
-    return spawned && this.pending === 0
+
+    return spawned && this.countPending() === 0
   }
 
   public deactivateMembers() {
@@ -208,8 +191,7 @@ export class RegionImpostorComponent implements GameComponent {
   }
 
   public constructor(data: ImpostorComponentOptions) {
-    // impostor origin is the cell center
-    this.span = data.span
+    this.isPoi = !!data.isPOI
     const half = data.cellSize * 0.5
     this.min = vec3AddScalars(data.origin, -half, -half, 0)
     this.max = vec3AddScalars(data.origin, half, half, data.regionSize)
@@ -219,6 +201,7 @@ export class RegionImpostorComponent implements GameComponent {
   public initialize(): void {
     this.content = this.entity.service(ContentService)
     this.scheduler = this.entity.service(SchedulerSystem)
+    this.instance = this.entity.component(InstanceDataComponent)
   }
 
   public activate(): void {

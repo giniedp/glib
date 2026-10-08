@@ -37,7 +37,7 @@ import {
   type ChunkRuntimeData,
   type ViewerSlice,
 } from '../../api'
-import { CHUNK_MESH_RANGE, ENABLE_CHUNK_RANGE_CLAMP, IMPOSTOR_HOLD_CHUNK_SIZES } from '../../constants'
+import { CHUNK_MESH_RANGE, IMPOSTOR_HOLD_CHUNK_SIZES } from '../../constants'
 import { ContentService } from '../../content'
 import { MaterialLayerMasks } from '../../material'
 import { DebugLayer, DebugShapeComponent } from '../debug/DebugShapeComponent'
@@ -60,7 +60,7 @@ export interface SliceSpawnerComponentOptions {
   slice: AssetReference
 }
 
-export function capitalSliceEntityOPtions(parent: GameEntity, data: CapitalRuntimeData): CreateEntityOptions {
+export function capitalSliceEntityOptions(parent: GameEntity, data: CapitalRuntimeData): CreateEntityOptions {
   return {
     name: data.slice.hint,
     parent,
@@ -101,18 +101,7 @@ export function chunkSliceEntityOptions(
     color: { x: 1, y: 1, z: 0 },
     layer: DebugLayer.Slice,
   })
-  debug
-    .addInfo('chunk size', () => data.size)
-    .addInfo('chunk spawnRadius', () => data.spawnRadius)
-    .addInfo('chunk type', () => data.chunkType)
-    .addInfo('viewer spawnRadius', () => spawner.spawnRadius)
-    .addInfo('spawned', () => !!spawner.isSpawned)
-    .addInfo('cell', () => (cell ? `${cell.entity?.name} (${cell.cellState})` : 'none, spawned by distance'))
-    .addInfo('distance to center', () => {
-      const camera = debug.entity.world.getSystem(RangeActivationSystem).cameraPosition
-      const center = mat4GetTranslation(debug.entity.getTransform().world, vec3.$0)
-      return Math.hypot(center.x - camera.x, center.y - camera.y, center.z - camera.z).toFixed(1)
-    })
+
   const half = data.size * 0.5
   return {
     name: data.slice.hint,
@@ -150,13 +139,13 @@ export class SliceSpawnerComponent implements GameComponent, ActivatableComponen
   /**
    * Impostor cell that spawns this chunk, the SliceSystem does not spawn it by distance
    */
-  public readonly cell: RegionImpostorComponent | null
+  public readonly impostor: RegionImpostorComponent | null
   public readonly slices: SliceSpawnerComponent[] = []
   public constructor(data: SliceSpawnerComponentOptions) {
     this.slice = data.slice
     this.isChunk = !!data.isChunk
     this.chunkSize = data.chunkSize ?? 0
-    this.cell = data.cell ?? null
+    this.impostor = data.cell ?? null
     this.spawnRadius = 0
   }
 
@@ -227,7 +216,7 @@ export class SliceSpawnerComponent implements GameComponent, ActivatableComponen
       // entities of an inactive spawner (nested slice) are inactive as well
       const inactive = !!item.inactive || this.entity.layer === MaterialLayerMasks.Inactive
       let range = 0
-      const rangeSources: string[] = []
+
       const debug = new DebugShapeComponent()
       const components: GameComponent[] = [debug]
       const loaders: MeshLoaderComponent[] = []
@@ -238,13 +227,10 @@ export class SliceSpawnerComponent implements GameComponent, ActivatableComponen
           loaders.push(loader)
           components.push(loader)
           let meshRange = comp.maxViewDistance * comp.viewDistanceMultiplier
-          let meshSource = `mesh ${comp.mesh}: ${comp.maxViewDistance} x ${comp.viewDistanceMultiplier}`
-          if (ENABLE_CHUNK_RANGE_CLAMP && this.isChunk && meshRange > CHUNK_MESH_RANGE) {
-            meshRange = CHUNK_MESH_RANGE
-            meshSource += ` clamped to ${CHUNK_MESH_RANGE} (chunk)`
+          if (this.isChunk) {
+            meshRange = Math.min(meshRange, CHUNK_MESH_RANGE)
           }
           range = Math.max(range, meshRange)
-          rangeSources.push(meshSource)
           continue
         }
         if (isViewerPrefabSpawnerComponent(comp)) {
@@ -312,7 +298,6 @@ export class SliceSpawnerComponent implements GameComponent, ActivatableComponen
             case 'Point': {
               if (light.viewDistanceEnabled) {
                 range = Math.max(range, light.maxViewDistance)
-                rangeSources.push(`light ${light.type}: ${light.maxViewDistance}`)
               }
               debug.add({
                 type: 'sphere',
@@ -328,7 +313,6 @@ export class SliceSpawnerComponent implements GameComponent, ActivatableComponen
             case 'Area': {
               if (light.viewDistanceEnabled) {
                 range = Math.max(range, light.maxViewDistance)
-                rangeSources.push(`light ${light.type}: ${light.maxViewDistance}`)
               }
               debug.add({
                 type: 'box',
@@ -344,7 +328,6 @@ export class SliceSpawnerComponent implements GameComponent, ActivatableComponen
             case 'Projector': {
               if (light.viewDistanceEnabled) {
                 range = Math.max(range, light.maxViewDistance)
-                rangeSources.push(`light ${light.type}: ${light.maxViewDistance}`)
               }
 
               const proj = mat4CreatePerspectiveFieldOfView(
@@ -373,7 +356,6 @@ export class SliceSpawnerComponent implements GameComponent, ActivatableComponen
             case 'Probe': {
               if (light.viewDistanceEnabled) {
                 range = Math.max(range, light.maxViewDistance)
-                rangeSources.push(`light ${light.type}: ${light.maxViewDistance}`)
               }
               debug.add({
                 type: 'bounds-box',
@@ -404,7 +386,8 @@ export class SliceSpawnerComponent implements GameComponent, ActivatableComponen
 
       // Mesh entities of cell owned chunks that hold the impostor are activated by the cell, as a group.
       // Everything else keeps its own range, the small chunks hold most of the props with short view distances.
-      const cellMember = !!this.cell && loaders.length > 0 && IMPOSTOR_HOLD_CHUNK_SIZES.includes(this.chunkSize)
+      const isImpostorMember =
+        !!this.impostor && loaders.length > 0 && IMPOSTOR_HOLD_CHUNK_SIZES.includes(this.chunkSize)
       const entity = this.entity.world.createEntity({
         parent: this.entity,
         name: item.name,
@@ -412,26 +395,22 @@ export class SliceSpawnerComponent implements GameComponent, ActivatableComponen
         transform: new TransformComponent({
           keepWorld: true,
           world: mat4$premultiply(mat4CreateFromArray(item.transform), parentWorld),
-          lifeCycle: range || cellMember ? LifeCycleFlags.Propagate : LifeCycleFlags.Full,
+          lifeCycle: range || isImpostorMember ? LifeCycleFlags.Propagate : LifeCycleFlags.Full,
         }),
       })
+      if (isImpostorMember && debug.entries[0]) {
+        debug.entries[0].color = Color.Magenta
+      }
       if (inactive) {
         // shown only when the Inactive layer is enabled on the camera
         entity.layer = MaterialLayerMasks.Inactive
       }
 
-      if (cellMember) {
-        this.cell.addMember({ entity, loaders })
-        debug.addInfo('range', () => 'cell member, holds impostor')
-        debug.addInfo('cell state', () => this.cell.cellState)
-        debug.addInfo('mesh state', () => loaders.map((it) => it.state).join(', '))
-        debug.addInfo('state', () => entity.stateName)
+      if (isImpostorMember) {
+        this.impostor.addMember({ entity, loaders })
       } else if (range) {
         this.rangeSystem.add(entity, mat4GetTranslation(entity.getTransform().world, vec3.$0), range)
         this.rangeEntities.push(entity)
-        addRangeDebugInfo(debug, this.rangeSystem, entity, range, rangeSources)
-      } else {
-        debug.addInfo('range', () => 'none, active with parent')
       }
 
       const spawner = entity.component(SliceSpawnerComponent, GetComponent.Optional)
@@ -450,30 +429,6 @@ export class SliceSpawnerComponent implements GameComponent, ActivatableComponen
       this.rangeSystem.remove(entity)
     }
     this.rangeEntities.length = 0
-    this.cell?.removeMembers(this.entity)
+    this.impostor?.removeMembers(this.entity)
   }
-}
-
-function addRangeDebugInfo(
-  debug: DebugShapeComponent,
-  rangeSystem: RangeActivationSystem,
-  entity: GameEntity,
-  range: number,
-  sources: string[],
-) {
-  const fmt = (value: number) => (value == null ? '-' : value.toFixed(1))
-  debug.addInfo('range', () => fmt(range))
-  sources.forEach((source, i) => debug.addInfo(`source ${i}`, () => source))
-  debug.addInfo('range class', () => rangeSystem.inspect(entity)?.cellSize)
-  debug.addInfo('deactivate at', () => fmt(rangeSystem.inspect(entity)?.deactivateRange))
-  debug.addInfo('queued', () => rangeSystem.inspect(entity)?.queued)
-  debug.addInfo('distance', () => {
-    const it = rangeSystem.inspect(entity)
-    if (!it) {
-      return 'not registered'
-    }
-    const camera = rangeSystem.cameraPosition
-    return fmt(Math.hypot(it.x - camera.x, it.y - camera.y, it.z - camera.z))
-  })
-  debug.addInfo('state', () => entity.stateName)
 }

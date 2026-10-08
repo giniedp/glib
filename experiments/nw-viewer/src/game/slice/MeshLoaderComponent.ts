@@ -1,5 +1,6 @@
 import {
   BoundsComponent,
+  InstanceDataComponent,
   ModelComponent,
   PriorityLane,
   SchedulerSystem,
@@ -34,7 +35,14 @@ import { InstancedRenderSystem } from '../instancing/InstancedRenderSystem'
 export type MeshLoadState = 'idle' | 'loading' | 'loaded' | 'failed'
 
 export class MeshLoaderComponent implements GameComponent {
-  public static onLoad = brand<EventType<GameEntity>>(Symbol('MeshLoaderComponent.onLoaded'))
+  /**
+   * Emitted when a model is successfully loaded
+   */
+  public static onLoad = brand<EventType<GameEntity>>(Symbol('MeshLoaderComponent.onLoad'))
+  /**
+   * Emitted when o model failed to load
+   */
+  public static onError = brand<EventType<GameEntity>>(Symbol('MeshLoaderComponent.onError'))
 
   public readonly entity: GameEntity
   public readonly data: ViewerMeshComponent
@@ -71,11 +79,6 @@ export class MeshLoaderComponent implements GameComponent {
     if (this.task || this.isLoaded) {
       return
     }
-    if (this.data.loadOnActivate) {
-      // console.count('loadOnActivate')
-    } else {
-      console.count("don't load")
-    }
 
     this.state = 'loading'
     this.task = this.scheduler.schedule<Model>({
@@ -103,14 +106,12 @@ export class MeshLoaderComponent implements GameComponent {
               components: [
                 new BoundsComponent(),
                 this.data.alwaysRender ? null : new SpatialNodeComponent(),
-                this.addMeshDebugInfo(
-                  new DebugShapeComponent({
-                    type: 'bounds-box',
-                    color: Color.LimeGreen,
-                    layer: DebugLayer.MeshInstance,
-                  }),
-                ),
-                createModelComponent(model),
+                new DebugShapeComponent({
+                  type: 'bounds-box',
+                  color: Color.LimeGreen,
+                  layer: DebugLayer.MeshInstance,
+                }),
+                ...createModelComponent(model),
               ].filter((it) => !!it),
             })
             // render layer of the owning entity (e.g. inactive entities)
@@ -155,15 +156,13 @@ export class MeshLoaderComponent implements GameComponent {
             components: [
               new BoundsComponent(),
               this.data.alwaysRender ? null : new SpatialNodeComponent(),
-              this.addMeshDebugInfo(
-                new DebugShapeComponent({
-                  type: 'box',
-                  color: color,
-                  layer: DebugLayer.Mesh,
-                  instances: boxTransforms,
-                }),
-              ),
-              createModelComponent(model),
+              new DebugShapeComponent({
+                type: 'box',
+                color: color,
+                layer: DebugLayer.Mesh,
+                instances: boxTransforms,
+              }),
+              ...createModelComponent(model),
             ].filter((it) => !!it),
           })
           // render layer of the owning entity (e.g. inactive entities)
@@ -182,8 +181,10 @@ export class MeshLoaderComponent implements GameComponent {
           this.entity.events.emit(MeshLoaderComponent.onLoad, this.entity)
         } else if (err instanceof TaskCancelledError) {
           this.state = 'idle'
+          //
         } else {
           this.state = 'failed'
+          this.entity.events.emit(MeshLoaderComponent.onError, this.entity)
         }
       },
     })
@@ -203,22 +204,10 @@ export class MeshLoaderComponent implements GameComponent {
     }
   }
 
-  private addMeshDebugInfo(debug: DebugShapeComponent) {
-    const data = this.data
-    return debug
-      .addInfo('mesh', () => data.mesh)
-      .addInfo('material', () => data.material)
-      .addInfo('maxViewDistance', () => data.maxViewDistance)
-      .addInfo('viewDistanceMultiplier', () => data.viewDistanceMultiplier)
-      .addInfo('instances', () => data.instances?.length ?? 0)
-      .addInfo('alwaysRender', () => !!data.alwaysRender)
-      .addInfo('visibilityOccluder', () => !!data.visibilityOccluder)
-  }
-
   /**
    * Renders static models through the GPU instance batch, falls back to the scene render path otherwise
    */
-  private modelComponentFactory(model: Model): (instance: Model) => GameComponent {
+  private modelComponentFactory(model: Model): (instance: Model) => GameComponent[] {
     const maxViewDistance = (this.data.maxViewDistance || 0) * (this.data.viewDistanceMultiplier || 1)
     const instanceSystem = this.entity.world.getSystem(InstancedRenderSystem, { optional: true })
     let canInstance = ENABLE_INSTANCED_LEVEL_OBJECTS
@@ -236,20 +225,26 @@ export class MeshLoaderComponent implements GameComponent {
     if (!canInstance) {
       // shaders fade out by the relative distance to the max view distance (e.g. GeometryBeam %ENABLE_FADEOUT)
       return (instance) => {
-        return new ModelComponent({
-          model: instance,
-          instanceData: createInstanceData(maxViewDistance),
-        })
+        return [
+          new InstanceDataComponent({
+            data: createInstanceData({ maxViewDistance }),
+          }),
+          new ModelComponent({
+            model: instance,
+          }),
+        ]
       }
     }
 
     const key = `${this.data.mesh}|${this.data.material || ''}`
     return (instance) => {
-      return new InstancedModelComponent({
-        model: instance,
-        key,
-        maxViewDistance,
-      })
+      return [
+        new InstancedModelComponent({
+          model: instance,
+          key,
+          maxViewDistance,
+        }),
+      ]
     }
   }
 }

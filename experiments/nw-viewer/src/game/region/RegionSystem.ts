@@ -1,27 +1,12 @@
 import { EcsGame } from '@gglib/components'
 import { GameEntity, GameQuery, GameSystem, GameWorld, GetComponent } from '@gglib/ecs'
-import {
-  BoundingFrustum,
-  boxMat4DistanceSquared,
-  frustumBoxIntersects,
-  mat4GetTranslationX,
-  mat4GetTranslationY,
-  vec3,
-  vec3$initFrom,
-  type IVec3,
-  type Mat4,
-} from '@gglib/math'
+import { BoundingFrustum, boxMat4DistanceSquared, frustumBoxIntersects, vec3, vec3$initFrom } from '@gglib/math'
 import {
   CHUNK_MESH_RANGE,
-  ENABLE_POI_IMPOSTOR_DITHER,
-  IMPOSTOR_FADE_RANGE,
-  LOD_SPANS,
-  lodSpanStart,
-  lodSpanVisibleEnd,
+  IMPOSTOR_VISIBILITY_END,
   RANGE_ACTIVATION_BUDGET_MS,
   RANGE_HYSTERESIS,
 } from '../../constants'
-import type { ContentService } from '../../content'
 import { RegionComponent } from './RegionComponent'
 import { RegionImpostorComponent } from './RegionImpostorComponent'
 
@@ -29,7 +14,6 @@ export class RegionSystem extends GameSystem {
   private allRegions: GameQuery
 
   private game: EcsGame
-  private content: ContentService
   private world: GameWorld
 
   public initialize(world: GameWorld): void {
@@ -69,27 +53,6 @@ export class RegionSystem extends GameSystem {
   private loadingCells: Array<{ cell: RegionImpostorComponent; distance: number }> = []
 
   /**
-   * Advances the chunk state of a POI cell that owns chunks
-   *
-   * @param distance - squared distance from the camera to the cell box
-   */
-  private updateCellState(cell: RegionImpostorComponent, distance: number) {
-    const loadAt = CHUNK_MESH_RANGE
-    const unloadAt = CHUNK_MESH_RANGE * RANGE_HYSTERESIS
-    if (cell.cellState === 'far') {
-      if (distance <= loadAt * loadAt) {
-        cell.setCellState('loading')
-      }
-    } else if (distance > unloadAt * unloadAt) {
-      cell.deactivateMembers()
-      cell.setCellState('far')
-    }
-    if (cell.cellState === 'loading') {
-      this.loadingCells.push({ cell, distance })
-    }
-  }
-
-  /**
    * Spawns and activates the content of loading cells, nearest first, until the deadline
    */
   private updateLoadingCells(deadline: number) {
@@ -113,9 +76,6 @@ export class RegionSystem extends GameSystem {
     const entity = region.entity
     const camera = this.game.scene.getView(0).camera
 
-    if (!entity) {
-      debugger
-    }
     const regionSize = region.regionSize
     const cellSize = region.cellSize
 
@@ -159,39 +119,31 @@ export class RegionSystem extends GameSystem {
   private updateImpostorVisibility(region: RegionComponent, entity: GameEntity) {
     const camera = this.game.scene.getView(0).camera
     const impostor = entity.component(RegionImpostorComponent)
-    const distance = boxMat4DistanceSquared(impostor.min, impostor.max, camera.world)
+    const distanceSqr = boxMat4DistanceSquared(impostor.min, impostor.max, camera.world)
+    const distance = Math.sqrt(distanceSqr)
 
-    const showAt = lodSpanStart(impostor.span)
-    const hideAt = lodSpanVisibleEnd(impostor.span)
-    let impostorShouldShow = showAt * showAt <= distance && distance <= hideAt * hideAt
-    if (impostor.span === LOD_SPANS.impostorPoi && region.enableChunks && impostor.hasChunks) {
-      // The cell drives its chunk content. The impostor stays until the holding chunk meshes are loaded,
-      // even if the camera is inside the cell.
-      this.updateCellState(impostor, distance)
-      impostorShouldShow =
-        distance <= hideAt * hideAt && (distance >= showAt * showAt || impostor.cellState !== 'ready')
-    } else if (impostor.span === LOD_SPANS.impostorPoi && ENABLE_POI_IMPOSTOR_DITHER) {
-      // A POI cell covers many meshes, each activated by the distance to itself. Keep the cell visible as long as
-      // any part of it is beyond showAt, so it still covers the meshes that are not active yet.
-      // The shader discards impostor pixels closer than showAt, so the near part does not overlap.
-      impostorShouldShow =
-        boxFarthestDistanceSquared(impostor.min, impostor.max, camera.world) >= showAt * showAt &&
-        distance <= hideAt * hideAt
-    }
-    if (impostor.span === LOD_SPANS.impostor) {
+    let shouldShow = distance <= IMPOSTOR_VISIBILITY_END
+    if (impostor.isPoi) {
+      if (region.enableChunks && impostor.hasChunks) {
+        // The cell drives its chunk content. The impostor stays until the holding chunk meshes are loaded,
+        // even if the camera is inside the cell.
+        this.updateCellState(impostor, distanceSqr)
+        // impostorShouldShow ||= impostor.cellState !== 'ready'
+      }
+    } else {
       // vegetation impostors crossfade with the distribution in [showAt - IMPOSTOR_FADE_RANGE, showAt].
       // A cell must be visible as soon as any part of it reaches into that range, the shader discards the closer pixels.
-      const fadeStart = showAt - IMPOSTOR_FADE_RANGE
-      impostorShouldShow =
-        boxFarthestDistanceSquared(impostor.min, impostor.max, camera.world) >= fadeStart * fadeStart &&
-        distance <= hideAt * hideAt
+      // const fadeStart = showAt - IMPOSTOR_FADE_RANGE
+      // impostorShouldShow =
+      //   boxFarthestDistanceSquared(impostor.min, impostor.max, camera.world) >= fadeStart * fadeStart &&
+      //   distance <= hideAt * hideAt
     }
 
-    if (entity.isActive && !impostorShouldShow) {
+    if (entity.isActive && !shouldShow) {
       entity.deactivate()
     }
 
-    if (!entity.isActive && impostorShouldShow) {
+    if (!entity.isActive && shouldShow) {
       if (entity.canInitialize) {
         entity.initialize()
       }
@@ -229,19 +181,28 @@ export class RegionSystem extends GameSystem {
     }
   }
 
+  /**
+   * Advances the chunk state of a POI cell that owns chunks
+   *
+   * @param distance - squared distance from the camera to the cell box
+   */
+  private updateCellState(cell: RegionImpostorComponent, distance: number) {
+    const loadAt = CHUNK_MESH_RANGE
+    const unloadAt = CHUNK_MESH_RANGE * RANGE_HYSTERESIS
+    if (cell.cellState === 'far') {
+      if (distance <= loadAt * loadAt) {
+        cell.setCellState('loading')
+      }
+    } else if (distance > unloadAt * unloadAt) {
+      cell.deactivateMembers()
+      cell.setCellState('far')
+    }
+    if (cell.cellState === 'loading') {
+      this.loadingCells.push({ cell, distance })
+    }
+  }
+
   private removeRegionTag = (entity: GameEntity) => {
     entity.removeComponentByType(RegionComponent.Tag)
   }
-}
-
-/**
- * Squared horizontal distance from the camera position to the farthest point of the box.
- * Impostor boxes span the whole region height, so the vertical axis is ignored.
- */
-function boxFarthestDistanceSquared(min: IVec3, max: IVec3, world: Mat4) {
-  const x = mat4GetTranslationX(world)
-  const y = mat4GetTranslationY(world)
-  const dx = Math.max(Math.abs(x - min.x), Math.abs(x - max.x))
-  const dy = Math.max(Math.abs(y - min.y), Math.abs(y - max.y))
-  return dx * dx + dy * dy
 }

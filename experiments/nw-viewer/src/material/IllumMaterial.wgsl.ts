@@ -144,7 +144,8 @@ struct MaterialBlock {
 // @private
 @group(0) @binding(4) var envMap                 : texture_cube<f32>;
 
-@group(1) @binding(0) var<storage, read> object  : array<ObjectBlock, 1>; // per instance data
+@group(1) @binding(0) var<storage, read> object       : array<ObjectBlock>; // per instance data
+@group(1) @binding(1) var<storage, read> instanceData : array<InstanceDataBlock>; // per instance data
 @group(2) @binding(0) var<uniform>       material: MaterialBlock;
 
 @group(2) @binding(1) var samplerLinear      : sampler;
@@ -190,6 +191,7 @@ struct FragmentInput {
   @location(8)       vertexColor   : vec4f,
   @location(9)       viewVec       : vec3f,  // un-normalized; normalize in PS
   @location(10)      ambient       : vec4f,
+  @location(11)      dissolve      : f32,
 };
 
 @vertex
@@ -229,7 +231,7 @@ fn vs_main(input : VertexInput) -> FragmentInput {
   output.worldBitangent = bitangent;
   output.viewVec        = toEye;
   output.vertexColor    = input.color;
-
+  output.dissolve       = instanceData[input.id].dissolveAmount;
   let uvBase = vec4f(input.texture.xy, 0.0, 1.0);
 
   // --- UV MOD DIFFUSE --
@@ -275,7 +277,7 @@ fn vs_main(input : VertexInput) -> FragmentInput {
 @fragment
 fn fs_main(input: FragmentInput) -> FragmentOutput {
   // impostor fade in, distribution / vegetation fade out (DITHER_FADE_* constants)
-  ditherFade(input.position.xy, distance(view.cameraPosition, input.worldPos));
+  ditherFade(input.position.xy, distance(view.cameraPosition, input.worldPos), input.dissolve);
 
   let toEye = normalize(input.viewVec);
   let tbn = mat3x3f(
@@ -721,6 +723,7 @@ fn fs_main(input: FragmentInput) -> FragmentOutput {
 
     }
   }
+  // out.color = vec4f(instanceData[input.id].dissolveAmount, 0.0,0.0,1.0);
   return out;
 }
 

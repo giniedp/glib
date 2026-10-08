@@ -19,7 +19,7 @@ import {
   type Mat4,
 } from '@gglib/math'
 import type { Model } from '@gglib/model'
-import { IMPOSTOR_FADE_RANGE, LOD_SPANS, lodSpanStart } from '../../constants'
+import { IMPOSTOR_FADE_RANGE, IMPOSTOR_VISIBILITY_START } from '../../constants'
 import { setDitherFadeConstants } from '../../material'
 import { DISTRIBUTION_CULL_SHADER } from './DistributionCull.wgsl'
 import { BYTES_PER_DRAW, indirectDrawArgs, IndirectGeometry, IndirectMaterials, WORDS_PER_DRAW } from './IndirectDraw'
@@ -222,13 +222,11 @@ export class DistributionBatch {
     this.counterBuffer = this.createBuffer(`${name} counters`, this.groups.length * 4, BufferUsage.STORAGE, true)
     this.paramsBuffer = this.createBuffer(`${name} params`, PARAMS_BYTE_SIZE, BufferUsage.UNIFORM)
 
-    // crossfade with the vegetation impostors, which fade in over the same range
-    const fadeEnd = lodSpanStart(LOD_SPANS.impostor)
     const constants = {}
     setDitherFadeConstants(constants, {
       mode: 'out',
-      start: fadeEnd - IMPOSTOR_FADE_RANGE,
-      end: fadeEnd,
+      start: IMPOSTOR_VISIBILITY_START - IMPOSTOR_FADE_RANGE,
+      end: IMPOSTOR_VISIBILITY_START,
     })
 
     this.indirectMaterials = new IndirectMaterials(this.device, this.outputBuffer, constants)

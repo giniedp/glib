@@ -6,7 +6,7 @@ export type DebugShapeType = 'bounds-box' | 'bounds-sphere' | 'box' | 'sphere' |
 export type DebugLayer = number
 export const DebugLayer = {
   Selection: 1 << 0,
-  Impostor: 1 << 1,
+  Impostor_VEG: 1 << 1,
   Impostor_POI: 1 << 2,
   Mesh: 1 << 3,
   MeshInstance: 1 << 4,

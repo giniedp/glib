@@ -33,7 +33,7 @@ import { Renderer, type RendererStats } from '@gglib/render'
 import { brand, lfmt, type EventType } from '@gglib/utils'
 import { redrawUi } from 'tweak-ui'
 import { getLevelListUrl } from './api'
-import { REGION_SIZE, REGION_VISIBILITY } from './constants'
+import { REGION_SIZE } from './constants'
 import { ContentService } from './content'
 import { CapitalSystem } from './game/capital/CapitalSystem'
 import { DebugLayer, DebugShapeComponent } from './game/debug/DebugShapeComponent'
@@ -164,11 +164,21 @@ export class NwViewer extends EcsGame {
         new CameraComponent({
           type: 'perspective',
           near: 0.1,
-          far: REGION_SIZE + REGION_VISIBILITY,
+          far: 2 * REGION_SIZE,
           perspectiveFov: 90 * DEGREE_TO_RAD,
           reversedZ: true,
           aspect: this.device.output.aspectRatio,
         }),
+        // used to debug distances
+        // new DebugShapeComponent({
+        //   type: 'cylinder',
+        //   color: Color.Magenta,
+        //   solid: true,
+        //   alpha: 0.1,
+        //   instances: [
+        //     mat4CreateFromRTS(quatCreateIdentity(), vec4(), vec3(128 * 1.5)),
+        //   ],
+        // }),
         new WASDComponent(),
       ],
     }).component(CameraComponent)

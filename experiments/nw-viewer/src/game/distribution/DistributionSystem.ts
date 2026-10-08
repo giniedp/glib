@@ -1,19 +1,8 @@
 import { EcsGame } from '@gglib/components'
 import { GameQuery, GameSystem, GameWorld } from '@gglib/ecs'
 import { boxMat4DistanceSquared, mat4GetTranslation, vec3 } from '@gglib/math'
-import { Renderer, type RenderContext } from '@gglib/render'
-import {
-  DISTRIBUTION_VIEW_DISTANCE_SCALE,
-  LOD_SPANS,
-  lodSpanVisibleEnd,
-  SEGMENT_SIZE,
-} from '../../constants'
+import { IMPOSTOR_VISIBILITY_START } from '../../constants'
 import { DistributionComponent } from './DistributionComponent'
-
-// must match the distance where impostors start to show, otherwise there is a gap or an overlap
-const VISIBLE_DISTANCE = lodSpanVisibleEnd(LOD_SPANS.distribution)
-// models are loaded ahead of time, so they are ready when they become visible
-const PREPARE_DISTANCE_SQ = Math.pow(VISIBLE_DISTANCE + SEGMENT_SIZE, 2)
 
 const cellMin = vec3()
 const cellMax = vec3()
@@ -25,28 +14,32 @@ const cameraPosition = vec3()
 export class DistributionSystem extends GameSystem {
   private allDistributions: GameQuery
   private game: EcsGame
-  private world: GameWorld
-  private renderer: Renderer | null = null
 
   public initialize(world: GameWorld): void {
-    this.world = world
     this.allDistributions = world.query({ scope: 'active', required: [DistributionComponent] })
     this.game = world.getSystem(EcsGame)
   }
 
   public update() {
-    if (!this.renderer) {
-      this.renderer = this.world.getSystem(Renderer, { optional: true })
-      this.renderer?.onContextReady.add(this.cull)
-    }
-
     const camera = this.game.scene.getView(0).camera
+    mat4GetTranslation(camera.world, cameraPosition)
+
+    const viewDistanceScale = 1
+    const visibleDistance = IMPOSTOR_VISIBILITY_START
+    const loadDistance = IMPOSTOR_VISIBILITY_START * 2
+    const loadDistanceSquared = loadDistance * loadDistance
+
     for (const entity of this.allDistributions) {
       const distribution = entity.component(DistributionComponent)
-      if (!distribution.ensureBatch()) {
+      const batch = distribution.ensureBatch()
+      if (!batch) {
         continue
       }
-      const { origin, cellSize, mountainHeight } = distribution.options
+
+      const origin = distribution.options.origin
+      const cellSize = distribution.options.cellSize
+      const mountainHeight = distribution.options.mountainHeight
+
       for (const cell of distribution.cells) {
         cellMin.x = origin.x + cell.x * cellSize
         cellMin.y = origin.y + cell.y * cellSize
@@ -54,31 +47,23 @@ export class DistributionSystem extends GameSystem {
         cellMax.x = cellMin.x + cellSize
         cellMax.y = cellMin.y + cellSize
         cellMax.z = mountainHeight
-        if (boxMat4DistanceSquared(cellMin, cellMax, camera.world) <= PREPARE_DISTANCE_SQ) {
+        if (boxMat4DistanceSquared(cellMin, cellMax, camera.world) <= loadDistanceSquared) {
           distribution.requestCell(cell)
         }
       }
+
+      // TODO: don't pass new object each frame
+      batch.cull({
+        view: camera.view,
+        projection: camera.projection,
+        cameraPosition,
+        visibleDistance,
+        viewDistanceScale,
+      })
     }
   }
 
   public destroy(): void {
-    this.renderer?.onContextReady.remove(this.cull)
-  }
-
-  private cull = (context: RenderContext) => {
-    const camera = context.view.camera
-    if (camera !== this.game.scene.getView(0).camera) {
-      return
-    }
-    mat4GetTranslation(camera.world, cameraPosition)
-    for (const entity of this.allDistributions) {
-      entity.component(DistributionComponent).batch?.cull({
-        view: camera.view,
-        projection: camera.projection,
-        cameraPosition,
-        visibleDistance: VISIBLE_DISTANCE,
-        viewDistanceScale: DISTRIBUTION_VIEW_DISTANCE_SCALE,
-      })
-    }
+    //
   }
 }

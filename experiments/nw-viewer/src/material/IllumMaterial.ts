@@ -14,7 +14,7 @@ import {
   TRUE,
 } from '@gglib/graphics'
 import { mat4Identity, vec2, vec4 } from '@gglib/math'
-import { ENABLE_POI_IMPOSTOR_DITHER, LOD_SPANS, lodSpanStart, POI_IMPOSTOR_FADE_LENGTH } from '../constants'
+import { IMPOSTOR_FADE_RANGE, IMPOSTOR_VISIBILITY_START } from '../constants'
 import { type NwMaterialProps } from './GltfExtension'
 import SCHEMA from './IllumMaterial.meta'
 import WGSL from './IllumMaterial.wgsl'
@@ -44,6 +44,7 @@ export function illumEffectOptions(constants: Record<string, number>): EffectOpt
       shader: illumShaderOptions(constants),
       sharedBlocks: [InputBlocks.Global, InputBlocks.View, InputBlocks.Frame, InputBlocks.Lights],
       perInstanceTransformBlock: 'object',
+      perInstanceDataBlock: 'instanceData',
     },
   }
 }
@@ -260,13 +261,11 @@ export class IllumMaterial extends MaterialWithSchema(SCHEMA) {
     }
 
     const shaderConst = getShaderConstants(shaderFlags)
-    if (ENABLE_POI_IMPOSTOR_DITHER && shaderFlags.has('IS_POI_IMPOSTOR')) {
-      // impostors fade in after the start of their span, like the impostor dissolve in illum.cfx
-      const start = lodSpanStart(LOD_SPANS.impostorPoi)
+    if (shaderFlags.has('IS_POI_IMPOSTOR')) {
       setDitherFadeConstants(shaderConst, {
         mode: 'in',
-        start: start,
-        end: start + POI_IMPOSTOR_FADE_LENGTH,
+        start: IMPOSTOR_VISIBILITY_START,
+        end: IMPOSTOR_VISIBILITY_START + IMPOSTOR_FADE_RANGE,
       })
     }
 

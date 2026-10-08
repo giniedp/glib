@@ -50,9 +50,6 @@ export const ENABLE_VOLUMETRIC_FOG_2 = true
  */
 export const FOG_DISTANCE_SCALE = 0.5
 
-export const ENABLE_IMPOSTORS = true
-export const ENABLE_CAPITALS = true
-export const ENABLE_DISTRIBUTION = true
 /**
  * Loads only the smaller mips of split DDS material textures instead of the merged texture (merge=partial in nwbt).
  * The textures are allocated with their full mip chain, only the loaded mips are sampled (Texture.residentMipLevel).
@@ -75,15 +72,7 @@ export const ENABLE_INSTANCED_LEVEL_OBJECTS = false
  * Reduces the number of entities, spatial nodes and bounds, culling happens per instance array.
  */
 export const COMBINE_INSTANCE_ARRAYS = true
-/**
- * Scales the max view distance of distribution meshes, 0 ignores the view distance
- */
-export const DISTRIBUTION_VIEW_DISTANCE_SCALE = 1
 
-/**
- * Renders the baked vegetation of the region.vegetation files (mostly groundcover)
- */
-export const ENABLE_VEGETATION = true
 /**
  * Vegetation is rendered up to this distance. Lumberyard spawns a 13x13 grid of 16m sectors around the camera.
  */
@@ -125,97 +114,53 @@ export const RANGE_UPDATE_DISTANCE_FACTOR = 1 / 64
  */
 export const RANGE_ACTIVATION_BUDGET_MS = 2
 
-export const REGION_VISIBILITY = 4 * SEGMENT_SIZE
-export const SEGMENT_VISIBILITY = 4 * SEGMENT_SIZE
-
 export type LodSpan = {
   start: number
   visibleFor: number
   keepAliveFor: number
 }
 
-export const LOD_SPANS = {
-  capital: {
-    start: 0,
-    visibleFor: 1,
-    keepAliveFor: 1,
-  },
-  // vegetation impostors, distribution hands over at the start of this span.
-  // The distribution culls instances by cell, an instance can be one cell diagonal further away than its cell.
-  // Instances must not reach their max view distance (trees 255, bushes 270) before the impostor shows,
-  // so start + cell diagonal (181) must stay below the max view distance of trees and bushes.
-  impostor: {
-    start: 0.5,
-    visibleFor: 9.5,
-    keepAliveFor: 4,
-  },
-  // rocks and structures, capitals hand over at the start of this span.
-  // Starts one cell out (128), so chunk slices that spawn at 384 have time to load before their meshes are needed
-  // (chunk meshes are active up to CHUNK_MESH_RANGE = start + fade + one cell)
-  impostorPoi: {
-    start: 0.5,
-    visibleFor: 9.5,
-    keepAliveFor: 4,
-  },
-  // vegetation impostors take over beyond the visible span, so visible span must end where impostors start
-  distribution: {
-    start: 0,
-    visibleFor: 0.5,
-    keepAliveFor: 0,
-  },
-}
+export const ENABLE_IMPOSTOR_VEG = true
+export const ENABLE_IMPOSTOR_POI = true
+export const ENABLE_DISTRIBUTION = true
+export const ENABLE_VEGETATION = true
+export const ENABLE_CAPITALS = true
+export const ENABLE_CHUNKS = true
+
+/**
+ * Distance from camera to where impostor begin, where game objects fade out and impostor fades in
+ */
+export const IMPOSTOR_VISIBILITY_START = SEGMENT_SIZE * 1.5
+
+/**
+ * Distance from camera to maximum distance where impostor are still visible
+ */
+export const IMPOSTOR_VISIBILITY_END = SEGMENT_SIZE * 6
+
+/**
+ * Range
+ */
+export const IMPOSTOR_LOAD_RANGE = SEGMENT_SIZE * 0.25
 
 /**
  * Width of the dithered crossfade between the distribution and the vegetation impostors.
  * The band ends where the impostor span starts, impostor cells are activated early enough to cover it.
  */
-export const IMPOSTOR_FADE_RANGE = 16
-/**
- * Fade in distance of POI impostors after the start of their span (gImpostorsFadeDistance in illum.cfx)
- */
-export const POI_IMPOSTOR_FADE_LENGTH = 20
+export const IMPOSTOR_FADE_RANGE = 20
 /**
  * Fade out distance of the groundcover vegetation before VEGETATION_VISIBLE_DISTANCE
  */
-export const VEGETATION_FADE_LENGTH = 24
+export const VEGETATION_FADE_RANGE = 24
 
-export function lodSpanStart(span: LodSpan) {
-  return span.start * SEGMENT_SIZE
-}
-export function lodSpanVisibleEnd(span: LodSpan) {
-  return (span.start + span.visibleFor) * SEGMENT_SIZE
-}
-export function lodSpanEnd(span: LodSpan) {
-  return (span.start + span.visibleFor + span.keepAliveFor) * SEGMENT_SIZE
-}
-
-/**
- * Caps the view distance of meshes in coatgen chunk slices at the POI impostor hand-over.
- *
- * Chunk slices carry the editor computed view distance (several km) and no impostor flag,
- * the source slices of their content are flagged with impostorFarDistance in their .slice.meta.
- */
-export const ENABLE_CHUNK_RANGE_CLAMP = true
-/**
- * Distance at which POI impostors are fully faded in
- */
-export const IMPOSTOR_POI_HANDOVER_RANGE = lodSpanStart(LOD_SPANS.impostorPoi) + POI_IMPOSTOR_FADE_LENGTH
 /**
  * View distance cap of meshes in chunk slices.
  *
  * One impostor cell beyond the hand-over: a POI impostor cell covers many meshes and disappears per pixel
  * at the start of its span, so the meshes of the whole cell must be active by then.
  */
-export const CHUNK_MESH_RANGE = IMPOSTOR_POI_HANDOVER_RANGE + SEGMENT_SIZE
+export const CHUNK_MESH_RANGE = IMPOSTOR_VISIBILITY_START + IMPOSTOR_FADE_RANGE
 /**
  * Mesh chunk sizes whose loading holds their cell's POI impostor (see RegionImpostorComponent cell state).
  * Chunks of other sizes are activated with their cell but do not delay it.
  */
 export const IMPOSTOR_HOLD_CHUNK_SIZES: number[] = [128]
-/**
- * Dither fade-in of POI impostors (start of their span + POI_IMPOSTOR_FADE_LENGTH).
- *
- * TODO: disabled until the impostor dither can be switched per cell. A cell that holds its impostor while its
- * chunk meshes load must not discard its near pixels.
- */
-export const ENABLE_POI_IMPOSTOR_DITHER = true

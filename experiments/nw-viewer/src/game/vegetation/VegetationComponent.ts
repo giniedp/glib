@@ -77,7 +77,10 @@ export class VegetationComponent implements GameComponent {
       work: (task) => {
         const [data, buffer] = task.context
         this.data = data
+        const t1 = performance.now()
         this.file = parseVegetation(buffer)
+        const ms = performance.now() - t1
+        console.log(...this.logTag, 'parseVegetation', ms, 'ms')
         return true
       },
       finalize: (task, err) => {

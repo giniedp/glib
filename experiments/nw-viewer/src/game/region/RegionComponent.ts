@@ -20,18 +20,26 @@ import {
   type CapitalRuntimeData,
   type ChunkRuntimeData,
   type RegionCapitalsData,
+  type RegionImpostor,
   type RegionInfo,
 } from '../../api'
-import { ENABLE_CAPITALS, ENABLE_DISTRIBUTION, ENABLE_IMPOSTORS, ENABLE_VEGETATION, LOD_SPANS } from '../../constants'
+import {
+  ENABLE_CAPITALS,
+  ENABLE_CHUNKS,
+  ENABLE_DISTRIBUTION,
+  ENABLE_IMPOSTOR_POI,
+  ENABLE_IMPOSTOR_VEG,
+  ENABLE_VEGETATION,
+} from '../../constants'
 import { ContentService } from '../../content'
 import { DistributionComponent } from '../distribution/DistributionComponent'
-import { VegetationComponent } from '../vegetation/VegetationComponent'
 import {
-  capitalSliceEntityOPtions,
+  capitalSliceEntityOptions,
   chunkSliceEntityOptions,
   SliceSpawnerComponent,
 } from '../slice/SliceSpawnerComponent'
 import { TerrainRegionComponent } from '../terrain/TerrainRegionComponent'
+import { VegetationComponent } from '../vegetation/VegetationComponent'
 import { impostorEntityOptions, RegionImpostorComponent } from './RegionImpostorComponent'
 
 export interface RegionComponentOptions {
@@ -249,14 +257,12 @@ export class RegionComponent implements GameComponent {
       },
       work: (task) => {
         const info = task.context
+        console.log(...this.logTag, 'Info loaded', info)
+
         this.regionInfo = info
         this.terrain.component(TerrainRegionComponent).materialData = info.terrainMaterial
-        console.log(...this.logTag, 'Info loaded', info)
-        if (ENABLE_IMPOSTORS) {
-          this.createImpostors(info)
-        } else {
-          console.warn(...this.logTag, 'Impostors are disabled, skipping creation of impostor entities')
-        }
+        this.createImpostorLayers(info)
+
         return true
       },
       finalize: (task, err) => {
@@ -294,9 +300,9 @@ export class RegionComponent implements GameComponent {
         console.log(...this.logTag, 'Capital data loaded', data)
         if (ENABLE_CAPITALS) {
           this.createCapitals(data.capitals)
+        }
+        if (ENABLE_CHUNKS) {
           this.createChunks(data.chunks)
-        } else {
-          console.warn(...this.logTag, 'Capitals are disabled, skipping creation of capital and chunk entities')
         }
         return true
       },
@@ -308,22 +314,30 @@ export class RegionComponent implements GameComponent {
     })
   }
 
-  public createImpostors(data: RegionInfo) {
-    const impostors = [
-      ...(data.impostors || []).map((it) => ({ ...it, span: LOD_SPANS.impostor })),
-      ...(data.poiImpostors || []).map((it) => ({ ...it, span: LOD_SPANS.impostorPoi })),
-    ]
-    for (const item of impostors) {
+  private createImpostorLayers(data: RegionInfo) {
+    if (ENABLE_IMPOSTOR_VEG) {
+      this.createImpostorLayer(data.impostors, false)
+    }
+    if (ENABLE_IMPOSTOR_POI) {
+      this.createImpostorLayer(data.poiImpostors, true)
+    }
+  }
+
+  private createImpostorLayer(impostor: RegionImpostor[], isPOI: boolean) {
+    if (!impostor) {
+      return
+    }
+    for (const item of impostor) {
       const options = impostorEntityOptions(this.impostors, {
         name: item.model,
         model: item.model,
         origin: vec3(item.position.x, item.position.y, 0),
         regionSize: this.regionSize,
         cellSize: this.cellSize,
-        span: item.span,
+        isPOI,
       })
       const entity = this.entity.world.createEntity(options)
-      if (item.span === LOD_SPANS.impostorPoi) {
+      if (isPOI) {
         this.poiCells.set(this.cellIndex(item.position.x, item.position.y), entity.component(RegionImpostorComponent))
       }
     }
@@ -344,10 +358,13 @@ export class RegionComponent implements GameComponent {
   }
 
   public createCapitals(layers: Record<string, CapitalRuntimeData[]>) {
+    if (!layers) {
+      return
+    }
     for (const key in layers) {
       const parent = this.getCapitalLayerEntity(key)
       for (const item of layers[key]) {
-        const options = capitalSliceEntityOPtions(parent, item)
+        const options = capitalSliceEntityOptions(parent, item)
         const entity = this.entity.world.createEntity(options)
         this.slices.push(entity.component(SliceSpawnerComponent))
       }
@@ -355,6 +372,9 @@ export class RegionComponent implements GameComponent {
   }
 
   public createChunks(layers: Record<string, ChunkRuntimeData[]>) {
+    if (!layers) {
+      return
+    }
     for (const key in layers) {
       const parent = this.getCapitalLayerEntity(key)
       for (const item of layers[key]) {

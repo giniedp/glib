@@ -325,16 +325,6 @@ export function setDitherFadeConstants(
   constants['DITHER_FADE_END'] = options.end
 }
 
-/**
- * Creates the per instance data of a level mesh (ModelComponent.instanceData), see InstanceDataBlock in common.wgsl.
- * Effects read it with `perInstanceDataBlock: 'instanceData'`.
- *
- * @param maxViewDistance - max view distance of the entity, 0 for unlimited
- */
-export function createInstanceData(maxViewDistance: number) {
-  return new Float32Array([maxViewDistance || 0, 0, 0, 0])
-}
-
 export function getShaderConstants(flags: Set<FeatureFlag>) {
   const constants: Record<string, number> = {}
   for (const feature of flags) {
@@ -368,3 +358,29 @@ export const MaterialMapNames = new Set([
   '[5] Custom',
   '[5] Smoothness',
 ])
+
+// Lumberyard uses:
+// float4      SPIBendInfo;
+// float4      SPIBendInfoPrev;
+// float4      SPIAmbientOpacity;
+// float4      SPIDissolveRef;
+// TODO: replace single value setter with full row writer: setInstanceDissolveRef
+
+export function setInstanceMaxViewDistance(instance: Float32Array, value: number) {
+  instance[0] = value
+}
+
+export function setInstanceDissolveAmount(instance: Float32Array, value: number) {
+  instance[1] = value
+}
+
+export function createInstanceData(options: { maxViewDistance?: number; dissolveAmount?: number }) {
+  const data = new Float32Array(16)
+  if (options.maxViewDistance != null) {
+    setInstanceMaxViewDistance(data, options.maxViewDistance)
+  }
+  if (options.dissolveAmount != null) {
+    setInstanceDissolveAmount(data, options.dissolveAmount)
+  }
+  return data
+}

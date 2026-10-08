@@ -12,7 +12,7 @@ import {
 import { BoundingBox, BoundingFrustum, BoundingSphere, mat4Identity, type Mat4 } from '@gglib/math'
 import type { Model } from '@gglib/model'
 import type { RegionVegetationData } from '../../api'
-import { VEGETATION_FADE_LENGTH, VEGETATION_VISIBLE_DISTANCE } from '../../constants'
+import { VEGETATION_FADE_RANGE, VEGETATION_VISIBLE_DISTANCE } from '../../constants'
 import { setDitherFadeConstants } from '../../material'
 import {
   BYTES_PER_DRAW,
@@ -191,7 +191,7 @@ export class VegetationBatch {
     const constants = {}
     setDitherFadeConstants(constants, {
       mode: 'out',
-      start: VEGETATION_VISIBLE_DISTANCE - VEGETATION_FADE_LENGTH,
+      start: VEGETATION_VISIBLE_DISTANCE - VEGETATION_FADE_RANGE,
       end: VEGETATION_VISIBLE_DISTANCE,
     })
 
