@@ -456,5 +456,16 @@ describe('BufferRecorder', () => {
       rec.clearRecord(1)
       expect(rec.isDirty).toBe(true)
     })
+
+    it('keeps records written before in the dirty range', () => {
+      const rec = new BufferRecorder({ capacity: 3, autosize: false, recordByteSize: 16 })
+      rec.seek(0)
+      rec.writeFloat32x4(1, 2, 3, 4)
+      rec.seek(2)
+      rec.clearRecord(2)
+      expect(rec.isDirty).toBe(true)
+      expect(rec['dirtyStart']).toBe(0)
+      expect(rec['dirtyEnd']).toBe(12)
+    })
   })
 })

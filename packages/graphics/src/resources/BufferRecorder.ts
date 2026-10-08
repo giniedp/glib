@@ -503,8 +503,8 @@ export class BufferRecorder {
     const start = index * this.strideInElements
     const end = start + this.strideInElements
     this.dataFloat32.fill(0, start, end)
-    this.dirtyStart = Math.min(this.writeStart, start)
-    this.dirtyEnd = Math.max(this.writeEnd, end)
+    this.dirtyStart = Math.min(this.dirtyStart, start)
+    this.dirtyEnd = Math.max(this.dirtyEnd, end)
     return this
   }
 
