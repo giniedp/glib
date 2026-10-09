@@ -172,6 +172,22 @@ export interface RegionMaterial {
   specularMap: string
   layers: RegionMaterialLayer[]
   pertinentLayersMipChain: string[]
+  macroMaterialParams?: MacroMaterialParams
+  customBackgroundParams?: MacroMaterialParams
+  customForegroundParams?: MacroMaterialParams
+  worldBackgroundParams?: MacroMaterialParams
+  worldForegroundParams?: MacroMaterialParams
+  pomDisplacement?: number
+  pomHeightBias?: number
+  pomSelfShadowStrength?: number
+}
+
+export interface MacroMaterialParams {
+  color: [number, number, number, number]
+  colorScale: number
+  glossScale: number
+  normalScale: number
+  specularReflectance: number
 }
 
 export interface RegionMaterialLayer {

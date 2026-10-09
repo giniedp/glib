@@ -2,6 +2,9 @@ import { COMMON_WGSL } from './common.wgsl'
 
 export const TERRAIN_PATCH_SHADER = /* wgsl */ `
 
+// parallax occlusion mapping on the baked height, disabled for now
+const USE_POM = false;
+
 struct MaterialBlock {
   mountainHeight:  f32,
   lines:           f32,
@@ -174,7 +177,10 @@ fn fs_main(input: VertexOutput) -> FragmentOutput {
   // tangent space view direction for POM
   let tbn = getCotangentFrame(input.vWorldPos, normalize(input.vNormal), patchUv);
   let viewTS = normalize(tbn * toEye);
-  let pomUV = parallaxOcclusionMap(patchUv, patchLayer, viewTS, 8, 0.0078, 0.0);
+  var pomUV = patchUv;
+  if (USE_POM) {
+    pomUV = parallaxOcclusionMap(patchUv, patchLayer, viewTS, 8, 0.0078, 0.0);
+  }
 
   // mip selection from the unparallaxed uv gradients, the parallax offset would add noise
   let dUvX       = dpdx(patchUv);
@@ -332,7 +338,7 @@ fn unpackParams(sample1: vec4f, sample2: vec4f) -> MtlParams {
   let normalXY   = vec2f(sample1.a, sample2.b) * 2.0 - 1.0;
   let normalZ    = sqrt(max(0.0, 1.0 - dot(normalXY, normalXY)));
   params.normal    = normalize(vec3f(normalXY, normalZ));
-  params.color     = sample1.rgb / 8.0; // BC3_BASE_COLOR_SCALE, applied in shader for better precision
+  params.color     = sample1.rgb * sample1.rgb; // stored as sqrt for precision in the darks
   params.roughness = smoothnessToRoughness(sample2.r);
   params.specular  = sample2.g;
   params.height    = sample2.a;

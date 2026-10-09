@@ -109,44 +109,77 @@ fn encodeAlphaBlock(minAlpha: f32, maxAlpha: f32) -> vec2u {
 // ---------------------------------------------------------------------------
 
 fn toRGB565(color: vec3f) -> u32 {
-    let r = u32(clamp(color.r * 255.0, 0.0, 255.0)) / 8u;
-    let g = u32(clamp(color.g * 255.0, 0.0, 255.0)) / 4u;
-    let b = u32(clamp(color.b * 255.0, 0.0, 255.0)) / 8u;
-    return (r << 11u) | (g << 5u) | b;
+    // round, truncation biases r/b (5 bit) more than g (6 bit) and tints the result
+    let c = vec3u(round(saturate(color) * vec3f(31.0, 63.0, 31.0)));
+    return (c.r << 11u) | (c.g << 5u) | c.b;
+}
+
+fn fromRGB565(c: u32) -> vec3f {
+    return vec3f(f32((c >> 11u) & 31u), f32((c >> 5u) & 63u), f32(c & 31u)) / vec3f(31.0, 63.0, 31.0);
 }
 
 // ---------------------------------------------------------------------------
 // Color block encoder
 //
-// Direct port of the color section in CompressTextureDXT5.
-//
-// Endpoint selection: component-wise min/max → RGB565.
-// Bitpack: min565 low word, max565 high word.
-// Index assignment: project onto color line, threshold into 4 buckets.
+// Endpoints: bounding box, diagonal selected by the covariance signs relative to R
+// (min/max corners alone leave the color line and shift the hue), inset by 1/16.
+// Indices: nearest palette entry of the quantized endpoints, as the decoder sees them.
 // ---------------------------------------------------------------------------
 
-fn encodeColorBlock(minColor: vec3f, maxColor: vec3f) -> vec2u {
+fn encodeColorBlock(minIn: vec3f, maxIn: vec3f) -> vec2u {
+    var minColor = minIn;
+    var maxColor = maxIn;
 
-    let minC565 = toRGB565(minColor);
-    let maxC565 = toRGB565(maxColor);
+    // select diagonal
+    let center = (minColor + maxColor) * 0.5;
+    var covRG = 0.0;
+    var covRB = 0.0;
+    for (var i = 0u; i < 16u; i++) {
+        let d = samples[i].rgb - center;
+        covRG += d.r * d.g;
+        covRB += d.r * d.b;
+    }
+    if covRG < 0.0 {
+        let t = minColor.g;
+        minColor.g = maxColor.g;
+        maxColor.g = t;
+    }
+    if covRB < 0.0 {
+        let t = minColor.b;
+        minColor.b = maxColor.b;
+        maxColor.b = t;
+    }
 
-    // color0 (low word) = max, color1 (high word) = min
-    // this ensures color0 > color1 → 4-color mode on decode
-    let colorWord0 = (maxC565 & 0xFFFFu) | ((minC565 << 16u) & 0xFFFF0000u);
+    // inset
+    let inset = (maxColor - minColor) / 16.0;
+    minColor += inset;
+    maxColor -= inset;
 
+    var c0 = toRGB565(maxColor);
+    var c1 = toRGB565(minColor);
+    // color0 > color1 selects 4-color mode on decode
+    if c0 < c1 {
+        let t = c0;
+        c0 = c1;
+        c1 = t;
+    }
+    let colorWord0 = (c0 & 0xFFFFu) | ((c1 & 0xFFFFu) << 16u);
     var colorWord1 = 0u;
 
-    if maxC565 != minC565 {
-        // endPoint0 = color0 = max, endPoint1 = color1 = min
-        let colorLine    = minColor - maxColor;
-        let colorLineLen = length(colorLine);
-        let colorDir     = normalize(colorLine);
-
+    if c0 != c1 {
+        let e0 = fromRGB565(c0);
+        let e1 = fromRGB565(c1);
+        let p2 = (2.0 * e0 + e1) / 3.0;
+        let p3 = (e0 + 2.0 * e1) / 3.0;
         for (var i = 0u; i < 16u; i++) {
-            let iVal   = dot(samples[i].rgb - maxColor, colorDir) / colorLineLen;
-            let sel    = vec3f(iVal) > vec3f(1.0/6.0, 1.0/2.0, 5.0/6.0);
-            let index  = i32(dot(vec3f(sel), vec3f(2.0, 1.0, -2.0)));
-            colorWord1 |= (u32(index) & 0x3u) << (i * 2u);
+            let c = samples[i].rgb;
+            let d = vec4f(dot(c - e0, c - e0), dot(c - e1, c - e1), dot(c - p2, c - p2), dot(c - p3, c - p3));
+            var index = 0u;
+            var best = d.x;
+            if d.y < best { best = d.y; index = 1u; }
+            if d.z < best { best = d.z; index = 2u; }
+            if d.w < best { best = d.w; index = 3u; }
+            colorWord1 |= index << (i * 2u);
         }
     }
 
@@ -174,7 +207,10 @@ fn main(
     let useAlpha = uniforms.params.y >= 1.0; // use either .r or .g of sourceAlpha based on selector
     let useG     = uniforms.params.y >= 2.0; // use .g
 
-    let color    = raw.rgb * uniforms.params.x;
+    var color    = raw.rgb * uniforms.params.x;
+    if (uniforms.params.z >= 1.0) {
+      color = sqrt(saturate(color));
+    }
     let alpha    = select(raw.a, select(alphaSrc.r, alphaSrc.g, useG), useAlpha);
     samples[localIndex] = vec4f(color, alpha);
 

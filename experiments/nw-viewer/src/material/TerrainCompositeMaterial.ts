@@ -6,9 +6,8 @@ import {
   type ShaderModuleOptions,
   type Texture,
 } from '@gglib/graphics'
-import { vec4 } from '@gglib/math'
+import { vec2, vec4 } from '@gglib/math'
 import { getShaderConstants, MaterialLayerMasks, type FeatureFlag } from './common'
-import { smoothnessToRoughness } from './common.wgsl'
 import type { NwMaterialProps } from './GltfExtension'
 import Schema from './TerrainCompositeMaterial.meta'
 import WGSL from './TerrainCompositeMaterial.wgsl'
@@ -78,6 +77,9 @@ export class TerrainCompositeMaterial extends MaterialWithSchema(Schema) {
     this.MaterialBlendFalloff = 1.0
     this.MaterialHeightOffset = 0
     this.MaterialHeightScale = 1.0
+    this.MacroColor = vec4(1, 1, 1, 1)
+    this.MacroGlossScale = 1.0
+    this.MacroNormalScale = 1.0
   }
 
   private setTextures(maps: NwMaterialProps['textures']) {
@@ -101,7 +103,7 @@ export class TerrainCompositeMaterial extends MaterialWithSchema(Schema) {
   }
 
   private setModifiers(mods: NwMaterialProps['mods']) {
-    this.Tiling = mods.Diffuse?.TileU ?? 1
+    this.Tiling = vec2(mods.Diffuse?.TileU ?? 1, mods.Diffuse?.TileV ?? mods.Diffuse?.TileU ?? 1)
   }
 
   private setAttributes(attr: NwMaterialProps['attrs'], flags: Set<FeatureFlag>) {
@@ -111,9 +113,8 @@ export class TerrainCompositeMaterial extends MaterialWithSchema(Schema) {
       // console.log('Emittance', attr.Emittance)
       // this.EmissiveColor.initFrom(parseColor(attr.Emittance))
     }
-    if (attr.Shininess >= 0) {
-      this.Roughness = smoothnessToRoughness(attr.Shininess / 255)
-    }
+    // PerMaterial_SpecularColor.w
+    this.Gloss = attr.Shininess >= 0 ? attr.Shininess / 255 : 1
   }
 
   private setPublicParams(params: PublicParams) {

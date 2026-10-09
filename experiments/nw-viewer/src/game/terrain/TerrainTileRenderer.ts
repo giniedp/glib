@@ -1,5 +1,5 @@
 import { BlendState, Color, Texture, TextureUsage, WebGpuTexture, type Device } from '@gglib/graphics'
-import { ALBEDO_MULTIPLIER, TERRAIN_TILE_TEXTURE_MIP_COUNT } from '../../constants'
+import { TERRAIN_TILE_TEXTURE_MIP_COUNT } from '../../constants'
 import { BC3Encoder } from '../../graphics'
 import { SplatPackMaterial, type TerrainCompositeMaterial } from '../../material'
 import type { TerrainTile } from './TerrainTileManager'
@@ -31,7 +31,7 @@ export class TerrainTileRenderer {
     this.encoder = new BC3Encoder(this.device, options)
 
     this.stagingMap1 = this.device.createTexture({
-      format: 'rgba8unorm',
+      format: 'rgba16float',
       width: width,
       height: height,
       usage: TextureUsage.TextureBinding | TextureUsage.RenderTarget,
@@ -39,7 +39,7 @@ export class TerrainTileRenderer {
       mipLevelCount: TERRAIN_TILE_TEXTURE_MIP_COUNT,
     })
     this.stagingMap2 = this.device.createTexture({
-      format: 'rgba8unorm',
+      format: 'rgba16float',
       width: width,
       height: height,
       usage: TextureUsage.TextureBinding | TextureUsage.RenderTarget,
@@ -47,7 +47,7 @@ export class TerrainTileRenderer {
       mipLevelCount: TERRAIN_TILE_TEXTURE_MIP_COUNT,
     })
     this.stagingMap3 = this.device.createTexture({
-      format: 'rgba8unorm',
+      format: 'rgba16float',
       width: width,
       height: height,
       usage: TextureUsage.TextureBinding | TextureUsage.RenderTarget,
@@ -119,7 +119,7 @@ export class TerrainTileRenderer {
       const mipResolution = this.stagingMap1.width >> mipLevel
 
       // texture 1
-      // rgb = base color scaled with factor 8.0 for better precision in bc3 encoding
+      // rgb = sqrt(base color) for better precision in the darks, decoded with x*x
       //
       this.encoder.encode(
         this.stagingMap1, // take RGB
@@ -128,8 +128,9 @@ export class TerrainTileRenderer {
         tile.slot.layer,
         mipResolution,
         mipLevel,
-        ALBEDO_MULTIPLIER, // rgbScale
+        1.0, // rgbScale
         'r', // alphaSelector
+        true, // sqrtEncode
       )
 
       pass.flush()

@@ -66,6 +66,7 @@ export class BC3Encoder {
     mipLevel: number, // which mip level to read from src and write into dst
     rgbScale: number = 1.0, // optional scale applied to source RGB before encoding (default 1.0, no change)
     alphaSelector: null | 'r' | 'g' = null,
+    sqrtEncode = false, // store sqrt(rgb), decode with x*x. keeps precision in the darks
   ): void {
     // stop encoding below 4x4 — BC3 block size minimum
     if (resolution < 4) return
@@ -84,6 +85,7 @@ export class BC3Encoder {
     // update params
     this.params[0] = rgbScale
     this.params[1] = alphaSelector === 'r' ? 1.0 : alphaSelector === 'g' ? 2.0 : 0.0
+    this.params[2] = sqrtEncode ? 1.0 : 0.0
     this.device.queue.writeBuffer(this.paramsBuffer.resource, 0, this.params)
 
     // block grid for this mip level

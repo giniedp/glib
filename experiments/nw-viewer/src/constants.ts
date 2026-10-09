@@ -4,7 +4,8 @@ export const SEGMENT_SIZE = 128
 export const HEIGHTMAP_TILE_SIZE = 256
 export const QUAD_TREE_LEAF_SIZE = 32
 export const TERRAIN_TILE_TEXTURE_SIZE = 512
-export const TERRAIN_TILE_TEXTURE_MIP_COUNT = 1
+// down to 4x4, the smallest BC3 block
+export const TERRAIN_TILE_TEXTURE_MIP_COUNT = Math.log2(TERRAIN_TILE_TEXTURE_SIZE) - 1
 export const TERRAIN_LOD_RANGE_FACTOR = 2
 
 export const POM_DISPLACEMENT = 0.25 // in world units -> 0.25 / QUAD_LEAF_SIZE
@@ -13,7 +14,6 @@ export const POM_SELF_SHADOW_STRENGTH = 2.0
 export const MACRO_VIEW_DISTANCE = 1000
 export const MACRO_BLEND_DISTANCE = 100
 export const MACRO_WORLD_SIZE = REGION_SIZE
-export const ALBEDO_MULTIPLIER = 8.0
 export const MAX_ANISOTROPY = 4.0
 export const MAX_MIP_LEVELS = 8.0
 

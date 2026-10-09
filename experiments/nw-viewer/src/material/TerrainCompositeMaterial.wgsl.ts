@@ -33,7 +33,10 @@ struct Uniforms {
   baseColor: vec4f,
   specularColor: vec4f,
   debugColor: vec4f, // debug color for visualization, alpha is used as a flag to indicate debug mode
-  roughness: f32,
+  // g_macroMaterialDiffuseColor, multiplies the macro color map
+  macroColor: vec4f,
+  // PerMaterial_SpecularColor.w (Shininess / 255), multiplies the smoothness map
+  gloss: f32,
 
   // Scales the saturation of the macro texture before an Overlay Blend with the material's diffuse texture
   macroSaturation: f32,
@@ -50,7 +53,7 @@ struct Uniforms {
   materialHeightScale: f32,
   materialHeightOffset: f32,
 
-  tiling: f32,
+  tiling: vec2f,
 };
 
 @group(0) @binding(0)
@@ -86,20 +89,20 @@ fn fs(in: VSOutput) -> FSOutput {
   // 2) textureSampleBias(..., -bias) also causes aliasing
   // TODO: review this
 
-  let mipBias = -4.0;
+  let mipBias = 0.0;
   // Material input
   var matNormal     : vec3f = textureSampleBias(normalMap, materialSampler, in.uvMaterial, mipBias).rgb;
   var matColor      : vec3f = textureSampleBias(baseMap, materialSampler, in.uvMaterial, mipBias).rgb * params.baseColor.rgb;
   var matSpecular   : vec3f = textureSampleBias(specularMap, materialSampler, in.uvMaterial, mipBias).rgb * params.specularColor.rgb;
-  var matSmoothness : f32   = textureSampleBias(smoothnessMap, materialSampler, in.uvMaterial, mipBias).r * params.roughness;
-  var matHeight     : f32   = textureSampleBias(heightMap, materialSampler, in.uvMaterial, mipBias).r * params.materialHeightScale + params.materialHeightOffset;
+  var matSmoothness : f32   = textureSampleBias(smoothnessMap, materialSampler, in.uvMaterial, mipBias).r * params.gloss;
+  var matHeight     : f32   = saturate(textureSampleBias(heightMap, materialSampler, in.uvMaterial, mipBias).r * params.materialHeightScale + params.materialHeightOffset);
 
   // Splat / blend input
   let splatValue  = textureSample(splatMap, macroSampler, in.uvRegion).r;
   let blendWeight = materialBlend(matHeight, splatValue, params.materialBlendFactor, params.materialBlendFalloff);
 
   // Macro input
-  let macroBase         = textureSample(macroBaseMap, macroSampler, in.uvRegion).rgb;
+  let macroBase         = textureSample(macroBaseMap, macroSampler, in.uvRegion).rgb * params.macroColor.rgb;
   let macroNormalSample = textureSample(macroNormalMap, macroSampler, in.uvRegion).rgb;
   let macroNormal       = normalize(vec3f(macroNormalSample.xy, 1.0 / params.macroNormalScale));
   let macroGloss        = textureSample(macroGlossMap, macroSampler, in.uvRegion).r * params.macroGlossScale;

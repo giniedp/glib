@@ -4,10 +4,10 @@ import { Device } from '@gglib/graphics'
 import { mat4$setScaleXYZ, mat4CreateTranslation, vec3, vec3$initFrom, vec4, vec4$init, type IVec4 } from '@gglib/math'
 import { removeItemUnordered } from '@gglib/utils'
 
-import type { LevelInfo } from '../../api'
+import type { LevelInfo, MacroMaterialParams } from '../../api'
 import { QUAD_TREE_LEAF_SIZE, TERRAIN_LOD_RANGE_FACTOR } from '../../constants'
 import { ContentService } from '../../content'
-import { WaterPatchMaterial, type OceanAnimationParams } from '../../material'
+import { WaterPatchMaterial, type OceanAnimationParams, type TerrainCompositeMaterial } from '../../material'
 import { TerrainComponent } from './TerrainComponent'
 import { TerrainMesh } from './TerrainMesh'
 import { TerrainRegionComponent, TerraQuadState, type TerraQuad } from './TerrainRegionComponent'
@@ -212,11 +212,15 @@ export class TerrainSystem extends GameSystem {
   }
 
   private syncMacroTextures(region: TerrainRegionComponent) {
-    if (region.baseMaterial) {
-      region.baseMaterial.MacroNormalScale = 1 / region.mountainHeight
-    } else {
+    if (!region.baseMaterial) {
       return
     }
+    // Lumberyard binds the region macro material (TerrainCompositer_Render.cpp BindMacroMaterialShaderConstants).
+    // NW adds world foreground/background compositing params with per region overrides,
+    // assumption: foreground = composited tiles, background = distant macro only terrain
+    const data = region.materialData
+    const macro = data?.customForegroundParams ?? data?.worldForegroundParams ?? data?.macroMaterialParams
+    applyMacroParams(region.baseMaterial, macro)
 
     if (!region.layerMaterials?.length) {
       return
@@ -226,7 +230,7 @@ export class TerrainSystem extends GameSystem {
       material.MacroBaseMap = region.baseMaterial.MacroBaseMap
       material.MacroNormalMap = region.baseMaterial.MacroNormalMap
       material.MacroGlossMap = region.baseMaterial.MacroGlossMap
-      material.MacroNormalScale = 1 / region.mountainHeight
+      applyMacroParams(material, macro)
     }
   }
 
@@ -552,4 +556,12 @@ export function computeUvTransform(childNode: TerraQuad, ancestorNode: TerraQuad
   output.y = scaleY
   output.z = offsetX
   output.w = offsetY
+}
+
+function applyMacroParams(material: TerrainCompositeMaterial, params: MacroMaterialParams | undefined) {
+  const color = params?.color ?? [1, 1, 1, 1]
+  const colorScale = params?.colorScale ?? 1
+  material.MacroColor = vec4(color[0] * colorScale, color[1] * colorScale, color[2] * colorScale, color[3])
+  material.MacroGlossScale = params?.glossScale ?? 1
+  material.MacroNormalScale = Math.max(params?.normalScale ?? 1, 0.001)
 }
