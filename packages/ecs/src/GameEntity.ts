@@ -493,6 +493,11 @@ export class GameEntity {
   }
 
   /**
+   * Looks up a component by type on the entity
+   */
+  public $ = this.component.bind(this)
+
+  /**
    * Looks up a game system in the world registry. If not found, tries to look up
    * a game component of the given type up the entity hierarchy and returns it if found.
    */

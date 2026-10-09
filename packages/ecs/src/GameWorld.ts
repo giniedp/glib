@@ -1,7 +1,7 @@
 import { EventBus, idMap } from '@gglib/utils'
 import { ComponentTypeIds, type GameComponent, type GameComponentType, getComponentType } from './GameComponent'
 import { GameEntity, type GameEntityId, type NotGameEntity } from './GameEntity'
-import { GameQueryDescriptor } from './GameQuery'
+import { GameQuery, GameQueryDescriptor } from './GameQuery'
 import { GameQueryCache } from './GameQueryCache'
 import { GameSystemCollection } from './GameSystem'
 import { type GameTransform, GameTransformToken } from './GameTransform'
@@ -233,7 +233,7 @@ export class GameWorld {
   /**
    * Gets a query for the given descriptor.
    */
-  public query(descriptor: WorldQueryDescriptor) {
+  public query(descriptor: WorldQueryDescriptor): GameQuery {
     const scope = descriptor.scope
     const query: GameQueryDescriptor = {
       required: descriptor.required?.map((it) => ComponentTypeIds.getOrCreate(it)),
