@@ -134,12 +134,12 @@ describe('@gglib/ecs/TransformComponent', () => {
       it('should not propagate state change', () => {
         const root = world.createEntity({
           name: 'root',
-          transform: new TransformComponent({ lifeCycle: LifeCycleFlags.Propagate }),
+          transform: new TransformComponent({ lifeCycle: LifeCycleFlags.PropagateOnly }),
         })
         const parent = world.createEntity({
           name: 'parent',
           parent: root,
-          transform: new TransformComponent({ lifeCycle: LifeCycleFlags.Receive }),
+          transform: new TransformComponent({ lifeCycle: LifeCycleFlags.InheritOnly }),
         })
         const child = world.createEntity({
           name: 'child',

@@ -61,19 +61,60 @@ export interface TransformComponentOptions {
   keepWorld?: boolean
 
   /**
-   * If true, the transform will propagate the entity life cycle calls (initialize, activate etc.) to child entities
+   * Controls whether entity life cycle calls (initialize, activate etc.) are received from the parent
+   * and propagated to child entities. See {@link LifeCycleFlags}.
    */
   lifeCycle?: LifeCycleFlags
 }
 
+/**
+ * Bit flags controlling how entity life cycle calls (initialize, activate, deactivate, destroy)
+ * travel along the transform hierarchy. See {@link LifeCycleFlags}.
+ *
+ * @public
+ */
 export type LifeCycleFlags = number
-export const LifeCycleReceive = 1 << 0
-export const LifeCyclePropagate = 1 << 1
+/**
+ * Accept life cycle calls from the parent.
+ *
+ * @public
+ * @remarks
+ * The entity is initialized, activated, deactivated and destroyed along with its parent.
+ * On re-parenting, the entity state is synced to the state of the new parent.
+ */
+export const LifeCycleInherit = 1 as const
+/**
+ * Forward life cycle calls to child entities that have the {@link LifeCycleInherit} flag set.
+ *
+ * @public
+ */
+export const LifeCyclePropagate = 2 as const
+/**
+ * Values for {@link TransformComponentOptions.lifeCycle}
+ *
+ * @public
+ */
 export const LifeCycleFlags = {
+  /**
+   * Life cycle is fully decoupled from the hierarchy. Entity state is managed manually.
+   */
   None: 0,
-  Receive: LifeCycleReceive,
-  Propagate: LifeCyclePropagate,
-  Full: LifeCycleReceive | LifeCyclePropagate,
+  /**
+   * Accept life cycle calls from the parent.
+   *
+   * @remarks
+   * The entity is initialized, activated, deactivated and destroyed along with its parent.
+   * On re-parenting, the entity state is synced to the state of the new parent.
+   */
+  InheritOnly: LifeCycleInherit,
+  /**
+   * Forward life cycle calls to child entities that have the {@link LifeCycleFlags.InheritOnly} flag set.
+   */
+  PropagateOnly: LifeCyclePropagate,
+  /**
+   * Accept life cycle calls from the parent and passes down to children
+   */
+  InheritAndPropagate: LifeCycleInherit | LifeCyclePropagate,
 }
 
 /**
@@ -92,7 +133,7 @@ export class TransformComponent
   /**
    * Default value for {@link TransformComponentOptions.lifeCycle}
    */
-  public static lifeCycle: LifeCycleFlags = LifeCycleFlags.Full
+  public static lifeCycle: LifeCycleFlags = LifeCycleFlags.InheritAndPropagate
 
   /**
    * Default value for {@link TransformComponentOptions.keepWorld}
@@ -104,6 +145,9 @@ export class TransformComponent
    */
   public readonly entity: GameEntity
 
+  /**
+   * Life cycle flags of this transform. See {@link LifeCycleFlags}.
+   */
   public lifeCycle: LifeCycleFlags
 
   constructor(options: TransformComponentOptions = {}) {
@@ -142,11 +186,11 @@ export class TransformComponent
 
   public initialize(): void {
     this.name ||= `${this.entity.name} Transform`
-    if (!(this.lifeCycle & LifeCycleFlags.Propagate)) {
+    if (!(this.lifeCycle & LifeCyclePropagate)) {
       return
     }
     for (const child of this.children) {
-      if (!(child.lifeCycle & LifeCycleFlags.Receive)) {
+      if (!(child.lifeCycle & LifeCycleFlags.InheritOnly)) {
         continue
       }
       if (child.entity?.canInitialize) {
@@ -156,11 +200,11 @@ export class TransformComponent
   }
 
   public activate(): void {
-    if (!(this.lifeCycle & LifeCycleFlags.Propagate)) {
+    if (!(this.lifeCycle & LifeCyclePropagate)) {
       return
     }
     for (const child of this.children) {
-      if (!(child.lifeCycle & LifeCycleFlags.Receive)) {
+      if (!(child.lifeCycle & LifeCycleInherit)) {
         continue
       }
       if (child.entity?.canInitialize) {
@@ -173,11 +217,11 @@ export class TransformComponent
   }
 
   public deactivate(): void {
-    if (!(this.lifeCycle & LifeCycleFlags.Propagate)) {
+    if (!(this.lifeCycle & LifeCyclePropagate)) {
       return
     }
     for (const child of this.children) {
-      if (!(child.lifeCycle & LifeCycleFlags.Receive)) {
+      if (!(child.lifeCycle & LifeCycleInherit)) {
         continue
       }
       if (child.entity?.canDeactivate) {
@@ -187,11 +231,11 @@ export class TransformComponent
   }
 
   public destroy(): void {
-    if (!(this.lifeCycle & LifeCycleFlags.Propagate)) {
+    if (!(this.lifeCycle & LifeCyclePropagate)) {
       return
     }
     for (const child of this.children) {
-      if (!(child.lifeCycle & LifeCycleFlags.Receive)) {
+      if (!(child.lifeCycle & LifeCycleInherit)) {
         continue
       }
       child.entity.destroy()
@@ -199,7 +243,7 @@ export class TransformComponent
   }
 
   protected override handleParentChange(parent: this, oldParent: this): void {
-    if (!(this.lifeCycle & LifeCycleFlags.Receive)) {
+    if (!(this.lifeCycle & LifeCycleInherit)) {
       return
     }
     if (!this.entity) {
