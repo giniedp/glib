@@ -33,6 +33,7 @@ export class DistributionComponent implements GameComponent {
 
   public data: DistributionData | null = null
   public batch: DistributionBatch | null = null
+  public isLoaded: boolean
 
   private scheduler: SchedulerSystem
   private content: ContentService
@@ -81,10 +82,14 @@ export class DistributionComponent implements GameComponent {
         return true
       },
       finalize: (task, err) => {
+        const isCancelled = err instanceof TaskCancelledError
+
         if (this.task === task) {
           this.task = null
+          this.isLoaded = !isCancelled
         }
-        if (err && !(err instanceof TaskCancelledError)) {
+
+        if (err && !isCancelled) {
           console.warn(...this.logTag, 'not loaded', err)
         }
       },

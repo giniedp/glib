@@ -13,7 +13,7 @@ import {
 } from '@gglib/graphics'
 import { type Mat4, mat4CreateRotationX, type IVec3, type IVec4 } from '@gglib/math'
 import { ShapeMaterial } from '../../material/ShapeMaterial'
-import type { DebugShapeType } from './DebugShapeComponent'
+import type { DebugShapeGeometry, DebugShapeType } from './DebugShapeComponent'
 
 export const instanceLayout = bufferLayout([
   { name: 'transform', type: 'mat4x4f' },
@@ -28,9 +28,9 @@ export class DebugMesh extends Mesh {
     return this.materials[0] as ShapeMaterial
   }
 
-  public constructor(device: Device, type: DebugShapeType, solid: boolean) {
+  public constructor(device: Device, type: DebugShapeType, solid: boolean, geometry?: DebugShapeGeometry) {
     super(device, {
-      geometries: [createShapeGeometry(device, type, solid)],
+      geometries: [geometry ? geometry.create(device, solid) : createShapeGeometry(device, type, solid)],
       materials: [new ShapeMaterial(device, { properties: {} })],
       parts: [{ geometryIndex: 0, materialIndex: 0 }],
     })

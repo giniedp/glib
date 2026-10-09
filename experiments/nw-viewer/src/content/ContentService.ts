@@ -5,6 +5,7 @@ import { Model } from '@gglib/model'
 import { addItemIfAbsent, type Type } from '@gglib/utils'
 import { fetchTypedRequest, type TypedRequest, type ViewerSlice } from '../api'
 import { PARTIAL_TEXTURE_SIZE, PARTIAL_TEXTURES } from '../constants'
+import { RnrAssetType, type RnrAsset } from '../formats/rnr'
 
 // Global engine texture keys
 export const Noise3DKey = Symbol('noise3d')
@@ -144,6 +145,17 @@ export class ContentService extends GameSystem {
     })
     this.modelCache.set(source.url, result)
     return result
+  }
+
+  /**
+   * Loads a RockNRoll `.rnr` collision shape asset, cached by the content loader
+   *
+   * @param url - file path relative to the nwbt file root
+   */
+  public loadCollisionShape(url: string): Promise<RnrAsset> {
+    return this.loader.load(RnrAssetType, url, {
+      baseUrl: this.nwbtFileUrl,
+    })
   }
 
   public loadTexture(url: string) {

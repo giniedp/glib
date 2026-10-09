@@ -185,6 +185,8 @@ export interface RegionMaterialLayer {
 // Runtime data
 // ---------------------------------------------------------------------------
 
+export type Vec3Data = [number, number, number]
+
 /** Column-major 4×4 matrix, stored as a flat array of 16 numbers. */
 export type Mat4Data = [
   number,
@@ -209,6 +211,17 @@ export interface AssetReference {
   guid: string
   subId: number
   hint?: string
+  /**
+   * Lower case slice variant, the slice is keyed by `${guid}_${subId}_${variant}`
+   */
+  variant?: string
+}
+
+/**
+ * Key of the referenced slice in RegionCapitalsData.slices
+ */
+export function assetReferenceKey(ref: AssetReference) {
+  return ref.variant ? `${ref.guid}_${ref.subId}_${ref.variant}` : `${ref.guid}_${ref.subId}`
 }
 
 export interface CapitalRuntimeData {
@@ -227,6 +240,12 @@ export interface ChunkRuntimeData {
   /** 0: static, 1: mesh, 2: collision */
   chunkType?: number
   slice: AssetReference
+}
+
+export const ChunkType = {
+  Static: 0,
+  Mesh: 1,
+  Collision: 2,
 }
 
 export interface RegionCapitalsData {
@@ -345,6 +364,8 @@ export const PrefabSpawnerComponentName = 'PrefabSpawner' as const
 export const AreaSpawnerComponentName = 'AreaSpawner' as const
 export const LightComponentName = 'Light' as const
 export const TimeOfDayComponentName = 'TimeOfDay' as const
+export const ColliderComponentName = 'Collider' as const
+export const VolumeComponentName = 'Volume' as const
 
 export const ComponentTypes = {
   MeshComponentName,
@@ -354,6 +375,8 @@ export const ComponentTypes = {
   AreaSpawnerComponentName,
   LightComponentName,
   TimeOfDayComponentName,
+  ColliderComponentName,
+  VolumeComponentName,
 }
 
 export type ComponentType =
@@ -362,6 +385,8 @@ export type ComponentType =
   | typeof PointSpawnerComponentName
   | typeof PrefabSpawnerComponentName
   | typeof AreaSpawnerComponentName
+  | typeof ColliderComponentName
+  | typeof VolumeComponentName
 
 export interface ViewerBaseComponent {
   type: ComponentType
@@ -391,6 +416,10 @@ export interface ViewerMeshComponent extends ViewerBaseComponent {
   visibilityOccluder?: boolean
   useVisAreas?: boolean
   useManualViewDistance?: boolean
+  /**
+   * The mesh is baked into the POI impostor of its cell (m_impostorFarDistance in region.slicedata)
+   */
+  impostor?: boolean
 }
 
 export interface ViewerSpawnerComponent extends ViewerBaseComponent {
@@ -515,4 +544,72 @@ export function isViewerLightComponent(component: any): component is ViewerLight
 
 export function isTimeOfDayComponent(component: any): component is ViewerTimeOfDayComponent {
   return component.type === ComponentTypes.TimeOfDayComponentName
+}
+
+/**
+ * Primitive shape in entity space (Z-up), see nwbt ViewerShape
+ */
+export interface ViewerShape {
+  kind: 'box' | 'sphere' | 'capsule' | 'cylinder' | 'prism'
+  /**
+   * Offset of the shape center in entity space
+   */
+  center?: Vec3Data
+  /**
+   * box: half extents
+   */
+  halfExtents?: Vec3Data
+  /**
+   * sphere, capsule, cylinder
+   */
+  radius?: number
+  /**
+   * capsule: length of the segment between the cap centers, cylinder: full height along Z, prism: extrusion height
+   */
+  height?: number
+  /**
+   * capsule: segment direction, Z if omitted
+   */
+  axis?: Vec3Data
+  /**
+   * prism: polygon in the XY plane, extruded along Z from 0 to height
+   */
+  vertices?: Array<[number, number]>
+}
+
+/**
+ * Collision of a rigid body, either a RockNRoll shape asset or a primitive
+ */
+export interface ViewerColliderComponent extends ViewerBaseComponent {
+  type: typeof ColliderComponentName
+  /**
+   * File path of the .rnr shape asset
+   */
+  rnr?: string
+  shape?: ViewerShape
+  /**
+   * Collision filter, e.g. Structure, CharacterOnly
+   */
+  filter?: string
+  dynamic?: boolean
+  scaleShapes?: boolean
+}
+
+/**
+ * Query or trigger volume without collision response
+ */
+export interface ViewerVolumeComponent extends ViewerBaseComponent {
+  type: typeof VolumeComponentName
+  volume: 'hit' | 'detection' | 'trigger'
+  shape: ViewerShape
+  filter?: string
+  name?: string
+}
+
+export function isViewerColliderComponent(component: any): component is ViewerColliderComponent {
+  return component.type === ComponentTypes.ColliderComponentName
+}
+
+export function isViewerVolumeComponent(component: any): component is ViewerVolumeComponent {
+  return component.type === ComponentTypes.VolumeComponentName
 }

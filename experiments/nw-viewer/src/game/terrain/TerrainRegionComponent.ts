@@ -64,15 +64,19 @@ export class TerrainRegionComponent implements GameComponent {
 
   public heightmap: Float16Array
   public heightmapTask: ScheduledTask | null
+  public heightmapReady: boolean
 
   public watermap: Float16Array
   public watermapTask: ScheduledTask | null
+  public watermapReady: boolean
 
   public baseMaterial: TerrainCompositeMaterial
   public baseMaterialTask: ScheduledTask | null
+  public baseMaterialReady: boolean
 
   public layerMaterials: TerrainCompositeMaterial[]
   public layerMaterialsTask: ScheduledTask | null
+  public layerMaterialsReady: boolean
 
   public materialVersion: number = 0
   public materialData: RegionMaterial
@@ -85,6 +89,13 @@ export class TerrainRegionComponent implements GameComponent {
   public readonly leafSize: number
   public readonly maxLevel: number
   public readonly mountainHeight: number
+
+  /**
+   * Indicates whether all resources have been loaded
+   */
+  public get isLoaded() {
+    return this.heightmapReady && this.watermapReady && this.baseMaterialReady && this.layerMaterialsReady
+  }
 
   private frustum: BoundingFrustum = new BoundingFrustum()
   private requiredQuads = new Set<TerraQuad>()

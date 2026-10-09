@@ -1,5 +1,5 @@
 import { type CreateEntityOptions, type GameComponent, type GameEntity } from '@gglib/ecs'
-import { vec3 } from '@gglib/math'
+import { vec3, vec3$multiplyScalar } from '@gglib/math'
 
 import { TransformComponent } from '@gglib/components'
 import type { LevelInfo, RegionLocation } from '../../api'
@@ -26,6 +26,9 @@ export class LevelComponent implements GameComponent {
 
   public sky: GameEntity
   public terrain: GameEntity
+  public get hasTerrain() {
+    return this.data.mountainHeight > 256
+  }
 
   public constructor(data: LevelInfo) {
     this.data = data
@@ -45,8 +48,7 @@ export class LevelComponent implements GameComponent {
   }
 
   private createTerrain() {
-    const hasTerrain = this.data.mountainHeight > 256
-    if (!hasTerrain) {
+    if (!this.hasTerrain) {
       return
     }
     this.entity.world.createEntity({
@@ -79,12 +81,13 @@ export class LevelComponent implements GameComponent {
       regionName: region.name,
       regionSize,
       cellSize,
-      origin: vec3(location[0] * regionSize, location[1] * regionSize, 0),
+      origin: vec3$multiplyScalar(vec3(location, 0), regionSize),
       mountainHeight: this.data.mountainHeight,
       oceanLevel: this.data.oceanLevel,
       enableDistribution: this.data.enableDistribution,
       enableVegetation: this.data.enableVegetation,
       enableChunks: this.data.enableChunks,
+      enableTerrain: this.hasTerrain,
     })
     this.entity.world.createEntity(options)
   }

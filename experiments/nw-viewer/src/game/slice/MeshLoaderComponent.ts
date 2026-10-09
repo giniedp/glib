@@ -23,7 +23,7 @@ import {
   type Mat4,
 } from '@gglib/math'
 import { Model } from '@gglib/model'
-import { brand, type EventType } from '@gglib/utils'
+import { brand, type Brand, type EventType } from '@gglib/utils'
 import type { ViewerMeshComponent } from '../../api'
 import { COMBINE_INSTANCE_ARRAYS, ENABLE_INSTANCED_LEVEL_OBJECTS } from '../../constants'
 import { ContentService } from '../../content'
@@ -32,7 +32,13 @@ import { DebugLayer, DebugShapeComponent } from '../debug/DebugShapeComponent'
 import { InstancedModelComponent } from '../instancing/InstancedModelComponent'
 import { InstancedRenderSystem } from '../instancing/InstancedRenderSystem'
 
-export type MeshLoadState = 'idle' | 'loading' | 'loaded' | 'failed'
+export type MeshLoadState = Brand<number, 'MeshLoad'>
+export const MeshLoadState = {
+  idle: brand<MeshLoadState>(0),
+  loading: brand<MeshLoadState>(1),
+  loaded: brand<MeshLoadState>(2),
+  failed: brand<MeshLoadState>(-1),
+}
 
 export class MeshLoaderComponent implements GameComponent {
   /**
@@ -56,7 +62,7 @@ export class MeshLoaderComponent implements GameComponent {
   /**
    * Load state of the model, failed loads are not retried until the next activation
    */
-  public state: MeshLoadState = 'idle'
+  public state: MeshLoadState = MeshLoadState.idle
   /**
    * Scheduler lane of the model load
    */
@@ -80,7 +86,7 @@ export class MeshLoaderComponent implements GameComponent {
       return
     }
 
-    this.state = 'loading'
+    this.state = MeshLoadState.loading
     this.task = this.scheduler.schedule<Model>({
       entity: this.entity,
       lane: this.lane,
@@ -176,14 +182,14 @@ export class MeshLoaderComponent implements GameComponent {
         }
 
         if (!err) {
-          this.state = 'loaded'
+          this.state = MeshLoadState.loaded
           this.isLoaded = true
           this.entity.events.emit(MeshLoaderComponent.onLoad, this.entity)
         } else if (err instanceof TaskCancelledError) {
-          this.state = 'idle'
+          this.state = MeshLoadState.idle
           //
         } else {
-          this.state = 'failed'
+          this.state = MeshLoadState.failed
           this.entity.events.emit(MeshLoaderComponent.onError, this.entity)
         }
       },

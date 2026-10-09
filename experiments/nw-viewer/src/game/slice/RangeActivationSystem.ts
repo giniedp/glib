@@ -60,11 +60,12 @@ export class RangeActivationSystem extends GameSystem {
   /**
    * Registers an entity for range activation. The entity is expected to be inactive.
    */
-  public add(entity: GameEntity, position: IVec3, range: number) {
+  public add(entity: GameEntity, range: number) {
     if (!(range > 0)) {
       return
     }
     range = Math.min(range, RANGE_CLASS_MAX)
+    const position = mat4GetTranslation(entity.getTransform().world, vec3.$0)
     const index = Math.max(0, Math.ceil(Math.log2(range)) - this.minExponent)
     this.grids[Math.min(index, this.grids.length - 1)].add(entity, position.x, position.y, position.z, range)
   }

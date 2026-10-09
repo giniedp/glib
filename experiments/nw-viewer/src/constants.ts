@@ -160,7 +160,16 @@ export const VEGETATION_FADE_RANGE = 24
  */
 export const CHUNK_MESH_RANGE = IMPOSTOR_VISIBILITY_START + IMPOSTOR_FADE_RANGE
 /**
- * Mesh chunk sizes whose loading holds their cell's POI impostor (see RegionImpostorComponent cell state).
- * Chunks of other sizes are activated with their cell but do not delay it.
+ * Mesh chunk sizes whose meshes hold their cell's POI impostor (see RegionImpostorComponent cell state).
+ * Chunk meshes have no impostor flag (see ViewerMeshComponent.impostor), the large chunks hold the far visible meshes.
  */
-export const IMPOSTOR_HOLD_CHUNK_SIZES: number[] = [128]
+export const IMPOSTOR_HOLD_CHUNK_SIZES: number[] = [128, 64, 32]
+
+/**
+ * Collision shape assets are loaded for debug display within this distance of the camera
+ */
+export const COLLISION_DEBUG_RANGE = 128
+/**
+ * Maximum number of collision shape assets that load at the same time
+ */
+export const COLLISION_LOAD_CONCURRENCY = 32

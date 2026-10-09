@@ -35,7 +35,9 @@ import { redrawUi } from 'tweak-ui'
 import { getLevelListUrl } from './api'
 import { REGION_SIZE } from './constants'
 import { ContentService } from './content'
+import { registerRnr } from './formats/rnr'
 import { CapitalSystem } from './game/capital/CapitalSystem'
+import { CollisionSystem } from './game/collision/CollisionSystem'
 import { DebugLayer, DebugShapeComponent } from './game/debug/DebugShapeComponent'
 import { DebugShapeSystem } from './game/debug/DebugShapeSystem'
 import { RaycastSystem, type RaySelection } from './game/debug/RaycastSystem'
@@ -125,6 +127,7 @@ export class NwViewer extends EcsGame {
     this.world.addSystem(new InstancedRenderSystem())
     this.world.addSystem(new CapitalSystem())
     this.world.addSystem(new SliceSystem())
+    this.world.addSystem(new CollisionSystem())
     this.world.addSystem(new RangeActivationSystem())
     this.world.addSystem(new SkyLightSystem())
     this.world.addSystem(new LightSystem())
@@ -151,6 +154,7 @@ export class NwViewer extends EcsGame {
     this.content.registerLoader(GLTF.Loader)
     this.content.registerLoader(DDS.Loader)
     this.content.registerLoader(HDR.Loader)
+    registerRnr(this.content)
 
     this.scheduler = this.world.getSystem(SchedulerSystem)
 

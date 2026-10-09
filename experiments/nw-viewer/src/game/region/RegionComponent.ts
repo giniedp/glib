@@ -11,26 +11,36 @@ import {
   type ScheduledTask,
 } from '@gglib/components'
 import { GetComponent, type CreateEntityOptions, type GameComponent, type GameEntity, type Type } from '@gglib/ecs'
-import { mat4CreateTranslation, vec3, vec3AddScalar, vec3Copy, type IVec3 } from '@gglib/math'
+import {
+  mat4CreateFromArray,
+  mat4CreateTranslation,
+  mat4Invert,
+  mat4Multiply,
+  vec3,
+  vec3AddScalar,
+  vec3Copy,
+  type IVec3,
+  type Mat4,
+} from '@gglib/math'
 
+import { Color } from '@gglib/graphics'
 import { lfmt } from '@gglib/utils'
 import {
+  assetReferenceKey,
+  ChunkType,
   getRegionCapitalsUrl,
   getRegionInfoUrl,
+  isViewerMeshComponent,
+  isViewerPointSpawnerComponent,
+  isViewerPrefabSpawnerComponent,
+  type AssetReference,
   type CapitalRuntimeData,
   type ChunkRuntimeData,
   type RegionCapitalsData,
   type RegionImpostor,
   type RegionInfo,
 } from '../../api'
-import {
-  ENABLE_CAPITALS,
-  ENABLE_CHUNKS,
-  ENABLE_DISTRIBUTION,
-  ENABLE_IMPOSTOR_POI,
-  ENABLE_IMPOSTOR_VEG,
-  ENABLE_VEGETATION,
-} from '../../constants'
+import { ENABLE_CAPITALS, ENABLE_CHUNKS, ENABLE_IMPOSTOR_POI, ENABLE_IMPOSTOR_VEG } from '../../constants'
 import { ContentService } from '../../content'
 import { DistributionComponent } from '../distribution/DistributionComponent'
 import {
@@ -53,6 +63,7 @@ export interface RegionComponentOptions {
   enableDistribution: boolean
   enableVegetation: boolean
   enableChunks: boolean
+  enableTerrain: boolean
 }
 
 export function regionEntityOptions(parent: GameEntity, options: RegionComponentOptions): CreateEntityOptions {
@@ -64,7 +75,7 @@ export function regionEntityOptions(parent: GameEntity, options: RegionComponent
     parent,
     transform: new TransformComponent({
       world: mat4CreateTranslation(options.origin),
-      lifeCycle: LifeCycleFlags.Propagate, // is controlled by RegionSystem
+      lifeCycle: LifeCycleFlags.PropagateOnly, // is controlled by RegionSystem
       keepWorld: true,
     }),
     components: [
@@ -111,10 +122,13 @@ export class RegionComponent implements GameComponent {
   public readonly enableDistribution: boolean
   public readonly enableVegetation: boolean
   public readonly enableChunks: boolean
+  public readonly enableTerrain: boolean
+
   /**
    * POI impostor cells by local cell index
    */
-  private poiCells = new Map<number, RegionImpostorComponent>()
+  private poiImpostor: Record<number, RegionImpostorComponent> = {}
+  private impostor: Record<number, RegionImpostorComponent> = {}
 
   private scheduler: SchedulerSystem
   private content: ContentService
@@ -127,13 +141,33 @@ export class RegionComponent implements GameComponent {
 
   public regionInfo: RegionInfo | null
   public regionInfoTask: ScheduledTask | null
+  public regionInfoLoaded: boolean
 
   public capitalData: RegionCapitalsData | null
   public capitalDataTask: ScheduledTask | null
+  public capitalDataLoaded: boolean
+
+  public get isLoaded() {
+    return this.regionInfoLoaded && this.capitalDataLoaded
+  }
+
   private capitalLayers: Record<string, GameEntity> = {}
 
   public slices: SliceSpawnerComponent[] = []
   private logTag = lfmt.badge('#4E79A7', 'RegionComponent')
+
+  public get debugColor() {
+    if (this.regionInfoTask) {
+      return Color.Red
+    }
+    if (this.capitalDataTask) {
+      return Color.DarkRed
+    }
+    if (this.entity.isActive) {
+      return Color.White
+    }
+    return Color.Black
+  }
 
   public constructor(data: RegionComponentOptions) {
     this.logTag = lfmt.merge(this.logTag, lfmt.badge('#BAB0AC', `${data.regionName}`))
@@ -143,9 +177,10 @@ export class RegionComponent implements GameComponent {
     this.cellSize = data.cellSize
     this.oceanLevel = data.oceanLevel
     this.mountainHeight = data.mountainHeight
-    this.enableDistribution = data.enableDistribution
-    this.enableVegetation = data.enableVegetation
-    this.enableChunks = !!data.enableChunks
+    this.enableDistribution = !!data.enableDistribution // && ENABLE_DISTRIBUTION
+    this.enableVegetation = !!data.enableVegetation // && ENABLE_VEGETATION
+    this.enableChunks = !!data.enableChunks // && ENABLE_CHUNKS
+    this.enableTerrain = !!data.enableTerrain
     this.min = vec3Copy(data.origin)
     this.max = vec3AddScalar(data.origin, data.regionSize)
   }
@@ -182,7 +217,7 @@ export class RegionComponent implements GameComponent {
       ],
     })
 
-    if (ENABLE_DISTRIBUTION && this.enableDistribution) {
+    if (this.enableDistribution) {
       this.distribution = this.entity.world.createEntity({
         name: 'Distribution',
         parent: this.entity,
@@ -202,7 +237,7 @@ export class RegionComponent implements GameComponent {
       })
     }
 
-    if (ENABLE_VEGETATION && this.enableVegetation) {
+    if (this.enableVegetation) {
       this.vegetation = this.entity.world.createEntity({
         name: 'Vegetation',
         parent: this.entity,
@@ -226,7 +261,7 @@ export class RegionComponent implements GameComponent {
   }
 
   public activate(): void {
-    this.loadRegionInfo()
+    //
   }
 
   public deactivate(): void {
@@ -241,8 +276,13 @@ export class RegionComponent implements GameComponent {
     }
   }
 
-  private loadRegionInfo() {
-    if (this.regionInfo || this.regionInfoTask) {
+  public poiImpostorAt(x: number, y: number): RegionImpostorComponent | null {
+    return this.poiImpostor[this.cellIndex(x, y)] || null
+  }
+
+  // #region Tasks
+  public loadRegionInfo() {
+    if (this.regionInfo || this.regionInfoTask || this.regionInfoLoaded) {
       return
     }
     console.log(...this.logTag, 'Loading info')
@@ -266,13 +306,10 @@ export class RegionComponent implements GameComponent {
         return true
       },
       finalize: (task, err) => {
-        if (this.regionInfoTask !== task) {
-          return
-        }
-        this.regionInfoTask = null
-
-        if (err instanceof TaskCancelledError) {
-          return
+        const isCancelled = err instanceof TaskCancelledError
+        if (this.regionInfoTask === task) {
+          this.regionInfoLoaded = !isCancelled
+          this.regionInfoTask = null
         }
 
         this.loadCapitalData()
@@ -280,10 +317,11 @@ export class RegionComponent implements GameComponent {
     })
   }
 
-  private loadCapitalData() {
-    if (this.capitalData || this.capitalDataTask) {
+  public loadCapitalData() {
+    if (this.capitalData || this.capitalDataTask || this.capitalDataLoaded) {
       return
     }
+
     console.log(...this.logTag, `Loading capitals`)
     this.capitalDataTask = this.scheduler.schedule<RegionCapitalsData>({
       lane: PriorityLane.High,
@@ -307,13 +345,17 @@ export class RegionComponent implements GameComponent {
         return true
       },
       finalize: (task, err) => {
+        const isCancelled = err instanceof TaskCancelledError
         if (this.capitalDataTask === task) {
+          this.capitalDataLoaded = !isCancelled
           this.capitalDataTask = null
         }
       },
     })
   }
+  // #endregion
 
+  // #region createImpostor
   private createImpostorLayers(data: RegionInfo) {
     if (ENABLE_IMPOSTOR_VEG) {
       this.createImpostorLayer(data.impostors, false)
@@ -323,22 +365,27 @@ export class RegionComponent implements GameComponent {
     }
   }
 
-  private createImpostorLayer(impostor: RegionImpostor[], isPOI: boolean) {
+  private createImpostorLayer(impostor: RegionImpostor[], isPoi: boolean) {
     if (!impostor) {
       return
     }
     for (const item of impostor) {
-      const options = impostorEntityOptions(this.impostors, {
-        name: item.model,
-        model: item.model,
-        origin: vec3(item.position.x, item.position.y, 0),
-        regionSize: this.regionSize,
-        cellSize: this.cellSize,
-        isPOI,
-      })
-      const entity = this.entity.world.createEntity(options)
-      if (isPOI) {
-        this.poiCells.set(this.cellIndex(item.position.x, item.position.y), entity.component(RegionImpostorComponent))
+      const entity = this.entity.world.createEntity(
+        impostorEntityOptions(this.impostors, {
+          name: item.model,
+          model: item.model,
+          origin: vec3(item.position.x, item.position.y, 0),
+          regionSize: this.regionSize,
+          cellSize: this.cellSize,
+          isPoi,
+        }),
+      )
+      const index = this.cellIndex(item.position.x, item.position.y)
+      const impostor = entity.component(RegionImpostorComponent)
+      if (isPoi) {
+        this.poiImpostor[index] = impostor
+      } else {
+        this.impostor[index] = impostor
       }
     }
   }
@@ -349,15 +396,10 @@ export class RegionComponent implements GameComponent {
     const iy = Math.floor((y - this.min.y) / this.cellSize)
     return ix + iy * count
   }
+  // #endregion
 
-  /**
-   * The POI impostor cell at a world position, if the cell has a POI impostor
-   */
-  public poiCellAt(x: number, y: number): RegionImpostorComponent | null {
-    return this.poiCells.get(this.cellIndex(x, y)) || null
-  }
-
-  public createCapitals(layers: Record<string, CapitalRuntimeData[]>) {
+  // #region createCapitals
+  private createCapitals(layers: Record<string, CapitalRuntimeData[]>) {
     if (!layers) {
       return
     }
@@ -366,37 +408,74 @@ export class RegionComponent implements GameComponent {
       for (const item of layers[key]) {
         const options = capitalSliceEntityOptions(parent, item)
         const entity = this.entity.world.createEntity(options)
-        this.slices.push(entity.component(SliceSpawnerComponent))
+        const spawner = entity.component(SliceSpawnerComponent)
+        this.slices.push(spawner)
+        // cells with impostor meshes of the capital spawn it when they start loading
+        const cells = new Set<RegionImpostorComponent>()
+        this.collectImpostorCells(item.slice, mat4CreateFromArray(item.transform), cells, 0)
+        for (const cell of cells) {
+          cell.slices.push(spawner)
+        }
       }
     }
   }
 
-  public createChunks(layers: Record<string, ChunkRuntimeData[]>) {
+  /**
+   * Collects the POI cells of the impostor meshes of a slice and its nested slices
+   *
+   * @param world - world transform of the slice spawner
+   */
+  private collectImpostorCells(ref: AssetReference, world: Mat4, cells: Set<RegionImpostorComponent>, depth: number) {
+    const slice = this.content.slices.get(assetReferenceKey(ref))
+    if (!slice?.entities || depth > 8) {
+      return
+    }
+    // see SliceSpawnerComponent.spawn
+    const parent = slice.transform ? mat4Multiply(world, mat4Invert(mat4CreateFromArray(slice.transform))) : world
+    for (const entity of slice.entities) {
+      let entityWorld: Mat4 = null
+      for (const comp of entity.components) {
+        if (isViewerMeshComponent(comp) && comp.impostor) {
+          entityWorld ??= mat4Multiply(parent, mat4CreateFromArray(entity.transform))
+          const cell = this.poiImpostorAt(entityWorld[12], entityWorld[13])
+          if (cell) {
+            cells.add(cell)
+          }
+        } else if (isViewerPrefabSpawnerComponent(comp) || isViewerPointSpawnerComponent(comp)) {
+          entityWorld ??= mat4Multiply(parent, mat4CreateFromArray(entity.transform))
+          this.collectImpostorCells(comp.slice, entityWorld, cells, depth + 1)
+        }
+      }
+    }
+  }
+  // #endregion
+
+  // #region createChunks
+  private createChunks(layers: Record<string, ChunkRuntimeData[]>) {
     if (!layers) {
       return
     }
     for (const key in layers) {
       const parent = this.getCapitalLayerEntity(key)
       for (const item of layers[key]) {
-        if (item.chunkType === 2) {
-          // collision chunks have no entities
-          continue
-        }
-        // chunks that fit into one impostor cell are spawned by that cell
+        // chunks that fit into one impostor cell are spawned by that cell.
+        // Collision chunks are spawned by the SliceSystem, only while collision is shown.
+        const isCollision = item.chunkType === ChunkType.Collision
         const cell =
-          this.enableChunks && item.size <= this.cellSize
-            ? this.poiCellAt(item.transform[12], item.transform[13])
+          this.enableChunks && !isCollision && item.size <= this.cellSize
+            ? this.poiImpostorAt(item.transform[12], item.transform[13])
             : null
         const options = chunkSliceEntityOptions(parent, item, cell)
         const entity = this.entity.world.createEntity(options)
         const spawner = entity.component(SliceSpawnerComponent)
         this.slices.push(spawner)
         if (cell) {
-          cell.chunks.push(spawner)
+          cell.slices.push(spawner)
         }
       }
     }
   }
+  // #endregion
 
   private getCapitalLayerEntity(layer: string) {
     console.assert(!!layer, 'Layer name is required')

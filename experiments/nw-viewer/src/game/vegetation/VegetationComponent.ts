@@ -29,13 +29,13 @@ export class VegetationComponent implements GameComponent {
   public data: RegionVegetationData | null = null
   public file: VegetationFile | null = null
   public batch: VegetationBatch | null = null
+  public isLoaded = false
 
   private scheduler: SchedulerSystem
   private content: ContentService
   private task: ScheduledTask | null = null
   private groupTasks = new Map<VegetationGroup, ScheduledTask>()
   private logTag = lfmt.badge('#8CD17D', 'Vegetation')
-  private isLoaded = false
 
   public constructor(options: VegetationComponentOptions) {
     this.options = options
@@ -84,11 +84,14 @@ export class VegetationComponent implements GameComponent {
         return true
       },
       finalize: (task, err) => {
+        const isCancelled = err instanceof TaskCancelledError
+
         if (this.task === task) {
           this.task = null
-          this.isLoaded = true
+          this.isLoaded = !isCancelled
         }
-        if (err && !(err instanceof TaskCancelledError)) {
+
+        if (err && !isCancelled) {
           console.warn(...this.logTag, 'not loaded', err)
         }
       },

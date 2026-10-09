@@ -181,9 +181,11 @@ export class TerrainSystem extends GameSystem {
     }
     const material = region.materialData
     if (!material) {
+      region.baseMaterialReady = true
       return
     }
     region.baseMaterialTask = loadBaseMaterial(this.content, this.scheduler, material, (result) => {
+      region.baseMaterialReady = true
       region.baseMaterialTask = null
       region.baseMaterial = result
       this.syncMacroTextures(region)
@@ -197,9 +199,11 @@ export class TerrainSystem extends GameSystem {
     }
     const material = region.materialData
     if (!material) {
+      region.layerMaterialsReady = true
       return
     }
     region.layerMaterialsTask = loadLayerMaterials(this.content, this.scheduler, material, (result) => {
+      region.layerMaterialsReady = true
       region.layerMaterialsTask = null
       region.layerMaterials = result || []
       this.syncMacroTextures(region)
@@ -236,6 +240,7 @@ export class TerrainSystem extends GameSystem {
       region.coatlicueName,
       region.regionName,
       (result) => {
+        region.heightmapReady = true
         region.heightmapTask = null
         region.heightmap = result || new Float16Array(region.size * region.size)
       },
@@ -252,6 +257,7 @@ export class TerrainSystem extends GameSystem {
       region.coatlicueName,
       region.regionName,
       (result) => {
+        region.watermapReady = true
         region.watermapTask = null
         region.watermap = result || new Float16Array(region.size * region.size)
       },

@@ -1,7 +1,25 @@
 import type { GameComponent, GameEntity } from '@gglib/ecs'
+import type { Device, Geometry } from '@gglib/graphics'
 import { mat4CreateFromRTS, vec4, type IVec3, type IVec4, type Mat4 } from '@gglib/math'
 
-export type DebugShapeType = 'bounds-box' | 'bounds-sphere' | 'box' | 'sphere' | 'plane' | 'cylinder' | 'cone' | 'disc'
+export type DebugShapeType =
+  | 'bounds-box'
+  | 'bounds-sphere'
+  | 'box'
+  | 'sphere'
+  | 'plane'
+  | 'cylinder'
+  | 'cone'
+  | 'disc'
+  | 'custom'
+
+/**
+ * Geometry of a custom debug shape. All entries with the same key share one geometry and are drawn instanced.
+ */
+export interface DebugShapeGeometry {
+  key: string
+  create: (device: Device, solid: boolean) => Geometry
+}
 
 export type DebugLayer = number
 export const DebugLayer = {
@@ -17,10 +35,16 @@ export const DebugLayer = {
   LightArea: 1 << 9,
   LightProbe: 1 << 10,
   TimeOfDay: 1 << 11,
+  Collision: 1 << 12,
+  CollisionVolume: 1 << 13,
 }
 
 export interface DebugShapeOptions {
   type: DebugShapeType
+  /**
+   * Required for the custom type
+   */
+  geometry?: DebugShapeGeometry
   layer?: DebugLayer
 
   translation?: IVec3
@@ -38,6 +62,7 @@ export interface DebugShapeOptions {
 
 export interface DebugShapeEntry {
   type: DebugShapeType
+  geometry?: DebugShapeGeometry
   transforms: Mat4[]
   solid: boolean
   color: IVec4
@@ -91,6 +116,7 @@ export class DebugShapeComponent implements GameComponent {
       layer: options?.layer ?? DebugLayer.Selection,
       visibleIf: options?.visibleIf,
       type: options?.type ?? 'bounds-box',
+      geometry: options?.geometry,
       boundsBox: options?.type === 'bounds-box',
       boundsSphere: options?.type === 'bounds-sphere',
       transforms: options.instances,

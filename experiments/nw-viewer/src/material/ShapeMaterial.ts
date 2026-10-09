@@ -42,7 +42,7 @@ export class ShapeMaterial extends MaterialWithSchema(Schema) {
     this.isTransparent = true
     this.effect.blendState = BlendState.Alpha
     this.effect.cullState = CullState.None
-    this.effect.depthState = DepthState.GreaterNoWrite
+    this.effect.depthState = DepthState.GreaterEqualNoWrite
   }
 
   public instances() {

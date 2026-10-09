@@ -12,7 +12,7 @@ import {
   mat4Identity,
 } from '@gglib/math'
 import { DebugMesh } from './DebugMesh'
-import { DebugLayer, DebugShapeComponent, type DebugShapeEntry, type DebugShapeType } from './DebugShapeComponent'
+import { DebugLayer, DebugShapeComponent, type DebugShapeEntry } from './DebugShapeComponent'
 import { DebugShapeRenderComponent } from './DebugShapeRenderComponent'
 
 const tmp1 = mat4Identity()
@@ -92,7 +92,7 @@ export class DebugShapeSystem extends GameSystem {
   }
 
   private writeShapeInstance(root: DebugShapeRenderComponent, ref: DebugShapeEntry, world: Mat4) {
-    const shape = this.getShape(root, ref.type, ref.solid)
+    const shape = this.getShape(root, ref)
     const mesh = shape.mesh
     mesh.startInstance(mesh.getInstanceCount() + 1)
     mesh.writeTransform(world)
@@ -139,8 +139,9 @@ export class DebugShapeSystem extends GameSystem {
     }
   }
 
-  private getShape(root: DebugShapeRenderComponent, type: DebugShapeType, solid: boolean): MeshComponent<DebugMesh> {
-    const key = `${type}:${solid}`
+  private getShape(root: DebugShapeRenderComponent, ref: DebugShapeEntry): MeshComponent<DebugMesh> {
+    const { type, solid, geometry } = ref
+    const key = geometry ? `custom:${geometry.key}:${solid}` : `${type}:${solid}`
 
     if (key in root.shapes) {
       return root.shapes[key]
@@ -148,7 +149,7 @@ export class DebugShapeSystem extends GameSystem {
 
     const component = new MeshComponent<DebugMesh>()
     const device = this.world.getSystem(Device)
-    component.mesh = new DebugMesh(device, type, solid)
+    component.mesh = new DebugMesh(device, type, solid, geometry)
     this.world.createEntity({
       parent: root.entity,
       transform: new TransformComponent({
