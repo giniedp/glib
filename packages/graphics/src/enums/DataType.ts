@@ -3,7 +3,7 @@ import { GLConst as gl } from './GLConst'
 export type DataType = 'int8' | 'uint8' | 'int16' | 'uint16' | 'int32' | 'uint32' | 'float32' | 'float16'
 export type DataTypeViewWriter = (view: DataView, byteOffset: number, value: number) => void
 export type DataTypeViewReader = (view: DataView, byteOffset: number) => number
-export type VertexType = Exclude<GPUVertexFormat, 'unorm10-10-10-2' | 'unorm8x4-bgra'>
+export type VertexType = Exclude<GPUVertexFormat, 'unorm10-10-10-2'>
 
 const dataTypeViewWriterMap: Record<DataType, DataTypeViewWriter> = {
   int8: (view, bo, v) => view.setInt8(bo, v),
@@ -283,7 +283,7 @@ const vertexFormats: Record<VertexType, Readonly<DataElementFormat>> = {
   unorm8: { elementType: 'uint8', elementCount: 1, normalized: true },
   unorm8x2: { elementType: 'uint8', elementCount: 2, normalized: true },
   unorm8x4: { elementType: 'uint8', elementCount: 4, normalized: true },
-  // 'unorm8x4-bgra': { elementType: 'uint8', elementCount: 4, normalized: true },
+  'unorm8x4-bgra': { elementType: 'uint8', elementCount: 4, normalized: true },
 } satisfies Record<string, DataElementFormat>
 
 export function vertexTypeFromDataFormat(format: DataElementFormat): VertexType {
