@@ -158,9 +158,15 @@ export class LightSystem extends GameSystem {
         out.type = 'area'
         out.width = config.areaWidth
         out.height = config.areaHeight
+        // the area FOV is the frustum half angle (LightInstance: m_fLightFrustumAngle = m_areaFOV),
+        // the tiled shading uses cos(areaFOV) for the spot falloff (D3DTiledShading.cpp)
         const fov = config.areaFOV || 0
-        if (fov > 0 && fov < 180) {
-          out.coneAngle = fov * 0.5 * DEGREE_TO_RAD
+        if (fov > 0) {
+          out.coneAngle = fov * DEGREE_TO_RAD
+        }
+        // rectangular area lights use the rectangle size as attenuation bulb
+        if (out.width && out.height && fov) {
+          out.bulbSize = (out.width + out.height) * 0.25
         }
         return true
       }

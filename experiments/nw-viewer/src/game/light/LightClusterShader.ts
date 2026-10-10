@@ -233,10 +233,10 @@ export class LightClusterShader {
         type = LIGHT_TYPE_AREA
         halfW = Math.max((light.width || 0) * 0.5, 0.001)
         halfH = Math.max((light.height || 0) * 0.5, 0.001)
+        // spot falloff of the emission (GetSpotAttenuation), no falloff at 90 degrees and above (cos <= 0)
         const halfAngle = light.coneAngle || 0
-        if (halfAngle > 0 && halfAngle < Math.PI * 0.5) {
+        if (halfAngle > 0) {
           cosOuter = Math.cos(halfAngle)
-          cosInner = Math.cos(light.coneAngleInner ?? halfAngle * 0.8)
         }
         boundsR = range + Math.sqrt(halfW * halfW + halfH * halfH)
         break

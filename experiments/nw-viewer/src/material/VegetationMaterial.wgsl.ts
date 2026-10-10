@@ -579,6 +579,8 @@ fn fs_main(input: FragmentInput) -> FragmentOutput {
 
   // -- Compose final color ---------------------------------------------------
   var color = albedo + specular + emittance;
+  // opaque surfaces write full alpha, the alpha tested edges would otherwise leak through to the canvas
+  alpha = select(1.0, alpha, material.enabledAlphaBlend == TRUE);
 
   var out: FragmentOutput;
   out.color = applyFog(color, alpha, input.worldPos, view.cameraPosition);
