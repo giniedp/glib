@@ -9,6 +9,7 @@ struct SunShaftsParams {
   // xy = sun position in screen uv (top left origin), w = sign, sun direction dot camera forward
   sunPos      : vec4f,
   // x = radial step (PI_sunShaftsParams.x), y = rays attenuation (PI_sunShaftsParams.y)
+  // z = jitter of the sample offsets in steps (0 = none), not in the original
   shafts      : vec4f,
   // x = 1 / far (normalizes linear depth), y = aspect ratio correction (1.333 * height / width)
   // zw = size of the full resolution inputs
@@ -62,7 +63,11 @@ fn fs_main(in: FragmentInput) -> @location(0) vec4f {
 `
 
 /**
- * SunShaftsGenPS: radial blur of the mask towards the sun, 8 taps with linear falloff
+ * SunShaftsGenPS: radial blur of the mask towards the sun, 8 taps with linear falloff.
+ *
+ * Not in the original: the sample offsets can be jittered per pixel (params.shafts.z) with interleaved gradient
+ * noise. The first pass takes large steps, which shows as bands. Jittering it turns the bands into noise that the
+ * second, narrow pass blurs away, at no extra taps.
  */
 export const SUN_SHAFTS_GEN_WGSL = /* wgsl */ `
 ${FULLSCREEN_WGSL_VS}
@@ -79,10 +84,13 @@ fn fs_main(in: FragmentInput) -> @location(0) vec4f {
   let sunDist = saturate(fSign) * saturate(1.0 - saturate(length(sunVec * vec2f(1.0, params.screen.y)) * params.shafts.y));
   let sunDir = (sunPosProj - in.uv) * params.shafts.x * fSign;
 
-  var accum = textureSampleLevel(maskMap, maskSampler, in.uv, 0.0);
+  // interleaved gradient noise (Jimenez 2014), offsets all taps by up to one step towards the sun
+  let jitter = fract(52.9829189 * fract(dot(floor(in.position.xy), vec2f(0.06711056, 0.00583715)))) * params.shafts.z;
+
+  var accum = textureSampleLevel(maskMap, maskSampler, in.uv + sunDir * jitter, 0.0);
   for (var i = 1; i < 8; i++) {
     let w = 1.0 - f32(i) / 8.0;
-    accum += textureSampleLevel(maskMap, maskSampler, in.uv + sunDir * f32(i), 0.0) * w;
+    accum += textureSampleLevel(maskMap, maskSampler, in.uv + sunDir * (f32(i) + jitter), 0.0) * w;
   }
   accum /= 8.0;
 

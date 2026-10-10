@@ -30,6 +30,11 @@ const APPLY_BLEND = BlendState.get({
 const SUN_VISIBILITY_THRESHOLD = 0.25
 
 /**
+ * Per pixel jitter of the first blur pass in steps, hides the banding of its large steps (not in the original)
+ */
+const SHAFTS_JITTER = 1
+
+/**
  * Sun shafts post process, port of CSunShafts (PostProcessSunShafts.cpp, SunShafts.cfx).
  *
  * - {@link generate}: mask from the HDR scene and depth at half resolution, then two radial blur passes
@@ -99,9 +104,11 @@ export class SunShaftsPass {
     this.source = frame.read(RenderChannel.Color)
     this.depth = frame.read(RenderChannel.LinearDepth)
 
+    // 8 bit like BackBufferScaled_d2 in the game (R8G8B8A8_UNORM in GPA captures): the mask and both blur passes
+    // are clamped to [0, 1]. A float target lets the HDR brightness around the sun accumulate and white out the image.
     this.texDesc ||= {
       type: '2d',
-      format: 'rgba16float',
+      format: 'rgba8unorm',
       width: 1,
       height: 1,
       depth: 1,
@@ -141,11 +148,13 @@ export class SunShaftsPass {
       this.draw(ctx, program, this.texShafts)
     }
 
-    // big radius, project until end of screen
+    // big radius, project until end of screen. Jittered, the second pass smooths the noise.
     this.shafts[0] = 0.1
+    this.shafts[2] = SHAFTS_JITTER
     this.blur(ctx, this.texShafts, this.texPingPong)
     // interpolate between projections
     this.shafts[0] = 0.025
+    this.shafts[2] = 0
     this.blur(ctx, this.texPingPong, this.texShafts)
     pass.flush()
   }
