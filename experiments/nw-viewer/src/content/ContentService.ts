@@ -23,7 +23,8 @@ export class ContentService extends GameSystem {
 
   private modelCache = new Map<string, Promise<Model>>()
 
-  public nwbtUrl: string = ''
+  // empty: same origin (vite proxy), otherwise the nwbt server directly, e.g. https://localhost:8443 for HTTP/2
+  public nwbtUrl: string = import.meta.env.VITE_NWBT_URL ?? ''
 
   public get nwbtFileUrl() {
     return `${this.nwbtUrl}/files/`
@@ -49,7 +50,7 @@ export class ContentService extends GameSystem {
   public initialize(world: GameWorld): void {
     this.device = world.getSystem(Device)
     this.loader = world.getSystem(ContentLoader)
-    this.loader.executor = new BoundedAsyncExecutor(10)
+    this.loader.executor = new BoundedAsyncExecutor(20)
 
     if (PARTIAL_TEXTURES) {
       const resolve = this.loader.uriResolver
