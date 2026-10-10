@@ -307,7 +307,7 @@ export class Renderer {
     list.begin(mode, ctx.view, ctx.renderInputs.blocks, this.instances)
     this.collectors.begin(ctx, list)
     for (const item of ctx.view.items) {
-      if (!(item.flags & mode.mask)) {
+      if (!mode.accepts(item.flags, item.layer)) {
         continue
       }
       this.collectors.add(item)

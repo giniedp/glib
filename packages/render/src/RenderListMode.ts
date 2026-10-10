@@ -91,7 +91,25 @@ export function compareSortKey(aHi: number, aLo: number, bHi: number, bLo: numbe
 }
 
 /**
+ * Layer filter of a {@link RenderListMode}
+ */
+export interface RenderListLayers {
+  /**
+   * Only items with a layer that intersects this mask are listed. Defaults to all layers.
+   */
+  includeLayers?: number
+  /**
+   * Items with a layer that intersects this mask are skipped. Defaults to none.
+   */
+  excludeLayers?: number
+}
+
+/**
  * Defines the sorting andfilter behavior for render items in a render pass.
+ *
+ * @remarks
+ * Each mode instance has its own render list. Passes that split one kind of items (e.g. transparent) into
+ * separate lists use modes with disjoint layer filters.
  */
 export class RenderListMode {
   public static Opaque = new RenderListMode(RenderSortPriority.State, RenderItemFlags.Opaque)
@@ -100,11 +118,22 @@ export class RenderListMode {
 
   public readonly mask: RenderItemFlags
   public readonly priority: RenderSortPriority
+  public readonly includeLayers: number
+  public readonly excludeLayers: number
 
-  public constructor(priority: RenderSortPriority, mask: RenderItemFlags) {
+  public constructor(priority: RenderSortPriority, mask: RenderItemFlags, layers?: RenderListLayers) {
     this.mask = mask
     this.priority = priority
+    this.includeLayers = layers?.includeLayers ?? Number.MAX_SAFE_INTEGER
+    this.excludeLayers = layers?.excludeLayers ?? 0
     this.getKey = this.buildKeyFn(mask, priority)
+  }
+
+  /**
+   * Whether an item with the given flags and layer belongs to this list
+   */
+  public accepts(flags: number, layer: number): boolean {
+    return !!(flags & this.mask) && !!(layer & this.includeLayers) && !(layer & this.excludeLayers)
   }
 
   /**
