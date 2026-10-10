@@ -58,6 +58,16 @@ export const PARTIAL_TEXTURES = false
  */
 export const PARTIAL_TEXTURE_SIZE = 256
 /**
+ * Size of the merged material textures (`merge=true&size=N`), same as the `--texture-size` of nwbt (pnpm dev:nwbt)
+ * that it uses for the textures of its glTF files
+ */
+export const MATERIAL_TEXTURE_SIZE = 1024
+/**
+ * Loads materials from the original `.mtl` files instead of the nwbt converted `<file>.mtl.glb`.
+ * Currently used for road, river and water volume materials, see tmp/cgf-models/plan.md
+ */
+export const USE_MTL_LOADER = true
+/**
  * Renders meshes with an instance array (InstancedMeshComponent) with GPU culling and indirect draws.
  * Disabled: indirect draws are expensive per call and level objects have few instances per draw.
  * Measured at x=5500 y=600: all level objects 82ms vs 37ms, instance arrays only 25ms vs 16.8ms (median frame).

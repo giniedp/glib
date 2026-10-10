@@ -1,22 +1,7 @@
 import type { AcquireTextureOptions, Texture, TextureOptions } from '@gglib/graphics'
 import type { GLTF } from '@gglib/loaders'
-import { DistanceCloudsMaterial } from './DistanceCloudsMaterial'
-import { FxMeshAdvancedMaterial } from './FxMeshAdvancedMaterial'
-import { FxMeshAdvancedTranspMaterial } from './FxMeshAdvancedTranspMaterial'
-import { GeometryBeamMaterial } from './GeometryBeamMaterial'
-import { GeometryBeamSimpleMaterial } from './GeometryBeamSimpleMaterial'
-import { GeometryFogMaterial } from './GeometryfogMaterial'
-import { GlassMaterial } from './GlassMaterial'
-import { IllumMaterial } from './IllumMaterial'
-import { MeshparticleMaterial } from './MeshparticleMaterial'
-import { NowDrawMaterial } from './NoDrawMaterial'
-import { ParticleImposterMaterial } from './ParticleImposterMaterial'
-import { TerrainCompositeMaterial } from './TerrainCompositeMaterial'
 import type { TexMod } from './TexMod'
-import { UnknownMaterial } from './UnknownMaterial'
-import { VegetationMaterial } from './VegetationMaterial'
-import { WaterPatchMaterial } from './WaterPatchMaterial'
-import { WaterVolumeMaterial } from './WaterVolumeMaterial'
+import { nwMaterialFactory } from './nwMaterial'
 
 export interface NwMaterialExtensionData {
   attrs: NwMaterialAttrs
@@ -141,79 +126,7 @@ export const NwMaterialExtension: GLTF.GltfMaterialExtension = {
         }
       })
     })
-    const shaderName = data.attrs.Shader?.toLocaleLowerCase()
-    // console.count(shaderName)
-    switch (shaderName) {
-      case 'terraintilecomposite': {
-        node.data.factory = (device, asset) => new TerrainCompositeMaterial(device, asset)
-        break
-      }
-      case 'illum': {
-        node.data.factory = (device, asset) => new IllumMaterial(device, asset)
-        break
-      }
-      case 'glass': {
-        node.data.factory = (device, asset) => new GlassMaterial(device, asset)
-        break
-      }
-      case 'nodraw': {
-        node.data.factory = (device) => new NowDrawMaterial(device)
-        break
-      }
-      case 'fxmeshadvanced': {
-        node.data.factory = (device, asset) => new FxMeshAdvancedMaterial(device, asset)
-        break
-      }
-      case 'fxmeshadvancedtransp': {
-        node.data.factory = (device, asset) => new FxMeshAdvancedTranspMaterial(device, asset)
-        break
-      }
-      case 'geometrybeam': {
-        node.data.factory = (device, asset) => new GeometryBeamMaterial(device, asset)
-        break
-      }
-      case 'geometrybeamsimple': {
-        node.data.factory = (device, asset) => new GeometryBeamSimpleMaterial(device, asset)
-        break
-      }
-      case 'geometryfog':
-      case 'geometryfognovertalpha': {
-        node.data.factory = (device, asset) => new GeometryFogMaterial(device, asset)
-        break
-      }
-      case 'vegetation': {
-        node.data.factory = (device, asset) => new VegetationMaterial(device, asset)
-        break
-      }
-      case 'distanceclouds': {
-        node.data.factory = (device, options) => new DistanceCloudsMaterial(device, options)
-        break
-      }
-      case 'meshparticle': {
-        node.data.factory = (device, options) => new MeshparticleMaterial(device, options)
-        break
-      }
-      case 'particleimposter': {
-        node.data.factory = (device, options) => new ParticleImposterMaterial(device, options)
-        break
-      }
-      case 'water': {
-        node.data.factory = (device, options) => new WaterPatchMaterial(device, options)
-        break
-      }
-      case 'watervolume': {
-        node.data.factory = (device, options) => new WaterVolumeMaterial(device, options)
-        break
-      }
-      default: {
-        console.warn('Unknown shader', data.attrs.Shader, data.attrs.StringGenMask)
-        node.data.factory = (device, asset) => new UnknownMaterial(device, { properties: {} })
-      }
-    }
-
-    if (!node.data.factory) {
-      node.data.factory = (device, asset) => new IllumMaterial(device, asset)
-    }
+    node.data.factory = nwMaterialFactory(data.attrs.Shader, data.attrs.StringGenMask)
   },
 }
 

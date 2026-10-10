@@ -254,6 +254,14 @@ function modelSource(modelFile: string, materialFile: string, rootUrl: string): 
   }
 }
 
+/**
+ * Normalizes a game asset path like nwbt does (lowercase, forward slashes, no leading slash),
+ * so that differently spelled references share the same content cache entry
+ */
+export function normalizeAssetPath(path: string) {
+  return path.trim().toLowerCase().replace(/\\/g, '/').replace(/\/{2,}/g, '/').replace(/^\//, '')
+}
+
 function extName(url: string) {
   const path = new URL(url, location.origin).pathname
   const index = path.lastIndexOf('.')

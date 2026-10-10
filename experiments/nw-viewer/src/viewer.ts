@@ -35,6 +35,7 @@ import { redrawUi } from 'tweak-ui'
 import { getLevelListUrl } from './api'
 import { REGION_SIZE } from './constants'
 import { ContentService } from './content'
+import { registerMtl } from './formats/mtl'
 import { registerRnr } from './formats/rnr'
 import { CapitalSystem } from './game/capital/CapitalSystem'
 import { CollisionSystem } from './game/collision/CollisionSystem'
@@ -158,6 +159,7 @@ export class NwViewer extends EcsGame {
     this.content.registerLoader(DDS.Loader)
     this.content.registerLoader(HDR.Loader)
     registerRnr(this.content)
+    registerMtl(this.content)
 
     this.scheduler = this.world.getSystem(SchedulerSystem)
 
