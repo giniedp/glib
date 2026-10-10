@@ -12,6 +12,9 @@ const LIGHT_TYPE_SPOT:        u32 = 3u;
 const LIGHT_TYPE_AREA:        u32 = 4u;
 // added to the type of ambient only lights, they multiply the ambient lighting (TiledShading.cfi)
 const LIGHT_TYPE_AMBIENT:     u32 = 8u;
+// gbuffer lighting models (LIGHTINGMODEL_* in the deferred shading)
+const LIGHTINGMODEL_STANDARD:      u32 = 0u;
+const LIGHTINGMODEL_TRANSMITTANCE: u32 = 1u;
 const FLOAT_EPSILON = 1e-10;
 const MIN_ROUGHNESS = 0.05;// 0.001;
 
@@ -365,6 +368,7 @@ struct SurfaceParams {
   Specular      : vec3f,
   Roughness     : f32,
   Normal        : vec4f,
+  LightingModel : u32, // LIGHTINGMODEL_*, zero initialized to standard
 };
 
 struct LightResult {
@@ -373,6 +377,7 @@ struct LightResult {
   specular  : vec3f,
   falloff   : f32,
   specularDirection: vec3f, // optional direction for specular (area lights), zero if unused
+  specularNormalization: f32, // area lights: GGX energy normalization of the representative point, zero if unused
 };
 
 struct FragmentOutput {
@@ -460,11 +465,14 @@ fn getClusterLight(light: Light, position: vec3f, reflectDir: vec3f) -> LightRes
     let toLight = pDiffuse - position;
     let dist = length(toLight);
     result.direction = toLight / max(dist, 1e-5);
-    result.falloff = getPhysicalLightAttenuation(dist, 1.0/range, max(bulb, min(halfW, halfH)));
+    result.falloff = getPhysicalLightAttenuation(dist, 1.0/range, bulb);
 
-    // optional emission cone (disabled when cos outer <= -1)
-    if (light.params.z > -1.0) {
-      result.falloff *= smoothstep(light.params.z, light.params.w, dot(-result.direction, dir));
+    // spot falloff of the emission (GetSpotAttenuation), no falloff when cos <= 0
+    let PdotL = dot(-result.direction, dir);
+    result.falloff *= 1.0 - pow(saturate(light.params.z / (PdotL + 1e-6)), range);
+    // the emitter is lambertian: NdotL * saturate(PdotL) (tiled shading), ambient area lights apply PdotL themselves
+    if (u32(light.direction.w) < LIGHT_TYPE_AMBIENT) {
+      result.falloff *= saturate(PdotL);
     }
 
     // specular: representative point where the reflection ray hits the light plane
@@ -476,7 +484,11 @@ fn getClusterLight(light: Light, position: vec3f, reflectDir: vec3f) -> LightRes
         pSpec = closestPointOnRect(position + reflectDir * t, center, axisX, axisY, halfW, halfH);
       }
     }
-    result.specularDirection = normalize(pSpec - position);
+    let toSpec = pSpec - position;
+    let specDist = max(length(toSpec), 1e-6);
+    result.specularDirection = toSpec / specDist;
+    // the roughness dependent part is applied in shadeLight (SphereNormalization)
+    result.specularNormalization = saturate(length(vec2f(halfW, halfH)) / specDist);
     return result;
   }
 
@@ -517,17 +529,28 @@ fn shadeLight(output: ptr<function, ShadeOutput>, surface: SurfaceParams, toEye:
 
   // area lights provide a separate representative direction for specular
   let Ls = select(L, light.specularDirection, dot(light.specularDirection, light.specularDirection) > 0.5);
-  let NdotLs = saturate(dot(normal, Ls));
-  let cSpecular = Kr * specularBRDF(roughness, normal, V, Ls, surface.Specular.rgb, 1.0);
+  // area lights: the representative point widens the lobe by the light size (SphereNormalization in AreaLightIntersection)
+  var specNorm = 1.0;
+  if (light.specularNormalization > 0.0) {
+    let normFactor = roughness / saturate(roughness + 0.5 * light.specularNormalization);
+    specNorm = normFactor * normFactor;
+  }
+  let cSpecular = Kr * specularBRDF(roughness, normal, V, Ls, surface.Specular.rgb, specNorm);
 
   let ck = vec3(1.0); // pLight.fOcclShadow * pLight.fFallOff * pLight.cFilter;
 
-  (*output).diffuse += cDiffuse * ck;
-  if (length(surface.Transmittance.rgb) > 0.0) {
+  if (surface.LightingModel == LIGHTINGMODEL_TRANSMITTANCE) {
+    // deferred tiled shading: translucent surfaces replace the diffuse term
+    (*output).diffuse += Kd * thinTranslucencyBRDF(normal, L, surface.Transmittance.rgb) * ck;
+  } else {
+    (*output).diffuse += cDiffuse * ck;
+  }
+  if (surface.LightingModel == LIGHTINGMODEL_STANDARD && length(surface.Transmittance.rgb) > 0.0) {
     let fTransmitance = pow(saturate(dot(-normal, L) * 0.6 + 0.4), 1 / (1 - surface.Transmittance.a));
     (*output).diffuse += fTransmitance * Kd * surface.Transmittance.rgb * ck;
   }
-  (*output).specular += cSpecular * ck * NdotLs;
+  // the tiled shading weights the specular with the diffuse NdotL (nearest point on area lights)
+  (*output).specular += cSpecular * ck * NdotL;
 }
 
 fn accumulateLight(lights: LightBlock, env: GlobalBlock, surface: SurfaceParams, toEye: vec3f, worldPos: vec3f) -> vec3f {
@@ -640,6 +663,16 @@ fn burleyBRDF(roughness: f32, NdotL: f32, NdotV: f32, VdotH: f32) -> f32 {
   let scatterV = mix(1, fd90, pow(1 - dotNV, 5));
 
   return scatterL * scatterV * energyFactor * NdotL;
+}
+
+// wrapped diffuse plus back lighting of thin translucent surfaces (ThinTranslucencyBRDF, deferred tiled shading)
+fn thinTranslucencyBRDF(N: vec3f, L: vec3f, transmittanceColor: vec3f) -> vec3f {
+  let w = mix(0.0, 0.5, getLuminance(transmittanceColor));
+  let wn = 1.0 / ((1.0 + w) * (1.0 + w));
+  let NdotL = dot(N, L);
+  let transmittance = saturate((-NdotL + w) * wn);
+  let diffuse = saturate((NdotL + w) * wn);
+  return transmittanceColor * transmittance + diffuse;
 }
 
 fn diffuseBRDF( roughness: f32, N: vec3f, V: vec3f, L: vec3f, NdotL: f32) -> f32 {

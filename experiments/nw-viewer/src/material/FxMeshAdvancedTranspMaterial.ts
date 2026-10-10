@@ -18,6 +18,7 @@ import SCHEMA from './FxMeshAdvancedTranspMaterial.meta'
 import WGSL from './FxMeshAdvancedTranspMaterial.wgsl'
 import type { NwMaterialProps } from './GltfExtension'
 import { TextureModifier } from './TexMod'
+import { MtlFlag } from './types'
 import { MtlUtil, paramValue, paramVec4 } from './utils'
 
 export function fxMeshAdvancedTranspShaderOptions(constants: Record<string, number>): ShaderModuleOptions {
@@ -143,6 +144,10 @@ export class FxMeshAdvancedTranspMaterial extends MaterialWithSchema(SCHEMA) {
     this.effect.cullState = CullState.CullBack
     this.effect.blendState = BlendState.Additive
     this.isTransparent = true
+    // a two sided material overrides the cull mode of the technique (D3DFXPipeline: MTL_FLAG_2SIDED, RBSI_LOCKCULL)
+    if (attrs.MtlFlags & MtlFlag.MTL_FLAG_2SIDED) {
+      this.effect.cullState = CullState.None
+    }
 
     this.layer = MaterialLayerMasks.FxMeshAdvanced
     this.setDefaults()

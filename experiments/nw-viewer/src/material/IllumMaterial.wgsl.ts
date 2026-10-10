@@ -428,9 +428,20 @@ fn fs_main(input: FragmentInput) -> FragmentOutput {
   // #endif
 
   var cShadingBack = vec3f(0.0);
+  var lightingModel = LIGHTINGMODEL_STANDARD;
   if (TRANSMITTANCE) {
     let cBackDiffuseMap = textureSample(opacityMap, samplerLinear, uvBase.xy).r;
-    cShadingBack = material.backDiffuseMultiplier * cBackDiffuseMap * material.transmittanceColor.rgb;
+    if (material.enabledAlphaBlend == TRUE) {
+      // forward shading (clusterforward_defaultlighting.cfi)
+      cShadingBack = material.backDiffuseMultiplier * cBackDiffuseMap * material.transmittanceColor.rgb;
+    } else {
+      // opaque surfaces go through the gbuffer (illum.cfx gbuffer attributes): the translucency is clamped,
+      // higher normal view dependency makes bumped normals less translucent, simulating thickness
+      let adjustedNormal = normalize(mix(normal, -tbn[2], material.normalViewDependency));
+      let fTranslucency = material.backDiffuseMultiplier * cBackDiffuseMap * dot(adjustedNormal, normal);
+      cShadingBack = saturate(fTranslucency) * material.transmittanceColor.rgb;
+      lightingModel = LIGHTINGMODEL_TRANSMITTANCE;
+    }
   }
 
   if (SPECULAR_MAP) {
@@ -440,6 +451,8 @@ fn fs_main(input: FragmentInput) -> FragmentOutput {
   // smoothness is served as a single channel texture (_ddna.dds.a)
   gloss    *= textureSample(smoothnessMap, samplerLinear, uvBase.xy).r;
 
+  // %VERTCOLORS: the vertex alpha is part of the blended alpha (fades e.g. water floor edges and road decal ends).
+  // It is not part of the alpha test, see below.
   if (VERTCOLORS) {
     alpha *= input.vertexColor.a;
   }
@@ -519,7 +532,9 @@ fn fs_main(input: FragmentInput) -> FragmentOutput {
   }
 
   // --- Alpha test (%_RT_ALPHATEST) --------------------------
-  if (material.enabledAlphaTest == TRUE && alpha < material.alphaTestRef) {
+  // tests the diffuse alpha only (cDiffuseMap.a in the original), not the vertex alpha or decal opacity:
+  // meshes may store other data in the vertex alpha, e.g. the cottage stairs have 0 there
+  if (material.enabledAlphaTest == TRUE && cDiffuseMap.a < material.alphaTestRef) {
     discard;
   }
 
@@ -583,8 +598,15 @@ fn fs_main(input: FragmentInput) -> FragmentOutput {
     ao = textureSample(occlusionMap, samplerLinear, uvBase.xy).r;
   }
 
+  // %VERTCOLORS tints the diffuse color only (fraglib.cfi: cDiffuseMap.rgb *= IN.Color.rgb before lighting).
+  // The vertex alpha is not part of the alpha (test), meshes may store other data in it.
+  if (VERTCOLORS) {
+    albedo *= input.vertexColor.rgb;
+  }
+
   var surface: SurfaceParams;
   surface.Transmittance = vec4f(cShadingBack.rgb, material.normalViewDependency);
+  surface.LightingModel = lightingModel;
   surface.Diffuse   = albedo;
   surface.Alpha     = alpha;
   surface.Specular  = specular;
