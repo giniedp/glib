@@ -1,7 +1,7 @@
 import { PriorityLane, SchedulerSystem, type ScheduledTask } from '@gglib/components'
 import type { Texture } from '@gglib/graphics'
 import type { RegionMaterial } from '../../../api'
-import type { ContentService } from '../../../content'
+import { materialAssetPath, type ContentService } from '../../../content'
 import type { TerrainCompositeMaterial } from '../../../material'
 import type { TerrainMacroMaps } from '../TerrainRegionComponent'
 
@@ -41,7 +41,7 @@ export function loadBaseMaterial(
       gloss = await content.loadTexture(data.specularMap)
       signal.throwIfAborted()
 
-      material = (await content.loader.loadMaterial(data.defaultMaterial + '.glb', {
+      material = (await content.loader.loadMaterial(materialAssetPath(data.defaultMaterial), {
         baseUrl: content.nwbtFileUrl,
         signal: signal,
       })) as TerrainCompositeMaterial

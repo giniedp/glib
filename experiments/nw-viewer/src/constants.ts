@@ -63,10 +63,13 @@ export const PARTIAL_TEXTURE_SIZE = 256
  */
 export const MATERIAL_TEXTURE_SIZE = 1024
 /**
- * Loads materials from the original `.mtl` files instead of the nwbt converted `<file>.mtl.glb`.
- * Currently used for road, river and water volume materials, see tmp/cgf-models/plan.md
+ * Requests the `.cgfheap` of a model only after its `.cgf` is parsed, and only if the file references heap data.
+ *
+ * Off: `.cgf` and `.cgfheap` are requested in parallel (one round trip). Files of the old format (inline vertex data,
+ * 0.7% of the files) have no heap, their heap request fails with 404.
+ * On: no heap request for those files, but one more round trip per model.
  */
-export const USE_MTL_LOADER = true
+export const CGF_HEAP_AFTER_PARSE = false
 /**
  * Renders meshes with an instance array (InstancedMeshComponent) with GPU culling and indirect draws.
  * Disabled: indirect draws are expensive per call and level objects have few instances per draw.

@@ -1,0 +1,146 @@
+/**
+ * Chunk types of CryEngine chunk files (`.cgf`, `.skin`), only those read by {@link parseCgf}
+ *
+ * @remarks
+ * See nw-buddy tools/nwbt/formats/cgf/types.go for the full list
+ */
+export const CgfChunkType = {
+  Mesh: 0x1000,
+  Helper: 0x1001,
+  Node: 0x100b,
+  MtlName: 0x1014,
+  DataStream: 0x1016,
+  MeshSubsets: 0x1017,
+  MeshPhysicsData: 0x1018,
+  DataRef: 0x300b,
+} as const
+
+/**
+ * Stream types of mesh chunks, the index into {@link CgfMesh.streams}
+ */
+export const CgfStreamType = {
+  Positions: 0,
+  Normals: 1,
+  TexCoords: 2,
+  Colors: 3,
+  Colors2: 4,
+  Indices: 5,
+  Tangents: 6,
+  ShCoeffs: 7,
+  ShapeDeformation: 8,
+  BoneMapping: 9,
+  FaceMap: 10,
+  VertMats: 11,
+  QTangents: 12,
+  SkinData: 13,
+  Dummy2: 14,
+  P3S_C4B_T2S: 15,
+} as const
+
+export interface CgfChunkHeader {
+  type: number
+  version: number
+  id: number
+  size: number
+  offset: number
+}
+
+/**
+ * A parsed chunk file
+ *
+ * @remarks
+ * Stream data is not copied, {@link CgfDataStream.data} views the buffer that was parsed
+ */
+export interface CgfFile {
+  version: number
+  chunks: CgfChunkHeader[]
+  nodes: CgfNode[]
+  meshes: Map<number, CgfMesh>
+  subsets: Map<number, CgfMeshSubset[]>
+  dataRefs: Map<number, CgfDataRef>
+  dataStreams: Map<number, CgfDataStream>
+  /**
+   * Material reference of the first non-empty MtlName chunk: an asset id or a file path, see {@link isAssetIdRef}
+   */
+  mtlRef: string | null
+}
+
+export interface CgfNode {
+  id: number
+  name: string
+  /**
+   * Chunk id of the object (mesh or helper chunk)
+   */
+  objectId: number
+  /**
+   * Chunk id of the parent node, -1 for root nodes
+   */
+  parentId: number
+  materialId: number
+  /**
+   * Local transform, row major as stored in the file (translation in elements 12-14), translation scaled to meters
+   */
+  transform: Float32Array
+  properties: string
+}
+
+export interface CgfMesh {
+  id: number
+  flags: number
+  flags2: number
+  vertexCount: number
+  indexCount: number
+  subsetCount: number
+  subsetsChunkId: number
+  /**
+   * Chunk ids (DataStream or DataRef) per stream type ({@link CgfStreamType}), 8 slots each, 0 for unused
+   */
+  streams: Int32Array[]
+  physicsDataChunkIds: Int32Array
+  bboxMin: [number, number, number]
+  bboxMax: [number, number, number]
+}
+
+export interface CgfMeshSubset {
+  firstIndex: number
+  numIndices: number
+  firstVertex: number
+  numVertices: number
+  materialId: number
+  radius: number
+  center: [number, number, number]
+}
+
+/**
+ * Reference to stream data in the `.cgfheap` file
+ */
+export interface CgfDataRef {
+  id: number
+  flags: number
+  index: number
+  /**
+   * Byte offset in the heap
+   */
+  offset: number
+  /**
+   * Byte size in the heap
+   */
+  size: number
+  /**
+   * Byte size of one element
+   */
+  stride: number
+}
+
+/**
+ * Stream data stored inline in the chunk file (old format)
+ */
+export interface CgfDataStream {
+  id: number
+  flags: number
+  streamType: number
+  streamIndex: number
+  elementCount: number
+  elementSize: number
+  data: Uint8Array
+}

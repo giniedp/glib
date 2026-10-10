@@ -7,7 +7,7 @@ import {
 } from '@gglib/content'
 import type { MaterialOptions, MaterialProperties, Texture } from '@gglib/graphics'
 import { MATERIAL_TEXTURE_SIZE } from '../../constants'
-import { normalizeAssetPath } from '../../content'
+import { isArchivePath, normalizeAssetPath, type AssetIdResolver } from '../../content/assetIds'
 import type { NwMaterialProps, TexMapName } from '../../material/GltfExtension'
 import { nwMaterialFactory } from '../../material/nwMaterial'
 import { parseMtl } from './parse'
@@ -27,6 +27,11 @@ export function registerMtl(content: ContentLoader) {
  * Loads New World (CryEngine) `.mtl` material files
  */
 export class MtlLoader implements AssetLoader {
+  /**
+   * Resolves texture asset ids, used for textures whose file path does not resolve. Set by the ContentService.
+   */
+  public static resolveAssetId: AssetIdResolver | null = null
+
   public static extensions = ['.mtl']
   public static mimeTypes: string[] = []
   public static create = () => new MtlLoader()
@@ -104,29 +109,49 @@ async function createMaterialOptions(material: MtlMaterial, context: LoadContext
 
 /**
  * Loads the texture of a material, or returns null if it does not resolve (as nwbt drops such textures)
+ *
+ * @remarks
+ * The file path is tried first. If it is no archive path (e.g. `C:/users/…` of the authoring machine) or does not load,
+ * the asset id is resolved like nwbt does (47 of 535k references need it).
  */
 async function loadMtlTexture(tex: MtlTexture, context: LoadContext): Promise<Texture | null> {
-  const file = mtlTextureFile(tex)
-  if (!file) {
+  if (isEngineTexture(tex)) {
     return null
   }
+  let file = mtlTextureFile(tex)
+  let texture = file ? await loadTextureFile(tex.Map, file, context) : null
+  if (!texture && tex.AssetId && MtlLoader.resolveAssetId) {
+    const resolved = await MtlLoader.resolveAssetId(tex.AssetId)
+    const resolvedFile = resolved ? mtlTextureFile({ ...tex, File: resolved }) : null
+    if (resolvedFile && resolvedFile !== file) {
+      file = resolvedFile
+      texture = await loadTextureFile(tex.Map, file, context)
+    }
+  }
+  if (!texture) {
+    console.warn('mtl texture not loaded', tex.File, tex.AssetId)
+  }
+  return texture
+}
+
+function loadTextureFile(map: TexMapName, file: string, context: LoadContext): Promise<Texture | null> {
   const load = (path: string) =>
     context.content.loadTexture(mtlTextureUrl(path), {
       baseUrl: context.baseUrl,
       color: 'linear',
       signal: context.signal,
     })
-  if (usesAttachedAlpha(tex.Map, file)) {
-    // smoothness is stored in the attached alpha of the normal map (_ddna.dds.a), see nwbt LoadOrStoreMtlTexture
-    const alpha = await load(`${file}.a.dds`).catch(() => null)
-    if (alpha) {
-      return alpha
-    }
-  }
-  return load(file).catch((err) => {
-    console.warn('mtl texture not loaded', file, err)
-    return null
-  })
+  // smoothness is stored in the attached alpha of the normal map (_ddna.dds.a), see nwbt LoadOrStoreMtlTexture
+  const alpha = usesAttachedAlpha(map, file) ? load(`${file}.a.dds`).catch(() => null) : Promise.resolve(null)
+  return alpha.then((it) => it || load(file).catch(() => null))
+}
+
+/**
+ * Whether the texture is bound by the engine at runtime: `$…` names and `nearest_cubemap` (TexType 7, nearest cube)
+ */
+function isEngineTexture(tex: MtlTexture) {
+  const file = tex.File || ''
+  return file.startsWith('$') || tex.TexType === NEAREST_CUBE || /^nearest_cubemap(.w+)?$/i.test(file)
 }
 
 /**
@@ -155,9 +180,9 @@ function usesAttachedAlpha(map: TexMapName, file: string) {
  * Asset id only references are not resolved, they are rare (47 of 535k references, mostly characters).
  */
 export function mtlTextureFile(tex: MtlTexture): string | null {
-  let file = tex.File
-  // `$…` names and `nearest_cubemap` (TexType 7, nearest cube) are bound by the engine at runtime
-  if (!file || file.startsWith('$') || tex.TexType === NEAREST_CUBE || /^nearest_cubemap(\.\w+)?$/i.test(file)) {
+  let file = tex.File?.trim()
+  // absolute paths of the authoring machine (e.g. `C:/users/…`) are not in the archive, only the asset id resolves them
+  if (!file || isEngineTexture(tex) || !isArchivePath(file)) {
     return null
   }
   file = normalizeAssetPath(file)

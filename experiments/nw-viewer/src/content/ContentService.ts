@@ -2,10 +2,17 @@ import { AssetType, BoundedAsyncExecutor, ContentLoader } from '@gglib/content'
 import { GameEntity, GameSystem, GameWorld } from '@gglib/ecs'
 import { Device, Material, Texture } from '@gglib/graphics'
 import { Model } from '@gglib/model'
-import { addItemIfAbsent, type Type } from '@gglib/utils'
 import { fetchTypedRequest, type TypedRequest, type ViewerSlice } from '../api'
 import { PARTIAL_TEXTURE_SIZE, PARTIAL_TEXTURES } from '../constants'
+import { CgfGeometryAssetType, isAssetIdRef } from '../formats/cgf'
+import { MtlLoader } from '../formats/mtl'
+import { createAssetIdResolver, normalizeAssetPath, type AssetIdResolver } from './assetIds'
 import { RnrAssetType, type RnrAsset } from '../formats/rnr'
+
+/**
+ * Material used when a model has none, same as nwbt (game/resolvers.go)
+ */
+const DEFAULT_MATERIAL = 'materials/references/base_colors/purple_trans_glowing.mtl'
 
 // Global engine texture keys
 export const Noise3DKey = Symbol('noise3d')
@@ -22,6 +29,11 @@ export class ContentService extends GameSystem {
   public device: Device
 
   private modelCache = new Map<string, Promise<Model>>()
+
+  /**
+   * Resolves asset ids with the nwbt catalog, see {@link createAssetIdResolver}
+   */
+  public resolveAssetId: AssetIdResolver
 
   // empty: same origin (vite proxy), otherwise the nwbt server directly, e.g. https://localhost:8443 for HTTP/2
   public nwbtUrl: string = import.meta.env.VITE_NWBT_URL ?? ''
@@ -51,6 +63,9 @@ export class ContentService extends GameSystem {
     this.device = world.getSystem(Device)
     this.loader = world.getSystem(ContentLoader)
     this.loader.executor = new BoundedAsyncExecutor(20)
+    this.resolveAssetId = createAssetIdResolver(this.loader, this.nwbtUrl)
+    // textures of .mtl files that only resolve by their asset id
+    MtlLoader.resolveAssetId = this.resolveAssetId
 
     if (PARTIAL_TEXTURES) {
       const resolve = this.loader.uriResolver
@@ -136,16 +151,126 @@ export class ContentService extends GameSystem {
     await Promise.all(loads.map((it) => it()))
   }
 
-  public loadModel(model: string, material: string) {
-    const source = modelSource(model, material, this.nwbtFileUrl)
-    if (this.modelCache.has(source.url)) {
-      return this.modelCache.get(source.url)
+  /**
+   * Loads a static model (`.cgf`) with its material
+   *
+   * @param model - path of the `.cgf` file
+   * @param material - path of the `.mtl` file (override), empty to use the material of the `.cgf` file
+   */
+  public loadModel(model: string, material: string): Promise<Model> {
+    if (!model || extName(model) !== '.cgf') {
+      return Promise.reject(new Error(`unsupported model type: ${model}`))
     }
-    const result = this.loader.loadModel(source.url, {
-      baseUrl: source.rootUrl,
+    return this.loadCgfModel(model, material)
+  }
+
+  /**
+   * Assembles a model from the original `.cgf` (+ `.cgfheap`) and `.mtl` files
+   *
+   * @remarks
+   * Geometry is loaded and uploaded once per `.cgf`, materials once per `.mtl` sub material.
+   * Each model+material pair gets its own (cheap) Model and Mesh objects that share them.
+   *
+   * Material precedence: the given material (override of the slice), else the material of the `.cgf` file,
+   * else the default material.
+   */
+  private loadCgfModel(model: string, material: string): Promise<Model> {
+    model = normalizeAssetPath(model)
+    material = material ? normalizeAssetPath(material) : ''
+    const key = `cgf:${model}|${material}`
+    if (!this.modelCache.has(key)) {
+      this.modelCache.set(key, this.assembleCgfModel(model, material))
+    }
+    return this.modelCache.get(key)
+  }
+
+  private async assembleCgfModel(model: string, override: string): Promise<Model> {
+    const geometryTask = this.loader.load(CgfGeometryAssetType, model, { baseUrl: this.nwbtFileUrl })
+    // the override is known upfront, load its xml along with the geometry
+    const overrideTask = override ? this.materialCount(override) : null
+    const geometry = await geometryTask
+    let material = override
+    let count = await overrideTask
+    if (!count) {
+      material = (await this.resolveCgfMaterial(model, geometry.mtlRef)) || DEFAULT_MATERIAL
+      count = await this.materialCount(material)
+    }
+    // models with and without override that end up with the same material share the Model
+    const key = `cgf:${model}|${material}`
+    if (override !== material && this.modelCache.has(key)) {
+      return this.modelCache.get(key)
+    }
+
+    // only the sub materials that are used by the subsets, an .mtl file often holds more
+    const used: number[] = []
+    const partMaterial = (id: number) => {
+      // like nwbt: material ids out of range use the first material
+      id = id >= 0 && id < count ? id : 0
+      if (!used.includes(id)) {
+        used.push(id)
+      }
+      return used.indexOf(id)
+    }
+    const parts = geometry.meshes.map((mesh) =>
+      mesh.materialIds.map((id, i) => ({ geometryIndex: i, materialIndex: partMaterial(id) })),
+    )
+    const materials = await Promise.all(
+      used.map((index) => this.loader.loadMaterial(material, { baseUrl: this.nwbtFileUrl, index })),
+    )
+
+    const result = this.loader.createModel({
+      name: model,
+      nodes: structuredClone(geometry.nodes),
+      scenes: [{ nodes: [...geometry.roots] }],
+      scene: 0,
+      meshes: geometry.meshes.map((mesh, i) => ({
+        name: mesh.name,
+        boundingBox: mesh.boundingBox,
+        geometries: mesh.geometries,
+        materials: materials,
+        parts: parts[i],
+      })),
     })
-    this.modelCache.set(source.url, result)
+    if (override !== material) {
+      this.modelCache.set(key, Promise.resolve(result))
+    }
     return result
+  }
+
+  /**
+   * Number of sub materials of an `.mtl` file, loads and parses the file (cached by the content loader)
+   */
+  private async materialCount(file: string): Promise<number> {
+    const container = await this.loader.loadContainer(file, { baseUrl: this.nwbtFileUrl })
+    const count = container.count(AssetType.Material)
+    if (!count) {
+      throw new Error(`no materials in ${file}`)
+    }
+    return count
+  }
+
+  /**
+   * Resolves the material reference of a `.cgf` file (MtlName chunk) to an `.mtl` path
+   *
+   * @remarks
+   * Paths resolve like nwbt `ResolveMtlFromCgf`: with a directory relative to the asset root, a plain file name relative
+   * to the directory of the `.cgf`. Asset ids are resolved by the nwbt catalog (one request per distinct id).
+   */
+  private resolveCgfMaterial(model: string, ref: string | null): Promise<string | null> {
+    if (!ref) {
+      return Promise.resolve(null)
+    }
+    if (!isAssetIdRef(ref)) {
+      let file = normalizeAssetPath(ref)
+      if (!file.includes('/')) {
+        file = model.slice(0, model.lastIndexOf('/') + 1) + file
+      }
+      if (!/\.[^./]+$/.test(file)) {
+        file += '.mtl'
+      }
+      return Promise.resolve(file)
+    }
+    return this.resolveAssetId(ref)
   }
 
   /**
@@ -191,75 +316,6 @@ export class ContentService extends GameSystem {
       }
     }
   }
-}
-
-export type ContentSchema = {
-  [key: string]: AssetSource
-}
-
-export type AssetSource<T extends Type<Texture> | Type<Material> | Type<Model> | unknown = unknown> = {
-  url: string
-  type: T
-}
-
-export interface ModelSource {
-  url: string
-  rootUrl?: string
-}
-const buckets: Record<string, string[]> = {}
-window['__nw_viewer_buckets'] = buckets
-function modelSource(modelFile: string, materialFile: string, rootUrl: string): ModelSource | null {
-  if (!modelFile) {
-    return null
-  }
-  switch (extName(modelFile)) {
-    case '.cgf':
-    case '.cdf':
-    case '.caf':
-    case '.dynamicslice':
-      modelFile = modelFile + '.glb'
-      break
-    case '.gtlf':
-    case '.glb':
-      // ok
-      break
-    default:
-      console.warn('Unknown model type', modelFile)
-      return null
-  }
-  if (!rootUrl.endsWith('/')) {
-    rootUrl = rootUrl + '/'
-  }
-  if (modelFile.startsWith('/')) {
-    modelFile = modelFile.substring(1)
-  }
-  if (materialFile) {
-    buckets[modelFile] = buckets[modelFile] || []
-    addItemIfAbsent(buckets[modelFile], materialFile)
-    if (modelFile.includes('?')) {
-      modelFile += `&material=${materialFile}`
-    } else {
-      modelFile += `?material=${materialFile}`
-    }
-  }
-  if (modelFile.includes('?')) {
-    modelFile += `&no-lod=1`
-  } else {
-    modelFile += `?no-lod=1`
-  }
-
-  return {
-    url: modelFile,
-    rootUrl: rootUrl,
-  }
-}
-
-/**
- * Normalizes a game asset path like nwbt does (lowercase, forward slashes, no leading slash),
- * so that differently spelled references share the same content cache entry
- */
-export function normalizeAssetPath(path: string) {
-  return path.trim().toLowerCase().replace(/\\/g, '/').replace(/\/{2,}/g, '/').replace(/^\//, '')
 }
 
 function extName(url: string) {

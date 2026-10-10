@@ -1,6 +1,6 @@
 import { PriorityLane, SchedulerSystem, type ScheduledTask } from '@gglib/components'
 import type { RegionMaterial } from '../../../api'
-import type { ContentService } from '../../../content'
+import { materialAssetPath, type ContentService } from '../../../content'
 import type { TerrainCompositeMaterial } from '../../../material'
 import type { TerrainMaterialLayer } from '../TerrainRegionComponent'
 
@@ -23,7 +23,7 @@ export function loadLayerMaterials(
 
         const splat = await content.loadTexture(layer.splatMap)
         // the material may be shared with other regions (loader cache), region state lives in the layer entry
-        const material = (await content.loader.loadMaterial(layer.material + '.glb', {
+        const material = (await content.loader.loadMaterial(materialAssetPath(layer.material), {
           baseUrl: content.nwbtFileUrl,
         })) as TerrainCompositeMaterial
 

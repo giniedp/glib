@@ -13,7 +13,7 @@ import {
 import { type GameEntity } from '@gglib/ecs'
 import { MouseListener } from '@gglib/game'
 import { Color, type DeviceStats } from '@gglib/graphics'
-import { DDS, GLTF, HDR } from '@gglib/loaders'
+import { DDS, HDR } from '@gglib/loaders'
 import {
   DEGREE_TO_RAD,
   mat4,
@@ -35,6 +35,7 @@ import { redrawUi } from 'tweak-ui'
 import { getLevelListUrl } from './api'
 import { REGION_SIZE } from './constants'
 import { ContentService } from './content'
+import { registerCgf } from './formats/cgf'
 import { registerMtl } from './formats/mtl'
 import { registerRnr } from './formats/rnr'
 import { CapitalSystem } from './game/capital/CapitalSystem'
@@ -54,7 +55,7 @@ import { RoadSystem } from './game/road/RoadSystem'
 import { TerrainSystem } from './game/terrain/TerrainSystem'
 import { VegetationSystem } from './game/vegetation/VegetationSystem'
 import { createRenderPipeline } from './graphics'
-import { InputSlots, MaterialLayerMasks, NwMaterialExtension, NwMaterialRefExtension } from './material'
+import { InputSlots, MaterialLayerMasks } from './material'
 import { attachOverlay } from './ui/overlay'
 
 export interface NwViewerOptions {
@@ -151,15 +152,11 @@ export class NwViewer extends EcsGame {
   protected override onInitialize(): void {
     super.onInitialize()
 
-    GLTF.Loader.registerExtension(NwMaterialExtension)
-    GLTF.Loader.registerExtension(NwMaterialRefExtension)
-    GLTF.Loader.registerExtension(GLTF.KhrMaterialsSpecular)
-
-    this.content.registerLoader(GLTF.Loader)
     this.content.registerLoader(DDS.Loader)
     this.content.registerLoader(HDR.Loader)
     registerRnr(this.content)
     registerMtl(this.content)
+    registerCgf(this.content)
 
     this.scheduler = this.world.getSystem(SchedulerSystem)
 

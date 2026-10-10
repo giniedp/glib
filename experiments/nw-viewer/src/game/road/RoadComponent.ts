@@ -13,8 +13,7 @@ import { Device, Mesh, type Material } from '@gglib/graphics'
 import { mat4Identity } from '@gglib/math'
 import { Model } from '@gglib/model'
 import type { ViewerRoadComponent } from '../../api'
-import { USE_MTL_LOADER } from '../../constants'
-import { ContentService, normalizeAssetPath } from '../../content'
+import { ContentService, materialAssetPath } from '../../content'
 import { buildRiverMesh, buildRoadMesh } from './RoadMesh'
 import { RoadSystem } from './RoadSystem'
 
@@ -137,15 +136,6 @@ export class RoadComponent implements GameComponent {
     this.child.layer = this.entity.layer
     this.state = 'built'
   }
-}
-
-/**
- * Asset path of a road, river or water volume material
- */
-export function materialAssetPath(material: string) {
-  // a few water materials are referenced without extension
-  const path = /\.mtl$/i.test(material) ? material : material + '.mtl'
-  return USE_MTL_LOADER ? normalizeAssetPath(path) : path + '.glb'
 }
 
 function buildRiver(data: ViewerRoadComponent, transform: ArrayLike<number>) {

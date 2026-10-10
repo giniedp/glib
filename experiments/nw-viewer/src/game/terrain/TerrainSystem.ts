@@ -20,7 +20,7 @@ import { removeItemUnordered } from '@gglib/utils'
 
 import type { LevelInfo } from '../../api'
 import { QUAD_TREE_LEAF_SIZE, TERRAIN_LOD_RANGE_FACTOR, VT_LOD_QUALITY, VT_MIP_COUNT } from '../../constants'
-import { ContentService } from '../../content'
+import { ContentService, materialAssetPath } from '../../content'
 import { WaterPatchMaterial, type OceanAnimationParams } from '../../material'
 import { DebugLayer, type DebugShapeEntry } from '../debug/DebugShapeComponent'
 import { DebugShapeSystem } from '../debug/DebugShapeSystem'
@@ -142,9 +142,7 @@ export class TerrainSystem extends GameSystem {
       return
     }
 
-    const mtlPath = materialName.toLowerCase().replace(/.mtl$/, '') + '.mtl'
-    const glbPath = mtlPath + '.glb'
-    const material = await this.content.loader.loadMaterial(glbPath, {
+    const material = await this.content.loader.loadMaterial(materialAssetPath(materialName), {
       baseUrl: this.content.nwbtFileUrl,
       signal: ctx.signal,
     })

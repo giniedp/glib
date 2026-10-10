@@ -124,6 +124,11 @@ describe('mtlTextureFile', () => {
     expect(mtlTextureFile({ Map: 'Environment', File: 'nearest_cubemap' })).toBeNull()
   })
 
+  it('rejects absolute paths of the authoring machine', () => {
+    expect(mtlTextureFile({ Map: 'Diffuse', File: 'C:/users/artist/desktop/temp/wood_diff.tif' })).toBeNull()
+    expect(mtlTextureFile({ Map: 'Diffuse', File: 'file:///c:/temp/wood_diff.tif' })).toBeNull()
+  })
+
   it('appends the extension if missing', () => {
     expect(mtlTextureFile({ Map: 'Diffuse', File: 'textures/foo' })).toBe('textures/foo.dds')
   })

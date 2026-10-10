@@ -14,7 +14,7 @@ import { mat4Identity } from '@gglib/math'
 import { Model } from '@gglib/model'
 import type { ViewerWaterVolumeComponent } from '../../api'
 import { ContentService } from '../../content'
-import { materialAssetPath } from '../road/RoadComponent'
+import { materialAssetPath } from '../../content'
 import { buildWaterVolumeMesh } from './WaterVolumeMesh'
 
 export type WaterVolumeState = 'idle' | 'loading' | 'built' | 'failed'
