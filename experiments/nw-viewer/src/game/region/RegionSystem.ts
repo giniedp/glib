@@ -152,10 +152,18 @@ function loadRegionData(regions: GameQuery) {
       // try next frame
       continue
     }
-    if (region.enableVegetation && !region.vegetation.$(VegetationComponent).isLoaded) {
-      // vegetation is still loading
-      // try next frame
-      continue
+    if (region.enableVegetation) {
+      const vegetation = region.vegetation.$(VegetationComponent)
+      if (!vegetation.isLoadRequested) {
+        vegetation.load()
+        continue
+      }
+
+      if (!vegetation.isLoaded) {
+        // vegetation is still loading
+        // try next frame
+        continue
+      }
     }
 
     if (!region.regionInfoLoaded) {
@@ -164,7 +172,7 @@ function loadRegionData(regions: GameQuery) {
     }
 
     if (!region.capitalDataLoaded) {
-      region.loadRegionInfo()
+      region.loadCapitalData()
       continue
     }
   }
