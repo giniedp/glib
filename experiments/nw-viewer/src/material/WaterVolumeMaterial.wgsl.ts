@@ -109,7 +109,8 @@ fn vsMain(input: VertexInput) -> Varyings {
 fn fsMain(in: Varyings) -> FragmentOutput {
   let mat     = material;
   let timeSec = frame.elapsedTime;
-  let sunDir  = normalize(global.sunDirection);
+  // global.sunDirection points away from the sun, PerFrame_SunDirection of the original towards it
+  let sunDir  = -normalize(global.sunDirection);
 
   let toEye = view.cameraPosition - in.worldPos;
   let dist  = length(toEye);

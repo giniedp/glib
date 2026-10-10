@@ -198,7 +198,8 @@ fn vs_main(input : VertexInput) -> FragmentInput {
     handedness *= flipN;
   }
   if (GRASS) {
-    output.frontLight = vec3f(saturate(dot(global.sunDirection.xyz, normal)));
+    // global.sunDirection points away from the sun (PerFrame_SunDirection towards it)
+    output.frontLight = vec3f(saturate(dot(-global.sunDirection.xyz, normal)));
   }
 
   output.color0 = vec4f(
