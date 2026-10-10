@@ -37,6 +37,7 @@ struct FogParams {
   fogScatteringColor             : vec4f,
   fogScatteringSecondaryColor    : vec4f,
   volFog2Ambient                 : vec4f,
+  volFog2Zenith                  : vec4f,
   // x = 1 when volumetric fog 2 is enabled
   volFog2Enabled                 : vec4f,
 };
@@ -86,6 +87,7 @@ fn computeFog(position: vec2f, depth: f32) -> vec4f {
     p.color1        = params.fogScatteringColor;
     p.color2        = params.fogScatteringSecondaryColor;
     p.ambient       = params.volFog2Ambient;
+    p.zenith        = params.volFog2Zenith;
     // in-scattering and transmittance, matches the blending dst = src.rgb + dst.rgb * src.a
     return volFog2Analytical(p, cameraToWorldPos, -params.sunDirection.xyz);
   }

@@ -169,6 +169,7 @@ export class SkyLightSystem extends GameSystem {
     inputs.set(InputSlots.Global.VolFog2Ramp, tod.volFog2Ramp)
     inputs.set(InputSlots.Global.VolFog2Scattering, tod.volFog2Scattering)
     inputs.set(InputSlots.Global.VolFog2Blend, tod.volFog2Blend)
+    inputs.set(InputSlots.Global.VolFog2Zenith, tod.volFog2Zenith)
     // no environment probes: the fog color of the time of day stands in for the probe in-scattering
     inputs.set(InputSlots.Global.VolFog2Ambient, tod.fogColGradBase)
     inputs.set(InputSlots.Global.VolFog2Enabled, ENABLE_VOLUMETRIC_FOG_2 ? 1 : 0)

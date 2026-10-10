@@ -42,10 +42,10 @@ export const ENABLE_VOLUMETRIC_FOG_2 = true
 /**
  * Scales the distance in the volumetric fog 2 (PerFrame_FogDistanceScale.x in the shader).
  *
- * TEMPORARY: the game renders thinner fog than the time of day parameters give with a scale of 1.
- * The source of the runtime value is unknown (not in the slices, possibly the weather system). Tuned by eye.
+ * 1 in all GPA captures. An earlier value of 0.5 was tuned by eye to compensate for the fog pass reconstructing
+ * its view rays with the camera entity transform instead of the inverse view matrix (fixed).
  */
-export const FOG_DISTANCE_SCALE = 0.5
+export const FOG_DISTANCE_SCALE = 1
 
 /**
  * Loads only the smaller mips of split DDS material textures instead of the merged texture (merge=partial in nwbt).

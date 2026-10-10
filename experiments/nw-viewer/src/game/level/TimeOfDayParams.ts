@@ -80,6 +80,9 @@ export const TodParams = {
   VOLFOG2_COLOR: color("Volumetric fog", "Color (entities)", "Volumetric fog 2: Fog albedo color (entities)", vec3(1.0)),
   VOLFOG2_ANISOTROPIC: value("Volumetric fog", "Anisotropy (entities)", "Volumetric fog 2: Anisotropy factor (entities)", 0.6, -1.0, 1.0),
   VOLFOG2_GLOBAL_FOG_VISIBILITY: value("Volumetric fog", "Analytical fog visibility", "Volumetric fog 2: Analytical volumetric fog visibility", 0.5, 0.0, 1.0),
+  // New World: fade the analytical fog towards the zenith (GetZenithFadeAmount in volumetricfog.cfi)
+  VOLFOG2_ZENITH_FADE_FACTOR: value("Volumetric fog", "Zenith fade factor", "Volumetric fog 2: Zenith Fade Factor", 0.0, 0.0, 1.0),
+  VOLFOG2_ZENITH_FADE_CURVE: value("Volumetric fog", "Zenith fade curve", "Volumetric fog 2: Zenith Fade Curve", 0.5, 0.0, 1.0),
   VOLFOG2_FINAL_DENSITY_CLAMP: value("Volumetric fog", "Final density clamp", "Volumetric fog 2: Final density clamp", 1.0, 0.0, 1.0),
 
   SKYLIGHT_SUN_INTENSITY: color("Sky Light", "Sun intensity", "Sky light: Sun intensity", vec3(1.0)),

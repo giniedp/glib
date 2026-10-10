@@ -139,10 +139,19 @@ fn vs_main(input: VertexInput) -> FragmentInput {
 
 @fragment
 fn fs_main(input: FragmentInput) -> FragmentOutput {
+  var out: FragmentOutput;
   if (ADVANCED) {
-    return psAdvanced(input);
+    out = psAdvanced(input);
+  } else {
+    out = psBasic(input);
   }
-  return psBasic(input);
+  if (global.debug == DEBUG_OFF) {
+    // The game draws the clouds after the (unfogged) sky and fogs both in the deferred fog pass at sky depth.
+    // The sky here is already fogged, fogging the cloud color the same way gives the same alpha blended result.
+    let fog = getSceneFog(farPlaneWorldPos(input.position.xy));
+    out.color = vec4f(out.color.rgb * fog.a + fog.rgb, out.color.a);
+  }
+  return out;
 }
 
 fn getCloudTexture(uv: vec2f, scaleOffset: vec4f) -> vec4f {

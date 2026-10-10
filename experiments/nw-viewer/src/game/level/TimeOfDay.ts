@@ -28,6 +28,12 @@ import type { LevelInfo, TimeOfDay as TimeOfDayData } from '../../api'
 import { FOG_DISTANCE_SCALE } from '../../constants'
 import type { ContentService } from '../../content'
 import { TodParams, type TodParam } from './TimeOfDayParams'
+
+/**
+ * Zenith fade curve exponent as observed in GPA captures (PerFrame_VolumetricFogDistributionParams.w),
+ * see TimeOfDay volFog2Zenith
+ */
+const ZENITH_FADE_CURVE_EXPONENT = 32.1111
 import { TimeOfDayPreset } from './TimeOfDayPreset'
 
 export type TimeOfDayLayer = {
@@ -110,6 +116,8 @@ export class TimeOfDay {
   public volFog2Ramp = vec4(0)
   public volFog2Scattering = vec4(0)
   public volFog2Blend = vec4(0)
+  // x = zenith fade factor, y = zenith fade curve (exponent), see VolFog2Params
+  public volFog2Zenith = vec4(0)
   public volFog2ScatteringColor = vec4(0)
   public volFog2ScatteringSecondaryColor = vec4(0)
   private volFog2Albedo = vec3()
@@ -671,8 +679,14 @@ export class TimeOfDay {
     // sGetVolumetricFogScatteringBlendParams
     this.volFog2Blend.x = this.getParamValue(TodParams.VOLFOG2_BLEND_FACTOR)
     this.volFog2Blend.y = this.getParamValue(TodParams.VOLFOG2_BLEND_MODE)
-    // PerFrame_FogDistanceScale.x, temporary constant until the runtime source is known
+    // PerFrame_FogDistanceScale.x, 1 in all GPA captures
     this.volFog2Blend.z = FOG_DISTANCE_SCALE
+
+    // PerFrame_VolumetricFogDistributionParams.xw (New World): zenith fade factor and curve.
+    // The engine maps the authored curve to an exponent on the CPU, every GPA capture shows 32.11 for the authored 0.56
+    // of the skybox preset. The mapping is unknown, so the observed exponent is used as long as fading is enabled.
+    this.volFog2Zenith.x = this.getParamValue(TodParams.VOLFOG2_ZENITH_FADE_FACTOR)
+    this.volFog2Zenith.y = ZENITH_FADE_CURVE_EXPONENT
 
     // sGetVolumetricFogScatteringColor / SecondaryColor: sun color * albedo, anisotropy of the sun radial lobe
     const k2 = clampAnisotropy(this.getParamValue(TodParams.VOLFOG2_ANISOTROPIC2))

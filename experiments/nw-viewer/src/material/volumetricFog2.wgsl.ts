@@ -6,7 +6,7 @@
  *
  * Parameters are computed like the sGetVolumetricFog* functions in D3DHWShader.cpp, see TimeOfDay.
  * The global environment probe in-scattering is replaced by a constant ambient color (no probes).
- * Not included: the zenith fade (zero in Lumberyard).
+ * Includes the New World zenith fade (GetZenithFadeAmount), which thins the fog when looking up.
  */
 export const VOLUMETRIC_FOG_2_WGSL = /* wgsl */ `
 struct VolFog2Params {
@@ -24,7 +24,20 @@ struct VolFog2Params {
   color2       : vec4f,
   // rgb = isotropic ambient in-scattering, stands in for the global environment probe of the original
   ambient      : vec4f,
+  // x = zenith fade factor, y = zenith fade curve (exponent), PerFrame_VolumetricFogDistributionParams.xw
+  zenith       : vec4f,
 };
+
+// GetZenithFadeAmount: amount of fog removed when looking up, 0 at and below the horizon
+fn volFog2ZenithFade(factor: f32, curve: f32, viewUp: f32) -> f32 {
+  if (viewUp < 0.0 || factor <= 0.0) {
+    return 0.0;
+  }
+  // pushes the fog up from the horizon for a smoother transition
+  let up = pow(min(1.0, viewUp), 2.0);
+  let fade = pow(saturate(1.0 - up), curve);
+  return factor - factor * fade;
+}
 
 fn volFog2SchlickPhase(dotLE: f32, k: f32, oneMinusK2: f32) -> f32 {
   let h = -((k * dotLE) - 1.0);
@@ -94,6 +107,10 @@ fn volFog2Analytical(p: VolFog2Params, cameraToWorldPos: vec3f, sunDir: vec3f) -
 
   // in-scattering from ramp end to the end of depth
   fog = vec4f(fog.rgb + trns * inscatter * (1.0 - T0), fog.a);
+
+  // zenith fade (end of GetVolumetricFogAnalyticalColor), view up from the scaled length like the original
+  let zenithFade = volFog2ZenithFade(p.zenith.x, p.zenith.y, cameraToWorldPos.z / d);
+  fog = vec4f(mix(fog.rgb, vec3f(0.0), zenithFade), mix(fog.a, 1.0, zenithFade));
 
   // ApplyVolumetricFogAnalytical: analytical fog visibility
   fog = vec4f(fog.rgb * p.heightDensity.z, fog.a);

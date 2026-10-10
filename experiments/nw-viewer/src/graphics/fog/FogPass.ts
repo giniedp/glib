@@ -1,4 +1,5 @@
 import { BlendState, type Device, type InputValueType, type Program } from '@gglib/graphics'
+import { mat4Identity, mat4Invert } from '@gglib/math'
 import { FrameGraph, RenderChannel, type FrameResource, type RenderContext, type RenderPass } from '@gglib/render'
 import { ENABLE_VOLUMETRIC_FOG_2 } from '../../constants'
 import { InputSlots } from '../../material/common'
@@ -53,6 +54,7 @@ export class FogPass implements RenderPass {
   private depthResources: FrameResource[] = []
 
   private ndcToView = new Float32Array(4)
+  private cameraWorld = mat4Identity()
   private viewport = new Float32Array(4)
   private depthRange = new Float32Array(4)
 
@@ -141,7 +143,9 @@ export class FogPass implements RenderPass {
 
   private setParams(ctx: RenderContext, program: Program) {
     const inputs = ctx.renderInputs
-    program.set('params.cameraWorld', ctx.view.camera.world)
+    // view to world: the inverse of the view matrix. The camera entity transform (camera.world) is not the same,
+    // the view matrix adds the rotation from the Z-up world into the view space looking down -z.
+    program.set('params.cameraWorld', mat4Invert(ctx.view.camera.view, this.cameraWorld))
     program.set('params.ndcToView', this.ndcToView)
     program.set('params.viewport', this.viewport)
     program.set('params.depthRange', this.depthRange)
@@ -176,6 +180,7 @@ export class FogPass implements RenderPass {
     setIfPresent(program, 'params.volFog2Scattering', inputs.get(InputSlots.Global.VolFog2Scattering))
     setIfPresent(program, 'params.volFog2Blend', inputs.get(InputSlots.Global.VolFog2Blend))
     setIfPresent(program, 'params.volFog2Ambient', inputs.get(InputSlots.Global.VolFog2Ambient))
+    setIfPresent(program, 'params.volFog2Zenith', inputs.get(InputSlots.Global.VolFog2Zenith))
     setIfPresent(program, 'params.fogScatteringColor', inputs.get(InputSlots.Global.FogScatteringColor))
     setIfPresent(
       program,

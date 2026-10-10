@@ -111,6 +111,10 @@ export const InputSlots = {
      * Ambient in-scattering of the volumetric fog 2, stand-in for the global environment probe
      */
     VolFog2Ambient: inputSlotVec4('global', 'volFog2Ambient'),
+    /**
+     * Zenith fade of the volumetric fog 2, x = factor, y = curve exponent
+     */
+    VolFog2Zenith: inputSlotVec4('global', 'volFog2Zenith'),
     VolFog2Enabled: inputSlotScalar('global', 'volFog2Enabled'),
 
     Debug: inputSlotScalar('global', 'debug'),

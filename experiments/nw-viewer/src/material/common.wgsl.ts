@@ -245,6 +245,8 @@ struct GlobalBlock {
   fogScatteringSecondaryColor : vec4f,
   // rgb = ambient in-scattering, stand-in for the global environment probe
   volFog2Ambient       : vec4f,
+  // x = zenith fade factor, y = zenith fade curve (exponent)
+  volFog2Zenith        : vec4f,
   volFog2Enabled       : u32,
 
 };
@@ -976,6 +978,19 @@ fn applyFog(
   return vec4f(color * fog.a + fog.rgb, alpha);
 }
 
+// World position on the far plane behind a pixel (fragCoord in pixels, origin top-left, reversed-z).
+// Sky pixels (and geometry drawn on the sky like the distance clouds) are fogged at this position.
+fn farPlaneWorldPos(fragCoord: vec2f) -> vec3f {
+  let ndc = vec4f(
+    (fragCoord.x / view.viewportSize.x) * 2.0 - 1.0,
+    1.0 - (fragCoord.y / view.viewportSize.y) * 2.0,
+    0.0, // reversed-z: 0 = far plane
+    1.0
+  );
+  let worldH = view.inverseViewProjectionMatrix * ndc;
+  return worldH.xyz / worldH.w;
+}
+
 fn globalVolFog2Params() -> VolFog2Params {
   var p: VolFog2Params;
   p.heightDensity = global.volFog2HeightDensity;
@@ -985,6 +1000,7 @@ fn globalVolFog2Params() -> VolFog2Params {
   p.color1        = global.fogScatteringColor;
   p.color2        = global.fogScatteringSecondaryColor;
   p.ambient       = global.volFog2Ambient;
+  p.zenith        = global.volFog2Zenith;
   return p;
 }
 

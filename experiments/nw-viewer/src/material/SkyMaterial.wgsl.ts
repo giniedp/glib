@@ -178,7 +178,7 @@ fn fs_main(in: FragmentInput) -> FragmentOutput {
   color = min(color.rgb, vec3f(16384.0));
 
   // ---- fog ----
-  let worldPos = reconstructWorldPos(in.position.xy);
+  let worldPos = farPlaneWorldPos(in.position.xy);
   let fog = getSceneFog(worldPos);
   color = color * fog.a + fog.rgb;
 
@@ -209,16 +209,4 @@ fn fs_main(in: FragmentInput) -> FragmentOutput {
 }
 
 
-fn reconstructWorldPos(fragCoord: vec2f) -> vec3f {
-  // fragCoord is in pixels, origin top-left, per WGSL @builtin(position) convention
-  let ndc = vec4f(
-    (fragCoord.x / view.viewportSize.x) * 2.0 - 1.0,
-    1.0 - (fragCoord.y / view.viewportSize.y) * 2.0,
-    0.0, // reversed-z: 0 = far plane, matches output.position.z = 0 in vs_main
-    1.0
-  );
-
-  let worldH = view.inverseViewProjectionMatrix * ndc;
-  return worldH.xyz / worldH.w;
-}
 `
