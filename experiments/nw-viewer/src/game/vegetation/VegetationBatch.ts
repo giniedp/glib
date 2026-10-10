@@ -333,8 +333,9 @@ export class VegetationBatch {
     if (this.drawGroups.length <= this.drawCapacity) {
       return
     }
+    const oldArgs = this.argsBuffer as WebGpuBuffer | null
+    const oldCapacity = this.drawCapacity
     this.drawCapacity = Math.max(64, this.drawCapacity * 2, this.drawGroups.length)
-    this.argsBuffer?.dispose()
     this.drawBuffer?.dispose()
     this.argsBuffer = this.createBuffer(
       'vegetation draw args',
@@ -344,6 +345,21 @@ export class VegetationBatch {
     )
     this.drawBuffer = this.createBuffer('vegetation draw groups', this.drawCapacity * 4, BufferUsage.STORAGE)
     this.drawBuffer.setSubData(0, new Uint32Array(this.drawGroups))
+    if (oldArgs) {
+      // Groups are enabled after the cull of the frame, the new buffer would draw nothing until the next cull.
+      // Take over the args of the last cull for the existing draws, otherwise the vegetation of the region
+      // disappears for one frame (flickering) whenever the buffer grows. New draws start empty (zeroed buffer).
+      const encoder = this.device.gpu.createCommandEncoder({ label: 'vegetation draw args grow' })
+      encoder.copyBufferToBuffer(
+        oldArgs.resource,
+        0,
+        (this.argsBuffer as WebGpuBuffer).resource,
+        0,
+        oldCapacity * BYTES_PER_DRAW,
+      )
+      this.device.gpu.queue.submit([encoder.finish()])
+      oldArgs.dispose()
+    }
     this.bindGroup = null
     this.layoutDirty = true
   }

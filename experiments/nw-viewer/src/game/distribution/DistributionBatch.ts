@@ -338,8 +338,9 @@ export class DistributionBatch {
     if (this.drawGroups.length <= this.drawCapacity) {
       return
     }
+    const oldArgs = this.argsBuffer as WebGpuBuffer | null
+    const oldCapacity = this.drawCapacity
     this.drawCapacity = Math.max(64, this.drawCapacity * 2, this.drawGroups.length)
-    this.argsBuffer?.dispose()
     this.drawBuffer?.dispose()
     this.argsBuffer = this.createBuffer(
       'distribution draw args',
@@ -350,6 +351,21 @@ export class DistributionBatch {
     this.drawBuffer = this.createBuffer('distribution draw groups', this.drawCapacity * 4, BufferUsage.STORAGE)
     this.argsBuffer.setSubData(0, new Uint32Array(this.drawArgs))
     this.drawBuffer.setSubData(0, new Uint32Array(this.drawGroups))
+    if (oldArgs) {
+      // The static args have instance count 0, the counts are written by the cull pass. Groups are enabled after the
+      // cull of the frame, so take over the counts of the last cull for the existing draws. Otherwise all draws of the
+      // region render nothing for one frame (flickering) whenever the buffer grows.
+      const encoder = this.device.gpu.createCommandEncoder({ label: 'distribution draw args grow' })
+      encoder.copyBufferToBuffer(
+        oldArgs.resource,
+        0,
+        (this.argsBuffer as WebGpuBuffer).resource,
+        0,
+        oldCapacity * BYTES_PER_DRAW,
+      )
+      this.device.gpu.queue.submit([encoder.finish()])
+      oldArgs.dispose()
+    }
     this.bindGroup = null
   }
 

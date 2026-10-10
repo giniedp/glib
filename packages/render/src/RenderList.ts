@@ -205,7 +205,8 @@ export class RenderList {
     let instanceItem: Geometry
     let instanceEffect: Effect
 
-    let instanceOffset = this.instances.index
+    // continue behind the instances of lists that were batched before in this frame
+    let instanceOffset = this.instances.count
     this.drawCount = 0
 
     for (let i = 0; i < this.size; i++) {

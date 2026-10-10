@@ -37,6 +37,10 @@ export class WebGpuShaderResource {
   private dirtyMin: number = Infinity
   private dirtyMax: number = -Infinity
   private managedBuffer: GPUBuffer | null = null
+  /**
+   * The buffer object the bound GPUBuffer was taken from, see {@link syncSource}
+   */
+  private sourceBuffer: { readonly resource: GPUBuffer | null } | null = null
   private changeHandler: WebGpuShaderResourceHandler[] = []
 
   public constructor(device: WebGpuDevice, info: WgslResourceInfo, isCompute: boolean) {
@@ -89,14 +93,33 @@ export class WebGpuShaderResource {
     this.setResource(resource)
   }
 
-  public setBuffer(resource: GPUBuffer | GPUBufferBinding) {
+  /**
+   * Binds a GPU buffer, or the managed buffer if none is given
+   *
+   * @param resource - the buffer to bind
+   * @param source - the buffer object that owns `resource`. Buffer objects may replace their GPUBuffer when they are
+   * resized, the binding follows the replacement, see {@link syncSource}
+   */
+  public setBuffer(resource: GPUBuffer | GPUBufferBinding, source?: { readonly resource: GPUBuffer | null }) {
     if (!this.managedBuffer) {
       throw new Error(`Cannot set buffer on non-buffer parameter '${this.nameInShader}'`)
     }
     const self = this as Mutable<this>
+    this.sourceBuffer = (resource && source) || null
     resource ||= this.managedBuffer
     self.isManaged = this.managedBuffer === resource
     this.setResource(resource)
+  }
+
+  /**
+   * Rebinds the GPUBuffer of the bound buffer object if it was replaced, e.g. when the buffer has grown
+   * (see Buffer.setData). Without this the binding would keep the old GPUBuffer with stale data, or a destroyed one.
+   */
+  public syncSource(): void {
+    const resource = this.sourceBuffer?.resource
+    if (resource && resource !== this.bindingResource) {
+      this.setResource(resource)
+    }
   }
 
   private setResource(resource: GPUBindingResource) {

@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { BufferUsage } from '../../enums'
 import { WebGpuDevice } from '../WebGpuDevice'
 import { WebGpuShaderModule } from './WebGpuShaderModule'
 
@@ -332,6 +333,37 @@ describe('WebGpuProgram', () => {
       expect(shader.program.get('material').binding).toBe(0)
       expect(shader.program.get('baseColorMap').binding).toBe(1)
       expect(shader.program.get('defaultSampler').binding).toBe(2)
+    })
+  })
+
+  describe('storage buffer objects', () => {
+    let shader: WebGpuShaderModule
+
+    beforeEach(async () => {
+      shader = device.createShaderModule({
+        wgsl: /* wgsl */ `
+          ${SHADER_BASE}
+
+          @group(0) @binding(0) var<storage, read> records: array<vec4<f32>>;
+        `,
+      })
+      await shader.compiled
+    })
+
+    it('follows the GPUBuffer of a bound buffer object when it is replaced', () => {
+      const buffer = device.createBuffer({ usage: BufferUsage.STORAGE, size: 64 })
+      shader.program.set('records', buffer)
+      const before = shader.program.bindGroups[0]
+      const oldResource = buffer.resource
+
+      // growing the buffer replaces its GPUBuffer, e.g. an instance buffer of the renderer
+      buffer.setData(new Float32Array(64))
+      expect(buffer.resource).not.toBe(oldResource)
+
+      const after = shader.program.bindGroups[0]
+      expect(after).not.toBe(before)
+      // unchanged buffer keeps the bind group
+      expect(shader.program.bindGroups[0]).toBe(after)
     })
   })
 })

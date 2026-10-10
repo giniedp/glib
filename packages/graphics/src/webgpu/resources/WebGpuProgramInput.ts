@@ -249,7 +249,7 @@ export class WebGpuProgramInput extends ProgramInput {
 
   public setBuffer(value: Buffer | GPUBuffer | GPUBufferBinding): void {
     if (value instanceof Buffer) {
-      this.resource.setBuffer((value as WebGpuBuffer).resource)
+      this.resource.setBuffer((value as WebGpuBuffer).resource, value as WebGpuBuffer)
     } else {
       this.resource.setBuffer(value)
     }

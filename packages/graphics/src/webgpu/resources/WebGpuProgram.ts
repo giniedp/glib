@@ -27,6 +27,10 @@ export class WebGpuProgram extends Program {
 
   public bindGroupLayouts: GPUBindGroupLayout[]
   public get bindGroups(): GPUBindGroup[] {
+    // buffer objects may have replaced their GPUBuffer since they were bound (e.g. grown instance buffers)
+    for (const resource of this.resources) {
+      resource.syncSource()
+    }
     if (this.changed || !this.gpuBindGroups) {
       this.updateBindGroups()
     }
