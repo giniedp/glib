@@ -1,10 +1,6 @@
 import { inputSlot } from '@gglib/graphics'
 export default {
   ModelMatrix: inputSlot('object', 'modelmatrix', 'mat4x4'),
-  HeightMapUvTransform: inputSlot('material', 'heightmapuvtransform', 'vec4'),
-  HeightMapSize: inputSlot('material', 'heightmapsize', 'scalar'),
-  MountainHeight: inputSlot('material', 'mountainheight', 'scalar'),
-  WaterHeight: inputSlot('material', 'waterheight', 'scalar'),
   WaterLevel: inputSlot('material', 'waterlevel', 'scalar'),
   SpecularColor: inputSlot('material', 'specularcolor', 'vec4'),
   Tiling: inputSlot('material', 'tiling', 'scalar'),
@@ -33,9 +29,7 @@ export default {
   WavesSize: inputSlot('material', 'wavessize', 'scalar'),
   WavesSpeed: inputSlot('material', 'wavesspeed', 'scalar'),
   FoamScrollSpeed: inputSlot('material', 'foamscrollspeed', 'scalar'),
-  HeightMapSampler: inputSlot('material', 'heightMapSampler', 'sampler'),
-  HeightMap: inputSlot('material', 'heightMap', 'texture'),
-  WaterMap: inputSlot('material', 'waterMap', 'texture'),
+  SamplerClamp: inputSlot('material', 'samplerClamp', 'sampler'),
   SamplerLinear: inputSlot('material', 'samplerLinear', 'sampler'),
   FoamMap: inputSlot('material', 'foamMap', 'texture'),
   FoamNormalMap: inputSlot('material', 'foamNormalMap', 'texture'),
@@ -46,8 +40,8 @@ export default {
   Params1: inputSlot('instances', 'params1', 'vec4'),
   Params2: inputSlot('instances', 'params2', 'vec4'),
   Params3: inputSlot('instances', 'params3', 'vec4'),
-  ColorUvTransform: inputSlot('instances', 'coloruvtransform', 'vec4'),
-  ColorUvTransformCoarse: inputSlot('instances', 'coloruvtransformcoarse', 'vec4'),
+  RegionParams: inputSlot('instances', 'regionparams', 'vec4'),
+  MacroColor: inputSlot('instances', 'macrocolor', 'vec4'),
   HeightUvTransform: inputSlot('instances', 'heightuvtransform', 'vec4'),
   HeightUvTransformCoarse: inputSlot('instances', 'heightuvtransformcoarse', 'vec4'),
 }

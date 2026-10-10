@@ -14,6 +14,7 @@ import {
   mat4CreatePerspectiveFieldOfView,
   mat4CreateScaleUniform,
   mat4CreateScaleXYZ,
+  mat4CreateTranslation,
   mat4GetTranslation,
   mat4Invert,
   mat4Multiply,
@@ -31,9 +32,13 @@ import {
   isViewerMeshComponent,
   isViewerPointSpawnerComponent,
   isViewerPrefabSpawnerComponent,
+  isViewerRoadComponent,
+  isViewerWaterVolumeComponent,
   isViewerVolumeComponent,
+  type ViewerRoadComponent,
+  type ViewerWaterVolumeComponent,
 } from '../../api'
-import { CHUNK_MESH_RANGE, IMPOSTOR_HOLD_CHUNK_SIZES } from '../../constants'
+import { CHUNK_MESH_RANGE, IMPOSTOR_HOLD_CHUNK_SIZES, ROAD_VIEW_DISTANCE } from '../../constants'
 import { ContentService } from '../../content'
 import { MaterialLayerMasks } from '../../material'
 import { CollisionComponent } from '../collision/CollisionComponent'
@@ -42,6 +47,9 @@ import { DebugLayer, DebugShapeComponent } from '../debug/DebugShapeComponent'
 import { TimeOfDayComponent } from '../level/TimeOfDayComponent'
 import { LightComponent } from '../light/LightComponent'
 import { RegionComponent } from '../region/RegionComponent'
+import { RoadComponent } from '../road/RoadComponent'
+import { WaterVolumeComponent } from '../water/WaterVolumeComponent'
+import { shapeOutline } from '../water/WaterVolumeMesh'
 import type { RegionImpostorComponent } from '../region/RegionImpostorComponent'
 import { MeshLoaderComponent } from './MeshLoaderComponent'
 import { RangeActivationSystem } from './RangeActivationSystem'
@@ -154,7 +162,9 @@ export class SliceSystem extends GameSystem {
 
     const world = component.entity.getTransform().world
     const position = mat4GetTranslation(world, vec3.$0)
-    const intersects = spherePointIntersects(position, component.spawnRadius, camera)
+    const intersects = component.isChunk
+      ? chunkInRange(position, component.chunkSize, component.spawnRadius, camera)
+      : spherePointIntersects(position, component.spawnRadius, camera)
     if (intersects) {
       executeSpawner(component)
       // spawned slices may contain nested spawners
@@ -380,6 +390,22 @@ export function executeSpawner(spawner: SliceSpawnerComponent) {
         }
         continue
       }
+      if (isViewerRoadComponent(comp)) {
+        components.push(new RoadComponent(comp))
+        debug.add({
+          type: 'sphere',
+          color: vec3Copy(Color.Orange),
+          layer: DebugLayer.Roads,
+          instances: comp.spline.vertices.map((v) => mat4$scaleUniform(mat4CreateTranslation(vec3(v[0], v[1], v[2])), 0.5)),
+        })
+        range = Math.max(range, roadRange(comp))
+        continue
+      }
+      if (isViewerWaterVolumeComponent(comp)) {
+        components.push(new WaterVolumeComponent(comp))
+        range = Math.max(range, waterVolumeRange(comp))
+        continue
+      }
       console.log('Component not implemented', comp)
     }
 
@@ -435,4 +461,38 @@ export function executeSpawner(spawner: SliceSpawnerComponent) {
       spawner.slices.push(child)
     }
   }
+}
+
+/**
+ * Whether the camera is within range of a chunk. The chunk position is its cell center, the range is measured
+ * from the cell square (xy), so large chunks (e.g. 1024 m) spawn when the camera gets close to any part of them.
+ */
+function chunkInRange(center: IVec3, size: number, range: number, camera: IVec3) {
+  const half = size * 0.5
+  const dx = Math.max(Math.abs(camera.x - center.x) - half, 0)
+  const dy = Math.max(Math.abs(camera.y - center.y) - half, 0)
+  return dx * dx + dy * dy <= range * range
+}
+
+/**
+ * View range of a road measured from the entity origin: the view distance plus the extent of the spline,
+ * long roads have their origin far away from most of their geometry
+ */
+function roadRange(road: ViewerRoadComponent) {
+  let radius = 0
+  for (const v of road.spline.vertices) {
+    radius = Math.max(radius, Math.hypot(v[0], v[1]))
+  }
+  return ROAD_VIEW_DISTANCE * (road.viewDistanceMultiplier || 1) + radius + road.width
+}
+
+/**
+ * View range of a water volume measured from the entity origin: the view distance plus the extent of the surface
+ */
+function waterVolumeRange(water: ViewerWaterVolumeComponent) {
+  let radius = 0
+  for (const p of shapeOutline(water.shape) ?? []) {
+    radius = Math.max(radius, Math.hypot(p.x, p.y))
+  }
+  return ROAD_VIEW_DISTANCE * (water.viewDistanceMultiplier || 1) + radius
 }

@@ -20,8 +20,8 @@ const instanceLayout = bufferLayout([
   bufferField('params1', 'vec4f'),
   bufferField('params2', 'vec4f'),
   bufferField('params3', 'vec4f'),
-  bufferField('colorUvTransform', 'vec4f'),
-  bufferField('colorUvTransformCoarse', 'vec4f'),
+  bufferField('regionParams', 'vec4f'),
+  bufferField('macroColor', 'vec4f'),
   bufferField('heightUvTransform', 'vec4f'),
   bufferField('heightUvTransformCoarse', 'vec4f'),
 ])
@@ -89,12 +89,12 @@ export class TerrainMesh extends Mesh {
     this.writer.writeField(instanceLayout.fields.params3, value)
   }
 
-  public writeColorUvTransform(value: IVec4) {
-    this.writer.writeField(instanceLayout.fields.colorUvTransform, value)
+  public writeRegionParams(value: IVec4) {
+    this.writer.writeField(instanceLayout.fields.regionParams, value)
   }
 
-  public writeColorUvTransformCoarse(value: IVec4) {
-    this.writer.writeField(instanceLayout.fields.colorUvTransformCoarse, value)
+  public writeMacroColor(value: IVec4) {
+    this.writer.writeField(instanceLayout.fields.macroColor, value)
   }
 
   public writeHeightUvTransform(value: IVec4) {

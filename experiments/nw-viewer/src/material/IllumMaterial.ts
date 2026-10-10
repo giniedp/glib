@@ -443,6 +443,9 @@ export class IllumMaterial extends MaterialWithSchema(SCHEMA) {
     // - DecalOpacityMap
     if (maps.Opacity) {
       this.OpacityMap = maps.Opacity as any
+    } else {
+      // DecalOpacityMap defaults to white, the decal alpha then comes from the diffuse alpha (and vertex alpha)
+      this.OpacityMap = getWhiteTexture(this.device)
     }
 
     // == EFTT_SMOOTHNESS

@@ -163,6 +163,10 @@ export const DebugOptions = {
   DEBUG_SH_FRESNEL: 305,
   DEBUG_SH_COUNT: 306,
   DEBUG_SH_SPECULAR_AA: 307,
+
+  // Terrain virtual texture
+  DEBUG_VT_MIP: 400,
+  DEBUG_VT_NO_MACRO: 401,
 } as const
 
 export const MaterialLayerMasks = {
@@ -182,6 +186,10 @@ export const MaterialLayerMasks = {
    * e.g. alternative states switched by scripts or cutscenes. Hidden by default (camera visibility mask).
    */
   Inactive: 1 << 11,
+  /**
+   * Water volume surfaces (rivers, water volumes)
+   */
+  WaterVolume: 1 << 12,
 }
 
 const FLAGS_ARRAY = [

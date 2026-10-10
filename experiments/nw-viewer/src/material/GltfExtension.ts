@@ -16,6 +16,7 @@ import type { TexMod } from './TexMod'
 import { UnknownMaterial } from './UnknownMaterial'
 import { VegetationMaterial } from './VegetationMaterial'
 import { WaterPatchMaterial } from './WaterPatchMaterial'
+import { WaterVolumeMaterial } from './WaterVolumeMaterial'
 
 export interface NwMaterialExtensionData {
   attrs: NwMaterialAttrs
@@ -198,6 +199,10 @@ export const NwMaterialExtension: GLTF.GltfMaterialExtension = {
       }
       case 'water': {
         node.data.factory = (device, options) => new WaterPatchMaterial(device, options)
+        break
+      }
+      case 'watervolume': {
+        node.data.factory = (device, options) => new WaterVolumeMaterial(device, options)
         break
       }
       default: {

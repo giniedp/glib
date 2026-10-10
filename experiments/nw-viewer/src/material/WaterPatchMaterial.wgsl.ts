@@ -1,4 +1,5 @@
 import { COMMON_WGSL } from './common.wgsl'
+import { WATER_DDN_WGSL } from './water.wgsl'
 
 /**
  * Ocean surface, forward port of the game's water.cfx (WaterPS) for the terrain water patches.
@@ -11,12 +12,10 @@ import { COMMON_WGSL } from './common.wgsl'
  */
 export default /* wgsl */ `
 ${COMMON_WGSL}
+${WATER_DDN_WGSL}
 
 struct MaterialBlock {
-  heightMapUvTransform : vec4<f32>,
-  heightMapSize        : f32,
-  mountainHeight       : f32,
-  waterHeight          : f32,
+  // ocean level, at or below DRY_WATER_HEIGHT the level has no ocean
   waterLevel           : f32,
 
   // xyz = specular color, w = gloss
@@ -73,8 +72,9 @@ struct InstanceBlock {
   // w: +X+Z neighbour, -1 if none
   params3:                 vec4f,
 
-  colorUvTransform:        vec4f,
-  colorUvTransformCoarse:  vec4f,
+  // terrain only, see TerrainPatchMaterial
+  regionParams:            vec4f,
+  macroColor:              vec4f,
   heightUvTransform:       vec4f,
   heightUvTransformCoarse: vec4f,
 };
@@ -94,11 +94,7 @@ struct InstanceBlock {
 @group(0) @binding(5) var envMap        : texture_cube<f32>;
 
 // @block material
-@group(1) @binding(0) var heightMapSampler : sampler;
-// @block material
-@group(1) @binding(1) var heightMap : texture_2d_array<f32>;
-// @block material
-@group(1) @binding(2) var waterMap : texture_2d_array<f32>;
+@group(1) @binding(0) var samplerClamp : sampler;
 // @block material
 @group(1) @binding(3) var samplerLinear : sampler;
 // @block material
@@ -117,14 +113,11 @@ struct InstanceBlock {
 struct Varyings {
   @builtin(position) position : vec4f,
   @location(0) worldPos       : vec3f,
-  @location(1) uv             : vec2f,
   // wave compression at crests, 0 = none, 1 = breaking (vPosWS.w in water.cfx)
   @location(2) crest          : f32,
   @location(3) @interpolate(flat) iid:  u32,
   // water level of the surface without waves
   @location(4) level          : f32,
-  // see InstanceBlock.params3
-  @location(5) @interpolate(flat) params3: vec4f,
 };
 
 struct VertexIn {
@@ -153,38 +146,15 @@ fn vsMain(input: VertexIn) -> Varyings {
   worldPos.x -= morph.offset.x;
   worldPos.y += morph.offset.y;
 
-  let patchWorldSize = patchSize * exp2(morphLod);
-  let uvDelta = -morph.offset / patchWorldSize;
-
-  var uv = vec2f(input.texture.x, 1.0 - input.texture.y);
-  uv = uvScaleOffset(uv + uvDelta, instance.heightUvTransform);
-  // x = highest water level of the 4 nearest texels, y = 1 if any of them is dry
-  var water = readWaterHeight(uv, instance.params3);
-  if (water.x <= DRY_WATER_HEIGHT && morphLod > 0.0) {
-    // coarse cells span several texels, look for water within the cell footprint
-    water = vec2f(readWaterHeightAround(uv, instance.params3, exp2(morphLod) * 0.5), 1.0);
-  }
-  let waterHeight = water.x;
+  // Ocean plane at the ocean level. Rivers and water volumes are separate meshes (WaterVolumeMaterial).
+  let waterHeight = material.waterLevel;
   let amplitude = waveAmplitude();
-  var dispZ = waveSumZ(worldPos.xy, amplitude, frame.elapsedTime);
-  if (waterHeight <= DRY_WATER_HEIGHT) {
-    // No water around. Hide the vertex below the terrain, the depth test then rejects fully dry patches.
-    worldPos.z = readGroundHeight(uv, instance.params3) - DRY_GROUND_OFFSET;
-    dispZ = 0.0;
-  } else {
-    // no waves next to dry texels, otherwise the edge towards the dry cells moves up and down
-    if (water.y > 0.0) {
-      dispZ = 0.0;
-    }
-    worldPos.z = waterHeight + dispZ;
-  }
+  worldPos.z = waterHeight + waveSumZ(worldPos.xy, amplitude, frame.elapsedTime);
 
   var out : Varyings;
   out.position = view.projectionMatrix * view.viewMatrix * worldPos;
   out.worldPos = worldPos.xyz;
-  out.uv       = uv;
   out.level    = waterHeight;
-  out.params3  = instance.params3;
   out.crest   = saturate(waveCompression(worldPos.xy, amplitude, frame.elapsedTime) * WAVE_COMPRESSION_SCALE);
   out.iid      = input.instanceIndex;
   return out;
@@ -194,10 +164,8 @@ fn vsMain(input: VertexIn) -> Varyings {
 
 @fragment
 fn fsMain(in: Varyings) -> FragmentOutput {
-  // The game builds flat water quads per wet quadtree cell, so the surface ends at the cell edge.
-  // The grid here interpolates between vertices, cut away everything that is not over a wet texel at this level.
-  let texelLevel = readWaterTexel(in.uv, in.params3);
-  if (texelLevel <= DRY_WATER_HEIGHT || in.level > texelLevel + LEVEL_STEP_TOLERANCE) {
+  if (in.level <= DRY_WATER_HEIGHT) {
+    // no ocean in this level (oceanLevel -1000)
     discard;
   }
 
@@ -379,7 +347,7 @@ fn loadSceneDepth(uv: vec2f) -> f32 {
 }
 
 fn sampleSceneColor(uv: vec2f) -> vec3f {
-  return textureSampleLevel(sceneColorMap, heightMapSampler, clampScreenUv(uv), 0.0).rgb;
+  return textureSampleLevel(sceneColorMap, samplerClamp, clampScreenUv(uv), 0.0).rgb;
 }
 
 fn uvFootprint(uv: vec2f) -> f32 {
@@ -408,44 +376,9 @@ fn sunSpecular(fNdotL: f32, vNormal: vec3f, vView: vec3f, sunDir: vec3f) -> vec3
 
 // ── Water normals ─────────────────────────────────────────────
 
-const ONE_OVER_PI     : f32 = 0.31830988;
-const ONE_OVER_TWO_PI : f32 = 0.15915494;
-const DDN_GRID_SIZE   : f32 = 64.0;
-const DDN_WAVE_COUNT  : i32 = 8;
-
-// Replacement for $WaterVolumeDDN. Waves tile on the unit square (integer wave numbers).
-// Column layout: kx, ky (cycles per tile), amplitude (in texels of a 64 grid), phase
-const ddnWaves = array<vec4f, 8>(
-  vec4f( 1.0,  2.0, 3.20, 0.0),
-  vec4f(-2.0,  1.0, 2.40, 1.7),
-  vec4f( 3.0,  1.0, 1.50, 4.1),
-  vec4f(-1.0, -4.0, 1.10, 2.3),
-  vec4f( 5.0, -2.0, 0.70, 5.2),
-  vec4f(-4.0,  5.0, 0.50, 0.9),
-  vec4f( 7.0,  3.0, 0.35, 3.6),
-  vec4f(-6.0, -7.0, 0.25, 2.8),
-);
-
-// Returns the water normal map sample as WaterVolumesNormalGen does:
-// xyz = normalize(height delta to +x and +y texel, 8), w = height / 20
+// $WaterVolumeDDN driven by the ocean animation
 fn waterDDN(uv: vec2f, footprint: f32, timeSec: f32) -> vec4f {
-  var h = 0.0;
-  var g = vec2f(0.0);
-  let speed = 0.6 * material.wavesSpeed;
-  let amount = material.wavesAmount;
-  for (var i = 0; i < DDN_WAVE_COUNT; i++) {
-    let w  = ddnWaves[i];
-    let kl = length(w.xy);
-    // fade out waves that would alias, this is what the mip chain of the generated texture does
-    let atten = 1.0 - smoothstep(0.25, 0.5, kl * footprint);
-    let a     = w.z * amount * atten;
-    let phase = 2.0 * PI * dot(w.xy, uv) - speed * sqrt(kl) * 2.0 * PI * timeSec + w.w;
-    h += a * sin(phase);
-    g += a * cos(phase) * 2.0 * PI * w.xy;
-  }
-  // p0 - p1 of neighbouring texels is the negative gradient per texel
-  let n = normalize(vec3f(-g / DDN_GRID_SIZE, 8.0));
-  return vec4f(n, h / 20.0);
+  return waterDDNWaves(uv, footprint, timeSec, 0.6 * material.wavesSpeed, material.wavesAmount);
 }
 
 fn getParalaxOffset(baseTC: vec4f, footprint: f32, vView: vec3f, timeSec: f32) -> vec2f {
@@ -567,78 +500,6 @@ fn lod_morph(
   return result;
 }
 
-fn remapaUV(params3: vec4f, uv: vec2f) -> vec3f {
-  let crossX = uv.x >= 1.0;
-  let crossZ = uv.y <= 0.0;
-
-  var layer    : i32;
-  var sampleUV : vec2f;
-
-  if crossX && crossZ {
-    // corner
-    layer    = i32(params3.w);
-    sampleUV = vec2f(uv.x - 1.0, 1.0);
-  } else if crossX {
-    // right
-    layer    = i32(params3.y);
-    sampleUV = vec2f(uv.x - 1.0, uv.y);
-  } else if crossZ {
-    // bottom
-    layer    = i32(params3.z);
-    sampleUV = vec2f(uv.x, 1.0);
-  } else {
-    // this region
-    layer    = i32(params3.x);
-    sampleUV = uv;
-  }
-
-  if layer < 0 {
-    layer    = i32(params3.x);
-    sampleUV = clamp(uv, vec2f(0.0), vec2f(1.0));
-  }
-
-  return vec3f(sampleUV, f32(layer));
-}
-
-// water heights at or below this are dry cells of the water quadtree
+// levels at or below this have no ocean (oceanLevel -1000)
 const DRY_WATER_HEIGHT : f32 = 0.0;
-// vertices without any water around are placed this far below the terrain
-const DRY_GROUND_OFFSET : f32 = 0.05;
-// fragments above the level of their texel by more than this belong to a higher neighbour cell (water step)
-const LEVEL_STEP_TOLERANCE : f32 = 0.25;
-
-fn readGroundHeight(uv: vec2f, params3: vec4f) -> f32 {
-  let remapped = remapaUV(params3, uv);
-  return textureSampleLevel(heightMap, heightMapSampler, remapped.xy, i32(remapped.z), 0.0).r / 65535.0 * material.mountainHeight;
-}
-
-// The water map must not be filtered: blending a wet texel (e.g. 40) with a dry texel (0) gives a bogus
-// level in between, which pulls the surface down into walls along the cell edges.
-// Returns x = highest water level of the 4 nearest texels, y = 1 if any of them is dry.
-fn readWaterHeight(uv: vec2f, params3: vec4f) -> vec2f {
-  let remapped = remapaUV(params3, uv);
-  let texels = textureGather(0, waterMap, heightMapSampler, remapped.xy, i32(remapped.z));
-  let level = max(max(texels.x, texels.y), max(texels.z, texels.w));
-  let anyDry = min(min(texels.x, texels.y), min(texels.z, texels.w)) <= DRY_WATER_HEIGHT;
-  return vec2f(level, select(0.0, 1.0, anyDry));
-}
-
-// Highest water level of 4 texel quads, offset by radius texels diagonally. Used by coarse LOD vertices.
-fn readWaterHeightAround(uv: vec2f, params3: vec4f, radius: f32) -> f32 {
-  let d = radius / f32(textureDimensions(waterMap).x);
-  var level = DRY_WATER_HEIGHT;
-  level = max(level, readWaterHeight(uv + vec2f(-d, -d), params3).x);
-  level = max(level, readWaterHeight(uv + vec2f( d, -d), params3).x);
-  level = max(level, readWaterHeight(uv + vec2f(-d,  d), params3).x);
-  level = max(level, readWaterHeight(uv + vec2f( d,  d), params3).x);
-  return level;
-}
-
-// Unfiltered water level of the texel that contains uv
-fn readWaterTexel(uv: vec2f, params3: vec4f) -> f32 {
-  let remapped = remapaUV(params3, uv);
-  let size = vec2i(textureDimensions(waterMap));
-  let texel = clamp(vec2i(floor(remapped.xy * vec2f(size))), vec2i(0), size - 1);
-  return textureLoad(waterMap, texel, i32(remapped.z), 0).r;
-}
 `

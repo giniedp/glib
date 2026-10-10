@@ -1,17 +1,36 @@
 import { QuadTree, QuadTreeNode, type ScheduledTask } from '@gglib/components'
 import type { GameComponent, GameEntity } from '@gglib/ecs'
+import type { Texture } from '@gglib/graphics'
 import { BoundingFrustum, mat4GetTranslation, vec3, type IVec2 } from '@gglib/math'
 import type { CameraData } from '@gglib/render'
-import { brand, lfmt, type Brand } from '@gglib/utils'
+import { lfmt } from '@gglib/utils'
 import type { RegionMaterial } from '../../api'
 import { QUAD_TREE_LEAF_SIZE } from '../../constants'
 import type { TerrainCompositeMaterial } from '../../material'
-import type { TerrainTile } from './TerrainTileManager'
+
+/**
+ * A splat layer of a region. The material may be shared with other regions (loader cache),
+ * everything region specific is held here and bound right before baking.
+ */
+export interface TerrainMaterialLayer {
+  material: TerrainCompositeMaterial
+  splat: Texture
+  /**
+   * Region sub tiles (8x8 of 256m) where the layer contributes, bit = row * 8 + column with row 0 at the region max y
+   */
+  affectedTiles: bigint
+}
+
+/**
+ * Macro maps of a region
+ */
+export interface TerrainMacroMaps {
+  color: Texture
+  normal: Texture
+  gloss: Texture
+}
 
 export type TerraPayload = {
-  state: TerraQuadState
-  lastSeen: number
-
   /**
    * visible in this frame
    */
@@ -23,23 +42,6 @@ export type TerraPayload = {
   required: boolean
 
   region: TerrainRegionComponent
-
-  tile: TerrainTile
-  materialRenderTask: ScheduledTask
-}
-
-export type TerraQuadState = Brand<number, 'TerraQuadState'>
-export const TerraQuadState = {
-  Unloaded: brand<TerraQuadState>(0),
-
-  HeightLoading: brand<TerraQuadState>(1),
-  HeightReady: brand<TerraQuadState>(2),
-
-  MaterialStale: brand<TerraQuadState>(4),
-  MaterialLoading: brand<TerraQuadState>(5),
-  MaterialReady: brand<TerraQuadState>(6),
-
-  Ready: brand<TerraQuadState>(7),
 }
 
 export type TerraRoot = QuadTree<TerraPayload>
@@ -66,15 +68,15 @@ export class TerrainRegionComponent implements GameComponent {
   public heightmapTask: ScheduledTask | null
   public heightmapReady: boolean
 
-  public watermap: Float16Array
-  public watermapTask: ScheduledTask | null
-  public watermapReady: boolean
-
+  /**
+   * Default material of the region, may be shared with other regions, see TerrainMaterialLayer
+   */
   public baseMaterial: TerrainCompositeMaterial
+  public macroMaps: TerrainMacroMaps
   public baseMaterialTask: ScheduledTask | null
   public baseMaterialReady: boolean
 
-  public layerMaterials: TerrainCompositeMaterial[]
+  public layers: TerrainMaterialLayer[]
   public layerMaterialsTask: ScheduledTask | null
   public layerMaterialsReady: boolean
 
@@ -94,7 +96,7 @@ export class TerrainRegionComponent implements GameComponent {
    * Indicates whether all resources have been loaded
    */
   public get isLoaded() {
-    return this.heightmapReady && this.watermapReady && this.baseMaterialReady && this.layerMaterialsReady
+    return this.heightmapReady && this.baseMaterialReady && this.layerMaterialsReady
   }
 
   private frustum: BoundingFrustum = new BoundingFrustum()
@@ -142,7 +144,14 @@ export class TerrainRegionComponent implements GameComponent {
     console.log(...lfmt.merge(this.logTag, lfmt.red('Deactivated')))
   }
   public destroy(): void {
-    //
+    for (const layer of this.layers || []) {
+      layer.splat?.dispose()
+    }
+    this.layers = null
+    this.macroMaps?.color?.dispose()
+    this.macroMaps?.normal?.dispose()
+    this.macroMaps?.gloss?.dispose()
+    this.macroMaps = null
   }
   // #endregion
 

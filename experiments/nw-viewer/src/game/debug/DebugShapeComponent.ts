@@ -37,6 +37,8 @@ export const DebugLayer = {
   TimeOfDay: 1 << 11,
   Collision: 1 << 12,
   CollisionVolume: 1 << 13,
+  TerrainPages: 1 << 14,
+  Roads: 1 << 15,
 }
 
 export interface DebugShapeOptions {

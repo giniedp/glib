@@ -106,6 +106,3 @@ export function getRegionHeightmapUrl(levelName: string, regionName: string): Ty
   return { url: `/levels/${levelName}/${regionName}/heightmap.r16`, type: 'arraybuffer' }
 }
 
-export function getRegionWatermapUrl(levelName: string, regionName: string): TypedRequest<Float16Array> {
-  return { url: `/levels/${levelName}/${regionName}/watermap.r16`, type: 'arraybuffer' }
-}

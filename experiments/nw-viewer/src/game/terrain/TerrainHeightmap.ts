@@ -6,7 +6,6 @@ export class TerrainHeightmapArray {
   private readonly device: Device
 
   public readonly texture: Texture
-  public readonly texture2: Texture
 
   public constructor(device: Device, regionSize: number) {
     this.device = device
@@ -20,19 +19,9 @@ export class TerrainHeightmapArray {
       generateMipmap: false,
       mipLevelCount: 1,
     })
-    this.texture2 = device.createTexture({
-      name: 'terrain-heightmap-array',
-      type: '2d-array',
-      format: 'r16float',
-      width: regionSize,
-      height: regionSize,
-      depth: 4,
-      generateMipmap: false,
-      mipLevelCount: 1,
-    })
   }
 
-  public sync(regions: Array<{ regionName: string; heightmap: Float16Array; watermap: Float16Array }>): void {
+  public sync(regions: Array<{ regionName: string; heightmap: Float16Array }>): void {
     for (const [regionId, slot] of this.regionToLayer) {
       let found = false
       for (const r of regions) {
@@ -61,7 +50,6 @@ export class TerrainHeightmapArray {
       this.layerToRegion[slot] = r.regionName
       this.regionToLayer.set(r.regionName, slot)
       this.upload(slot, r.heightmap, this.texture)
-      this.upload(slot, r.watermap, this.texture2)
     }
   }
 
@@ -99,6 +87,5 @@ export class TerrainHeightmapArray {
 
   public dispose(): void {
     this.texture.dispose()
-    this.texture2.dispose()
   }
 }

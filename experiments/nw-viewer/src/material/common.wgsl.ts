@@ -57,6 +57,10 @@ const DEBUG_SH_FRESNEL:          u32 = 305u;
 const DEBUG_SH_COUNT:            u32 = 306u; // heatmap of overlapping lights/clusters
 const DEBUG_SH_SPECULAR_AA:      u32 = 307u; // roughness added by specular antialiasing
 
+// Terrain virtual texture
+const DEBUG_VT_MIP:              u32 = 400u; // sampled page mip, red = no page
+const DEBUG_VT_NO_MACRO:         u32 = 401u; // virtual texture without macro fallback and fade
+
 // Misc / engine
 // const DEBUG_MIP_LEVEL:     u32 = 29u;
 // const DEBUG_UV_CHECKER:    u32 = 30u;

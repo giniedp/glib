@@ -49,14 +49,14 @@ export const TerrainPatchMaterialSchema = {
   HeightMapUvTransform: inputSlotVec4('material', 'heightMapUvTransform'),
   HeightMapUvTransformCoarse: inputSlotVec4('material', 'heightMapUvTransformCoarse'),
 
-  ColorMapUvTransform: inputSlotVec4('material', 'colorMapUvTransform'),
-  ColorMapUvTransformCoarse: inputSlotVec4('material', 'colorMapUvTransformCoarse'),
-  ColorLayer: inputSlotScalar('material', 'colorLayer'),
-  ColorLayerCoarse: inputSlotScalar('material', 'colorLayerCoarse'),
-
   HeightMap: inputSlotTexture('material', 'heightMap'),
-  ColorMap1: inputSlotTexture('material', 'colorMap1'),
-  ColorMap2: inputSlotTexture('material', 'colorMap2'),
+  // terrain virtual texture: page cache, indirection and region macro maps, all 2d arrays
+  PageMap1: inputSlotTexture('material', 'pageMap1'),
+  PageMap2: inputSlotTexture('material', 'pageMap2'),
+  IndirectionMap: inputSlotTexture('material', 'indirectionMap'),
+  MacroColorMap: inputSlotTexture('material', 'macroColorMap'),
+  MacroNormalMap: inputSlotTexture('material', 'macroNormalMap'),
+  MacroGlossMap: inputSlotTexture('material', 'macroGlossMap'),
 
   HeightMapSampler: inputSlotSampler('material', 'heightMapSampler'),
   ColorMapSampler: inputSlotSampler('material', 'colorMapSampler'),
@@ -77,8 +77,6 @@ export class TerrainPatchMaterial extends MaterialWithSchema(TerrainPatchMateria
 
     this.HeightMapUvTransform = vec4(1, 1, 0, 0)
     this.HeightMapUvTransformCoarse = vec4(1, 1, 0, 0)
-    this.ColorMapUvTransform = vec4(1, 1, 0, 0)
-    this.ColorMapUvTransformCoarse = vec4(1, 1, 0, 0)
 
     this.effect.cullState = CullState.None
   }

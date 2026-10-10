@@ -382,6 +382,9 @@ export const LightComponentName = 'Light' as const
 export const TimeOfDayComponentName = 'TimeOfDay' as const
 export const ColliderComponentName = 'Collider' as const
 export const VolumeComponentName = 'Volume' as const
+export const RoadComponentName = 'Road' as const
+export const RiverComponentName = 'River' as const
+export const WaterVolumeComponentName = 'WaterVolume' as const
 
 export const ComponentTypes = {
   MeshComponentName,
@@ -393,6 +396,9 @@ export const ComponentTypes = {
   TimeOfDayComponentName,
   ColliderComponentName,
   VolumeComponentName,
+  RoadComponentName,
+  RiverComponentName,
+  WaterVolumeComponentName,
 }
 
 export type ComponentType =
@@ -403,6 +409,9 @@ export type ComponentType =
   | typeof AreaSpawnerComponentName
   | typeof ColliderComponentName
   | typeof VolumeComponentName
+  | typeof RoadComponentName
+  | typeof RiverComponentName
+  | typeof WaterVolumeComponentName
 
 export interface ViewerBaseComponent {
   type: ComponentType
@@ -524,8 +533,52 @@ export interface ViewerUnknownComponent {
   data: any
 }
 
+/**
+ * Road or river of the RoadsAndRivers gem: a strip of geometry along the entity spline,
+ * rendered with the material (Illum decal for roads). Spline data is in entity space.
+ */
+export interface ViewerRoadComponent extends ViewerBaseComponent {
+  type: typeof RoadComponentName | typeof RiverComponentName
+  material: string
+  /** default width, widths are per spline vertex offsets added to it */
+  width: number
+  widths?: number[]
+  segmentLength: number
+  tileLength: number
+  sortPriority: number
+  minSpec: number
+  viewDistanceMultiplier: number
+  spline: ViewerSpline
+  river?: ViewerRiver
+}
+
+export interface ViewerSpline {
+  type: 'Linear' | 'Bezier' | 'CatmullRom'
+  closed: boolean
+  vertices: Vec3Data[]
+  /** control points per vertex, absolute in entity space like the vertices */
+  bezier?: Array<{ back: Vec3Data; forward: Vec3Data; angle: number }>
+  granularity?: number
+  /** catmull rom knot parameterization, 0 uniform, 0.5 centripetal, 1 chordal */
+  knotParameterization?: number
+}
+
+export interface ViewerRiver {
+  tileWidth: number
+  waterVolumeDepth: number
+  waterStreamSpeed: number
+  waterFogDensity: number
+  fogColor: [number, number, number, number]
+  fogColorScale: number
+  widthFadeDist: number
+  lengthStartFadeDist: number
+  lengthEndFadeDist: number
+}
+
 export type ViewerComponent =
   | ViewerMeshComponent
+  | ViewerRoadComponent
+  | ViewerWaterVolumeComponent
   | ViewerSpawnerComponent
   | ViewerPointSpawnerComponent
   | ViewerPrefabSpawnerComponent
@@ -533,6 +586,37 @@ export type ViewerComponent =
   | ViewerLightComponent
   | ViewerTimeOfDayComponent
   | ViewerUnknownComponent
+
+export function isViewerRoadComponent(component: any): component is ViewerRoadComponent {
+  return component.type === ComponentTypes.RoadComponentName || component.type === ComponentTypes.RiverComponentName
+}
+
+/**
+ * Water volume (Water gem): a flat water surface on top of the entity shape, see nwbt ViewerWaterVolumeComponent.
+ * Box and cylinder surfaces are at +height / 2, prism surfaces at +height (entity space).
+ */
+export interface ViewerWaterVolumeComponent extends ViewerBaseComponent {
+  type: typeof WaterVolumeComponentName
+  material: string
+  shape: ViewerShape
+  /**
+   * Already multiplied with the FogColorMultiplier
+   */
+  fogColor: [number, number, number]
+  fogDensity: number
+  fogColorAffectedBySun: boolean
+  /**
+   * Texture coordinates per world unit
+   */
+  surfaceUScale: number
+  surfaceVScale: number
+  minSpec: number
+  viewDistanceMultiplier: number
+}
+
+export function isViewerWaterVolumeComponent(component: any): component is ViewerWaterVolumeComponent {
+  return component.type === ComponentTypes.WaterVolumeComponentName
+}
 
 export function isViewerMeshComponent(component: any): component is ViewerMeshComponent {
   return component.type === ComponentTypes.MeshComponentName

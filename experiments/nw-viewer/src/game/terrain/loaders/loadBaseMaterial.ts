@@ -3,16 +3,28 @@ import type { Texture } from '@gglib/graphics'
 import type { RegionMaterial } from '../../../api'
 import type { ContentService } from '../../../content'
 import type { TerrainCompositeMaterial } from '../../../material'
+import type { TerrainMacroMaps } from '../TerrainRegionComponent'
+
+export interface BaseMaterialResult {
+  /**
+   * Default material of the region, may be shared with other regions (loader cache), must not hold region state
+   */
+  material: TerrainCompositeMaterial
+  /**
+   * Macro maps of the region, owned by the caller
+   */
+  macro: TerrainMacroMaps
+}
 
 export function loadBaseMaterial(
   content: ContentService,
   scheduler: SchedulerSystem,
   data: RegionMaterial,
-  done: (result: TerrainCompositeMaterial) => void,
+  done: (result: BaseMaterialResult) => void,
 ): ScheduledTask {
-  let colorMap: Texture
-  let normalMap: Texture
-  let specularMap: Texture
+  let color: Texture
+  let normal: Texture
+  let gloss: Texture
   let material: TerrainCompositeMaterial
 
   return scheduler.schedule({
@@ -20,76 +32,31 @@ export function loadBaseMaterial(
     load: async (_, signal) => {
       signal.throwIfAborted()
 
-      colorMap = await content.loadTexture(data.colorMap)
+      color = await content.loadTexture(data.colorMap)
       signal.throwIfAborted()
 
-      normalMap = await content.loadTexture(data.normalMap)
+      normal = await content.loadTexture(data.normalMap)
       signal.throwIfAborted()
 
-      specularMap = await content.loadTexture(data.specularMap)
+      gloss = await content.loadTexture(data.specularMap)
       signal.throwIfAborted()
 
-      const result = await content.loader.loadMaterial(data.defaultMaterial + '.glb', {
+      material = (await content.loader.loadMaterial(data.defaultMaterial + '.glb', {
         baseUrl: content.nwbtFileUrl,
         signal: signal,
-      })
+      })) as TerrainCompositeMaterial
       signal.throwIfAborted()
-
-      material = result as TerrainCompositeMaterial
-      if (!material) {
-        return
-      }
-
-      material.SplatMap = content.whitePixel
-
-      if (colorMap) {
-        material.MacroBaseMap = colorMap
-        colorMap.dispose()
-        colorMap = null
-      }
-
-      if (normalMap) {
-        material.MacroNormalMap = normalMap
-        normalMap.dispose()
-        normalMap = null
-      }
-
-      if (specularMap) {
-        material.MacroGlossMap = specularMap
-        specularMap.dispose()
-        specularMap = null
-      }
     },
     finalize: (_, err) => {
-      if (material) {
-        if (colorMap) {
-          material.MacroBaseMap = colorMap
-        }
-
-        if (normalMap) {
-          material.MacroNormalMap = normalMap
-        }
-
-        if (specularMap) {
-          material.MacroGlossMap = specularMap
-        }
-      }
-
-      colorMap?.dispose()
-      colorMap = null
-
-      normalMap?.dispose()
-      normalMap = null
-
-      specularMap?.dispose()
-      specularMap = null
-
-      if (err) {
-        material.dispose()
+      if (err || !material) {
+        color?.dispose()
+        normal?.dispose()
+        gloss?.dispose()
         done(null)
       } else {
-        done(material)
+        done({ material, macro: { color, normal, gloss } })
       }
+      color = normal = gloss = null
       material = null
     },
   })

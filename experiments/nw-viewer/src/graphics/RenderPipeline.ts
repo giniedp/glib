@@ -6,16 +6,25 @@ import {
   groupPass,
   RenderChannel,
   renderInputsPass,
+  RenderItemFlags,
   RenderListMode,
+  RenderSortPriority,
   tonemapPass,
   type RenderPipelineOptions,
 } from '@gglib/render'
-import { InputSlots } from '../material'
+import { InputSlots, MaterialLayerMasks } from '../material'
 import { DepthResolveEffect } from './DepthResolveEffect'
 import { FogPass } from './fog/FogPass'
 import { AmbientOcclusionApplyPass } from './ssao/AmbientOcclusionApplyPass'
 import { SunShaftsPass } from './sunshafts/SunShaftsPass'
 import { XeGtaoPass } from './ssao/XeGtaoPass'
+
+const WATER_VOLUME_LIST = new RenderListMode(RenderSortPriority.Depth, RenderItemFlags.Transparent, {
+  includeLayers: MaterialLayerMasks.WaterVolume,
+})
+const TRANSPARENT_LIST = new RenderListMode(RenderSortPriority.Depth, RenderItemFlags.Transparent, {
+  excludeLayers: MaterialLayerMasks.WaterVolume,
+})
 
 export function createRenderPipeline(device: Device): RenderPipelineOptions {
   const sunShafts = new SunShaftsPass(device)
@@ -66,9 +75,38 @@ export function createRenderPipeline(device: Device): RenderPipelineOptions {
           [CommonInputs.View.SceneDepthMap, RenderChannel.LinearDepth],
         ],
       }),
+      // water volumes (rivers) before all other transparent geometry, like the WATER_VOLUMES list of the original
+      // that is rendered before the TRANSPARENT_AW list. Waterfalls and other transparent meshes end up on top.
+      groupPass({
+        name: 'Water Volumes',
+        enabled: true,
+        passes: [
+          new GeometryPass({
+            name: 'WaterVolumePass',
+            list: WATER_VOLUME_LIST,
+            depth: RenderChannel.DepthMsaa,
+            clearDepth: false, // render on top
+            inputs: [RenderChannel.Color, RenderChannel.LinearDepth],
+            channels: [
+              {
+                clear: null, // render on top
+                render: RenderChannel.ColorMsaa,
+                blend: BlendState.Alpha,
+                resolve: null, // resolved by the transparent pass
+              },
+              {
+                clear: null, // render on top
+                render: RenderChannel.LinearDepthMsaa,
+                blend: BlendState.Opaque,
+                resolve: null,
+              },
+            ],
+          }),
+        ],
+      }),
       new GeometryPass({
         name: 'TransparentPass',
-        list: RenderListMode.Transparent,
+        list: TRANSPARENT_LIST,
         depth: RenderChannel.DepthMsaa,
         clearDepth: false, // render on top
         inputs: [RenderChannel.Color, RenderChannel.LinearDepth],

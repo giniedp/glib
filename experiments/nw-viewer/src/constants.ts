@@ -1,21 +1,18 @@
 export const REGION_SIZE = 2048
-export const MOUNTAIN_HEIGHT = 2048
 export const SEGMENT_SIZE = 128
-export const HEIGHTMAP_TILE_SIZE = 256
 export const QUAD_TREE_LEAF_SIZE = 32
-export const TERRAIN_TILE_TEXTURE_SIZE = 512
-// down to 4x4, the smallest BC3 block
-export const TERRAIN_TILE_TEXTURE_MIP_COUNT = Math.log2(TERRAIN_TILE_TEXTURE_SIZE) - 1
 export const TERRAIN_LOD_RANGE_FACTOR = 2
 
-export const POM_DISPLACEMENT = 0.25 // in world units -> 0.25 / QUAD_LEAF_SIZE
-export const POM_BIAS = 0.0
-export const POM_SELF_SHADOW_STRENGTH = 2.0
-export const MACRO_VIEW_DISTANCE = 1000
-export const MACRO_BLEND_DISTANCE = 100
-export const MACRO_WORLD_SIZE = REGION_SIZE
-export const MAX_ANISOTROPY = 4.0
-export const MAX_MIP_LEVELS = 8.0
+// terrain virtual texture, see coatlicue-terrain.cfx and the GPA capture findings
+// world size of a page at mip m is VT_PAGE_WORLD_SIZE * 2^m
+export const VT_TEXELS_PER_METER = 256
+export const VT_PAGE_SIZE = 512
+export const VT_PAGE_WORLD_SIZE = VT_PAGE_SIZE / VT_TEXELS_PER_METER
+export const VT_MIP_COUNT = 8
+export const VT_PAGE_CAPACITY = 640
+// texel to pixel ratio for the page selection, 1 = page texel density matches the screen pixel density
+// at perpendicular view, higher values keep detail at grazing angles
+export const VT_LOD_QUALITY = 1.5
 
 /**
  * How ambient only lights (light component flag Ambient) are rendered.
@@ -72,6 +69,11 @@ export const ENABLE_INSTANCED_LEVEL_OBJECTS = false
  * Reduces the number of entities, spatial nodes and bounds, culling happens per instance array.
  */
 export const COMBINE_INSTANCE_ARRAYS = true
+
+/**
+ * Base view distance of road decals, scaled by the road ViewDistanceMultiplier
+ */
+export const ROAD_VIEW_DISTANCE = 256
 
 /**
  * Vegetation is rendered up to this distance. Lumberyard spawns a 13x13 grid of 16m sectors around the camera.

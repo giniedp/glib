@@ -120,9 +120,8 @@ export class WaterPatchMaterial extends MaterialWithSchema(SCHEMA) {
   }
 
   private setDefaults() {
+    // ocean plane only, rivers and water volumes render their own meshes (WaterVolumeMaterial)
     this.WaterLevel = 40.0
-    this.MountainHeight = 2048
-    this.WaterHeight = 40
     this.SpecularColor = vec4(0.42, 0.42, 0.42, 1.0)
     this.FoamScrollSpeed = 0.15
     this.FoamMap = this.device.acquireTexture({ key: FoamMapKey, throwIfMissing: true, transient: true })
@@ -164,7 +163,7 @@ export class WaterPatchMaterial extends MaterialWithSchema(SCHEMA) {
     this.DetailTiling = 2.5
     this.FoamTiling = 1.0
 
-    this.HeightMapSampler = SamplerState.LinearClamp
+    this.SamplerClamp = SamplerState.LinearClamp
     this.SamplerLinear = SamplerState.LinearWrap
   }
 

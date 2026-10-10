@@ -2,8 +2,15 @@ import { COMMON_WGSL } from './common.wgsl'
 
 export const TERRAIN_PATCH_SHADER = /* wgsl */ `
 
-// parallax occlusion mapping on the baked height, disabled for now
-const USE_POM = false;
+// terrain virtual texture, see constants.ts VT_* and coatlicue-terrain.cfx SampleVirtualTextures
+const VT_TEXELS_PER_METER: f32 = 256.0;
+const VT_PAGE_SIZE: f32 = 512.0;
+const VT_PAGE_WORLD_SIZE: f32 = 2.0;
+const VT_MIP_COUNT: i32 = 8;
+const VT_MAX_ANISOTROPY: f32 = 4.0;
+// beyond this distance only the region macro maps are used (g_terrainMaterialParams in the capture)
+const MACRO_VIEW_DISTANCE: f32 = 1000.0;
+const MACRO_BLEND_DISTANCE: f32 = 100.0;
 
 struct MaterialBlock {
   mountainHeight:  f32,
@@ -18,10 +25,10 @@ struct InstanceBlock {
   // z: morphLod
   params1:                 vec4f,
 
-  // x: fine layer color map index
-  // y: coarse layer color map index
-  // z: 1 = fine ready
-  // w: 1 = coarse ready
+  // x: region layer of the indirection and macro arrays, -1 if none
+  // y: 1 = macro maps available
+  // z: macro normal scale
+  // w: macro specular reflectance
   params2:                 vec4f,
 
   // x: this region's heightmap layer
@@ -30,8 +37,10 @@ struct InstanceBlock {
   // w: +X+Z neighbour, -1 if none
   params3:                 vec4f,
 
-  colorUvTransform:        vec4f,
-  colorUvTransformCoarse:  vec4f,
+  // xy: region origin in world units, z: region size
+  regionParams:            vec4f,
+  // rgb: macro color multiplier (linear), w: macro gloss scale
+  macroColor:              vec4f,
   heightUvTransform:       vec4f,
   heightUvTransformCoarse: vec4f,
 };
@@ -58,9 +67,17 @@ struct InstanceBlock {
 // @block material
 @group(1) @binding(4) var heightMap: texture_2d_array<f32>;
 // @block material
-@group(1) @binding(5) var colorMap1: texture_2d_array<f32>;
+@group(1) @binding(5) var pageMap1: texture_2d_array<f32>;
 // @block material
-@group(1) @binding(6) var colorMap2: texture_2d_array<f32>;
+@group(1) @binding(6) var pageMap2: texture_2d_array<f32>;
+// @block material
+@group(1) @binding(7) var indirectionMap: texture_2d_array<f32>;
+// @block material
+@group(1) @binding(8) var macroColorMap: texture_2d_array<f32>;
+// @block material
+@group(1) @binding(9) var macroNormalMap: texture_2d_array<f32>;
+// @block material
+@group(1) @binding(10) var macroGlossMap: texture_2d_array<f32>;
 
 @group(2) @binding(0) var<storage, read> instances: array<InstanceBlock, 1>;
 
@@ -166,42 +183,48 @@ fn vs_main(input : VertexInput) -> VertexOutput {
 fn fs_main(input: VertexOutput) -> FragmentOutput {
   let instance = instances[input.iid];
 
-  let morphLod = f32(instance.params1.z);
   let toEye = normalize(view.cameraPosition - input.vWorldPos);
 
-  let patchUv          = uvScaleOffset(input.vTexCoord.zw, instance.colorUvTransform);
-  let patchUvCoarse    = uvScaleOffset(input.vTexCoord.zw, instance.colorUvTransformCoarse);
-  let patchLayer       = i32(instance.params2.x);
-  let patchLayerCoarse = i32(instance.params2.y);
+  let layer      = i32(instance.params2.x);
+  let regionSize = instance.regionParams.z;
+  // region local position in world units, kept inside the region so page lookups stay in range
+  let local      = clamp(input.vWorldPos.xy - instance.regionParams.xy, vec2f(0.0), vec2f(regionSize * 0.999999));
 
-  // tangent space view direction for POM
-  let tbn = getCotangentFrame(input.vWorldPos, normalize(input.vNormal), patchUv);
-  let viewTS = normalize(tbn * toEye);
-  var pomUV = patchUv;
-  if (USE_POM) {
-    pomUV = parallaxOcclusionMap(patchUv, patchLayer, viewTS, 8, 0.0078, 0.0);
+  // tangent frame, page uv runs along +x and -y
+  let tbn = getCotangentFrame(input.vWorldPos, normalize(input.vNormal), vec2f(local.x, -local.y));
+
+  // virtual texture
+  let vt = vtSample(local, max(layer, 0));
+  let vtParams = unpackParams(vt.map1, vt.map2);
+  var vtValid = vt.valid;
+  if (layer < 0) {
+    vtValid = 0.0;
   }
 
-  // mip selection from the unparallaxed uv gradients, the parallax offset would add noise
-  let dUvX       = dpdx(patchUv);
-  let dUvY       = dpdy(patchUv);
-  let dUvCoarseX = dpdx(patchUvCoarse);
-  let dUvCoarseY = dpdy(patchUvCoarse);
-  var sample1       = textureSampleGrad(colorMap1, colorMapSampler, pomUV,         patchLayer,       dUvX,       dUvY);
-  var sample2       = textureSampleGrad(colorMap2, colorMapSampler, pomUV,         patchLayer,       dUvX,       dUvY);
-  var coarseSample1 = textureSampleGrad(colorMap1, colorMapSampler, patchUvCoarse, patchLayerCoarse, dUvCoarseX, dUvCoarseY);
-  var coarseSample2 = textureSampleGrad(colorMap2, colorMapSampler, patchUvCoarse, patchLayerCoarse, dUvCoarseX, dUvCoarseY);
+  // macro maps, also the fallback where no page is resident
+  let regionUv     = vec2f(local.x / regionSize, 1.0 - local.y / regionSize);
+  let macroAlbedo  = textureSample(macroColorMap, colorMapSampler, regionUv, max(layer, 0)).rgb * instance.macroColor.rgb;
+  let macroNormalS = textureSample(macroNormalMap, colorMapSampler, regionUv, max(layer, 0)).xy;
+  let macroGloss   = textureSample(macroGlossMap, colorMapSampler, regionUv, max(layer, 0)).r * instance.macroColor.w;
+  let macroNormal  = normalize(vec3f(macroNormalS, 1.0 / max(instance.params2.z, 0.001)));
+  let macroValid   = instance.params2.y;
 
-  let fineParams = unpackParams(sample1, sample2);
-  let coarseParams = unpackParams(coarseSample1, coarseSample2);
+  let viewDistance = distance(view.cameraPosition, input.vWorldPos);
+  var macroWeight  = max(smoothstep(MACRO_VIEW_DISTANCE - MACRO_BLEND_DISTANCE, MACRO_VIEW_DISTANCE, viewDistance), 1.0 - vtValid);
+  if (global.debug == DEBUG_VT_NO_MACRO) {
+    macroWeight = 0.0;
+  }
+  macroWeight *= macroValid;
 
-  // only blend when both fine and coarse are real distinct tiles
-  let blend  = input.vMorph;
-  let normal = normalize(tbn * normalize(mix(fineParams.normal, coarseParams.normal, blend)));
-  let albedo = vec3f(mix(fineParams.color, coarseParams.color, blend));
+  // neither pages nor macro maps, neutral ground
+  let missing  = (1.0 - vtValid) * (1.0 - macroValid);
+  let vtAlbedo = mix(vtParams.color, vec3f(0.18), missing);
+
+  let normal = normalize(tbn * normalize(mix(vtParams.normal, macroNormal, macroWeight)));
+  let albedo = mix(vtAlbedo, macroAlbedo, macroWeight);
   let alpha = 1.0;
-  var specular = vec3f(mix(fineParams.specular, coarseParams.specular, blend));
-  let authoredRoughness = mix(fineParams.roughness, coarseParams.roughness, blend);
+  var specular = vec3f(mix(vtParams.specular, instance.params2.w, macroWeight));
+  let authoredRoughness = mix(vtParams.roughness, smoothnessToRoughness(macroGloss), macroWeight);
   // specular antialiasing, the game filters the gbuffer of all opaque surfaces (FilterGBufferPS)
   let saa = getNormalVarianceSmoothness(
     normal,
@@ -296,16 +319,20 @@ fn fs_main(input: VertexOutput) -> FragmentOutput {
 
     // #region Debug Vertex attributes
     case DEBUG_V_COLOR0: {
-      out.color = vec4f(vec3f(blend), 1.0);
+      out.color = vec4f(vec3f(input.vMorph), 1.0);
     }
     case DEBUG_V_COLOR1: {
       // out.color = vec4f(cDetailMap.rgb, 1.0);
     }
     case DEBUG_V_UV0: {
-      out.color = vec4f(fract(patchUv.xy), blend, 1.0);
+      out.color = vec4f(fract(local / VT_PAGE_WORLD_SIZE), 0.0, 1.0);
     }
     case DEBUG_V_UV1: {
-      out.color = vec4f(fract(patchUvCoarse.xy), blend, 1.0);
+      out.color = vec4f(regionUv, 0.0, 1.0);
+    }
+    case DEBUG_VT_MIP: {
+      let shade = 0.5 + 0.5 * max(dot(normal, normalize(vec3f(0.3, 0.3, 0.9))), 0.0);
+      out.color = vec4f(mix(vtMipColor(vt.mip), vec3f(1.0, 0.0, 0.0), 1.0 - vtValid) * shade, 1.0);
     }
     case DEBUG_V_UV3: {
       // out.color = vec4f(fract(uvEmittance.xy), 0.0, 1.0);
@@ -441,80 +468,81 @@ fn readMapData(uv: vec2f, params3: vec4f) -> vec4f {
   return vec4f(normal, h);
 }
 
-fn samplePOMHeight(uv: vec2f, layer: i32) -> f32 {
-  let clampedUV = clamp(uv, vec2f(0.0), vec2f(1.0));
-  return textureSampleLevel(colorMap2, colorMapSampler, clampedUV, layer, 0.0).a;
+struct VtSample {
+  map1:  vec4f,
+  map2:  vec4f,
+  valid: f32,
+  // page mip of the finer valid sample
+  mip:   f32,
 }
 
-// Parallax Occlusion Mapping
-// uv         : base tile UV
-// layer      : tile array layer
-// viewTS     : view direction in tangent space (tbn * toEye)
-// numSteps   : ray march steps, 8-16 is typical
-// displacement: max height displacement in UV space, e.g. 0.03
-// bias       : height bias, 0.5-0.7 typical
-fn parallaxOcclusionMap(
-  uv:           vec2f,
-  layer:        i32,
-  viewTS:       vec3f,
-  numSteps:     i32,
-  displacement: f32,
-  bias:         f32,
-) -> vec2f {
+// resolves the page for the requested level through the indirection and samples it (ResolvePhysicalUV)
+fn vtSampleLevel(local: vec2f, layer: i32, level: i32) -> VtSample {
+  var result: VtSample;
+  let dims  = vec2i(textureDimensions(indirectionMap, level));
+  let cell  = clamp(vec2i(floor(local / (VT_PAGE_WORLD_SIZE * exp2(f32(level))))), vec2i(0), dims - vec2i(1));
+  let entry = textureLoad(indirectionMap, cell, layer, level);
+  let slot  = i32(round(entry.r * 255.0)) + i32(round(entry.g * 255.0)) * 256;
+  let mip   = round(entry.b * 255.0);
 
-  // UV step per ray march iteration
-  // xy of viewTS is the tangent space direction, z is depth
-  // divide by z to get correct perspective-correct step
-  let stepSize = 1.0 / f32(numSteps);
-  // let uvDelta  = (viewTS.xy / viewTS.z) * displacement / f32(numSteps);
-  let uvDelta  = (viewTS.xy) * displacement / f32(numSteps);
+  // position inside the referenced page, which may be coarser than the requested level
+  let pagePos = local / (VT_PAGE_WORLD_SIZE * exp2(mip));
+  let f = clamp(pagePos - floor(pagePos), vec2f(0.0), vec2f(1.0));
+  // shared edges: texel centers 0 and N-1 lie on the page border, rows run from max y down
+  let uv = (vec2f(0.5) + vec2f(f.x, 1.0 - f.y) * (VT_PAGE_SIZE - 1.0)) / VT_PAGE_SIZE;
 
-  // start position — offset by bias to reduce self-intersection
-  var currentUV     = uv - (1.0 - bias) * f32(numSteps) * uvDelta;
-  var currentHeight = 1.0 - stepSize;
+  result.map1  = textureSampleLevel(pageMap1, colorMapSampler, uv, slot, 0.0);
+  result.map2  = textureSampleLevel(pageMap2, colorMapSampler, uv, slot, 0.0);
+  result.valid = step(0.5, entry.a);
+  result.mip   = mip;
+  return result;
+}
 
-  var prevSample = samplePOMHeight(currentUV, layer);
-  currentUV     += uvDelta;
-  var currSample = samplePOMHeight(currentUV, layer);
+// software trilinear filtering between two virtual texture mips (SampleVirtualTextures)
+fn vtSample(local: vec2f, layer: i32) -> VtSample {
+  let texel = local * VT_TEXELS_PER_METER;
+  let lx    = length(dpdx(texel));
+  let ly    = length(dpdy(texel));
+  let ddMax = max(lx, ly);
+  let ddMin = max(min(lx, ly), 1e-6);
+  let ratio = min(ceil(ddMax / ddMin), VT_MAX_ANISOTROPY);
+  let level = clamp(log2(max(ddMax / ratio, 1e-6)), 0.0, f32(VT_MIP_COUNT - 1));
 
-  // coarse ray march — find approximate intersection
-  for (var i = 0; i < numSteps; i++) {
-    if currSample >= currentHeight { break; }
+  let level0 = i32(floor(level));
+  let level1 = min(level0 + 1, VT_MIP_COUNT - 1);
+  let a = vtSampleLevel(local, layer, level0);
+  let b = vtSampleLevel(local, layer, level1);
 
-    prevSample     = currSample;
-    currentHeight -= stepSize;
-    currentUV     += uvDelta;
-    currSample     = samplePOMHeight(currentUV, layer);
+  // a level without page does not contribute
+  let t   = fract(level);
+  let wa  = a.valid * (1.0 - t);
+  let wb  = b.valid * t;
+  let sum = wa + wb;
+
+  var result: VtSample;
+  result.valid = max(a.valid, b.valid);
+  if (sum > 0.0) {
+    result.map1 = (a.map1 * wa + b.map1 * wb) / sum;
+    result.map2 = (a.map2 * wa + b.map2 * wb) / sum;
+  } else {
+    result.map1 = mix(a.map1, b.map1, b.valid);
+    result.map2 = mix(a.map2, b.map2, b.valid);
   }
+  result.mip = select(b.mip, a.mip, a.valid > 0.5);
+  return result;
+}
 
-  // binary search refinement — narrow down exact intersection
-  var t0     = currentHeight + stepSize;   // before intersection
-  var t1     = currentHeight;              // after intersection
-  var delta0 = t0 - prevSample;
-  var delta1 = t1 - currSample;
-
-  for (var i = 0; i < 10; i++) {
-    let denom = delta1 - delta0;
-    if abs(denom) < 0.0001 { break; }
-
-    let t      = (t0 * delta1 - t1 * delta0) / denom;
-    let uvBest = currentUV - (currentHeight - t) / stepSize * uvDelta;
-    let hBest  = samplePOMHeight(uvBest, layer);
-    let error  = t - hBest;
-
-    if abs(error) <= 0.01 {
-      currentUV = uvBest;
-      break;
-    }
-
-    if (error < 0.0) {
-      delta1 = error; t1 = t;
-    } else {
-      delta0 = error; t0 = t;
-    }
+fn vtMipColor(mip: f32) -> vec3f {
+  switch (i32(mip)) {
+    case 0: { return vec3f(1.0, 0.1, 0.1); }
+    case 1: { return vec3f(1.0, 0.5, 0.0); }
+    case 2: { return vec3f(1.0, 1.0, 0.0); }
+    case 3: { return vec3f(0.2, 1.0, 0.2); }
+    case 4: { return vec3f(0.0, 0.9, 0.9); }
+    case 5: { return vec3f(0.2, 0.4, 1.0); }
+    case 6: { return vec3f(0.6, 0.2, 1.0); }
+    default: { return vec3f(1.0, 0.3, 0.8); }
   }
-
-  return currentUV;
 }
 
 ${COMMON_WGSL}

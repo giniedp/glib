@@ -49,6 +49,7 @@ import { LightSystem } from './game/light/LightSystem'
 import { RegionSystem } from './game/region/RegionSystem'
 import { RangeActivationSystem } from './game/slice/RangeActivationSystem'
 import { SliceSystem } from './game/slice/SliceSystem'
+import { RoadSystem } from './game/road/RoadSystem'
 import { TerrainSystem } from './game/terrain/TerrainSystem'
 import { VegetationSystem } from './game/vegetation/VegetationSystem'
 import { createRenderPipeline } from './graphics'
@@ -97,7 +98,8 @@ export class NwViewer extends EcsGame {
         deviceOptions: () => {
           return {
             requiredLimits: {
-              maxTextureArrayLayers: 512,
+              // terrain virtual texture page cache, see VT_PAGE_CAPACITY
+              maxTextureArrayLayers: 1024,
             },
           }
         },
@@ -127,6 +129,7 @@ export class NwViewer extends EcsGame {
     this.world.addSystem(new InstancedRenderSystem())
     this.world.addSystem(new CapitalSystem())
     this.world.addSystem(new SliceSystem())
+    this.world.addSystem(new RoadSystem())
     this.world.addSystem(new CollisionSystem())
     this.world.addSystem(new RangeActivationSystem())
     this.world.addSystem(new SkyLightSystem())
