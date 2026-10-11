@@ -40,7 +40,14 @@ export interface LevelInfo {
   missionEntities: ViewerEntity[]
   /** slices/system/skyboxsystem, spawned by the game for every level. Holds the default TimeOfDay POI and its skybox */
   skyboxSystem: ViewerSlice | null
-  /** slices referenced by skyboxSystem, keyed by `${guid}_${subId}` */
+  /**
+   * Territory master slice from tracts.json `territoryMasterSlicePath`, spawned by the game.
+   * Its PrefabReferencer lists the territory, zone and POI bounds slices (Territory components).
+   */
+  territorySystem?: ViewerSlice | null
+  /**
+   * slices referenced by skyboxSystem and territorySystem, keyed by `${guid}_${subId}`
+   */
   slices?: Record<string, ViewerSlice> | null
 }
 
@@ -156,6 +163,11 @@ export interface RegionInfo {
   poiImpostors: RegionImpostor[]
   impostors: RegionImpostor[]
   terrainMaterial: RegionMaterial | null
+  /**
+   * Region local tract names (localmappings.json), indexed by the values of `tractmap.bin`.
+   * `tractmap.bin` holds u8 indices in image order like the heightmap (row 0 at region max y), 255 = unmapped.
+   */
+  tracts?: string[]
 }
 
 export interface RegionImpostor {
@@ -385,6 +397,11 @@ export const VolumeComponentName = 'Volume' as const
 export const RoadComponentName = 'Road' as const
 export const RiverComponentName = 'River' as const
 export const WaterVolumeComponentName = 'WaterVolume' as const
+export const TerritoryComponentName = 'Territory' as const
+export const PrefabReferencerComponentName = 'PrefabReferencer' as const
+export const AudioTriggerComponentName = 'AudioTrigger' as const
+export const AudioAmbienceComponentName = 'AudioAmbience' as const
+export const AudioAreaComponentName = 'AudioArea' as const
 
 export const ComponentTypes = {
   MeshComponentName,
@@ -399,6 +416,11 @@ export const ComponentTypes = {
   RoadComponentName,
   RiverComponentName,
   WaterVolumeComponentName,
+  TerritoryComponentName,
+  PrefabReferencerComponentName,
+  AudioTriggerComponentName,
+  AudioAmbienceComponentName,
+  AudioAreaComponentName,
 }
 
 export type ComponentType =
@@ -412,6 +434,11 @@ export type ComponentType =
   | typeof RoadComponentName
   | typeof RiverComponentName
   | typeof WaterVolumeComponentName
+  | typeof TerritoryComponentName
+  | typeof PrefabReferencerComponentName
+  | typeof AudioTriggerComponentName
+  | typeof AudioAmbienceComponentName
+  | typeof AudioAreaComponentName
 
 export interface ViewerBaseComponent {
   type: ComponentType
@@ -579,6 +606,11 @@ export type ViewerComponent =
   | ViewerMeshComponent
   | ViewerRoadComponent
   | ViewerWaterVolumeComponent
+  | ViewerTerritoryComponent
+  | ViewerPrefabReferencerComponent
+  | ViewerAudioTriggerComponent
+  | ViewerAudioAmbienceComponent
+  | ViewerAudioAreaComponent
   | ViewerSpawnerComponent
   | ViewerPointSpawnerComponent
   | ViewerPrefabSpawnerComponent
@@ -616,6 +648,106 @@ export interface ViewerWaterVolumeComponent extends ViewerBaseComponent {
 
 export function isViewerWaterVolumeComponent(component: any): component is ViewerWaterVolumeComponent {
   return component.type === ComponentTypes.WaterVolumeComponentName
+}
+
+/**
+ * Territory, zone or POI area (TerritoryDataProviderComponent) with its polygon prism in entity space, see nwbt ViewerTerritoryComponent.
+ * Territories and POIs share one id space. Audio values come from the territory and POI definition datasheets,
+ * e.g. `MX_Territory` / `Brightwoods` or `POI_State` / `castle_dracula`. Zones without audio omit them.
+ */
+export interface ViewerTerritoryComponent extends ViewerBaseComponent {
+  type: typeof TerritoryComponentName
+  territoryId: string
+  shape: ViewerShape
+  audioGroup?: string
+  audioState?: string
+}
+
+export function isViewerTerritoryComponent(component: any): component is ViewerTerritoryComponent {
+  return component.type === ComponentTypes.TerritoryComponentName
+}
+
+/**
+ * Slices that an entity references without spawning them, e.g. the territory master referencing the bounds slices
+ */
+export interface ViewerPrefabReferencerComponent extends ViewerBaseComponent {
+  type: typeof PrefabReferencerComponentName
+  slices: AssetReference[]
+}
+
+export function isViewerPrefabReferencerComponent(component: any): component is ViewerPrefabReferencerComponent {
+  return component.type === ComponentTypes.PrefabReferencerComponentName
+}
+
+/**
+ * ATL audio emitter (AudioTriggerComponent), see nwbt ViewerAudioTriggerComponent.
+ * `playsImmediately` is often false for ambient loops that scripts start (e.g. torches), do not rely on it.
+ * With `followShape` the emitter sits at the closest point of `shape` or `spline` (entity space) to the listener.
+ */
+export interface ViewerAudioTriggerComponent extends ViewerBaseComponent {
+  type: typeof AudioTriggerComponentName
+  playTrigger: string
+  stopTrigger?: string
+  playsImmediately: boolean
+  /**
+   * ATL preload names (AudioPreloadComponent)
+   */
+  preloads?: string[]
+  followShape?: boolean
+  shape?: ViewerShape
+  spline?: ViewerSpline
+}
+
+export function isViewerAudioTriggerComponent(component: any): component is ViewerAudioTriggerComponent {
+  return component.type === ComponentTypes.AudioTriggerComponentName
+}
+
+/**
+ * Listener ambience bed of an instance (dungeon_amb_soundbank_loader.lua), e.g. `Play_QuadAmb_Dungeon_CutlassKeys`
+ */
+export interface ViewerAudioAmbienceComponent extends ViewerBaseComponent {
+  type: typeof AudioAmbienceComponentName
+  playTrigger: string
+  stopTrigger: string
+  preload?: string
+}
+
+export function isViewerAudioAmbienceComponent(component: any): component is ViewerAudioAmbienceComponent {
+  return component.type === ComponentTypes.AudioAmbienceComponentName
+}
+
+/**
+ * Trigger area (dungeon_audio.lua) that sets audio states while the listener is inside its shape (entity space)
+ */
+export interface ViewerAudioAreaComponent extends ViewerBaseComponent {
+  type: typeof AudioAreaComponentName
+  shape: ViewerShape | null
+  values: AudioAreaValues
+}
+
+export interface AudioAreaValues {
+  /**
+   * starts the instance music on activation
+   */
+  startMusic?: boolean
+  isArena?: boolean
+  dungeonName?: string
+  musicGroup?: string
+  ambientGroup?: string
+  switchName?: string
+  rtpcName?: string
+  enterMusicState?: string
+  enterAmbientState?: string
+  enterSwitchValue?: string
+  enterRtpcValue?: string
+  exitMusicState?: string
+  exitAmbientState?: string
+  exitSwitchValue?: string
+  exitRtpcValue?: string
+}
+
+export function isViewerAudioAreaComponent(component: any): component is ViewerAudioAreaComponent {
+  return component.type === ComponentTypes.AudioAreaComponentName
 }
 
 export function isViewerMeshComponent(component: any): component is ViewerMeshComponent {

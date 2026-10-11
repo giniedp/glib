@@ -34,6 +34,9 @@ import {
   isViewerPrefabSpawnerComponent,
   isViewerRoadComponent,
   isViewerWaterVolumeComponent,
+  isViewerAudioTriggerComponent,
+  isViewerAudioAmbienceComponent,
+  isViewerAudioAreaComponent,
   isViewerVolumeComponent,
   type ViewerRoadComponent,
   type ViewerWaterVolumeComponent,
@@ -46,6 +49,7 @@ import { CollisionSystem } from '../collision/CollisionSystem'
 import { DebugLayer, DebugShapeComponent } from '../debug/DebugShapeComponent'
 import { TimeOfDayComponent } from '../level/TimeOfDayComponent'
 import { LightComponent } from '../light/LightComponent'
+import { AudioEmitterComponent, AudioScriptComponent } from '../../audio/AudioEmitterComponent'
 import { RegionComponent } from '../region/RegionComponent'
 import { RoadComponent } from '../road/RoadComponent'
 import { WaterVolumeComponent } from '../water/WaterVolumeComponent'
@@ -399,6 +403,19 @@ export function executeSpawner(spawner: SliceSpawnerComponent) {
           instances: comp.spline.vertices.map((v) => mat4$scaleUniform(mat4CreateTranslation(vec3(v[0], v[1], v[2])), 0.5)),
         })
         range = Math.max(range, roadRange(comp))
+        continue
+      }
+      if (isViewerAudioTriggerComponent(comp)) {
+        // like lights, inactive entities would play without being visible
+        if (!inactive) {
+          components.push(new AudioEmitterComponent(comp))
+        }
+        continue
+      }
+      if (isViewerAudioAmbienceComponent(comp) || isViewerAudioAreaComponent(comp)) {
+        if (!inactive) {
+          components.push(new AudioScriptComponent(comp))
+        }
         continue
       }
       if (isViewerWaterVolumeComponent(comp)) {

@@ -43,6 +43,7 @@ import {
   getLevelInfoUrl,
   isTimeOfDayComponent,
   isViewerMeshComponent,
+  type LevelInfo,
   type ViewerMeshComponent,
   type ViewerSlice,
 } from '../../api'
@@ -64,6 +65,10 @@ export class LevelSystem extends GameSystem {
   public entity: GameEntity
 
   public camera: CameraComponent
+  /**
+   * Info of the loaded level, null while none is loaded
+   */
+  public levelInfo: LevelInfo | null = null
 
   private renderer: Renderer
   private skyEntity: GameEntity
@@ -171,6 +176,7 @@ export class LevelSystem extends GameSystem {
     loadSignal.throwIfAborted()
 
     console.log(...this.logTag, 'Level data loaded', levelInfo)
+    this.levelInfo = levelInfo
 
     this.entity = this.game.createEntity(levelEntityOptions(this.game.scene.entity, levelInfo))
     this.skyEntity = this.game.createEntity(createSkySphere(this.entity, this.renderer.device))
@@ -366,6 +372,7 @@ export class LevelSystem extends GameSystem {
   }
 
   private unload() {
+    this.levelInfo = null
     this.skyEntity = null
     this.gizmoEntity = null
     this.cloudsEntity = null

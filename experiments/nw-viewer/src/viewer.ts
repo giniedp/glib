@@ -38,6 +38,7 @@ import { ContentService } from './content'
 import { registerCgf } from './formats/cgf'
 import { registerMtl } from './formats/mtl'
 import { registerRnr } from './formats/rnr'
+import { AudioSystem } from './audio/AudioSystem'
 import { CapitalSystem } from './game/capital/CapitalSystem'
 import { CollisionSystem } from './game/collision/CollisionSystem'
 import { DebugLayer, DebugShapeComponent } from './game/debug/DebugShapeComponent'
@@ -137,6 +138,7 @@ export class NwViewer extends EcsGame {
     this.world.addSystem(new SkyLightSystem())
     this.world.addSystem(new LightSystem())
     this.world.addSystem(new LevelSystem())
+    this.world.addSystem(new AudioSystem())
     this.world.addSystem(new DebugShapeSystem())
     this.world.addSystem(new RaycastSystem())
     this.world.addSystem(new SpatialSystem())

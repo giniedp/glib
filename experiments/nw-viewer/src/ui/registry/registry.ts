@@ -9,7 +9,9 @@ import { DebugShapeComponent } from '../../game/debug/DebugShapeComponent'
 import { DebugShapeSystem } from '../../game/debug/DebugShapeSystem'
 import { LevelSystem } from '../../game/level/LevelSystem'
 import { TimeOfDay } from '../../game/level/TimeOfDay'
+import { AudioSystem } from '../../audio/AudioSystem'
 import type { UiAnnotation } from './types'
+import uiAudioSystem from './uiAudioSystem'
 import uiBoundingBox from './uiBoundingBox'
 import uiBoundingSphere from './uiBoundingSphere'
 import uiCameraComponent from './uiCameraComponent'
@@ -69,5 +71,6 @@ export function uiRegistry() {
   result.add(Material, uiMaterial)
   result.add(TimeOfDay, uiTimeOfDay)
   result.add(LevelSystem, uiLevelSystem)
+  result.add(AudioSystem, uiAudioSystem)
   return result
 }
