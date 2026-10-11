@@ -12,6 +12,14 @@ import { SceneSystem } from './SceneSystem'
 import { TimeSystem } from './TimeSystem'
 import { TweenSystem } from './TweenSystem'
 
+export interface EcsGameStats {
+  /**
+   * CPU time in ms of the last draw phase: {@link EcsGame.onDraw} and {@link EcsGame.onEndDraw}.
+   * Includes the world render, scene collection, render lists, encoding and present.
+   */
+  draw: number
+}
+
 export class EcsGame {
   /**
    * The graphics device
@@ -27,6 +35,13 @@ export class EcsGame {
    * Emits game events
    */
   public readonly events = new EventEmitter()
+
+  /**
+   * Runtime statistics of this game, updated in place
+   */
+  public readonly stats: EcsGameStats = {
+    draw: 0,
+  }
 
   /**
    * The content loader system
@@ -274,8 +289,10 @@ export class EcsGame {
   private handleRender(time: number, dt: number) {
     console.assert(this.device.isReady, 'device must be ready')
     if (this.onBeginDraw(time, dt) !== false) {
+      const start = performance.now()
       this.onDraw(time, dt)
       this.onEndDraw(time, dt)
+      this.stats.draw = performance.now() - start
     }
   }
 }
