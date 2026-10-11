@@ -1,4 +1,5 @@
 export * from './Model'
+export * from './ModelLod'
 export * from './Data'
 // export * from './ModelPose'
 export * from './AnimationData'

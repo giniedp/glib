@@ -12,6 +12,7 @@ import { uuid } from '@gglib/utils'
 import type { AnimationData } from './AnimationData'
 import { AnimationPlayer } from './AnimationPlayer'
 import type { ModelOptions, NodeData, SceneData, SkinData } from './Data'
+import type { ModelLod } from './ModelLod'
 import { Skeleton } from './Skeleton'
 import { createSkeletons, createTransformNodes, flattenNodes } from './utils'
 
@@ -38,6 +39,14 @@ export class Model {
    * The user defined meta data of the model
    */
   public meta: Record<string, any>
+
+  /**
+   * Levels of detail of this model, null if the model has none
+   *
+   * @remarks
+   * Not copied by {@link instantiate}: levels hold per instance models, the owner of an instance assigns its own.
+   */
+  public lod: ModelLod | null = null
 
   /**
    * All meshes belonging to this model
