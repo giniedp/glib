@@ -18,6 +18,12 @@ export interface ModelLodOptions {
    * so that a camera on a level boundary does not switch every frame. Defaults to 0.1
    */
   hysteresis?: number
+  /**
+   * Maximum screen size per level, as a fraction of the screen height. Level `n` is only used while the model
+   * appears smaller than `maxScreenSize[n]`, a negative value means no limit.
+   * Keeps large models detailed, the distance based level is lowered to the coarsest level that is allowed.
+   */
+  maxScreenSize?: ArrayLike<number> | null
 }
 
 /**
@@ -44,6 +50,11 @@ export class ModelLod {
    */
   public hysteresis: number
 
+  /**
+   * Maximum screen size per level, see {@link ModelLodOptions.maxScreenSize}
+   */
+  public maxScreenSize: ArrayLike<number> | null
+
   private readonly levels: Array<Model | null> = []
   private readonly requested: boolean[] = []
   private readonly load: (level: number) => Promise<Model | null>
@@ -52,6 +63,7 @@ export class ModelLod {
     this.distance = options.distance
     this.maxLevel = options.maxLevel
     this.hysteresis = options.hysteresis ?? 0.1
+    this.maxScreenSize = options.maxScreenSize ?? null
     this.load = options.load
     this.levels[0] = base
     this.requested[0] = true
@@ -61,14 +73,24 @@ export class ModelLod {
    * Gets the level that should be shown at the given distance
    *
    * @param distance - distance from the camera to the model
+   * @param screenSize - size of the model on screen, as a fraction of the screen height
    * @param current - the level that was selected before
    */
-  public select(distance: number, current: number): number {
+  public select(distance: number, screenSize: number, current: number): number {
     const position = distance / this.distance
     // stay on the current level while the distance is within its range, widened by the hysteresis
     const stay = position >= current - this.hysteresis && position < current + 1 + this.hysteresis
-    const level = stay ? current : Math.floor(position)
-    return Math.max(0, Math.min(level, this.maxLevel))
+    let level = stay ? current : Math.floor(position)
+    level = Math.max(0, Math.min(level, this.maxLevel))
+    while (level > 0 && !this.allowsScreenSize(level, screenSize)) {
+      level--
+    }
+    return level
+  }
+
+  private allowsScreenSize(level: number, screenSize: number) {
+    const max = this.maxScreenSize?.[level]
+    return max == null || max < 0 || screenSize < max
   }
 
   /**

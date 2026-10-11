@@ -216,12 +216,16 @@ export class MeshLoaderComponent implements GameComponent {
    */
   private attachLod(instance: Model, source: Model, instantiate: (level: Model) => Model) {
     const info = source.meta.lod as CgfLodInfo | null
-    if (!info) {
+    // like the engine (GetLodDistances), the distances are divided by lodRatio / 100, a ratio of 0 disables the levels
+    const lodRatio = (this.data.lodRatio ?? 100) / 100
+    if (!info || lodRatio <= 0) {
       return
     }
     instance.lod = new ModelLod(instance, {
-      distance: info.distance,
+      distance: info.distance / lodRatio,
       maxLevel: info.maxLevel,
+      // NW specific, interpreted as the maximum screen size per level (the game data is -1, 0.675, 0.55, …, 0.175)
+      maxScreenSize: this.data.lodMinScreenPct,
       load: async (level) => {
         const model = await this.content.loadModelLod(this.data.mesh, this.data.material, level)
         return model ? instantiate(model) : null

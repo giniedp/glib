@@ -11,12 +11,14 @@ import { CommonInputs, Material, Mesh, Texture } from '@gglib/graphics'
 import {
   BoundingBox,
   BoundingFrustum,
+  BoundingSphere,
   Intersection,
   IntersectionType,
   type IVec3,
   Mat4,
   mat4GetTranslation,
   vec3,
+  vec3Distance,
 } from '@gglib/math'
 import type { Model } from '@gglib/model'
 import {
@@ -161,6 +163,7 @@ export class SceneComponent implements GameComponent, InitializableComponent, Re
   private collectResult: RenderItem[]
   private frustum = new BoundingFrustum()
   private cameraPosition = vec3()
+  private projectionScaleY = 1
   private frame: FrameInfo
   private visibilityMask: number
   public collect(frame: FrameInfo, camera: CameraData, result: RenderItem[]): void {
@@ -175,6 +178,7 @@ export class SceneComponent implements GameComponent, InitializableComponent, Re
     this.collectResult = result
     this.frustum.updateFromViewProjection(camera.view, camera.projection)
     mat4GetTranslation(camera.world, this.cameraPosition)
+    this.projectionScaleY = camera.projection[5]
 
     // clear pools
     this.sprites.clear()
@@ -287,9 +291,22 @@ export class SceneComponent implements GameComponent, InitializableComponent, Re
       return comp.model
     }
     const distance = distanceToBox(this.cameraPosition, comp.model.boundingBox)
-    comp.lodSelected = lod.select(distance, comp.lodSelected)
+    const screenSize = this.getScreenSize(comp.model.boundingSphere)
+    comp.lodSelected = lod.select(distance, screenSize, comp.lodSelected)
     comp.lodRendered = lod.resolve(comp.lodSelected)
     return lod.getModel(comp.lodRendered)
+  }
+
+  /**
+   * Size of a sphere on screen, as a fraction of the screen height (perspective projection)
+   */
+  private getScreenSize(sphere: BoundingSphere): number {
+    const distance = vec3Distance(this.cameraPosition, sphere.center)
+    if (distance <= sphere.radius) {
+      return Number.POSITIVE_INFINITY
+    }
+    // projection[5] is 1 / tan(fovY / 2), the visible height at the distance is 2 * distance / projection[5]
+    return (sphere.radius * this.projectionScaleY) / distance
   }
 
   private pushMesh(

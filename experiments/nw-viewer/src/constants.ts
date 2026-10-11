@@ -89,13 +89,31 @@ export const COMBINE_INSTANCE_ARRAYS = true
 export const ENABLE_MODEL_LOD = true
 /**
  * Target size of a triangle on screen, the engine cvar e_LodFaceAreaTargetSize.
- * The distance between two levels of detail is `sqrt(geometric mean face area) / LOD_FACE_AREA_TARGET_SIZE`.
+ * The distance between two levels of detail is `sqrt(geometric mean face area) / LOD_FACE_AREA_TARGET_SIZE`,
+ * a smaller value keeps the finer levels longer (half the value doubles all switch distances).
+ *
+ * The game sets it per object detail spec (config/cvargroups/sys_spec_objectdetail.cfg):
+ * - LOW ([4], [5]): 0.01
+ * - MID ([6]): 0.0075
+ * - HIGH (default [7]) and very high ([8]): 0.005
+ *
+ * Per mesh factors from nwbt (MeshLoaderComponent.attachLod):
+ * - MeshRenderOptions.LODRatio: the distances are divided by lodRatio / 100 (engine GetLodDistances).
+ *   100 is the default (98% of the meshes), 200 halves the switch distances, 50 doubles them.
+ * - MeshRenderOptions.Lod_MinScreenPct: NW specific, the game data is mostly [-1, 0.675, 0.55, 0.425, 0.3, 0.175].
+ *   Interpreted as the maximum screen size (fraction of the screen height) per level, it keeps large objects detailed.
+ *
+ * If the game values still switch too early, a viewer scale that keeps the game's ratios between the specs
+ * (1 : 1.5 : 2):
+ * - HIGH: 0.0025 (2x the game distances)
+ * - MID: 0.00375
+ * - LOW: 0.005 (the game HIGH)
  */
-export const LOD_FACE_AREA_TARGET_SIZE = 0.005
+export const LOD_FACE_AREA_TARGET_SIZE = 0.0025
 /**
  * Highest level of detail of a model, the engine supports 6 levels (MAX_STATOBJ_LODS_NUM)
  */
-export const LOD_MAX_LEVEL = 5
+export const LOD_MAX_LEVEL = 2
 /**
  * A level of detail with at most this many triangles is cheap enough, coarser sibling files are not requested.
  *

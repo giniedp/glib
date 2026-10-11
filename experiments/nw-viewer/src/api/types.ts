@@ -469,6 +469,14 @@ export interface ViewerMeshComponent extends ViewerBaseComponent {
   useVisAreas?: boolean
   useManualViewDistance?: boolean
   /**
+   * MeshRenderOptions.LODRatio, scales the level of detail distances by lodRatio / 100. Omitted if 100 (default)
+   */
+  lodRatio?: number
+  /**
+   * MeshRenderOptions.Lod_MinScreenPct, NW specific screen percentage per level of detail, index 0 is level 0
+   */
+  lodMinScreenPct?: number[]
+  /**
    * The mesh is baked into the POI impostor of its cell (m_impostorFarDistance in region.slicedata)
    */
   impostor?: boolean
