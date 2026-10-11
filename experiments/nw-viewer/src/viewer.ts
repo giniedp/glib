@@ -55,6 +55,7 @@ import { SliceSystem } from './game/slice/SliceSystem'
 import { RoadSystem } from './game/road/RoadSystem'
 import { TerrainSystem } from './game/terrain/TerrainSystem'
 import { VegetationSystem } from './game/vegetation/VegetationSystem'
+import { ViewerConfig } from './config'
 import { createRenderPipeline } from './graphics'
 import { InputSlots, MaterialLayerMasks } from './material'
 import { attachOverlay } from './ui/overlay'
@@ -113,7 +114,18 @@ export class NwViewer extends EcsGame {
     attachOverlay(options.element, this)
   }
 
+  /**
+   * The runtime settings, see {@link ViewerConfig}
+   */
+  public get config(): ViewerConfig {
+    return this.world.getSystem(ViewerConfig)
+  }
+
   protected override onCreate(): void {
+    // first, so systems and components can read the settings when they initialize
+    const config = new ViewerConfig()
+    config.load()
+    this.world.addSystem(config)
     this.world.addSystem(SpaceBasis.Z_UP_POS_Y)
     this.world.addSystem(new ContentService())
     this.world.addSystem(new KeyboardInputSystem())

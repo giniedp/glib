@@ -5,16 +5,20 @@ import { Model } from '@gglib/model'
 import { fetchTypedRequest, type TypedRequest, type ViewerSlice } from '../api'
 import {
   ENABLE_MODEL_LOD,
-  LOD_FACE_AREA_TARGET_SIZE,
-  LOD_MAX_LEVEL,
   LOD_PROBE_MIN_TRIANGLES,
   PARTIAL_TEXTURE_SIZE,
   PARTIAL_TEXTURES,
 } from '../constants'
+import { ViewerConfig, type ViewerConfigValues } from '../config'
 import { CgfGeometryAssetType, isAssetIdRef, type CgfGeometry } from '../formats/cgf'
 import { MtlLoader } from '../formats/mtl'
 import { createAssetIdResolver, normalizeAssetPath, type AssetIdResolver } from './assetIds'
 import { RnrAssetType, type RnrAsset } from '../formats/rnr'
+
+/**
+ * Highest level of detail the engine supports (MAX_STATOBJ_LODS_NUM - 1), the upper bound for probing sibling files
+ */
+const ENGINE_MAX_LOD_LEVEL = 5
 
 /**
  * Material used when a model has none, same as nwbt (game/resolvers.go)
@@ -61,12 +65,14 @@ export class ContentService extends GameSystem {
   public waterGlossMap: Texture
   public nullHeightmapArray: Texture
 
+  private config: ViewerConfig
   private engineAssets = Promise.withResolvers()
   public get whenLoaded() {
     return this.engineAssets.promise
   }
 
   public initialize(world: GameWorld): void {
+    this.config = world.getSystem(ViewerConfig)
     this.device = world.getSystem(Device)
     this.loader = world.getSystem(ContentLoader)
     this.loader.executor = new BoundedAsyncExecutor(20)
@@ -267,7 +273,7 @@ export class ContentService extends GameSystem {
     const nodes = inlineLod > 0 ? geometry.inlineLods[inlineLod - 1] : geometry.nodes
     const result = this.loader.createModel({
       name: model,
-      meta: { lod: inlineLod === 0 ? cgfLodInfo(geometry, material) : null },
+      meta: { lod: inlineLod === 0 ? cgfLodInfo(geometry, material, this.config.value) : null },
       nodes: structuredClone(nodes),
       scenes: [{ nodes: [...geometry.roots] }],
       scene: 0,
@@ -420,18 +426,19 @@ export interface CgfLodInfo {
  * Like the engine, inline levels take precedence over sibling files.
  * The distance follows the engine (CBrush::GetLodDistances with lod ratio 1): sqrt(face area) / target size.
  */
-function cgfLodInfo(geometry: CgfGeometry, material: string): CgfLodInfo | null {
+function cgfLodInfo(geometry: CgfGeometry, material: string, config: ViewerConfigValues): CgfLodInfo | null {
   if (!ENABLE_MODEL_LOD || !geometry.geometricMeanFaceArea) {
     return null
   }
   const inline = geometry.inlineLods.length > 0
-  const maxLevel = inline ? geometry.inlineLods.length : geometry.haveAutoLods ? LOD_MAX_LEVEL : 0
+  const available = inline ? geometry.inlineLods.length : geometry.haveAutoLods ? ENGINE_MAX_LOD_LEVEL : 0
+  const maxLevel = Math.min(available, config.lodMaxLevel)
   if (!maxLevel) {
     return null
   }
   return {
     material,
-    distance: Math.sqrt(geometry.geometricMeanFaceArea) / LOD_FACE_AREA_TARGET_SIZE,
+    distance: Math.sqrt(geometry.geometricMeanFaceArea) / config.lodFaceAreaTargetSize,
     maxLevel,
     inline,
   }

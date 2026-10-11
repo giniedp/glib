@@ -30,6 +30,7 @@ import svgStats from './icons/chart-simple-horizontal.svg?raw'
 import svgTree from './icons/list-tree.svg?raw'
 import { uiRegistry } from './registry'
 import { CameraComponentProps } from './registry/uiCameraComponent'
+import { ConfigProps } from './registry/uiConfig'
 import { DebugShapeSystemProps } from './registry/uiDebugShapeSystem'
 import { LightSystemProps } from './registry/uiLightSystem'
 import { RenderPipelineProps } from './registry/uiRenderPipeline'
@@ -271,6 +272,7 @@ const OverlayComponent: ClosureComponent<OverlayComponentAttrs> = () => {
                       ]),
                     ]),
                     uiGroup({ title: 'Lights' }, [h(LightSystemProps, { data: viewer.world.getSystem(LightSystem) })]),
+                    uiGroup({ title: 'Config', collapsible: true }, [h(ConfigProps, { data: viewer.config })]),
                     uiGroup({ title: 'Render Pipeline', collapsible: true }, [
                       h(RenderPipelineProps, { data: viewer.world.getSystem(Renderer).pipeline, device: viewer.device }),
                     ]),
