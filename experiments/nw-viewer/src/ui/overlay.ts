@@ -23,6 +23,7 @@ import { DebugShapeSystem } from '../game/debug/DebugShapeSystem'
 import { SkyLightSystem } from '../game/level/SkyLightSystem'
 import { LightSystem } from '../game/light/LightSystem'
 import { DebugOptions } from '../material'
+import type { SceneLoadOption } from '../scenes'
 import type { LevelLoadOption, NwViewer } from '../viewer'
 import { NwSceneBrowser } from './browser'
 import { uiIcon } from './icon'
@@ -298,7 +299,10 @@ const OverlayComponent: ClosureComponent<OverlayComponentAttrs> = () => {
                     ]),
                     uiGroup({ title: 'Lights' }, [h(LightSystemProps, { data: viewer.world.getSystem(LightSystem) })]),
                     uiGroup({ title: 'Render Pipeline', collapsible: true }, [
-                      h(RenderPipelineProps, { data: viewer.world.getSystem(Renderer).pipeline, device: viewer.device }),
+                      h(RenderPipelineProps, {
+                        data: viewer.world.getSystem(Renderer).pipeline,
+                        device: viewer.device,
+                      }),
                     ]),
                   ]),
                 ],
@@ -346,9 +350,11 @@ const SettingsButton: ClosureComponent<{ viewer: NwViewer }> = () => {
               ]),
             },
             [
-              h('div.twk-p-4', { style: { minWidth: '28rem', minHeight: '10rem', maxHeight: '60vh', overflow: 'auto' } }, [
-                h(ConfigProps, { data: viewer.config }),
-              ]),
+              h(
+                'div.twk-p-4',
+                { style: { minWidth: '28rem', minHeight: '10rem', maxHeight: '60vh', overflow: 'auto' } },
+                [h(ConfigProps, { data: viewer.config })],
+              ),
             ],
           ),
         ],
@@ -371,7 +377,7 @@ const LoadLevelButton: ClosureComponent<{ viewer: NwViewer; options: Record<stri
               dialogRef.showModal()
             },
           },
-          'Levels',
+          'Scenes',
         ),
         uiDialog(
           {
@@ -396,7 +402,7 @@ const LoadLevelButton: ClosureComponent<{ viewer: NwViewer; options: Record<stri
                   },
                   [
                     uiBarEnd({}, uiButton({ large: true, square: true, onclick: () => dialogRef?.close() }, '×')),
-                    h('div.twk-px-2', {}, 'Levels'),
+                    h('div.twk-px-2', {}, 'Scenes'),
                   ],
                 ),
                 footer: uiBar({}, [
@@ -406,35 +412,20 @@ const LoadLevelButton: ClosureComponent<{ viewer: NwViewer; options: Record<stri
                 ]),
               },
               [
-                h(
-                  'div.twk-p-4.twk-gap-1.twk-flex',
-                  { style: { minHeight: '10rem', maxHeight: '50vh', overflow: 'auto' } },
-                  [
-                    Object.entries(options).map(([title, options]) => {
-                      return uiGroup(
-                        { title, collapsible: true, collapsed: true },
-                        options.map((option) => {
-                          return uiButton(
-                            {
-                              class: 'twk-text-start twk-bar',
-                              onclick: () => {
-                                dialogRef.close()
-                                viewer.onLevelSelected(option.value)
-                              },
-                            },
-                            [
-                              option.label,
-                              h('span.twk-bar-end.twk-color-muted', {}, [
-                                option.isOpenWorld ? 'Open World' : '',
-                                option.isOpenWorld || title === 'raid' || title.match(/battle/) ? '⚠️' : '',
-                              ]),
-                            ],
-                          )
-                        }),
-                      )
-                    }),
-                  ],
-                ),
+                uiTabs({}, [
+                  uiGroup(
+                    { title: 'Levels' },
+                    levelList(viewer, options, () => dialogRef?.close()),
+                  ),
+                  uiGroup(
+                    { title: 'Particles' },
+                    sceneList(viewer, viewer.sceneOptions.particles, () => dialogRef?.close()),
+                  ),
+                  uiGroup(
+                    { title: 'Materials' },
+                    sceneList(viewer, viewer.sceneOptions.materials, () => dialogRef?.close()),
+                  ),
+                ]),
               ],
             ),
           ],
@@ -442,4 +433,59 @@ const LoadLevelButton: ClosureComponent<{ viewer: NwViewer; options: Record<stri
       ]
     },
   }
+}
+
+/**
+ * Levels grouped by category
+ */
+function levelList(viewer: NwViewer, options: Record<string, LevelLoadOption[]>, close: () => void) {
+  return h('div.twk-p-4.twk-gap-1.twk-flex', { style: { minHeight: '10rem', maxHeight: '50vh', overflow: 'auto' } }, [
+    Object.entries(options).map(([title, options]) => {
+      return uiGroup(
+        { title, collapsible: true, collapsed: true },
+        options.map((option) => {
+          return uiButton(
+            {
+              class: 'twk-text-start twk-bar',
+              onclick: () => {
+                close()
+                viewer.onLevelSelected(option.value)
+              },
+            },
+            [
+              option.label,
+              h('span.twk-bar-end.twk-color-muted', {}, [
+                option.isOpenWorld ? 'Open World' : '',
+                option.isOpenWorld || title === 'raid' || title.match(/battle/) ? '⚠️' : '',
+              ]),
+            ],
+          )
+        }),
+      )
+    }),
+  ])
+}
+
+/**
+ * Preview scenes without a level of a tab (particle showcase …)
+ */
+function sceneList(viewer: NwViewer, options: SceneLoadOption[], close: () => void) {
+  return h(
+    'div.twk-p-4.twk-gap-1.twk-flex',
+    { style: { minHeight: '10rem', maxHeight: '50vh', overflow: 'auto' } },
+    options.length
+      ? options.map((option) => {
+          return uiButton(
+            {
+              class: 'twk-text-start twk-bar',
+              onclick: () => {
+                close()
+                viewer.onLevelSelected(option.value)
+              },
+            },
+            [option.label, h('span.twk-bar-end.twk-color-muted', {}, option.description ?? '')],
+          )
+        })
+      : h('div.twk-color-muted.twk-p-2', {}, 'No scenes yet'),
+  )
 }

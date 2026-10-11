@@ -49,6 +49,7 @@ import { DistributionSystem } from './game/distribution/DistributionSystem'
 import { InstancedRenderSystem } from './game/instancing/InstancedRenderSystem'
 import { LevelSystem } from './game/level/LevelSystem'
 import { SkyLightSystem } from './game/level/SkyLightSystem'
+import { createSceneOptions, VIEWER_MODE_PARAMS, type SceneOptions } from './scenes'
 import { LightSystem } from './game/light/LightSystem'
 import { RegionSystem } from './game/region/RegionSystem'
 import { RangeActivationSystem } from './game/slice/RangeActivationSystem'
@@ -79,7 +80,7 @@ export class NwViewer extends EcsGame {
   public static readonly onLevelOptionsLoaded = brand<EventType<NwViewer>>(Symbol('levelOptions'))
 
   public camera: CameraComponent
-  public mode?: 'level' | 'model' | 'image' | 'material' | 'slice' = null
+  public mode?: 'level' | 'model' | 'image' | 'material' | 'slice' | 'particles' | 'materials' = null
 
   public deviceStats: DeviceStats
   public schedulerStats: SchedulerStats
@@ -88,6 +89,10 @@ export class NwViewer extends EcsGame {
   public scheduler: SchedulerSystem
   public levelSelection: string
   public levelOptions: Record<string, LevelLoadOption[]> = {}
+  /**
+   * Preview scenes without a level, the particles and materials tabs of the scenes dialog
+   */
+  public sceneOptions: SceneOptions = createSceneOptions()
 
   public logTag = lfmt.badge('#4E79A7', 'NwViewer')
 
@@ -447,8 +452,14 @@ export class NwViewer extends EcsGame {
     }, 1000)
   }
 
+  /**
+   * Opens a level or preview scene by its url parameters, replacing the parameters of the current one
+   */
   public onLevelSelected(value: string) {
     const url = new URL(window.location.href)
+    for (const key of VIEWER_MODE_PARAMS) {
+      url.searchParams.delete(key)
+    }
     const params = new URLSearchParams(value)
     params.forEach((value, key) => {
       url.searchParams.set(key, value)
@@ -467,6 +478,24 @@ export class NwViewer extends EcsGame {
     this.mode = 'material'
     this.world.getSystem(LevelSystem).loadMaterial(asset)
     this.teleport(0, 0, 0)
+    redrawUi()
+  }
+
+  /**
+   * Shows a material showcase set on shader stages, see LevelSystem.loadMaterials
+   */
+  public loadMaterials(set: string | null, options?: { time?: number }) {
+    this.mode = 'materials'
+    this.world.getSystem(LevelSystem).loadMaterials(set, options)
+    redrawUi()
+  }
+
+  /**
+   * Shows particle effects on a grid, see LevelSystem.loadParticles
+   */
+  public loadParticles(spec: string | null, filter?: string | null, options?: { spacing?: number; time?: number }) {
+    this.mode = 'particles'
+    this.world.getSystem(LevelSystem).loadParticles(spec, filter, options)
     redrawUi()
   }
 

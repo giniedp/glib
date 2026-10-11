@@ -31,6 +31,7 @@ import {
   mat4$preTranslateZ,
   mat4CreateFromArray,
   mat4CreateRotationX,
+  mat4CreateTranslation,
   mat4Identity,
   vec3,
   vec3Copy,
@@ -50,7 +51,25 @@ import {
 import { ContentService } from '../../content'
 import { InputSlots, SkyMaterial } from '../../material'
 import { ShapeMaterial } from '../../material/ShapeMaterial'
+import {
+  createParticleShowcase,
+  particleShowcaseGrid,
+  resolveParticleShowcase,
+  type ParticleShowcaseOptions,
+} from '../particles/ParticleShowcase'
+import { ParticleSystem } from '../particles/ParticleSystem'
+import {
+  createGroundGeometry,
+  createShaderBallGeometries,
+  createStageGeometries,
+  MATERIAL_SHOWCASE_SETS,
+  SHOWCASE_WATER_SHAPE,
+  SHOWCASE_STAGE_DEPTH,
+  SHOWCASE_STAGE_MATERIAL,
+  SHOWCASE_STAGE_WIDTH,
+} from '../showcase/MaterialShowcase'
 import { MeshLoaderComponent } from '../slice/MeshLoaderComponent'
+import { buildWaterVolumeMesh } from '../water/WaterVolumeMesh'
 import { TerrainSystem } from '../terrain/TerrainSystem'
 import { levelEntityOptions } from './LevelComponent'
 import { SkyLightSystem } from './SkyLightSystem'
@@ -264,21 +283,7 @@ export class LevelSystem extends GameSystem {
     wasd.targetVertical = 45 * DEGREE_TO_RAD
     wasd.orbitCenter.z = 4
 
-    const content = this.content
-    const asset = await content.loadAsset(assetUrl)
-    loadSignal.throwIfAborted()
-
-    const materials: Material[] = []
-    for (let i = 0; i < asset.count(AssetType.Material); i++) {
-      const options = await asset.load<MaterialOptions>(AssetType.Material, i, {
-        content: content.loader,
-        baseUrl: content.nwbtFileUrl,
-      })
-      loadSignal.throwIfAborted()
-
-      const material = content.loader.createMaterial(options)
-      materials.push(material)
-    }
+    const materials = await this.loadMaterialFile(assetUrl, loadSignal)
 
     const shapes = ['cylinder', 'box', 'sphere'] as const
     const meshOptions: MeshOptions = {
@@ -354,6 +359,234 @@ export class LevelSystem extends GameSystem {
     this.skyEntity = this.game.createEntity(createSkySphere(this.entity, this.renderer.device))
     this.cloudsEntity = this.game.createEntity(createCloudsDome(this.entity))
     this.gizmoEntity = this.game.createEntity(createGizmoGrid(this.entity, this.renderer.device))
+  }
+
+  /**
+   * Shows particle effects on a grid instead of a level, see {@link resolveParticleShowcase} for the specification
+   */
+  public async loadParticles(
+    spec: string | null,
+    filter?: string | null,
+    options?: ParticleShowcaseOptions & { time?: number; timeOfDayLevel?: string },
+  ) {
+    this.loadCancel()
+    const loadSignal = this.beginLoad()
+    await this.beginShowcase(loadSignal, options)
+
+    const items = await resolveParticleShowcase(this.game.world.getSystem(ParticleSystem), spec, filter)
+    loadSignal.throwIfAborted()
+    console.log(...lfmt.merge(this.logTag, lfmt.green(`Particle showcase: ${items.length} effects`)), items)
+
+    const spacing = options?.spacing ?? 6
+    const { columns, rows } = particleShowcaseGrid(items.length)
+    this.orbitShowcase(0, 0, Math.max(columns, rows) * spacing * 0.6 + 4)
+
+    this.entity = this.game.createEntity({
+      name: `Particles: ${spec || 'preset'}`,
+      parent: this.game.scene.entity,
+      transform: new TransformComponent({
+        keepWorld: true,
+        world: mat4Identity(),
+      }),
+    })
+    for (const entity of createParticleShowcase(this.entity, items, {
+      ...options,
+      spacing,
+      altitude: SHOWCASE_ALTITUDE,
+    })) {
+      this.game.createEntity(entity)
+    }
+
+    this.skyEntity = this.game.createEntity(createSkySphere(this.entity, this.renderer.device))
+    this.cloudsEntity = this.game.createEntity(createCloudsDome(this.entity))
+    this.gizmoEntity = this.game.createEntity(createGizmoGrid(this.entity, this.renderer.device))
+  }
+
+  /**
+   * Shows a set of materials, each on its own shader stage, see {@link MATERIAL_SHOWCASE_SETS}
+   */
+  public async loadMaterials(setName: string | null, options?: { time?: number; timeOfDayLevel?: string }) {
+    this.loadCancel()
+    const loadSignal = this.beginLoad()
+    await this.beginShowcase(loadSignal, options)
+
+    const set = MATERIAL_SHOWCASE_SETS[setName] ?? Object.values(MATERIAL_SHOWCASE_SETS)[0]
+    console.log(...lfmt.merge(this.logTag, lfmt.green(`Material showcase: ${set.label}`)), set)
+    const device = this.renderer.device
+    const [stageMaterial] = await this.loadMaterialFile(SHOWCASE_STAGE_MATERIAL, loadSignal)
+
+    const columns = Math.min(4, set.items.length)
+    const rows = Math.ceil(set.items.length / columns)
+    const cellX = SHOWCASE_STAGE_WIDTH + 1.5
+    const cellY = SHOWCASE_STAGE_DEPTH + 3
+    this.orbitShowcase(0, 0, Math.max(columns * cellX, rows * cellY) * 0.6 + 4)
+
+    this.entity = this.game.createEntity({
+      name: `Materials: ${set.label}`,
+      parent: this.game.scene.entity,
+      transform: new TransformComponent({ keepWorld: true, world: mat4Identity() }),
+    })
+    this.skyEntity = this.game.createEntity(createSkySphere(this.entity, device))
+    this.cloudsEntity = this.game.createEntity(createCloudsDome(this.entity))
+    this.game.createEntity({
+      name: 'Ground',
+      parent: this.entity,
+      transform: new TransformComponent({
+        keepWorld: true,
+        world: mat4CreateTranslation(vec3(0, 0, SHOWCASE_ALTITUDE)),
+      }),
+      components: [
+        new BoundsComponent(),
+        new ModelComponent({
+          model: new Model(device, {
+            meshes: [
+              new Mesh(device, {
+                materials: [stageMaterial],
+                partImports: [{ geometry: createGroundGeometry(device), materialIndex: 0 }],
+              }),
+            ],
+          }),
+        }),
+      ],
+    })
+
+    for (let i = 0; i < set.items.length; i++) {
+      const item = set.items[i]
+      const x = ((i % columns) - (columns - 1) / 2) * cellX
+      const y = (Math.floor(i / columns) - (rows - 1) / 2) * cellY
+      let materials: Material[] = []
+      if (item.material) {
+        materials = await this.loadMaterialFile(item.material, loadSignal).catch((err) => {
+          console.warn(...this.logTag, 'showcase material failed', item.material, err)
+          return []
+        })
+        if (item.index != null) {
+          materials = materials.slice(item.index, item.index + 1)
+        }
+      }
+
+      // the stage, and the material on the shader ball primitives (cycling through the sub materials)
+      const meshOptions: MeshOptions = { materials: [stageMaterial, ...materials], partImports: [] }
+      for (const geometry of createStageGeometries(device)) {
+        meshOptions.partImports.push({ geometry, materialIndex: 0 })
+      }
+      if (item.water) {
+        // the water surface crosses the shader ball in the stage material
+        for (const geometry of createShaderBallGeometries(device).slice(0, 3)) {
+          meshOptions.partImports.push({ geometry, materialIndex: 0 })
+        }
+      } else if (materials.length) {
+        // with a model, the model takes the place of the sphere and the sheet
+        const balls = createShaderBallGeometries(device).filter((_, k) => !item.model || k === 1 || k === 2)
+        balls.forEach((geometry, k) => {
+          meshOptions.partImports.push({ geometry, materialIndex: 1 + (k % materials.length) })
+        })
+      }
+      const cellWorld = mat4CreateTranslation(vec3(x, y, SHOWCASE_ALTITUDE))
+      if (item.water && materials.length) {
+        const builder = buildWaterVolumeMesh(SHOWCASE_WATER_SHAPE, cellWorld, {
+          uScale: 1,
+          vScale: 1,
+          fogColor: [0.05, 0.12, 0.12],
+          fogDensity: 0.8,
+          fogAffectedBySun: true,
+        })
+        if (builder) {
+          // the surface is built in world space
+          this.game.createEntity({
+            name: `${item.label} (water surface)`,
+            parent: this.entity,
+            transform: new TransformComponent({ keepWorld: true, world: mat4Identity() }),
+            components: [
+              new BoundsComponent(),
+              new ModelComponent({
+                model: new Model(device, {
+                  meshes: [
+                    new Mesh(device, {
+                      materials: [materials[0]],
+                      partImports: [
+                        { geometry: builder.buildGeometry(device, { name: 'WaterVolume' }), materialIndex: 0 },
+                      ],
+                    }),
+                  ],
+                }),
+              }),
+            ],
+          })
+        }
+      }
+      const cell = this.game.createEntity({
+        name: item.label,
+        parent: this.entity,
+        transform: new TransformComponent({ keepWorld: true, world: cellWorld }),
+        components: [
+          new BoundsComponent(),
+          new ModelComponent({ model: new Model(device, { meshes: [new Mesh(device, meshOptions)] }) }),
+        ],
+      })
+      if (item.model) {
+        this.game.createEntity({
+          name: item.model,
+          parent: cell,
+          transform: new TransformComponent({ local: mat4CreateTranslation(vec3(-0.6, 0.2, 0)) }),
+          components: [new MeshLoaderComponent({ type: 'Mesh', mesh: item.model, alwaysRender: true })],
+        })
+      }
+    }
+  }
+
+  /**
+   * Common setup of the showcase scenes: waits for the engine assets and applies the time of day of a level
+   */
+  private async beginShowcase(signal: AbortSignal, options?: { time?: number; timeOfDayLevel?: string }) {
+    // the viewer restores the camera from the url once the engine assets are loaded, set it up afterwards
+    await this.content.whenLoaded
+    signal.throwIfAborted()
+
+    // lighting, fog and sky of a level, the defaults are fogged in
+    const todLevel = options?.timeOfDayLevel ?? 'newworld_vitaeeterna'
+    const levelInfo = await fetchTypedRequest(this.content.nwbtUrl, getLevelInfoUrl(todLevel))
+    signal.throwIfAborted()
+    await this.timeOfDay.setLevelInfo(levelInfo, { content: this.content, signal })
+    if (options?.time != null) {
+      this.timeOfDay.time = options.time
+    }
+    this.oceanLevel = -1000
+  }
+
+  /**
+   * Orbit camera looking down onto a showcase around the center
+   */
+  private orbitShowcase(x: number, y: number, radius: number) {
+    const camera = this.game.scene.getView(0).camera as CameraComponent
+    const wasd = camera.entity.component(WASDComponent)
+    wasd.orbitMode = true
+    wasd.radiusMax = 1000
+    wasd.targetRadius = radius
+    wasd.orbitCenter.x = x
+    wasd.orbitCenter.y = y
+    wasd.orbitCenter.z = SHOWCASE_ALTITUDE + 1.5
+    // negative is down
+    wasd.setRotation(0, -25 * DEGREE_TO_RAD)
+  }
+
+  /**
+   * Loads all sub materials of a material file
+   */
+  private async loadMaterialFile(url: string, signal: AbortSignal): Promise<Material[]> {
+    const content = this.content
+    const asset = await content.loadAsset(url)
+    signal.throwIfAborted()
+    const result: Material[] = []
+    for (let i = 0; i < asset.count(AssetType.Material); i++) {
+      const options = await asset.load<MaterialOptions>(AssetType.Material, i, {
+        content: content.loader,
+        baseUrl: content.nwbtFileUrl,
+      })
+      signal.throwIfAborted()
+      result.push(content.loader.createMaterial(options))
+    }
+    return result
   }
 
   private loadCtrl: AbortController
@@ -433,6 +666,12 @@ function createGizmoGrid(parent: GameEntity, device: Device): CreateEntityOption
     ],
   }
 }
+
+/**
+ * Height of the showcase scenes. The height fog of the open world time of day is dense at sea level,
+ * the terrain of the levels is mostly above 100m.
+ */
+const SHOWCASE_ALTITUDE = 200
 
 /**
  * Cloud layer of the sky.

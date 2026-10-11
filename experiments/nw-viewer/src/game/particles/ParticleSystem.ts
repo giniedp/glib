@@ -97,7 +97,10 @@ export class ParticleSystem extends GameSystem {
     return this.effects.get(key)
   }
 
-  private loadLibrary(path: string): Promise<ParticleLibraryDocument | null> {
+  /**
+   * Loads and parses a particle library, null if it fails
+   */
+  public loadLibrary(path: string): Promise<ParticleLibraryDocument | null> {
     const key = normalizeAssetPath(path)
     if (!this.libraries.has(key)) {
       this.libraries.set(

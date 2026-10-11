@@ -34,6 +34,7 @@ export const GlossMapKey = Symbol('GlossMap')
 export const WhiteTextureKey = Symbol('WhiteTexture')
 export const GrayTextureKey = Symbol('GrayTexture')
 export const BlackTextureKey = Symbol('BlackTexture')
+export const FlatNormalTextureKey = Symbol('FlatNormalTexture')
 
 export class ContentService extends GameSystem {
   public loader: ContentLoader
@@ -58,6 +59,7 @@ export class ContentService extends GameSystem {
   public whitePixel: Texture
   public grayPixel: Texture
   public blackPixel: Texture
+  public flatNormalPixel: Texture
   public noise2d: Texture
   public noise3d: Texture
   public waterFoamMap: Texture
@@ -109,6 +111,16 @@ export class ContentService extends GameSystem {
       height: 1,
       format: 'rgba8unorm',
       source: new Uint8Array([128, 128, 128, 255]),
+    })
+
+    // tangent space normal (0, 0, 1), engine "FlatBump"
+    this.flatNormalPixel = device.acquireTexture({
+      key: FlatNormalTextureKey,
+      name: 'flatNormalPixel',
+      width: 1,
+      height: 1,
+      format: 'rgba8unorm',
+      source: new Uint8Array([128, 128, 255, 255]),
     })
 
     this.blackPixel = device.acquireTexture({

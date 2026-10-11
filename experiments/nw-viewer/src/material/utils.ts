@@ -1,7 +1,7 @@
 import type { Device, MaterialProperties, Texture } from '@gglib/graphics'
 import { vec3, vec4, vec4$init, type IVec3, type IVec4 } from '@gglib/math'
 import { lfmt } from '@gglib/utils'
-import { GrayTextureKey, WhiteTextureKey } from '../content'
+import { FlatNormalTextureKey, GrayTextureKey, WhiteTextureKey } from '../content'
 import type { NwMaterialProps } from './GltfExtension'
 import { getShaderFlags } from './common'
 
@@ -154,6 +154,13 @@ export class MtlUtil {
 
 export function getWhiteTexture(device: Device): Texture {
   return device.acquireTexture({ key: WhiteTextureKey, throwIfMissing: true, transient: true })
+}
+
+/**
+ * Tangent space normal map with the flat normal (0, 0, 1), the engine "FlatBump" texture
+ */
+export function getFlatNormalTexture(device: Device): Texture {
+  return device.acquireTexture({ key: FlatNormalTextureKey, throwIfMissing: true, transient: true })
 }
 
 export function getGrayTexture(device: Device): Texture {

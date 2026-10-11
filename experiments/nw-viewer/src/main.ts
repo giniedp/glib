@@ -16,6 +16,19 @@ if (params.has('image')) {
 } else if (params.has('material')) {
   const viewer = await bootViewer()
   viewer.loadMaterial(params.get('material'))
+} else if (params.has('materials')) {
+  // material showcase: ?materials=illum (sets in game/showcase/MaterialShowcase.ts)
+  const viewer = await bootViewer()
+  viewer.loadMaterials(params.get('materials'), {
+    time: params.has('time') ? Number(params.get('time')) : undefined,
+  })
+} else if (params.has('particles')) {
+  // particle showcase: ?particles (preset), ?particles=libs/particles/x.xml&filter=fire, ?particles=Lib.Effect,Lib.Effect2
+  const viewer = await bootViewer()
+  viewer.loadParticles(params.get('particles'), params.get('filter'), {
+    spacing: Number(params.get('spacing')) || undefined,
+    time: params.has('time') ? Number(params.get('time')) : undefined,
+  })
 } else if (params.has('model')) {
   const viewer = await bootViewer()
   viewer.loadModel(params.get('model'))

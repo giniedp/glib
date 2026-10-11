@@ -22,7 +22,15 @@ import { TextureModifier } from './TexMod'
 import { type FeatureFlag, getShaderConstants, InputBlocks, MaterialLayerMasks, setDitherFadeConstants } from './common'
 
 import { MtlFlag } from './types'
-import { getGrayTexture, getWhiteTexture, MtlUtil, paramValue, paramVec3, paramVec4 } from './utils'
+import {
+  getFlatNormalTexture,
+  getGrayTexture,
+  getWhiteTexture,
+  MtlUtil,
+  paramValue,
+  paramVec3,
+  paramVec4,
+} from './utils'
 
 export function illumShaderOptions(constants: Record<string, number>): ShaderModuleOptions {
   return {
@@ -360,29 +368,28 @@ export class IllumMaterial extends MaterialWithSchema(SCHEMA) {
     this.SamplerPoint = SamplerState.PointWrap
   }
 
+  /**
+   * Binds the texture maps. Unset slots get the neutral texture of the engine (TextureManager.cpp texSlotSemantics),
+   * the device default texture is a checker pattern that would show up in the shading.
+   */
   private setTextures(maps: NwMaterialProps['textures']) {
-    if (!maps) {
-      return
-    }
+    maps ||= {}
+    const white = getWhiteTexture(this.device)
+    const gray = getGrayTexture(this.device)
+    const flatNormal = getFlatNormalTexture(this.device)
 
     // == EFTT_DIFFUSE
     // - diffuseMap
     // - diffuseMap_Decal
-    if (maps.Diffuse) {
-      this.DiffuseMap = maps.Diffuse as any
-    }
+    this.DiffuseMap = (maps.Diffuse as any) || white
 
     // == EFTT_NORMALS
     // - normalMap
-    if (maps.Bumpmap) {
-      this.NormalMap = maps.Bumpmap as any
-    }
+    this.NormalMap = (maps.Bumpmap as any) || flatNormal
 
     // == EFTT_SPECULAR
     // - specularMap
-    if (maps.Specular) {
-      this.SpecularMap = maps.Specular as any
-    }
+    this.SpecularMap = (maps.Specular as any) || white
 
     // == EFTT_ENV
     // - envMap
@@ -392,50 +399,34 @@ export class IllumMaterial extends MaterialWithSchema(SCHEMA) {
 
     // == EFTT_DETAIL_OVERLAY
     // - detailMap
-    if (maps.Detail) {
-      this.DetailMap = maps.Detail as any
-    }
+    this.DetailMap = (maps.Detail as any) || gray
 
     // == EFTT_SECOND_SMOOTHNESS
     // - translucencyMap
-    if (maps.SecondSmoothness) {
-      this.TranslucencyMap = maps.SecondSmoothness as any
-    }
+    this.TranslucencyMap = (maps.SecondSmoothness as any) || white
 
     // == EFTT_HEIGHT
     // - heightMap
-    if (maps.Heightmap) {
-      this.HeightMap = maps.Heightmap as any
-    }
+    this.HeightMap = (maps.Heightmap as any) || white
 
     // == EFTT_DECAL_OVERLAY
     // - decalMap
     // - emissiveIntensity
-    if (maps.Decal) {
-      this.DecalEmissiveMap = maps.Decal as any
-    } else {
-      // engine default of the slot is gray (TextureManager.cpp), the emissive intensity then is 0.5
-      this.DecalEmissiveMap = getGrayTexture(this.device)
-    }
+    // engine default of the slot is gray (TextureManager.cpp), the emissive intensity then is 0.5
+    this.DecalEmissiveMap = (maps.Decal as any) || gray
 
     // == EFTT_SUBSURFACE
     // - subsurfaceMap
     // - HeightMap2
-    if (maps.SubSurface) {
-      this.SubsurfaceMap = maps.SubSurface as any
-    }
+    this.SubsurfaceMap = (maps.SubSurface as any) || white
 
     // == EFTT_CUSTOM
     // - DiffuseMap2
-    if (maps.Custom) {
-      this.DiffuseMap2 = maps.Custom as any
-    }
+    this.DiffuseMap2 = (maps.Custom as any) || white
 
     // == EFTT_CUSTOM_SECONDARY
     // - BumpMap2
-    if (maps['[1] Custom']) {
-      this.NormalMap2 = maps['[1] Custom'] as any
-    }
+    this.NormalMap2 = (maps['[1] Custom'] as any) || flatNormal
 
     // == EFTT_OPACITY
     // - opacityMap
@@ -467,15 +458,11 @@ export class IllumMaterial extends MaterialWithSchema(SCHEMA) {
 
     // == EFTT_OCCLUSION
     // - OcclusionMap
-    if (maps.Occlusion) {
-      this.OcclusionMap = maps.Occlusion as any
-    }
+    this.OcclusionMap = (maps.Occlusion as any) || white
 
     // == EFTT_SPECULAR_2
     // - SpecularMap2
-    if (maps.Specular2) {
-      this.SpecularMap2 = maps.Specular2 as any
-    }
+    this.SpecularMap2 = (maps.Specular2 as any) || white
   }
 
   private setModifiers(mods: NwMaterialProps['mods']) {

@@ -11,6 +11,21 @@ import { ParticleSystem, type ParticleUpdatable } from './ParticleSystem'
 
 export type ParticleComponentState = 'idle' | 'loading' | 'ready' | 'skipped' | 'failed'
 
+export interface ParticleComponentOptions {
+  /**
+   * Shows one shot effects regardless of config `particleOneShots`, e.g. in the particle showcase
+   */
+  oneShots?: boolean
+  /**
+   * Restarts one shot effects after this many seconds, 0 plays them once
+   */
+  loop?: number
+  /**
+   * Overrides the activation range, see {@link particleRange}
+   */
+  range?: number
+}
+
 interface EmitterSlot {
   emitter: ParticleEmitter
   geometry: Geometry
@@ -49,8 +64,14 @@ export class ParticleComponent implements GameComponent, ParticleUpdatable {
   private location: ParticleLocation = { position: vec3(), rotation: vec4(0, 0, 0, 1), scale: 1 }
   private scale = vec3()
 
-  public constructor(data: ViewerParticleComponent) {
+  public readonly options: ParticleComponentOptions
+
+  private isImmortal = true
+  private loopTime = 0
+
+  public constructor(data: ViewerParticleComponent, options?: ParticleComponentOptions) {
     this.data = data
+    this.options = options ?? {}
   }
 
   public get emitterCount() {
@@ -114,7 +135,8 @@ export class ParticleComponent implements GameComponent, ParticleUpdatable {
       return
     }
     this.effect = effect
-    if (!this.config?.value.particleOneShots && !isParticleEffectImmortal(effect)) {
+    this.isImmortal = isParticleEffectImmortal(effect)
+    if (!this.options.oneShots && !this.config?.value.particleOneShots && !this.isImmortal) {
       this.state = 'skipped'
       return
     }
@@ -217,7 +239,7 @@ export class ParticleComponent implements GameComponent, ParticleUpdatable {
 
   public updateParticles(dt: number, camera: ParticleCamera): void {
     // the entity may be active for longer by a mesh with a larger view distance
-    const range = particleRange(this.entity.world, this.data)
+    const range = this.options.range ?? particleRange(this.entity.world, this.data)
     if (vec3DistanceSquared(camera.position, this.location.position) > range * range) {
       if (this.prerolled) {
         this.prerolled = false
@@ -232,10 +254,23 @@ export class ParticleComponent implements GameComponent, ParticleUpdatable {
       this.prerolled = true
       this.updateLocation()
       for (const slot of this.slots) {
+        if (!this.isImmortal) {
+          // one shot effects play from the start
+          continue
+        }
         // simulate to the steady state, so effects do not visibly start when they come into range
         const p = slot.emitter.params
         const life = p.particleLifeTime.base * (1 + p.particleLifeTime.random)
         slot.emitter.preroll(Math.min(Number.isFinite(life) ? life : 2, 4))
+      }
+    }
+    if (!this.isImmortal && this.options.loop > 0) {
+      this.loopTime += dt
+      if (this.loopTime >= this.options.loop) {
+        this.loopTime = 0
+        for (const slot of this.slots) {
+          slot.emitter.reset()
+        }
       }
     }
     for (const slot of this.slots) {
