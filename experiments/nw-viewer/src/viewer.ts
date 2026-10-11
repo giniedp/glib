@@ -57,6 +57,7 @@ import { TerrainSystem } from './game/terrain/TerrainSystem'
 import { VegetationSystem } from './game/vegetation/VegetationSystem'
 import { ViewerConfig } from './config'
 import { createRenderPipeline } from './graphics'
+import { RenderSizeSystem } from './graphics/RenderSizeSystem'
 import { InputSlots, MaterialLayerMasks } from './material'
 import { attachOverlay } from './ui/overlay'
 
@@ -109,7 +110,8 @@ export class NwViewer extends EcsGame {
         },
       },
       platform: 'webgpu',
-      autosize: true,
+      // the render size is set by the RenderSizeSystem, from the config
+      autosize: false,
     })
     attachOverlay(options.element, this)
   }
@@ -126,6 +128,7 @@ export class NwViewer extends EcsGame {
     const config = new ViewerConfig()
     config.load()
     this.world.addSystem(config)
+    this.world.addSystem(new RenderSizeSystem())
     this.world.addSystem(SpaceBasis.Z_UP_POS_Y)
     this.world.addSystem(new ContentService())
     this.world.addSystem(new KeyboardInputSystem())
@@ -256,6 +259,54 @@ export class NwViewer extends EcsGame {
     this.schedulerStats = this.scheduler.instance.getStats(this.schedulerStats)
     this.sceneStats = this.scene.stats(this.sceneStats)
     this.renderStats = this.world.getSystem(Renderer).stats(this.renderStats)
+    if (this.screenshotRequests.length) {
+      this.takeScreenshot()
+    }
+  }
+
+  private screenshotRequests: Array<(image: Blob | null) => void> = []
+
+  /**
+   * Captures the next rendered frame as PNG, at the render resolution
+   *
+   * @remarks
+   * A WebGPU canvas can only be read in the task that renders the frame, so the capture runs after the next draw.
+   */
+  public captureScreenshot(): Promise<Blob | null> {
+    return new Promise((resolve) => this.screenshotRequests.push(resolve))
+  }
+
+  /**
+   * Captures the next rendered frame and downloads it as PNG
+   */
+  public async downloadScreenshot() {
+    const image = await this.captureScreenshot()
+    if (!image) {
+      return
+    }
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(image)
+    link.download = screenshotFileName(this.device.canvas.width, this.device.canvas.height)
+    link.click()
+    setTimeout(() => URL.revokeObjectURL(link.href), 1000)
+  }
+
+  private takeScreenshot() {
+    const requests = this.screenshotRequests.splice(0)
+    const source = this.device.canvas
+    const canvas = new OffscreenCanvas(source.width, source.height)
+    const context = canvas.getContext('2d')
+    // opaque image, the output may contain transparent pixels
+    context.fillStyle = '#000'
+    context.fillRect(0, 0, canvas.width, canvas.height)
+    context.drawImage(source, 0, 0)
+    canvas.convertToBlob({ type: 'image/png' }).then(
+      (image) => requests.forEach((resolve) => resolve(image)),
+      (err) => {
+        console.warn('screenshot failed', err)
+        requests.forEach((resolve) => resolve(null))
+      },
+    )
   }
 
   public dispose() {
@@ -426,4 +477,20 @@ export class NwViewer extends EcsGame {
     this.mode = 'model'
     redrawUi()
   }
+}
+
+/**
+ * File name of a screenshot: level, position, size and time, e.g. `nw-viewer_newworld_vitaeeterna_5500_600_1920x1080_2026-10-11T12-00-00.png`
+ */
+function screenshotFileName(width: number, height: number) {
+  const params = new URLSearchParams(location.search)
+  const parts = ['nw-viewer']
+  if (params.get('level')) {
+    parts.push(params.get('level'))
+  }
+  if (params.get('x') && params.get('y')) {
+    parts.push(String(Math.round(Number(params.get('x')))), String(Math.round(Number(params.get('y')))))
+  }
+  parts.push(`${width}x${height}`, new Date().toISOString().slice(0, 19).replace(/:/g, '-'))
+  return parts.join('_') + '.png'
 }

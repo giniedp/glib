@@ -1,4 +1,4 @@
-import { defineConfig, integer, number } from './properties'
+import { boolean, choice, defineConfig, integer, number } from './properties'
 
 /**
  * Runtime settings of the viewer
@@ -8,6 +8,41 @@ import { defineConfig, integer, number } from './properties'
  * or are hard to pass through the config, stay constants.
  */
 export const viewerConfigSchema = defineConfig({
+  /**
+   * Plays the ambient audio, see AudioSystem. Browsers only allow audio after a user gesture, so a saved value
+   * starts the audio with the first click or key press.
+   */
+  audioEnabled: boolean({
+    description: 'Plays the ambient audio. When saved, audio starts with the first click or key press (autoplay policy).',
+    editable: true,
+    default: false,
+    group: 'Audio',
+  }),
+  /**
+   * Size of the rendered image, see RenderSizeSystem. Helps to profile at a specific resolution without changing the
+   * browser window.
+   */
+  renderResolution: choice({
+    description:
+      'Render size in pixels. window follows the window size (device pixels), a fixed size keeps the resolution ' +
+      'and is displayed by renderScaling.',
+    editable: true,
+    options: ['window', '1280x720', '1600x900', '1920x1080', '2560x1440', '3840x2160'],
+    default: 'window',
+    group: 'Display',
+  }),
+  /**
+   * How a fixed render resolution is displayed, see RenderSizeSystem
+   */
+  renderScaling: choice({
+    description:
+      'Display of a fixed render resolution. fit scales the image into the window and keeps the aspect ratio, ' +
+      'none shows one render pixel per device pixel, centered and cropped if larger than the window.',
+    editable: true,
+    options: ['fit', 'none'],
+    default: 'fit',
+    group: 'Display',
+  }),
   /**
    * The engine cvar e_LodFaceAreaTargetSize. The distance between two levels of detail is
    * `sqrt(geometric mean face area) / lodFaceAreaTargetSize / (lodRatio / 100)`, see ContentService.cgfLodInfo and

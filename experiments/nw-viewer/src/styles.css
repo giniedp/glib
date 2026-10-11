@@ -1,4 +1,11 @@
 @import '/tweak-ui/dist/style.css';
+html,
+body {
+  background: #000;
+}
+html {
+  overflow: hidden;
+}
 body,
 #app,
 canvas {
@@ -7,6 +14,10 @@ canvas {
   width: 100%;
   height: 100dvh;
   overflow: hidden;
+}
+/* containing block of the canvas, which is positioned and may be larger than the window (RenderSizeSystem) */
+#app {
+  position: relative;
 }
 .thin-scrollbar {
   overflow: auto;

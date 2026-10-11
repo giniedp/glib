@@ -26,11 +26,15 @@ import { DebugOptions } from '../material'
 import type { LevelLoadOption, NwViewer } from '../viewer'
 import { NwSceneBrowser } from './browser'
 import { uiIcon } from './icon'
+import svgCamera from './icons/camera.svg?raw'
+import svgGear from './icons/gear.svg?raw'
 import svgStats from './icons/chart-simple-horizontal.svg?raw'
 import svgTree from './icons/list-tree.svg?raw'
+import svgVolume from './icons/volume-high.svg?raw'
+import svgVolumeOff from './icons/volume-xmark.svg?raw'
 import { uiRegistry } from './registry'
 import { CameraComponentProps } from './registry/uiCameraComponent'
-import { ConfigProps } from './registry/uiConfig'
+import { configActions, ConfigProps } from './registry/uiConfig'
 import { DebugShapeSystemProps } from './registry/uiDebugShapeSystem'
 import { LightSystemProps } from './registry/uiLightSystem'
 import { RenderPipelineProps } from './registry/uiRenderPipeline'
@@ -83,6 +87,17 @@ const OverlayComponent: ClosureComponent<OverlayComponentAttrs> = () => {
                   },
                   [uiIcon({ icon: svgTree })],
                 ),
+                uiButton(
+                  {
+                    square: true,
+                    accent: viewer.config.value.audioEnabled,
+                    title: viewer.config.value.audioEnabled ? 'Disable audio' : 'Enable audio',
+                    style: { padding: '0.25rem', margin: '0.25rem 0' },
+                    // runs in the click, so the audio context can start (autoplay policy)
+                    onclick: () => viewer.config.set('audioEnabled', !viewer.config.value.audioEnabled),
+                  },
+                  [uiIcon({ icon: viewer.config.value.audioEnabled ? svgVolume : svgVolumeOff })],
+                ),
               ]),
               uiBarEnd(
                 {
@@ -105,6 +120,16 @@ const OverlayComponent: ClosureComponent<OverlayComponentAttrs> = () => {
                       },
                     }),
                     h(LoadLevelButton, { viewer, options: levelOptions }),
+                    h(SettingsButton, { viewer }),
+                    uiButton(
+                      {
+                        square: true,
+                        title: 'Download screenshot (render resolution)',
+                        style: { padding: '0.25rem' },
+                        onclick: () => viewer.downloadScreenshot(),
+                      },
+                      [uiIcon({ icon: svgCamera })],
+                    ),
                     uiButton(
                       {
                         square: true,
@@ -272,7 +297,6 @@ const OverlayComponent: ClosureComponent<OverlayComponentAttrs> = () => {
                       ]),
                     ]),
                     uiGroup({ title: 'Lights' }, [h(LightSystemProps, { data: viewer.world.getSystem(LightSystem) })]),
-                    uiGroup({ title: 'Config', collapsible: true }, [h(ConfigProps, { data: viewer.config })]),
                     uiGroup({ title: 'Render Pipeline', collapsible: true }, [
                       h(RenderPipelineProps, { data: viewer.world.getSystem(Renderer).pipeline, device: viewer.device }),
                     ]),
@@ -281,6 +305,54 @@ const OverlayComponent: ClosureComponent<OverlayComponentAttrs> = () => {
               ),
         ]),
       ]),
+    ],
+  }
+}
+
+/**
+ * Opens the settings ({@link ViewerConfig}) in a dialog
+ */
+const SettingsButton: ClosureComponent<{ viewer: NwViewer }> = () => {
+  let dialogRef: HTMLDialogElement
+  return {
+    view: ({ attrs: { viewer } }) => [
+      uiButton(
+        {
+          square: true,
+          title: 'Settings',
+          style: { padding: '0.25rem' },
+          onclick: () => dialogRef?.showModal(),
+        },
+        [uiIcon({ icon: svgGear })],
+      ),
+      uiDialog(
+        {
+          oncreate: ({ dom }) => (dialogRef = dom as HTMLDialogElement),
+          onremove: () => (dialogRef = null),
+        },
+        [
+          uiSection(
+            {
+              class: 'twk-dialog-content twk-bg-300',
+              header: uiBar({ class: 'twk-bg-neutral twk-p-2' }, [
+                uiBarEnd({}, uiButton({ large: true, square: true, onclick: () => dialogRef?.close() }, '×')),
+                h('div.twk-px-2', {}, 'Settings'),
+              ]),
+              footer: uiBar({}, [
+                uiBarEnd({ class: 'twk-p-1 twk-flex-row twk-gap-1' }, [
+                  configActions(viewer.config, { large: true }),
+                  uiButton({ large: true, onclick: () => dialogRef?.close() }, 'Close'),
+                ]),
+              ]),
+            },
+            [
+              h('div.twk-p-4', { style: { minWidth: '28rem', minHeight: '10rem', maxHeight: '60vh', overflow: 'auto' } }, [
+                h(ConfigProps, { data: viewer.config }),
+              ]),
+            ],
+          ),
+        ],
+      ),
     ],
   }
 }

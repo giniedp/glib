@@ -1,3 +1,5 @@
+import fs from 'node:fs'
+import path from 'node:path'
 import { defineConfig } from 'vite'
 import dts from 'vite-plugin-dts'
 import { ggPlugin } from '@gglib/vite-plugin'
@@ -20,6 +22,14 @@ export default defineConfig(({ mode }) => {
 
   return {
     server: {
+      // HTTPS for access from other machines: WebGPU needs a secure context, plain http only counts on localhost.
+      // NW_VIEWER_TLS_DIR is a directory with cert.pem and key.pem, e.g. the nwbt certificate (E:/nw-buddy/.nwbt/tls)
+      https: process.env.NW_VIEWER_TLS_DIR
+        ? {
+            cert: fs.readFileSync(path.join(process.env.NW_VIEWER_TLS_DIR, 'cert.pem')),
+            key: fs.readFileSync(path.join(process.env.NW_VIEWER_TLS_DIR, 'key.pem')),
+          }
+        : undefined,
       proxy: {
         '/levels': 'http://localhost:8000',
         '/files': 'http://localhost:8000',

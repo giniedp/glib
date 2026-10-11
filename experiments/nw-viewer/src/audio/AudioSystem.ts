@@ -8,6 +8,7 @@ import {
   isViewerTerritoryComponent,
   type LevelInfo,
 } from '../api'
+import { ViewerConfig } from '../config'
 import { ContentService } from '../content'
 import { LevelSystem } from '../game/level/LevelSystem'
 import { SkyLightSystem } from '../game/level/SkyLightSystem'
@@ -47,6 +48,8 @@ export class AudioSystem extends GameSystem {
   private listenerTimer = 0
   private emitterTimer = 0
   private _enabled = false
+  private viewerConfig: ViewerConfig | null = null
+  private offConfig: (() => void) | null = null
 
   private position = vec3()
   private forward = vec3()
@@ -58,14 +61,56 @@ export class AudioSystem extends GameSystem {
   }
 
   /**
-   * Enables audio. Call from a user gesture, the audio context is resumed synchronously.
+   * Enables audio, through the viewer config (audioEnabled), which is the source of truth.
+   * Call from a user gesture, the audio context is resumed synchronously.
    */
   public set enabled(value: boolean) {
-    if (value) {
-      this.output.unlock()
+    if (this.viewerConfig) {
+      this.viewerConfig.set('audioEnabled', value)
+    } else {
+      this.applyEnabled(value)
     }
+  }
+
+  private applyEnabled = (value: boolean) => {
     this._enabled = value
+    if (value) {
+      // the autoplay policy needs a user gesture, a saved value is applied at page load without one
+      if (navigator.userActivation?.isActive) {
+        this.output.unlock()
+      } else {
+        this.unlockOnGesture()
+      }
+    }
     this.post({ type: 'enable', enabled: value })
+  }
+
+  private gestureListener: (() => void) | null = null
+
+  /**
+   * Unlocks the audio output with the next click or key press, if audio is still enabled then
+   */
+  private unlockOnGesture() {
+    if (this.gestureListener) {
+      return
+    }
+    this.gestureListener = () => {
+      this.removeGestureListener()
+      if (this._enabled) {
+        this.output.unlock()
+      }
+    }
+    window.addEventListener('pointerdown', this.gestureListener, { capture: true })
+    window.addEventListener('keydown', this.gestureListener, { capture: true })
+  }
+
+  private removeGestureListener() {
+    if (!this.gestureListener) {
+      return
+    }
+    window.removeEventListener('pointerdown', this.gestureListener, { capture: true })
+    window.removeEventListener('keydown', this.gestureListener, { capture: true })
+    this.gestureListener = null
   }
 
   public get masterDb() {
@@ -85,6 +130,13 @@ export class AudioSystem extends GameSystem {
     this.query = world.query({ scope: 'active', required: [AudioEmitterComponent] })
     this.scriptQuery = world.query({ scope: 'active', required: [AudioScriptComponent] })
     this.output.onEvicted = (mediaIds) => this.post({ type: 'evicted', mediaIds })
+
+    // the config value wins
+    this.viewerConfig = world.getSystem(ViewerConfig)
+    this.offConfig = this.viewerConfig.onChange('audioEnabled', this.applyEnabled)
+    if (this.viewerConfig.value.audioEnabled) {
+      this.applyEnabled(true)
+    }
   }
 
   /**
@@ -140,6 +192,8 @@ export class AudioSystem extends GameSystem {
   }
 
   public destroy(): void {
+    this.offConfig?.()
+    this.removeGestureListener()
     this.worker?.terminate()
     this.worker = null
     this.output.dispose()

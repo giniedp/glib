@@ -3,8 +3,8 @@ import { h, uiBoolWidget, uiButton, uiFlex, uiGroup, uiScalarWidget, uiSelect, u
 import type { Config, ConfigProperty, ConfigSchema } from '../../config'
 
 /**
- * Generic panel for a {@link Config}: one row per property, grouped by {@link ConfigProperty.group},
- * plus save, load and reset buttons
+ * Generic panel for a {@link Config}: one row per property, grouped by {@link ConfigProperty.group}.
+ * The save, load and reset buttons are separate, see {@link configActions}.
  */
 export const ConfigProps: FactoryComponent<{ data: Config<ConfigSchema> }> = () => {
   return {
@@ -21,16 +21,22 @@ export const ConfigProps: FactoryComponent<{ data: Config<ConfigSchema> }> = () 
         groups.get(group).push(propertyRow(data, name))
       }
       return [
-        uiFlex({ flow: 'row', style: { gap: '0.25rem', padding: '0.25rem' } }, [
-          uiButton({ onclick: () => data.save() }, ['Save']),
-          uiButton({ onclick: () => data.load() }, ['Load']),
-          uiButton({ onclick: () => data.reset() }, ['Reset all']),
-        ]),
         data.names.length ? null : h('div', { style: { padding: '0.25rem' } }, 'No settings yet'),
         [...groups].map(([title, rows]) => uiGroup({ title, collapsible: true }, rows)),
       ]
     },
   }
+}
+
+/**
+ * Save, load and reset buttons of a {@link Config}, e.g. for a dialog footer
+ */
+export function configActions(config: Config<ConfigSchema>, attrs: { large?: boolean } = {}): Children {
+  return [
+    uiButton({ ...attrs, onclick: () => config.save() }, ['Save']),
+    uiButton({ ...attrs, onclick: () => config.load() }, ['Load']),
+    uiButton({ ...attrs, onclick: () => config.reset() }, ['Reset all']),
+  ]
 }
 
 function propertyRow(config: Config<ConfigSchema>, name: string): Children {
@@ -77,7 +83,7 @@ function propertyWidget(
         max: property.max,
         step: property.step ?? (property.kind === 'integer' ? 1 : undefined),
         range: property.min != null && property.max != null,
-        decimals: property.min < 1 ? 3 : 1,
+        decimals: property.kind === 'integer' ? 0 : stepDecimals(property.step),
         readonly: !property.editable,
       })
     case 'choice':
@@ -101,4 +107,15 @@ function propertyWidget(
         readonly: !property.editable,
       })
   }
+}
+
+/**
+ * Fraction digits to show for a step, e.g. 0.0005 shows 4 digits
+ */
+function stepDecimals(step: number | undefined): number {
+  if (!step) {
+    return 3
+  }
+  const text = String(step)
+  return text.includes('.') ? text.length - text.indexOf('.') - 1 : 0
 }
