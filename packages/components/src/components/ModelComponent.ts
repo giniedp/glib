@@ -1,5 +1,5 @@
 import { type GameComponent, GameEntity, GetComponent, InitializableComponent } from '@gglib/ecs'
-import { Model } from '@gglib/model'
+import { Model, type ModelLod } from '@gglib/model'
 import { BoundsComponent } from './BoundsComponent'
 import { InstanceDataComponent } from './InstanceDataComponent'
 
@@ -34,6 +34,16 @@ export class ModelComponent implements GameComponent, InitializableComponent {
     return this.instance?.data
   }
 
+  /**
+   * The level of detail selected by distance, see {@link ModelLod.select}
+   */
+  public lodSelected: number = 0
+
+  /**
+   * The level of detail that is rendered, may be finer than {@link lodSelected} while that level is loading
+   */
+  public lodRendered: number = 0
+
   public version: number = 0
   protected value: Model
   protected bounds: BoundsComponent
@@ -55,6 +65,8 @@ export class ModelComponent implements GameComponent, InitializableComponent {
 
   private handleMeshChanged() {
     this.version++
+    this.lodSelected = 0
+    this.lodRendered = 0
     if (!this.bounds) {
       // not initialized yet, or does not have a bounds component
       return

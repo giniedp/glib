@@ -8,7 +8,17 @@ import {
   Type,
 } from '@gglib/ecs'
 import { CommonInputs, Material, Mesh, Texture } from '@gglib/graphics'
-import { BoundingFrustum, Intersection, IntersectionType, Mat4 } from '@gglib/math'
+import {
+  BoundingBox,
+  BoundingFrustum,
+  Intersection,
+  IntersectionType,
+  type IVec3,
+  Mat4,
+  mat4GetTranslation,
+  vec3,
+} from '@gglib/math'
+import type { Model } from '@gglib/model'
 import {
   CameraData,
   FrameInfo,
@@ -150,6 +160,7 @@ export class SceneComponent implements GameComponent, InitializableComponent, Re
 
   private collectResult: RenderItem[]
   private frustum = new BoundingFrustum()
+  private cameraPosition = vec3()
   private frame: FrameInfo
   private visibilityMask: number
   public collect(frame: FrameInfo, camera: CameraData, result: RenderItem[]): void {
@@ -163,6 +174,7 @@ export class SceneComponent implements GameComponent, InitializableComponent, Re
     this.frame = frame
     this.collectResult = result
     this.frustum.updateFromViewProjection(camera.view, camera.projection)
+    mat4GetTranslation(camera.world, this.cameraPosition)
 
     // clear pools
     this.sprites.clear()
@@ -234,15 +246,16 @@ export class SceneComponent implements GameComponent, InitializableComponent, Re
       return
     }
 
-    const model = comp.model
     const transform = entity.getTransform<TransformComponent>()
-    if (model[modelTransformVersion] !== transform.version) {
-      model[modelTransformVersion] = transform.version
-      model.update(transform.world)
-    }
+    updateModelTransform(comp.model, transform)
 
-    if (comp.version !== comp['cache']) {
+    // the base model decides the level by its bounds, the level model is rendered
+    const model = this.selectLodModel(comp)
+    updateModelTransform(model, transform)
+
+    if (comp.version !== comp['cache'] || model !== comp['cacheModel']) {
       comp['cache'] = comp.version
+      comp['cacheModel'] = model
       comp['cacheItems'] ||= []
       comp['cacheItems'].length = 0
 
@@ -261,6 +274,22 @@ export class SceneComponent implements GameComponent, InitializableComponent, Re
         this.collectResult.push(item)
       }
     }
+  }
+
+  /**
+   * Selects the level of detail of a model by the distance from the camera to its bounds
+   *
+   * @returns the model to render, the component model if it has no levels of detail
+   */
+  private selectLodModel(comp: ModelComponent): Model {
+    const lod = comp.model.lod
+    if (!lod) {
+      return comp.model
+    }
+    const distance = distanceToBox(this.cameraPosition, comp.model.boundingBox)
+    comp.lodSelected = lod.select(distance, comp.lodSelected)
+    comp.lodRendered = lod.resolve(comp.lodSelected)
+    return lod.getModel(comp.lodRendered)
   }
 
   private pushMesh(
@@ -353,4 +382,24 @@ export class SceneComponent implements GameComponent, InitializableComponent, Re
       this.collectResult.push(item)
     }
   }
+}
+
+/**
+ * Updates the node transforms and bounds of a model, if the entity transform changed since the last update
+ */
+function updateModelTransform(model: Model, transform: TransformComponent) {
+  if (model[modelTransformVersion] !== transform.version) {
+    model[modelTransformVersion] = transform.version
+    model.update(transform.world)
+  }
+}
+
+/**
+ * Distance from a point to the closest point of a box, 0 if the point is inside
+ */
+function distanceToBox(point: IVec3, box: BoundingBox): number {
+  const dx = Math.max(box.min.x - point.x, 0, point.x - box.max.x)
+  const dy = Math.max(box.min.y - point.y, 0, point.y - box.max.y)
+  const dz = Math.max(box.min.z - point.z, 0, point.z - box.max.z)
+  return Math.sqrt(dx * dx + dy * dy + dz * dz)
 }
