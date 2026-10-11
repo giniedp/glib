@@ -22,11 +22,11 @@ import {
   vec4,
   type Mat4,
 } from '@gglib/math'
-import { Model } from '@gglib/model'
+import { Model, ModelLod } from '@gglib/model'
 import { brand, type Brand, type EventType } from '@gglib/utils'
 import type { ViewerMeshComponent } from '../../api'
 import { COMBINE_INSTANCE_ARRAYS, ENABLE_INSTANCED_LEVEL_OBJECTS } from '../../constants'
-import { ContentService } from '../../content'
+import { ContentService, type CgfLodInfo } from '../../content'
 import { createInstanceData } from '../../material/common'
 import { DebugLayer, DebugShapeComponent } from '../debug/DebugShapeComponent'
 import { InstancedModelComponent } from '../instancing/InstancedModelComponent'
@@ -99,10 +99,8 @@ export class MeshLoaderComponent implements GameComponent {
         const combineInstances = COMBINE_INSTANCE_ARRAYS && !task.context.skins?.length
         if (this.data.instances?.length > 0 && !combineInstances) {
           for (const inst of this.data.instances) {
-            const model = task.context.instantiate({
-              meshes: false,
-              materials: false,
-            })
+            const model = instantiateModel(task.context)
+            this.attachLod(model, task.context, instantiateModel)
 
             const child = this.entity.world.createEntity({
               parent: this.entity,
@@ -124,13 +122,12 @@ export class MeshLoaderComponent implements GameComponent {
             child.layer = this.entity.layer
           }
         } else {
-          const model =
-            this.data.instances?.length > 0
-              ? createInstanceArrayModel(task.context, this.data.instances)
-              : task.context.instantiate({
-                  meshes: false,
-                  materials: false,
-                })
+          let instantiate = instantiateModel
+          if (this.data.instances?.length > 0) {
+            instantiate = (source: Model) => createInstanceArrayModel(source, this.data.instances)
+          }
+          const model = instantiate(task.context)
+          this.attachLod(model, task.context, instantiate)
           const color = { x: 0, y: 0, z: 1 }
           if (this.data.visibilityOccluder) {
             color.x = 1
@@ -211,6 +208,28 @@ export class MeshLoaderComponent implements GameComponent {
   }
 
   /**
+   * Assigns the levels of detail of a source model to an instance of it
+   *
+   * @param instance - the model of this entity
+   * @param source - the shared model it was created from
+   * @param instantiate - creates the model of a level the same way as the instance was created from the source
+   */
+  private attachLod(instance: Model, source: Model, instantiate: (level: Model) => Model) {
+    const info = source.meta.lod as CgfLodInfo | null
+    if (!info) {
+      return
+    }
+    instance.lod = new ModelLod(instance, {
+      distance: info.distance,
+      maxLevel: info.maxLevel,
+      load: async (level) => {
+        const model = await this.content.loadModelLod(this.data.mesh, this.data.material, level)
+        return model ? instantiate(model) : null
+      },
+    })
+  }
+
+  /**
    * Renders static models through the GPU instance batch, falls back to the scene render path otherwise
    */
   private modelComponentFactory(model: Model): (instance: Model) => GameComponent[] {
@@ -253,6 +272,13 @@ export class MeshLoaderComponent implements GameComponent {
       ]
     }
   }
+}
+
+/**
+ * Creates a model that shares the meshes and materials of the source model
+ */
+function instantiateModel(source: Model): Model {
+  return source.instantiate({ meshes: false, materials: false })
 }
 
 /**

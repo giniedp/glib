@@ -22,6 +22,18 @@ export interface CgfGeometry {
   nodes: NodeData[]
   roots: number[]
   meshes: CgfGeometryMesh[]
+  /**
+   * Node hierarchies of the inline levels of detail, index 0 is level 1, see {@link CgfGeometryOptions.inlineLods}
+   */
+  inlineLods: NodeData[][]
+  /**
+   * Whether the file has levels of detail in sibling files, see {@link CgfGeometryOptions.haveAutoLods}
+   */
+  haveAutoLods: boolean
+  /**
+   * Geometric mean of the triangle areas of all rendered meshes
+   */
+  geometricMeanFaceArea: number
 }
 
 export interface CgfGeometryMesh {
@@ -69,7 +81,8 @@ export class CgfLoader implements AssetLoader {
         // the old format has no heap file (404), its vertex data is inline
         .catch(() => null)
 
-    if (CGF_HEAP_AFTER_PARSE) {
+    // level of detail siblings are probed and may not exist, their heap is only requested when the file exists
+    if (CGF_HEAP_AFTER_PARSE || isSiblingLodUrl(url)) {
       // one more round trip, but no heap request for files with inline vertex data
       const res = await context.content.fetch(url, { responseType: 'arraybuffer', signal: context.signal })
       const cgf = parseCgf(res.body)
@@ -82,6 +95,10 @@ export class CgfLoader implements AssetLoader {
     ])
     return new CgfContainer(url, parseCgf(res.body), heap)
   }
+}
+
+function isSiblingLodUrl(url: string) {
+  return /_lod\d+\.cgf(\?|$)/i.test(url)
 }
 
 function heapUrl(url: string) {
@@ -126,6 +143,9 @@ export function createCgfGeometry(content: ContentLoader, options: CgfGeometryOp
     mtlRef: options.mtlRef,
     nodes: options.nodes,
     roots: options.roots,
+    inlineLods: options.inlineLods,
+    haveAutoLods: options.haveAutoLods,
+    geometricMeanFaceArea: options.geometricMeanFaceArea,
     meshes: options.meshes.map((mesh) => {
       const vertexBuffer = device.createVertexBuffer(mesh.vertexBuffer)
       const indexBuffer = device.createIndexBuffer(mesh.indexBuffer)

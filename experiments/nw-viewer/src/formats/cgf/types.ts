@@ -9,10 +9,32 @@ export const CgfChunkType = {
   Helper: 0x1001,
   Node: 0x100b,
   MtlName: 0x1014,
+  ExportFlags: 0x1015,
   DataStream: 0x1016,
   MeshSubsets: 0x1017,
   MeshPhysicsData: 0x1018,
   DataRef: 0x300b,
+} as const
+
+/**
+ * Flags of the ExportFlags chunk
+ */
+export const CgfExportFlags = {
+  MergeAllNodes: 0x0001,
+  /**
+   * The resource compiler created levels of detail, they are stored as sibling files `<name>_lod1.cgf`, `_lod2`, …
+   */
+  HaveAutoLods: 0x0002,
+} as const
+
+/**
+ * Flags of mesh chunks
+ */
+export const CgfMeshFlags = {
+  /**
+   * {@link CgfMesh.geometricMeanFaceArea} contains a valid value
+   */
+  HasFaceArea: 0x0008,
 } as const
 
 /**
@@ -60,6 +82,10 @@ export interface CgfFile {
   dataRefs: Map<number, CgfDataRef>
   dataStreams: Map<number, CgfDataStream>
   /**
+   * Flags of the ExportFlags chunk, see {@link CgfExportFlags}, 0 if the file has none
+   */
+  exportFlags: number
+  /**
    * Material reference of the first non-empty MtlName chunk: an asset id or a file path, see {@link isAssetIdRef}
    */
   mtlRef: string | null
@@ -99,6 +125,10 @@ export interface CgfMesh {
   physicsDataChunkIds: Int32Array
   bboxMin: [number, number, number]
   bboxMax: [number, number, number]
+  /**
+   * Geometric mean of the triangle areas, 0 if the file does not store it ({@link CgfMeshFlags.HasFaceArea})
+   */
+  geometricMeanFaceArea: number
 }
 
 export interface CgfMeshSubset {

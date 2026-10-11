@@ -1,5 +1,6 @@
 import {
   CgfChunkType,
+  CgfMeshFlags,
   type CgfChunkHeader,
   type CgfDataRef,
   type CgfDataStream,
@@ -46,6 +47,7 @@ export function parseCgf(buffer: ArrayBuffer | ArrayBufferView): CgfFile {
     subsets: new Map(),
     dataRefs: new Map(),
     dataStreams: new Map(),
+    exportFlags: 0,
     mtlRef: null,
   }
 
@@ -89,6 +91,9 @@ export function parseCgf(buffer: ArrayBuffer | ArrayBufferView): CgfFile {
         break
       case CgfChunkType.MtlName:
         result.mtlRef ||= readMtlName(view, bytes, chunk)
+        break
+      case CgfChunkType.ExportFlags:
+        result.exportFlags = view.getUint32(chunk.offset, true)
         break
     }
   }
@@ -161,6 +166,8 @@ function readMesh(view: DataView, chunk: CgfChunkHeader): CgfMesh {
   }
   const bboxMin: [number, number, number] = [float(), float(), float()]
   const bboxMax: [number, number, number] = [float(), float(), float()]
+  float() // texMappingDensity
+  const faceArea = float()
   return {
     id: chunk.id,
     flags,
@@ -173,6 +180,7 @@ function readMesh(view: DataView, chunk: CgfChunkHeader): CgfMesh {
     physicsDataChunkIds,
     bboxMin,
     bboxMax,
+    geometricMeanFaceArea: flags & CgfMeshFlags.HasFaceArea ? faceArea : 0,
   }
 }
 

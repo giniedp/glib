@@ -99,7 +99,7 @@ const OverlayComponent: ClosureComponent<OverlayComponentAttrs> = () => {
                         const vc = (viewer.sceneStats?.visible ?? 0).toString().padStart(4, '0')
                         const tasks = viewer.schedulerStats?.total || 0
                         const upd = viewer.world.stats.update.toFixed(2).padStart(5, '0')
-                        const draw = viewer.world.stats.render.toFixed(2).padStart(5, '0')
+                        const draw = viewer.stats.draw.toFixed(2).padStart(5, '0')
                         return `${tasks} Tasks | ${fps} FPS | ${ft} ms | upd ${upd} | draw ${draw} | ${dc} Draws | ${vc} Visible`
                       },
                     }),
@@ -184,7 +184,7 @@ const OverlayComponent: ClosureComponent<OverlayComponentAttrs> = () => {
                           min: 0,
                           max: 50,
                           smoothing: 0.9,
-                          sample: () => viewer.world.stats.render,
+                          sample: () => viewer.stats.draw,
                         },
                         {
                           name: 'Frame (MB)',

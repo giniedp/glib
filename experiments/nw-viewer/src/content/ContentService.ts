@@ -3,8 +3,15 @@ import { GameEntity, GameSystem, GameWorld } from '@gglib/ecs'
 import { Device, Material, Texture } from '@gglib/graphics'
 import { Model } from '@gglib/model'
 import { fetchTypedRequest, type TypedRequest, type ViewerSlice } from '../api'
-import { PARTIAL_TEXTURE_SIZE, PARTIAL_TEXTURES } from '../constants'
-import { CgfGeometryAssetType, isAssetIdRef } from '../formats/cgf'
+import {
+  ENABLE_MODEL_LOD,
+  LOD_FACE_AREA_TARGET_SIZE,
+  LOD_MAX_LEVEL,
+  LOD_PROBE_MIN_TRIANGLES,
+  PARTIAL_TEXTURE_SIZE,
+  PARTIAL_TEXTURES,
+} from '../constants'
+import { CgfGeometryAssetType, isAssetIdRef, type CgfGeometry } from '../formats/cgf'
 import { MtlLoader } from '../formats/mtl'
 import { createAssetIdResolver, normalizeAssetPath, type AssetIdResolver } from './assetIds'
 import { RnrAssetType, type RnrAsset } from '../formats/rnr'
@@ -174,17 +181,56 @@ export class ContentService extends GameSystem {
    * Material precedence: the given material (override of the slice), else the material of the `.cgf` file,
    * else the default material.
    */
-  private loadCgfModel(model: string, material: string): Promise<Model> {
+  private loadCgfModel(model: string, material: string, inlineLod = 0): Promise<Model> {
     model = normalizeAssetPath(model)
     material = material ? normalizeAssetPath(material) : ''
-    const key = `cgf:${model}|${material}`
+    const key = cgfModelKey(model, material, inlineLod)
     if (!this.modelCache.has(key)) {
-      this.modelCache.set(key, this.assembleCgfModel(model, material))
+      this.modelCache.set(key, this.assembleCgfModel(model, material, inlineLod))
     }
     return this.modelCache.get(key)
   }
 
-  private async assembleCgfModel(model: string, override: string): Promise<Model> {
+  /**
+   * Loads a level of detail of a static model, resolves null if the level does not exist
+   *
+   * @remarks
+   * Levels are either inline (`$lodN` nodes of the same file) or sibling files (`<name>_lodN.cgf`),
+   * see {@link CgfLodInfo} in the meta data of the base model. Sibling files are probed like the engine does:
+   * level n is only requested if level n-1 exists, so a model costs at most one failing request. Probing also stops
+   * after a level with at most {@link LOD_PROBE_MIN_TRIANGLES} triangles, coarser levels are not worth a request.
+   *
+   * @param model - path of the `.cgf` file of level 0
+   * @param material - same as for {@link loadModel}
+   * @param level - the level of detail, 1 or higher
+   */
+  public loadModelLod(model: string, material: string, level: number): Promise<Model | null> {
+    const key = `lod:${level}:${cgfModelKey(model, material, 0)}`
+    if (!this.lodCache.has(key)) {
+      this.lodCache.set(key, this.findModelLod(model, material, level))
+    }
+    return this.lodCache.get(key)
+  }
+
+  private lodCache = new Map<string, Promise<Model | null>>()
+
+  private async findModelLod(model: string, material: string, level: number): Promise<Model | null> {
+    const base = await this.loadModel(model, material)
+    const info = base.meta.lod as CgfLodInfo | null
+    if (!info || level > info.maxLevel) {
+      return null
+    }
+    if (info.inline) {
+      return this.loadCgfModel(model, info.material, level)
+    }
+    const previous = level > 1 ? await this.loadModelLod(model, material, level - 1) : base
+    if (!previous || countTriangles(previous) <= LOD_PROBE_MIN_TRIANGLES) {
+      return null
+    }
+    return this.loadCgfModel(siblingLodPath(model, level), info.material).catch(() => null)
+  }
+
+  private async assembleCgfModel(model: string, override: string, inlineLod: number): Promise<Model> {
     const geometryTask = this.loader.load(CgfGeometryAssetType, model, { baseUrl: this.nwbtFileUrl })
     // the override is known upfront, load its xml along with the geometry
     const overrideTask = override ? this.materialCount(override) : null
@@ -196,7 +242,7 @@ export class ContentService extends GameSystem {
       count = await this.materialCount(material)
     }
     // models with and without override that end up with the same material share the Model
-    const key = `cgf:${model}|${material}`
+    const key = cgfModelKey(model, material, inlineLod)
     if (override !== material && this.modelCache.has(key)) {
       return this.modelCache.get(key)
     }
@@ -218,9 +264,11 @@ export class ContentService extends GameSystem {
       used.map((index) => this.loader.loadMaterial(material, { baseUrl: this.nwbtFileUrl, index })),
     )
 
+    const nodes = inlineLod > 0 ? geometry.inlineLods[inlineLod - 1] : geometry.nodes
     const result = this.loader.createModel({
       name: model,
-      nodes: structuredClone(geometry.nodes),
+      meta: { lod: inlineLod === 0 ? cgfLodInfo(geometry, material) : null },
+      nodes: structuredClone(nodes),
       scenes: [{ nodes: [...geometry.roots] }],
       scene: 0,
       meshes: geometry.meshes.map((mesh, i) => ({
@@ -341,4 +389,72 @@ function toPartialTextureUrl(url: string) {
     return url
   }
   return url.replace('merge=true', 'merge=partial').replace(/([?&])size=\d+/, `$1size=${PARTIAL_TEXTURE_SIZE}`)
+}
+
+/**
+ * Level of detail information of a static model, stored in the meta data of the level 0 model (`meta.lod`)
+ */
+export interface CgfLodInfo {
+  /**
+   * The resolved material of level 0, all levels use it
+   */
+  material: string
+  /**
+   * Distance between two levels: level n is shown from n * distance on
+   */
+  distance: number
+  /**
+   * Highest level that may exist. Exact for inline levels, an upper bound for sibling files.
+   */
+  maxLevel: number
+  /**
+   * Whether the levels are `$lodN` nodes of the same file, otherwise they are sibling files
+   */
+  inline: boolean
+}
+
+/**
+ * Gets the level of detail information of a `.cgf` file, null if the file has no levels of detail
+ *
+ * @remarks
+ * Like the engine, inline levels take precedence over sibling files.
+ * The distance follows the engine (CBrush::GetLodDistances with lod ratio 1): sqrt(face area) / target size.
+ */
+function cgfLodInfo(geometry: CgfGeometry, material: string): CgfLodInfo | null {
+  if (!ENABLE_MODEL_LOD || !geometry.geometricMeanFaceArea) {
+    return null
+  }
+  const inline = geometry.inlineLods.length > 0
+  const maxLevel = inline ? geometry.inlineLods.length : geometry.haveAutoLods ? LOD_MAX_LEVEL : 0
+  if (!maxLevel) {
+    return null
+  }
+  return {
+    material,
+    distance: Math.sqrt(geometry.geometricMeanFaceArea) / LOD_FACE_AREA_TARGET_SIZE,
+    maxLevel,
+    inline,
+  }
+}
+
+function cgfModelKey(model: string, material: string, inlineLod: number) {
+  const key = `cgf:${normalizeAssetPath(model)}|${material ? normalizeAssetPath(material) : ''}`
+  return inlineLod > 0 ? `${key}|lod${inlineLod}` : key
+}
+
+/**
+ * Path of a level of detail sibling file: `a/b.cgf` level 2 is `a/b_lod2.cgf`
+ */
+function siblingLodPath(model: string, level: number) {
+  return model.replace(/\.cgf$/i, `_lod${level}.cgf`)
+}
+
+function countTriangles(model: Model) {
+  let count = 0
+  for (const mesh of model.meshes) {
+    for (const geometry of mesh.geometries) {
+      count += geometry.indexCount / 3
+    }
+  }
+  return count
 }

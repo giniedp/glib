@@ -84,6 +84,28 @@ export const ENABLE_INSTANCED_LEVEL_OBJECTS = false
 export const COMBINE_INSTANCE_ARRAYS = true
 
 /**
+ * Renders level objects with their levels of detail (`$lodN` nodes and `_lodN.cgf` sibling files)
+ */
+export const ENABLE_MODEL_LOD = true
+/**
+ * Target size of a triangle on screen, the engine cvar e_LodFaceAreaTargetSize.
+ * The distance between two levels of detail is `sqrt(geometric mean face area) / LOD_FACE_AREA_TARGET_SIZE`.
+ */
+export const LOD_FACE_AREA_TARGET_SIZE = 0.005
+/**
+ * Highest level of detail of a model, the engine supports 6 levels (MAX_STATOBJ_LODS_NUM)
+ */
+export const LOD_MAX_LEVEL = 5
+/**
+ * A level of detail with at most this many triangles is cheap enough, coarser sibling files are not requested.
+ *
+ * @remarks
+ * Saves the failing request of the probe after the last level: in the paks 46% of the last levels have at most
+ * 128 triangles. A skipped coarser level would have even fewer triangles.
+ */
+export const LOD_PROBE_MIN_TRIANGLES = 128
+
+/**
  * Base view distance of road decals, scaled by the road ViewDistanceMultiplier
  */
 export const ROAD_VIEW_DISTANCE = 256

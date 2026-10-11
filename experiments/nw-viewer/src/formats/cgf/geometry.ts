@@ -1,6 +1,6 @@
 import { BufferUsage, type BufferOptions, type VertexBufferOptions, type VertexLayout } from '@gglib/graphics'
 import type { NodeData } from '@gglib/model'
-import { CgfStreamType, type CgfFile, type CgfMesh } from './types'
+import { CgfExportFlags, CgfStreamType, type CgfFile, type CgfMesh } from './types'
 
 /**
  * CPU side data of the static geometry of a `.cgf` file, ready for upload
@@ -22,6 +22,22 @@ export interface CgfGeometryOptions {
    */
   roots: number[]
   meshes: CgfMeshOptions[]
+  /**
+   * Node hierarchies of the inline levels of detail (`$lodN` nodes), index 0 is level 1
+   *
+   * @remarks
+   * Same nodes and roots as {@link nodes}, but mesh nodes reference the mesh of their `$lodN_<name>` child.
+   * A node without a child for a level keeps the mesh of the closest finer level.
+   */
+  inlineLods: NodeData[][]
+  /**
+   * Whether the file has levels of detail in sibling files (`<name>_lod1.cgf`, …), see {@link CgfExportFlags.HaveAutoLods}
+   */
+  haveAutoLods: boolean
+  /**
+   * Geometric mean of the triangle areas of all rendered meshes, the basis of the level of detail distances
+   */
+  geometricMeanFaceArea: number
 }
 
 export interface CgfMeshOptions {
@@ -83,6 +99,7 @@ const TEXCOORD_TYPES = { 4: 'float16x2', 8: 'float32x2' } as const
  * @remarks
  * Nodes are kept with their transform. Helper (`$…`) and LOD (`$lodN`) nodes get no mesh, like the nwbt glTF
  * conversion with `no-lod`. Node transforms are used as stored: the cgf `tm` has the glTF layout.
+ * The meshes of `$lodN` nodes are built as well, {@link CgfGeometryOptions.inlineLods} references them.
  *
  * @param cgf - the parsed file
  * @param heap - content of the `.cgfheap` file, null for the inline format
@@ -93,11 +110,24 @@ export function buildCgfGeometryOptions(cgf: CgfFile, heap: Uint8Array<ArrayBuff
     nodes: [],
     roots: [],
     meshes: [],
+    inlineLods: [],
+    haveAutoLods: !!(cgf.exportFlags & CgfExportFlags.HaveAutoLods),
+    geometricMeanFaceArea: 0,
   }
 
   const nodeIndex = new Map<number, number>()
   cgf.nodes.forEach((node, i) => nodeIndex.set(node.id, i))
   const meshIndex = new Map<number, number>()
+  const faceAreas = geometricMeanAccumulator()
+
+  // builds a mesh once, also when several nodes reference it, -1 if it has no renderable data
+  const getMeshIndex = (mesh: CgfMesh, nodeName: string) => {
+    if (!meshIndex.has(mesh.id)) {
+      const options = buildMesh(cgf, heap, mesh, `${name}#${nodeName}`)
+      meshIndex.set(mesh.id, options ? result.meshes.push(options) - 1 : -1)
+    }
+    return meshIndex.get(mesh.id)
+  }
 
   cgf.nodes.forEach((node, i) => {
     const data: NodeData = { name: node.name }
@@ -118,15 +148,47 @@ export function buildCgfGeometryOptions(cgf: CgfFile, heap: Uint8Array<ArrayBuff
     if (!mesh) {
       return
     }
-    if (!meshIndex.has(mesh.id)) {
-      const options = buildMesh(cgf, heap, mesh, `${name}#${node.name}`)
-      meshIndex.set(mesh.id, options ? result.meshes.push(options) - 1 : -1)
-    }
-    const index = meshIndex.get(mesh.id)
+    const index = getMeshIndex(mesh, node.name)
     if (index >= 0) {
       data.mesh = index
+      faceAreas.add(mesh)
     }
   })
+
+  // inline levels of detail: `$lodN_<name>` children of rendered mesh nodes
+  const lodMeshes: Array<Map<number, number>> = []
+  cgf.nodes.forEach((node) => {
+    const level = inlineLodLevel(node.name)
+    const parent = nodeIndex.get(node.parentId)
+    if (!level || parent == null || result.nodes[parent].mesh == null) {
+      return
+    }
+    const mesh = cgf.meshes.get(node.objectId)
+    const index = mesh ? getMeshIndex(mesh, node.name) : -1
+    if (index >= 0) {
+      lodMeshes[level] ||= new Map()
+      lodMeshes[level].set(parent, index)
+    }
+  })
+  for (let level = 1; level < lodMeshes.length; level++) {
+    const nodes = result.nodes.map((node, i) => {
+      if (node.mesh == null) {
+        return node
+      }
+      // the closest finer level that has a mesh for this node, level 0 if none
+      let mesh = node.mesh
+      for (let l = level; l > 0; l--) {
+        if (lodMeshes[l]?.has(i)) {
+          mesh = lodMeshes[l].get(i)
+          break
+        }
+      }
+      return { ...node, mesh }
+    })
+    result.inlineLods.push(nodes)
+  }
+
+  result.geometricMeanFaceArea = faceAreas.result()
 
   // children in node order, nodes with an unknown parent are roots (see above)
   cgf.nodes.forEach((node, i) => {
@@ -141,10 +203,64 @@ export function buildCgfGeometryOptions(cgf: CgfFile, heap: Uint8Array<ArrayBuff
 }
 
 /**
- * Whether a node is rendered: no helper (`$…`, `$physics`) and no inline LOD (`$lodN`)
+ * Whether a node is rendered
+ *
+ * @remarks
+ * Not rendered are:
+ * - helpers (`$…`) and inline levels of detail (`$lodN_…`, built separately, see {@link inlineLodLevel})
+ * - physics proxies, by name like the engine (CGFLoader: `PhysicsProxy`, `$collision`, `$physics_proxy`)
+ * - merged collision meshes of old-format files (`Merged_phys`). Newer files name them `$physics_proxy_Merged_phys`.
+ *   All `*_phys` mesh nodes in the paks carry physics data, while only 5% of the render meshes do.
  */
 export function isRenderNode(name: string) {
-  return !name.startsWith('$') && !name.includes('$physics') && !name.includes('$lod')
+  const lower = name.toLowerCase()
+  if (lower.startsWith('$') || lower.includes('$lod')) {
+    return false
+  }
+  if (lower.includes('physicsproxy') || lower.includes('$collision') || lower.includes('$physics')) {
+    return false
+  }
+  return !lower.endsWith('_phys')
+}
+
+/**
+ * Level of an inline level of detail node (`$lod2_Merged` is level 2), 0 for other nodes
+ */
+export function inlineLodLevel(name: string): number {
+  const match = /^\$lod(\d+)_/i.exec(name)
+  return match ? Number(match[1]) : 0
+}
+
+/**
+ * Merges the geometric mean face areas of several meshes, weighted by their triangle counts (like SMeshLodInfo.Merge)
+ *
+ * @remarks
+ * Older files do not store the face area. Then it is estimated as the bounding box surface divided by the
+ * triangle count, which assumes the mesh surface is about the size of its bounding box.
+ */
+function geometricMeanAccumulator() {
+  let logSum = 0
+  let count = 0
+  return {
+    add(mesh: CgfMesh) {
+      const triangles = mesh.indexCount / 3
+      const area = mesh.geometricMeanFaceArea || boxSurface(mesh) / Math.max(1, triangles)
+      if (area > 0 && triangles > 0) {
+        logSum += Math.log(area) * triangles
+        count += triangles
+      }
+    },
+    result() {
+      return count > 0 ? Math.exp(logSum / count) : 0
+    },
+  }
+}
+
+function boxSurface(mesh: CgfMesh) {
+  const x = mesh.bboxMax[0] - mesh.bboxMin[0]
+  const y = mesh.bboxMax[1] - mesh.bboxMin[1]
+  const z = mesh.bboxMax[2] - mesh.bboxMin[2]
+  return 2 * (x * y + y * z + z * x)
 }
 
 function buildMesh(cgf: CgfFile, heap: Uint8Array<ArrayBuffer> | null, mesh: CgfMesh, name: string): CgfMeshOptions | null {
