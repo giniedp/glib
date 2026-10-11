@@ -37,6 +37,7 @@ import {
   isViewerAudioTriggerComponent,
   isViewerAudioAmbienceComponent,
   isViewerAudioAreaComponent,
+  isViewerParticleComponent,
   isViewerVolumeComponent,
   type ViewerRoadComponent,
   type ViewerWaterVolumeComponent,
@@ -49,6 +50,7 @@ import { CollisionSystem } from '../collision/CollisionSystem'
 import { DebugLayer, DebugShapeComponent } from '../debug/DebugShapeComponent'
 import { TimeOfDayComponent } from '../level/TimeOfDayComponent'
 import { LightComponent } from '../light/LightComponent'
+import { ParticleComponent, particleRange } from '../particles/ParticleComponent'
 import { AudioEmitterComponent, AudioScriptComponent } from '../../audio/AudioEmitterComponent'
 import { RegionComponent } from '../region/RegionComponent'
 import { RoadComponent } from '../road/RoadComponent'
@@ -415,6 +417,14 @@ export function executeSpawner(spawner: SliceSpawnerComponent) {
       if (isViewerAudioAmbienceComponent(comp) || isViewerAudioAreaComponent(comp)) {
         if (!inactive) {
           components.push(new AudioScriptComponent(comp))
+        }
+        continue
+      }
+      if (isViewerParticleComponent(comp)) {
+        // like lights, inactive entities are alternative states that scripts or events switch on
+        if (!inactive) {
+          components.push(new ParticleComponent(comp))
+          range = Math.max(range, particleRange(spawner.entity.world, comp))
         }
         continue
       }

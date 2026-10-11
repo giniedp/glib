@@ -194,6 +194,10 @@ export const MaterialLayerMasks = {
    * Water volume surfaces (rivers, water volumes)
    */
   WaterVolume: 1 << 12,
+  /**
+   * Sprite particles of particle emitters
+   */
+  Particle: 1 << 13,
 }
 
 const FLAGS_ARRAY = [

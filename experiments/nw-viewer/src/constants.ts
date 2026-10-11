@@ -45,7 +45,7 @@ export const ENABLE_VOLUMETRIC_FOG_2 = true
  * 1 in all GPA captures. An earlier value of 0.5 was tuned by eye to compensate for the fog pass reconstructing
  * its view rays with the camera entity transform instead of the inverse view matrix (fixed).
  */
-export const FOG_DISTANCE_SCALE = 1
+export const FOG_DISTANCE_SCALE = 0.5
 
 /**
  * Loads only the smaller mips of split DDS material textures instead of the merged texture (merge=partial in nwbt).

@@ -402,6 +402,7 @@ export const PrefabReferencerComponentName = 'PrefabReferencer' as const
 export const AudioTriggerComponentName = 'AudioTrigger' as const
 export const AudioAmbienceComponentName = 'AudioAmbience' as const
 export const AudioAreaComponentName = 'AudioArea' as const
+export const ParticleComponentName = 'Particle' as const
 
 export const ComponentTypes = {
   MeshComponentName,
@@ -421,6 +422,7 @@ export const ComponentTypes = {
   AudioTriggerComponentName,
   AudioAmbienceComponentName,
   AudioAreaComponentName,
+  ParticleComponentName,
 }
 
 export type ComponentType =
@@ -437,6 +439,7 @@ export type ComponentType =
   | typeof TerritoryComponentName
   | typeof PrefabReferencerComponentName
   | typeof AudioTriggerComponentName
+  | typeof ParticleComponentName
   | typeof AudioAmbienceComponentName
   | typeof AudioAreaComponentName
 
@@ -617,6 +620,7 @@ export type ViewerComponent =
   | ViewerTerritoryComponent
   | ViewerPrefabReferencerComponent
   | ViewerAudioTriggerComponent
+  | ViewerParticleComponent
   | ViewerAudioAmbienceComponent
   | ViewerAudioAreaComponent
   | ViewerSpawnerComponent
@@ -852,4 +856,37 @@ export function isViewerColliderComponent(component: any): component is ViewerCo
 
 export function isViewerVolumeComponent(component: any): component is ViewerVolumeComponent {
   return component.type === ComponentTypes.VolumeComponentName
+}
+
+/**
+ * Particle emitter (ParticleComponent), see nwbt ViewerParticleComponent.
+ * The library is a CryEngine particle library xml, `emitter` is the full effect name, library name first.
+ * The settings scale the effect like the engine SpawnParams.
+ */
+export interface ViewerParticleComponent extends ViewerBaseComponent {
+  type: typeof ParticleComponentName
+  library: string
+  emitter: string
+  color: [number, number, number, number]
+  alphaScale: number
+  countScale: number
+  sizeScale: number
+  particleSize: [number, number, number]
+  particleSizeRandom?: number
+  speedScale: number
+  timeScale: number
+  /**
+   * Emitter strength, negative uses the emitter age
+   */
+  strength: number
+  pulsePeriod?: number
+  preroll?: boolean
+  ignoreRotation?: boolean
+  notAttached?: boolean
+  viewDistanceMultiplier: number
+  useLod?: boolean
+}
+
+export function isViewerParticleComponent(component: any): component is ViewerParticleComponent {
+  return component.type === ComponentTypes.ParticleComponentName
 }

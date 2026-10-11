@@ -8,20 +8,14 @@ import { boolean, choice, defineConfig, integer, number } from './properties'
  * or are hard to pass through the config, stay constants.
  */
 export const viewerConfigSchema = defineConfig({
-  /**
-   * Plays the ambient audio, see AudioSystem. Browsers only allow audio after a user gesture, so a saved value
-   * starts the audio with the first click or key press.
-   */
   audioEnabled: boolean({
-    description: 'Plays the ambient audio. When saved, audio starts with the first click or key press (autoplay policy).',
+    description:
+      'Plays the ambient audio. When saved, audio starts with the first click or key press (autoplay policy).',
     editable: true,
     default: false,
     group: 'Audio',
   }),
-  /**
-   * Size of the rendered image, see RenderSizeSystem. Helps to profile at a specific resolution without changing the
-   * browser window.
-   */
+
   renderResolution: choice({
     description:
       'Render size in pixels. window follows the window size (device pixels), a fixed size keeps the resolution ' +
@@ -31,15 +25,14 @@ export const viewerConfigSchema = defineConfig({
     default: 'window',
     group: 'Display',
   }),
-  /**
-   * How a fixed render resolution is displayed, see RenderSizeSystem
-   */
+
   renderScaling: choice({
-    description:
-      'Display of a fixed render resolution. fit scales the image into the window and keeps the aspect ratio, ' +
-      'none shows one render pixel per device pixel, centered and cropped if larger than the window.',
+    description: 'Display of a fixed render resolution.',
     editable: true,
-    options: ['fit', 'none'],
+    options: [
+      'fit', // scales the image into the window and keeps the aspect ratio
+      'none', // unscaled, centered and cropped if larger than the window
+    ],
     default: 'fit',
     group: 'Display',
   }),
@@ -84,5 +77,36 @@ export const viewerConfigSchema = defineConfig({
     min: 0,
     max: 5,
     group: 'LOD',
+  }),
+  /**
+   * Distance up to which particle emitters are active, multiplied by the emitter view distance multiplier.
+   * The engine derives it from the emitter bounds and e_ViewDistRatio, see SliceSystem.
+   */
+  particleViewDistance: number({
+    description: 'Distance up to which particle emitters are active (times the emitter multiplier). Needs reload.',
+    editable: true,
+    default: 64,
+    min: 8,
+    max: 512,
+    step: 8,
+    group: 'Particles',
+  }),
+  particleCountScale: number({
+    description: 'Scales the particle count of all emitters. Needs reload.',
+    editable: true,
+    default: 1,
+    min: 0.1,
+    max: 4,
+    step: 0.1,
+    group: 'Particles',
+  }),
+  /**
+   * One shot effects (demolish, loot, impacts …) are triggered by game events. Shown, they play once on activation.
+   */
+  particleOneShots: boolean({
+    description: 'Also plays one shot effects (game event effects) once when they come into range. Needs reload.',
+    editable: true,
+    default: false,
+    group: 'Particles',
   }),
 })
