@@ -9,6 +9,7 @@ import {
   stencilOperationToWebGL,
   type PrimitiveType,
 } from '../enums'
+import type { GpuTimer } from '../GpuTimer'
 import { RenderEncoder } from '../RenderEncoder'
 import type { Buffer, DeviceOutput, Program, Texture, VertexBuffer } from '../resources'
 import {
@@ -578,6 +579,14 @@ export class WebglRenderEncoder extends RenderEncoder {
 
     // reset read/write framebuffer to default
     this.switchToFrameBuffer(null)
+  }
+
+  public beginTimer(_timer: GpuTimer): void {
+    // TODO: EXT_disjoint_timer_query_webgl2
+  }
+
+  public endTimer(_timer: GpuTimer): void {
+    // TODO: EXT_disjoint_timer_query_webgl2
   }
 
   public submit(): void {

@@ -1,5 +1,6 @@
 import { IVec4 } from '@gglib/math'
 import type { Device } from './Device'
+import type { GpuTimer } from './GpuTimer'
 import type { PrimitiveType } from './enums'
 import type { Buffer, DeviceOutput, Program, Texture, VertexBuffer } from './resources'
 
@@ -190,6 +191,26 @@ export abstract class RenderEncoder {
   ): void
 
   /**
+   * Starts measuring GPU time with the given timer
+   *
+   * @remarks
+   * Acts as a barrier: the currently open pass is ended, so work encoded before is not measured.
+   * The timer covers all passes begun until {@link endTimer} is called, also across {@link submit} and {@link flush}.
+   * Only one timer is active per encoder, a second call replaces the active timer.
+   * A pass that is still open when the timer ends is measured until it ends.
+   *
+   * @version WebGPU only, no-op on WebGL
+   */
+  public abstract beginTimer(timer: GpuTimer): void
+
+  /**
+   * Stops measuring with the given timer, if it is the active one. Does not end the open pass.
+   *
+   * @version WebGPU only, no-op on WebGL
+   */
+  public abstract endTimer(timer: GpuTimer): void
+
+  /**
    * Just calls the render method on the given object
    */
   public render(renderable: Renderable): void {
@@ -222,6 +243,7 @@ export abstract class RenderEncoder {
 
   /**
    * Ends and submits the current render pass, and resets the state.
+   * The active timer is kept, see {@link beginTimer}.
    *
    * @remarks
    * For webgl, this will reset internal state variables to default values

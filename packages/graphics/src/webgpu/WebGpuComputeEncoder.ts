@@ -1,3 +1,4 @@
+import type { GpuTimer } from '../GpuTimer'
 import { Buffer, Program } from '../resources'
 import { ComputePipelineParams } from './cache/ComputeCache'
 import { WebGpuBuffer, WebGpuProgram, WebGpuShaderModule } from './resources'
@@ -17,6 +18,12 @@ export class WebGpuComputeEncoder {
   private encoder: GPUCommandEncoder
   private pass: GPUComputePassEncoder
   private pipeline: GPUComputePipeline
+  private passDescriptor: GPUComputePassDescriptor = {
+    label: 'gglib compute',
+  }
+
+  private timer: GpuTimer = null
+  private timerBegun = false
 
   public constructor(device: WebGpuDevice) {
     this.device = device
@@ -46,6 +53,29 @@ export class WebGpuComputeEncoder {
   public dispatchIndirect(buffer: Buffer, offset: number = 0) {
     const gpuBuffer = (buffer as WebGpuBuffer).resource
     this.getPass()?.dispatchWorkgroupsIndirect(gpuBuffer, offset)
+  }
+
+  /**
+   * Starts measuring GPU time with the given timer
+   *
+   * @remarks
+   * Acts as a barrier: the currently open pass is ended, so work encoded before is not measured.
+   * The timer covers all passes begun until {@link endTimer} is called, also across {@link submit} and {@link flush}.
+   * Only one timer is active per encoder, a second call replaces the active timer.
+   */
+  public beginTimer(timer: GpuTimer) {
+    this.endPass()
+    this.timer = timer
+    this.timerBegun = false
+  }
+
+  /**
+   * Stops measuring with the given timer, if it is the active one. Does not end the open pass.
+   */
+  public endTimer(timer: GpuTimer) {
+    if (this.timer === timer) {
+      this.timer = null
+    }
   }
 
   /**
@@ -80,9 +110,14 @@ export class WebGpuComputeEncoder {
 
   private getPass(): GPUComputePassEncoder | null {
     if (!this.pass) {
-      this.pass = this.getEncoder().beginComputePass({
-        label: 'gglib compute',
-      })
+      const descriptor = this.passDescriptor
+      if (this.timer) {
+        descriptor.timestampWrites = this.device.timers.getWrites(this.timer, !this.timerBegun)
+        this.timerBegun = true
+      } else {
+        descriptor.timestampWrites = undefined
+      }
+      this.pass = this.getEncoder().beginComputePass(descriptor)
 
       if (!this.applyPipeline(this.pass)) {
         // still loading

@@ -51,11 +51,18 @@ export class RenderPipeline {
       for (const resource of node.acquire) {
         resource.texture = ctx.resources.acquire(resource.desc, `v${resource.version}`)
       }
+      const timer = node.pass.gpuTimer
+      if (timer) {
+        ctx.device.renderPass.beginTimer(timer)
+      }
       try {
         node.pass.render(ctx)
       } catch (err) {
         console.error(`Error executing render pass ${node.pass.name}:`, err)
       } finally {
+        if (timer) {
+          ctx.device.renderPass.endTimer(timer)
+        }
         for (const resource of node.release) {
           ctx.resources.release(resource.texture)
           resource.texture = null

@@ -98,7 +98,9 @@ const OverlayComponent: ClosureComponent<OverlayComponentAttrs> = () => {
                         const dc = (viewer.renderStats?.drawCount ?? 0).toString().padStart(4, '0')
                         const vc = (viewer.sceneStats?.visible ?? 0).toString().padStart(4, '0')
                         const tasks = viewer.schedulerStats?.total || 0
-                        return `${tasks} Tasks | ${fps} FPS | ${ft} ms | ${dc} Draws | ${vc} Visible`
+                        const upd = viewer.world.stats.update.toFixed(2).padStart(5, '0')
+                        const draw = viewer.world.stats.render.toFixed(2).padStart(5, '0')
+                        return `${tasks} Tasks | ${fps} FPS | ${ft} ms | upd ${upd} | draw ${draw} | ${dc} Draws | ${vc} Visible`
                       },
                     }),
                     h(LoadLevelButton, { viewer, options: levelOptions }),
@@ -169,6 +171,20 @@ const OverlayComponent: ClosureComponent<OverlayComponentAttrs> = () => {
                           sample: () => {
                             return viewer.frameTime > 0 ? 1 / viewer.frameTime : 0
                           },
+                        },
+                        {
+                          name: 'Update (ms)',
+                          min: 0,
+                          max: 50,
+                          smoothing: 0.9,
+                          sample: () => viewer.world.stats.update,
+                        },
+                        {
+                          name: 'Draw (ms)',
+                          min: 0,
+                          max: 50,
+                          smoothing: 0.9,
+                          sample: () => viewer.world.stats.render,
                         },
                         {
                           name: 'Frame (MB)',
@@ -256,7 +272,7 @@ const OverlayComponent: ClosureComponent<OverlayComponentAttrs> = () => {
                     ]),
                     uiGroup({ title: 'Lights' }, [h(LightSystemProps, { data: viewer.world.getSystem(LightSystem) })]),
                     uiGroup({ title: 'Render Pipeline', collapsible: true }, [
-                      h(RenderPipelineProps, { data: viewer.world.getSystem(Renderer).pipeline }),
+                      h(RenderPipelineProps, { data: viewer.world.getSystem(Renderer).pipeline, device: viewer.device }),
                     ]),
                   ]),
                 ],

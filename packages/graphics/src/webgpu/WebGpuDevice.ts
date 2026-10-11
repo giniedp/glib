@@ -3,6 +3,7 @@ import { brand, eventSource, EventType, type EventChannel } from '@gglib/utils'
 import { Color } from '../Color'
 import { Device, DeviceStats } from '../Device'
 import { FrameScheduler } from '../FrameScheduler'
+import type { GpuTimer, GpuTimerOptions } from '../GpuTimer'
 import { BufferUsage, type SurfaceFormat } from '../enums'
 import {
   createResourceTracker,
@@ -23,6 +24,7 @@ import { SamplerState } from '../states'
 import { WebGpuCapabilities } from './WebGpuCapabilities'
 import { WebGpuComputeEncoder } from './WebGpuComputeEncoder'
 import { WebGpuRenderEncoder } from './WebGpuRenderEncoder'
+import { WebGpuTimers } from './WebGpuTimers'
 import { colorTargetCache, colorTargetListCache } from './cache/ColorTargetCache'
 import { computePipelineCache } from './cache/ComputeCache'
 import { renderPipelineCache } from './cache/PipelineCache'
@@ -112,6 +114,11 @@ export class WebGpuDevice extends Device<GPUCanvasContext> {
   public readonly colorTargetCache = colorTargetCache()
   public readonly colorTargetListCache = colorTargetListCache()
 
+  /**
+   * Timestamp queries and readback of all {@link GpuTimer}s of this device
+   */
+  public readonly timers = new WebGpuTimers()
+
   protected shaders = createResourceTracker<WebGpuShaderModule>()
   protected textures = createResourceTracker<WebGpuTexture>()
   protected samplers = new Map<SamplerState, WebGpuSampler>()
@@ -193,6 +200,7 @@ export class WebGpuDevice extends Device<GPUCanvasContext> {
     self.adapter = adapter
     self.gpu = device
     self.capabilities = new WebGpuCapabilities(this)
+    this.timers.setup(device)
     self.defaultTexture ||= this.createTexture({
       name: 'GGLib Default Texture',
       // prettier-ignore
@@ -367,6 +375,14 @@ export class WebGpuDevice extends Device<GPUCanvasContext> {
     return result
   }
 
+  public createGpuTimer(options?: GpuTimerOptions): GpuTimer {
+    return this.timers.create(options)
+  }
+
+  public resolveGpuTimers(): void {
+    this.timers.resolve()
+  }
+
   public stats<T>(out?: T): T & DeviceStats {
     const result = (out || {}) as T & DeviceStats
     result.textureCount = this.textures.count
@@ -437,6 +453,7 @@ export class WebGpuDevice extends Device<GPUCanvasContext> {
   public dispose() {
     this.scheduler.dispose()
     this.resizeObserver?.disconnect()
+    this.timers.destroy()
     this.context.unconfigure()
     this.gpu.destroy()
   }

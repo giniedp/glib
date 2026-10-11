@@ -1,5 +1,6 @@
 import { IVec4 } from '@gglib/math'
 import { Color } from '../Color'
+import type { GpuTimer } from '../GpuTimer'
 import { RenderEncoder } from '../RenderEncoder'
 import { surfaceIsStencilFormat, type PrimitiveType } from '../enums'
 import { Texture, type Buffer, type DeviceOutput, type Program, type VertexBuffer } from '../resources'
@@ -76,6 +77,9 @@ export class WebGpuRenderEncoder extends RenderEncoder {
 
   private outputWidth: number
   private outputHeight: number
+
+  private timer: GpuTimer = null
+  private timerBegun = false
 
   public constructor(device: WebGpuDevice) {
     super()
@@ -762,9 +766,34 @@ export class WebGpuRenderEncoder extends RenderEncoder {
     }
   }
 
+  public beginTimer(timer: GpuTimer) {
+    this.endPass()
+    this.timer = timer
+    this.timerBegun = false
+  }
+
+  public endTimer(timer: GpuTimer) {
+    if (this.timer === timer) {
+      this.timer = null
+    }
+  }
+
+  /**
+   * Assigns the timestamp writes of the active timer to a pass descriptor that is about to begin
+   */
+  private applyTimer(descriptor: GPURenderPassDescriptor) {
+    if (!this.timer) {
+      descriptor.timestampWrites = undefined
+      return
+    }
+    descriptor.timestampWrites = this.device.timers.getWrites(this.timer, !this.timerBegun)
+    this.timerBegun = true
+  }
+
   public clear() {
     this.endPass()
     const descriptor = this.getClearPassDescriptor()
+    this.applyTimer(descriptor)
 
     const pass = this.getEncoder().beginRenderPass(descriptor)
     this.applyStencilReference(pass)
@@ -777,6 +806,7 @@ export class WebGpuRenderEncoder extends RenderEncoder {
   public resolve() {
     this.endPass()
     const descriptor = this.getColorPassDescriptor()
+    this.applyTimer(descriptor)
 
     const encoder = this.getEncoder()
     encoder.beginRenderPass(descriptor).end()
@@ -817,6 +847,7 @@ export class WebGpuRenderEncoder extends RenderEncoder {
   private getPass(): GPURenderPassEncoder | null {
     if (!this.pass) {
       const descriptor = this.getColorPassDescriptor()
+      this.applyTimer(descriptor)
       this.pass = this.getEncoder().beginRenderPass(descriptor)
       this.resetBoundState()
 

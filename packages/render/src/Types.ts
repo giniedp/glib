@@ -1,5 +1,6 @@
 import type {
   Device,
+  GpuTimer,
   Mesh,
   ProgramInputBlockCollection,
   RenderVariant,
@@ -277,6 +278,14 @@ export interface RenderPass {
    * Name of this render pass
    */
   name: string
+  /**
+   * If set, the pipeline measures the GPU time of this pass with the timer
+   *
+   * @remarks
+   * The pipeline begins the timer on the device render encoder before {@link render} and ends it afterwards.
+   * The pass should flush or submit its work inside {@link render}.
+   */
+  gpuTimer?: GpuTimer
   /**
    * Called to allow the pass to claim it's inputs and outputs
    */

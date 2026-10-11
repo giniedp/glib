@@ -362,6 +362,7 @@ export class Renderer {
     pass.render(this.spriteBatch)
     pass.submit()
     pass.flush()
+    this.device.resolveGpuTimers()
   }
 
   protected updateInputs(ctx: RenderContext) {

@@ -14,6 +14,17 @@ export interface CreateEntityOptions {
   components?: GameComponent[]
 }
 
+export interface GameWorldStats {
+  /**
+   * CPU time in ms spent in the last {@link GameWorld.update} call
+   */
+  update: number
+  /**
+   * CPU time in ms spent in the last {@link GameWorld.render} call
+   */
+  render: number
+}
+
 export class GameWorld {
   protected entities = idMap<GameEntityId, GameEntity>()
   protected queries = new GameQueryCache(this)
@@ -22,6 +33,14 @@ export class GameWorld {
 
   public readonly systems = new GameSystemCollection(this)
   public readonly eventBus = new EventBus()
+
+  /**
+   * Runtime statistics of this world, updated in place
+   */
+  public readonly stats: GameWorldStats = {
+    update: 0,
+    render: 0,
+  }
 
   public constructor() {
     this.eventBus.on(GameEntity.onInitialized, this.handleEntityInitialized)
@@ -207,9 +226,11 @@ export class GameWorld {
       throw new Error('Recursive update call detected')
     }
     this.isUpdating = true
+    const start = performance.now()
     try {
       this.systems.update(time, dt)
     } finally {
+      this.stats.update = performance.now() - start
       this.isUpdating = false
     }
   }
@@ -223,9 +244,11 @@ export class GameWorld {
       throw new Error('Recursive render call detected')
     }
     this.isRendering = true
+    const start = performance.now()
     try {
       this.systems.render(time, dt)
     } finally {
+      this.stats.render = performance.now() - start
       this.isRendering = false
     }
   }

@@ -2,6 +2,7 @@ import type { NdcMinZ } from '@gglib/math'
 import type { EventChannel } from '@gglib/utils'
 import type { Capabilities } from './Capabilities'
 import { FrameFn, FrameScheduler, FrameTask } from './FrameScheduler'
+import type { GpuTimer, GpuTimerOptions } from './GpuTimer'
 import { RenderEncoder } from './RenderEncoder'
 import type {
   AcquireTextureOptions,
@@ -204,6 +205,23 @@ export abstract class Device<C extends GPUCanvasContext | WebGL2RenderingContext
   public abstract dispose(): void
 
   public abstract stats<T>(out?: T): T & DeviceStats
+
+  /**
+   * Creates a timer that measures the GPU time of a region of passes
+   *
+   * @remarks
+   * Create timers once and reuse them every frame. The returned timer is inert if the backend
+   * has no timestamp support or all timer slots are taken.
+   * @public
+   */
+  public abstract createGpuTimer(options?: GpuTimerOptions): GpuTimer
+
+  /**
+   * Reads back the timestamps of all timers that ran in this frame.
+   * Call once per frame after the last submit. {@link GpuTimer} values update a few frames later.
+   * @public
+   */
+  public abstract resolveGpuTimers(): void
 
   /**
    * Adds a task function to be executed every frame until cancelled

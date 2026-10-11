@@ -4,6 +4,7 @@ import { Color } from '../Color'
 import { Device, DeviceStats } from '../Device'
 import { BufferUsage } from '../enums'
 import { FrameScheduler } from '../FrameScheduler'
+import { GpuTimer, type GpuTimerOptions } from '../GpuTimer'
 import {
   createResourceTracker,
   getRefCounter,
@@ -313,6 +314,15 @@ export class WebglDevice extends Device<WebGL2RenderingContext> {
       result.ref.release()
     }
     return result
+  }
+
+  public createGpuTimer(options?: GpuTimerOptions): GpuTimer {
+    // TODO: EXT_disjoint_timer_query_webgl2, until then timers are inert
+    return new GpuTimer(-1, options)
+  }
+
+  public resolveGpuTimers(): void {
+    // TODO: EXT_disjoint_timer_query_webgl2
   }
 
   public stats<T>(out?: T): T & DeviceStats {
