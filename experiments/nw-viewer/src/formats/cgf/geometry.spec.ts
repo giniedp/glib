@@ -70,10 +70,31 @@ describe('buildCgfGeometryOptions', () => {
     ])
   })
 
-  it('keeps the node transform as stored, translation in meters', () => {
+  it('ignores the node transform of a single mesh object, like the engine', () => {
     const options = buildCgfGeometryOptions(parseCgf(sampleFile()), sampleHeap())
     expect(options.roots).toEqual([0])
     expect(options.nodes[0].mesh).toBe(0)
+    expect(options.nodes[0].matrix).toBeUndefined()
+  })
+
+  it('keeps the node transforms of a compound object as stored, translation in meters', () => {
+    const file = new CgfWriter()
+      .chunk(CgfChunkType.Node, 0x0824, 1, (w) => writeNode(w, 'a', 3, -1, IDENTITY_CM))
+      .chunk(CgfChunkType.Node, 0x0824, 2, (w) => writeNode(w, 'b', 3, -1, IDENTITY_CM))
+      .chunk(CgfChunkType.Mesh, 0x0802, 3, (w) =>
+        writeMesh(w, {
+          verts: 4,
+          indices: 4,
+          subsetsId: 4,
+          streams: { [CgfStreamType.Positions]: 5, [CgfStreamType.Indices]: 6 },
+        }),
+      )
+      .chunk(CgfChunkType.MeshSubsets, 0x0800, 4, (w) => w.i32(0, 1).i32(0, 0).i32(0, 4, 0, 4, 0).f32(1, 0, 0, 0))
+      .chunk(CgfChunkType.DataRef, 0x0800, 5, (w) => w.i32(0, 0, 0, 96, 24))
+      .chunk(CgfChunkType.DataRef, 0x0800, 6, (w) => w.i32(0, 0, 96, 8, 2))
+      .build()
+    const options = buildCgfGeometryOptions(parseCgf(file), new Uint8Array(128))
+    expect(options.nodes.map((n) => n.mesh)).toEqual([0, 0])
     expect(options.nodes[0].matrix.slice(12)).toEqual([1, 2, 3, 1])
   })
 

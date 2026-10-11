@@ -155,6 +155,14 @@ export function buildCgfGeometryOptions(cgf: CgfFile, heap: Uint8Array<ArrayBuff
     }
   })
 
+  if (isSingleMeshObject(cgf, result.nodes)) {
+    // the engine renders the mesh in object space and ignores the node transforms (CStatObj::LoadCGF),
+    // e.g. bananaplant: `render_meshes` is rotated to Y-up, its vertices are already Z-up
+    for (const node of result.nodes) {
+      delete node.matrix
+    }
+  }
+
   // inline levels of detail: `$lodN_<name>` children of rendered mesh nodes
   const lodMeshes: Array<Map<number, number>> = []
   cgf.nodes.forEach((node) => {
@@ -221,6 +229,21 @@ export function isRenderNode(name: string) {
     return false
   }
   return !lower.endsWith('_phys')
+}
+
+/**
+ * Whether the engine loads the file as a single mesh instead of a compound object
+ *
+ * @remarks
+ * Like CStatObj::LoadCGF: all nodes are merged (export flag), or there is at most one mesh node and no `$joint`.
+ */
+function isSingleMeshObject(cgf: CgfFile, nodes: NodeData[]) {
+  if (cgf.exportFlags & CgfExportFlags.MergeAllNodes) {
+    return true
+  }
+  const meshNodes = nodes.filter((node) => node.mesh != null).length
+  const hasJoints = cgf.nodes.some((node) => node.name.startsWith('$joint'))
+  return meshNodes <= 1 && !hasJoints
 }
 
 /**
