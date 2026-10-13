@@ -113,14 +113,16 @@ export class ContentService extends GameSystem {
       source: new Uint8Array([128, 128, 128, 255]),
     })
 
-    // tangent space normal (0, 0, 1), engine "FlatBump"
+    // tangent space normal (0, 0, 1), engine "FlatBump".
+    // Signed like the game normal maps (BC5_SNORM): shaders decode xy without remapping (decodeNormal),
+    // an unorm 128 would read as 0.5 and tilt the normal by 45°.
     this.flatNormalPixel = device.acquireTexture({
       key: FlatNormalTextureKey,
       name: 'flatNormalPixel',
       width: 1,
       height: 1,
-      format: 'rgba8unorm',
-      source: new Uint8Array([128, 128, 255, 255]),
+      format: 'rgba8snorm',
+      source: new Int8Array([0, 0, 127, 127]),
     })
 
     this.blackPixel = device.acquireTexture({

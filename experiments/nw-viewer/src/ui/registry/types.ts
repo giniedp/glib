@@ -1,10 +1,10 @@
-import type { FactoryComponent } from 'mithril'
+import type { Component } from 'solid-js'
 
 export interface UiAnnotation<T> {
   icon?: (it: T) => string
   label?: (it: T) => string
   expandable?: (it: T) => boolean
   children?: (it: T) => Iterable<any>
-  actionComponent?: FactoryComponent<{ data: T }>
-  propsComponent?: FactoryComponent<{ data: T }>
+  actionComponent?: Component<{ data: T }>
+  propsComponent?: Component<{ data: T }>
 }

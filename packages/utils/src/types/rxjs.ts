@@ -7,7 +7,7 @@ export type RxJsObserver<T> = {
 }
 
 export interface RxJsSubscribable<T> {
-  subscribe(observer: Partial<RxJsObserver<T>>): RxJsUnsubscribable
+  subscribe(observer?: Partial<RxJsObserver<T>> | ((value: T) => any)): RxJsUnsubscribable
 }
 
 export interface RxJsUnsubscribable {

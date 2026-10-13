@@ -1,4 +1,21 @@
-@import '/tweak-ui/dist/style.css';
+@import 'tweak-ui/style.css';
+
+@font-face {
+  font-family: 'JetBrainsMono';
+  src: url('/fonts/JetBrainsMono-VariableFont_wght.ttf') format('truetype');
+  font-weight: 100 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'JetBrainsMono';
+  src: url('/fonts/JetBrainsMono-Italic-VariableFont_wght.ttf') format('truetype');
+  font-weight: 100 800;
+  font-style: italic;
+  font-display: swap;
+}
+
 html,
 body {
   background: #000;
@@ -42,38 +59,106 @@ canvas {
   background: transparent;
 }
 
-.tweak-ui {
-  max-height: calc(100vh);
+/* the ui above the canvas, see ui/overlay.tsx */
+.nw-overlay {
+  position: absolute;
+  inset: 0;
   height: 100%;
   overflow: hidden;
   background: transparent;
+  /* the canvas receives the input, except on the toolbar and the sidebars */
+  pointer-events: none;
 
-  --twk-size: 1.25rem;
-  --twk-gap: 0.125rem;
-  --twk-inset: 0rem;
-  --twk-radius: 0.125rem;
   --twk-width: 100%;
+  --twk-spacing-field: 1.5rem;
+  --twk-spacing-inset: 0rem;
+  --twk-radius-field: 0.125rem;
+  --twk-font-ui: 'JetBrainsMono', monospace;
+  --twk-font-mono: 'JetBrainsMono', monospace;
+}
+.nw-overlay-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+/* the application toolbar: larger controls than the panels, quick access to the most used actions */
+.nw-overlay-toolbar {
+  pointer-events: all;
+  background: color-mix(in oklab, var(--twk-color-base-300) 75%, transparent);
+  backdrop-filter: blur(8px);
+  padding: 0.125rem;
 }
 
-.twk-tree + .twk-group,
-.twk-tree + .nw-node-view {
-  height: calc(25vh);
+/* icons are sized by the font, not by the row height */
+.nw-overlay-toolbar .twk-icon {
+  width: 1rem;
+  height: 1rem;
 }
-.twk-tree + .twk-group > .twk-group-content {
-  max-height: 100%;
+.nw-overlay-panes {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+.nw-overlay-fluid {
+  flex: 1;
+}
+.nw-overlay-sidebar {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 325px;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: clip;
+  pointer-events: all;
+}
+
+.nw-dialog {
+  max-width: 48rem;
+  width: auto;
+  padding: 0;
+  pointer-events: all;
+}
+
+.nw-dialog-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-height: 10rem;
+  max-height: 50vh;
+  padding: 0.25rem;
   overflow: auto;
 }
-
-.twk-tree-label {
-  padding-left: 0.25rem;
+.nw-scene-label {
+  flex: 1;
+  text-align: start;
 }
-.twk-tree-icon {
+.nw-muted {
+  opacity: 0.5;
+}
+
+/* the scene tree fills the sidebar, the properties of the selection are below */
+.nw-scene-browser {
+  display: flex;
+  flex-direction: column;
+  gap: var(--twk-spacing-gap);
+  height: 100%;
+  min-height: 0;
+}
+.nw-scene-browser > .twk-tree {
+  flex: 1;
+  min-height: 0;
+}
+
+/* frame and scene stats in the toolbar, see ui/panels/statsBar.tsx */
+.nw-stats-bar {
   display: flex;
   align-items: center;
-  justify-content: center;
-  width: 16px;
+  white-space: nowrap;
 }
-.twk-tree-icon svg {
-  width: 16px;
-  height: 16px;
+.nw-stat {
+  padding: 0 0.5rem;
+}
+.nw-stat + .nw-stat {
+  border-left: 1px solid color-mix(in oklab, var(--twk-color-base-content) 25%, transparent);
 }

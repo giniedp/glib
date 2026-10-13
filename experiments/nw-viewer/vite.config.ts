@@ -1,13 +1,17 @@
+import { ggPlugin } from '@gglib/vite-plugin'
 import fs from 'node:fs'
 import path from 'node:path'
 import { defineConfig } from 'vite'
-import dts from 'vite-plugin-dts'
-import { ggPlugin } from '@gglib/vite-plugin'
+import solidPlugin from 'vite-plugin-solid'
 export default defineConfig(({ mode }) => {
   const isApp = mode !== 'lib' && mode !== 'development'
   if (isApp) {
     return {
+      resolve: {
+        dedupe: ['solid-js'],
+      },
       plugins: [
+        solidPlugin(),
         ggPlugin({
           files: ['src/**/*.wgsl.ts'],
         }),
@@ -40,7 +44,12 @@ export default defineConfig(({ mode }) => {
         },
       },
     },
+    resolve: {
+      // the components of tweak-ui and of the viewer must share one reactive runtime
+      dedupe: ['solid-js'],
+    },
     plugins: [
+      solidPlugin(),
       ggPlugin({
         files: ['src/**/*.wgsl.ts'],
       }),

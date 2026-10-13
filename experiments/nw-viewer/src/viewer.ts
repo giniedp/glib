@@ -31,7 +31,6 @@ import {
 } from '@gglib/math'
 import { Renderer, type RendererStats } from '@gglib/render'
 import { brand, lfmt, type EventType } from '@gglib/utils'
-import { redrawUi } from 'tweak-ui'
 import { getLevelListUrl } from './api'
 import { REGION_SIZE } from './constants'
 import { ContentService } from './content'
@@ -78,6 +77,7 @@ export interface LevelLoadOption {
 export class NwViewer extends EcsGame {
   public static readonly onRaySelection = brand<EventType<GameEntity>>(Symbol('raySelection'))
   public static readonly onLevelOptionsLoaded = brand<EventType<NwViewer>>(Symbol('levelOptions'))
+  public static readonly onModeChanged = brand<EventType<NwViewer>>(Symbol('mode'))
 
   public camera: CameraComponent
   public mode?: 'level' | 'model' | 'image' | 'material' | 'slice' | 'particles' | 'materials' = null
@@ -98,6 +98,10 @@ export class NwViewer extends EcsGame {
 
   public onRaySelection = this.events.channel(NwViewer.onRaySelection)
   public onLevelOptionsLoaded = this.events.channel(NwViewer.onLevelOptionsLoaded)
+  /**
+   * Emitted when a level, model or preview scene was opened, see {@link NwViewer.mode}
+   */
+  public onModeChanged = this.events.channel(NwViewer.onModeChanged)
 
   public selection: GameEntity
 
@@ -348,7 +352,7 @@ export class NwViewer extends EcsGame {
     this.levelSelection = name
     await this.world.getSystem(ContentService).whenLoaded
     this.world.getSystem(LevelSystem).loadLevel(name)
-    redrawUi()
+    this.onModeChanged.emit(this)
   }
 
   public teleport(x: number, y: number, z: number, rot: number = 0) {
@@ -471,14 +475,14 @@ export class NwViewer extends EcsGame {
     this.mode = 'model'
     this.world.getSystem(LevelSystem).loadModel(model, material, transform)
     this.teleport(0, 0, 0)
-    redrawUi()
+    this.onModeChanged.emit(this)
   }
 
   public loadMaterial(asset: string) {
     this.mode = 'material'
     this.world.getSystem(LevelSystem).loadMaterial(asset)
     this.teleport(0, 0, 0)
-    redrawUi()
+    this.onModeChanged.emit(this)
   }
 
   /**
@@ -487,7 +491,7 @@ export class NwViewer extends EcsGame {
   public loadMaterials(set: string | null, options?: { time?: number }) {
     this.mode = 'materials'
     this.world.getSystem(LevelSystem).loadMaterials(set, options)
-    redrawUi()
+    this.onModeChanged.emit(this)
   }
 
   /**
@@ -496,17 +500,17 @@ export class NwViewer extends EcsGame {
   public loadParticles(spec: string | null, filter?: string | null, options?: { spacing?: number; time?: number }) {
     this.mode = 'particles'
     this.world.getSystem(LevelSystem).loadParticles(spec, filter, options)
-    redrawUi()
+    this.onModeChanged.emit(this)
   }
 
   public loadImage(image: string) {
     this.mode = 'model'
-    redrawUi()
+    this.onModeChanged.emit(this)
   }
 
   public loadSlice(slice: string) {
     this.mode = 'model'
-    redrawUi()
+    this.onModeChanged.emit(this)
   }
 }
 

@@ -68,11 +68,18 @@ export abstract class EventChannel<T> implements RxJsSubscribable<T> {
 
   protected abstract processPending(): void
 
-  public subscribe(observer: Partial<RxJsObserver<T>>) {
+  public subscribe(observer?: Partial<RxJsObserver<T>> | ((it: T) => void)) {
+    let setter: (value: T) => void
+    if (typeof observer === 'function') {
+      setter = observer
+    } else if (typeof observer?.next === 'function') {
+      setter = observer.next.bind(observer)
+    } else {
+      setter = () => void 0
+    }
+
     return {
-      unsubscribe: this.add((value) => {
-        observer.next?.(value)
-      }),
+      unsubscribe: this.add(setter),
     }
   }
 
