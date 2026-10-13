@@ -30,16 +30,15 @@ import {
   vec4,
 } from '@gglib/math'
 import { Renderer, type RendererStats } from '@gglib/render'
-import { brand, lfmt, type EventType } from '@gglib/utils'
+import { brand, lfmt, MetricSampler, type EventType } from '@gglib/utils'
 import { getLevelListUrl } from './api'
+import { AudioSystem } from './audio/AudioSystem'
+import { ViewerConfig } from './config'
 import { REGION_SIZE } from './constants'
 import { ContentService } from './content'
 import { registerCgf } from './formats/cgf'
 import { registerMtl } from './formats/mtl'
 import { registerRnr } from './formats/rnr'
-import { AudioSystem } from './audio/AudioSystem'
-import { ParticleSystem } from './game/particles'
-import { CapitalSystem } from './game/capital/CapitalSystem'
 import { CollisionSystem } from './game/collision/CollisionSystem'
 import { DebugLayer, DebugShapeComponent } from './game/debug/DebugShapeComponent'
 import { DebugShapeSystem } from './game/debug/DebugShapeSystem'
@@ -48,18 +47,18 @@ import { DistributionSystem } from './game/distribution/DistributionSystem'
 import { InstancedRenderSystem } from './game/instancing/InstancedRenderSystem'
 import { LevelSystem } from './game/level/LevelSystem'
 import { SkyLightSystem } from './game/level/SkyLightSystem'
-import { createSceneOptions, VIEWER_MODE_PARAMS, type SceneOptions } from './scenes'
 import { LightSystem } from './game/light/LightSystem'
+import { ParticleSystem } from './game/particles'
 import { RegionSystem } from './game/region/RegionSystem'
+import { RoadSystem } from './game/road/RoadSystem'
 import { RangeActivationSystem } from './game/slice/RangeActivationSystem'
 import { SliceSystem } from './game/slice/SliceSystem'
-import { RoadSystem } from './game/road/RoadSystem'
 import { TerrainSystem } from './game/terrain/TerrainSystem'
 import { VegetationSystem } from './game/vegetation/VegetationSystem'
-import { ViewerConfig } from './config'
 import { createRenderPipeline } from './graphics'
 import { RenderSizeSystem } from './graphics/RenderSizeSystem'
 import { InputSlots, MaterialLayerMasks } from './material'
+import { createSceneOptions, VIEWER_MODE_PARAMS, type SceneOptions } from './scenes'
 import { attachOverlay } from './ui/overlay'
 
 export interface NwViewerOptions {
@@ -155,7 +154,6 @@ export class NwViewer extends EcsGame {
     this.world.addSystem(new DistributionSystem())
     this.world.addSystem(new VegetationSystem())
     this.world.addSystem(new InstancedRenderSystem())
-    this.world.addSystem(new CapitalSystem())
     this.world.addSystem(new SliceSystem())
     this.world.addSystem(new RoadSystem())
     this.world.addSystem(new CollisionSystem())
@@ -262,10 +260,8 @@ export class NwViewer extends EcsGame {
     this.world.getSystem(Renderer).inputs.set(InputSlots.Global.Debug, this.debug)
   }
 
-  public frameTime = 0
   override onEndDraw(time: number, dt: number): void {
     super.onEndDraw(time, dt)
-    this.frameTime = dt
     this.deviceStats = this.device.stats(this.deviceStats)
     this.schedulerStats = this.scheduler.instance.getStats(this.schedulerStats)
     this.sceneStats = this.scene.stats(this.sceneStats)
@@ -336,7 +332,6 @@ export class NwViewer extends EcsGame {
     const boxTransform = mat4CreateFromRTS(vec4(0, 0, 0, 1), boxCenter, boxScale)
     const nodeTransform = selection.node.world
 
-    shape.type = 'box'
     shape.transforms[0] ||= mat4()
     mat4$initScaleUniform(shape.transforms[0], 1.001)
     mat4$premultiply(shape.transforms[0], boxTransform)

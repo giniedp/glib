@@ -11,12 +11,12 @@ import {
 } from '@gglib/math'
 import type { ViewerShape } from '../../api'
 import { rnrTransformToMat4, type RnrShape } from '../../formats/rnr'
-import type { DebugShapeGeometry, DebugShapeOptions } from '../debug/DebugShapeComponent'
+import type { DebugShapeOptions } from '../debug/DebugShapeComponent'
 
 /**
  * Debug shapes of a collision shape, transforms are relative to the owning entity
  */
-export type CollisionDebugShape = Pick<DebugShapeOptions, 'type' | 'geometry' | 'instances'>
+export type CollisionDebugShape = Pick<DebugShapeOptions, 'key' | 'type' | 'geometry' | 'instances'>
 
 /**
  * Rotates the Z-up unit cylinder of the debug meshes to the Y axis (aligned RockNRoll cylinders and capsules)
@@ -38,9 +38,10 @@ function collectRnrShape(shape: RnrShape, key: string, parent: Mat4, out: Collis
   const transform = shape.localTransform ? mat4Multiply(parent, rnrTransformToMat4(shape.localTransform)) : parent
   switch (shape.kind) {
     case 'compound': {
-      shape.children.forEach((child, i) => {
+      for (let i = 0; i < shape.children.length; i++) {
+        const child = shape.children[i]
         collectRnrShape(child.shape, `${key}/${i}`, mat4Multiply(transform, rnrTransformToMat4(child.transform)), out)
-      })
+      }
       break
     }
     case 'transform': {
@@ -55,7 +56,10 @@ function collectRnrShape(shape: RnrShape, key: string, parent: Mat4, out: Collis
     }
     case 'box': {
       const { x, y, z } = shape.halfExtents
-      out.push({ type: 'box', instances: [mat4Multiply(transform, mat4CreateScaleXYZ(x * 2, y * 2, z * 2))] })
+      out.push({
+        type: 'box',
+        instances: [mat4Multiply(transform, mat4CreateScaleXYZ(x * 2, y * 2, z * 2))],
+      })
       break
     }
     case 'sphere': {
@@ -64,7 +68,10 @@ function collectRnrShape(shape: RnrShape, key: string, parent: Mat4, out: Collis
     }
     case 'cylinder': {
       const scale = mat4CreateScaleXYZ(shape.radius, shape.radius, shape.halfHeight * 2)
-      out.push({ type: 'cylinder', instances: [mat4Multiply(transform, mat4Multiply(Z_TO_Y, scale))] })
+      out.push({
+        type: 'cylinder',
+        instances: [mat4Multiply(transform, mat4Multiply(Z_TO_Y, scale))],
+      })
       break
     }
     case 'cylinderUnaligned': {
@@ -83,21 +90,32 @@ function collectRnrShape(shape: RnrShape, key: string, parent: Mat4, out: Collis
     case 'triangle': {
       const { a, b, c } = shape
       const vertices = new Float32Array([a.x, a.y, a.z, b.x, b.y, b.z, c.x, c.y, c.z])
-      out.push(
-        customShape(transform, `${key}/triangle`, (device, solid) => meshGeometry(device, vertices, [0, 1, 2], solid)),
-      )
+      out.push({
+        type: 'custom',
+        key: `${key}/triangle`,
+        instances: [transform],
+        geometry: (device, solid) => meshGeometry(device, vertices, [0, 1, 2], solid),
+      })
       break
     }
     case 'mesh': {
       const { vertices, indices } = shape
-      out.push(customShape(transform, `${key}/mesh`, (device, solid) => meshGeometry(device, vertices, indices, solid)))
+      out.push({
+        type: 'custom',
+        key: `${key}/mesh`,
+        instances: [transform],
+        geometry: (device, solid) => meshGeometry(device, vertices, indices, solid),
+      })
       break
     }
     case 'convexHull': {
       const { vertices, planes } = shape
-      out.push(
-        customShape(transform, `${key}/hull`, (device, solid) => convexHullGeometry(device, vertices, planes, solid)),
-      )
+      out.push({
+        type: 'custom',
+        key: `${key}/hull`,
+        instances: [transform],
+        geometry: (device, solid) => convexHullGeometry(device, vertices, planes, solid),
+      })
       break
     }
     default: {
@@ -147,11 +165,14 @@ export function viewerShapeDebugShapes(shape: ViewerShape): CollisionDebugShape[
     case 'prism': {
       const vertices = shape.vertices ?? []
       const height = shape.height ?? 0
-      const key = `prism:${height}:${vertices.map((it) => it.join(',')).join(';')}`
+      const key = `prism:${height}:${JSON.stringify(vertices)}`
       return [
-        customShape(mat4CreateFromRTS(IDENTITY_ROTATION, center, { x: 1, y: 1, z: 1 }), key, (device, solid) =>
-          prismGeometry(device, vertices, height, solid),
-        ),
+        {
+          type: 'custom',
+          key,
+          instances: [mat4CreateFromRTS(IDENTITY_ROTATION, center, { x: 1, y: 1, z: 1 })],
+          geometry: (device, solid) => prismGeometry(device, vertices, height, solid),
+        },
       ]
     }
   }
@@ -203,10 +224,6 @@ function rotationZTo(x: number, y: number, z: number): IVec4 {
   return { x: qx / length, y: qy / length, z: 0, w: w / length }
 }
 
-function customShape(transform: Mat4, key: string, create: DebugShapeGeometry['create']): CollisionDebugShape {
-  return { type: 'custom', geometry: { key, create }, instances: [transform] }
-}
-
 function meshGeometry(device: Device, vertices: ArrayLike<number>, indices: ArrayLike<number>, solid: boolean) {
   return buildGeometry(
     device,
@@ -237,7 +254,10 @@ function meshGeometry(device: Device, vertices: ArrayLike<number>, indices: Arra
         addEdge(indices[i + 2], indices[i])
       }
     },
-    { name: 'collision-mesh', primitiveType: solid ? 'triangle-list' : 'line-list' },
+    {
+      name: 'collision-mesh',
+      primitiveType: solid ? 'triangle-list' : 'line-list',
+    },
   )
 }
 
@@ -320,33 +340,24 @@ function prismGeometry(device: Device, polygon: Array<[number, number]>, height:
       for (let i = 0; i < n; i++) {
         const j = (i + 1) % n
         if (solid) {
-          builder
-            .addIndex(i)
-            .addIndex(j)
-            .addIndex(n + j)
-          builder
-            .addIndex(i)
-            .addIndex(n + j)
-            .addIndex(n + i)
+          builder.addIndices(i, j, n + j)
+          builder.addIndices(i, n + j, n + i)
         } else {
-          builder.addIndex(i).addIndex(j)
-          builder.addIndex(n + i).addIndex(n + j)
-          builder.addIndex(i).addIndex(n + i)
+          builder.addIndices(i, j)
+          builder.addIndices(n + i, n + j)
+          builder.addIndices(i, n + i)
         }
       }
       if (solid) {
         for (let i = 1; i + 1 < n; i++) {
-          builder
-            .addIndex(0)
-            .addIndex(i)
-            .addIndex(i + 1)
-          builder
-            .addIndex(n)
-            .addIndex(n + i + 1)
-            .addIndex(n + i)
+          builder.addIndices(0, i, i + 1)
+          builder.addIndices(n, n + i + 1, n + i)
         }
       }
     },
-    { name: 'collision-prism', primitiveType: solid ? 'triangle-list' : 'line-list' },
+    {
+      name: 'collision-prism',
+      primitiveType: solid ? 'triangle-list' : 'line-list',
+    },
   )
 }

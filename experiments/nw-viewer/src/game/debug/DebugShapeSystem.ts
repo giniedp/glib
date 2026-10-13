@@ -1,5 +1,5 @@
 import { BoundsComponent, EcsGame, MeshComponent, TransformComponent } from '@gglib/components'
-import { GameQuery, GameSystem, GameWorld, GetComponent } from '@gglib/ecs'
+import { GameEntity, GameSystem, GameWorld, GetComponent } from '@gglib/ecs'
 import { Device } from '@gglib/graphics'
 import {
   type Mat4,
@@ -11,6 +11,7 @@ import {
   mat4$setTranslationXYZ,
   mat4Identity,
 } from '@gglib/math'
+import { idMap, type IdMap } from '@gglib/utils'
 import { DebugMesh } from './DebugMesh'
 import { DebugLayer, DebugShapeComponent, type DebugShapeEntry } from './DebugShapeComponent'
 import { DebugShapeRenderComponent } from './DebugShapeRenderComponent'
@@ -20,43 +21,76 @@ const tmp1 = mat4Identity()
 export class DebugShapeSystem extends GameSystem {
   private game: EcsGame
   private world: GameWorld
-  private activeShapes: GameQuery
   private root: DebugShapeRenderComponent
+  private index = idMap<number, IdMap<number, DebugShapeEntry>>()
 
   public activeLayers: DebugLayer = DebugLayer.Selection
 
   public initialize(world: GameWorld): void {
     this.world = world
     this.game = world.getSystem(EcsGame)
-    this.activeShapes = world.query({ scope: 'active', required: [DebugShapeComponent] })
+
+    world.eventBus.on(GameEntity.onActivated, (entity) => {
+      const component = entity.$(DebugShapeComponent, GetComponent.Optional)
+      if (component) {
+        this.trackComponent(component)
+      }
+    })
+    world.eventBus.on(GameEntity.onDeactivating, (entity) => {
+      const component = entity.$(DebugShapeComponent, GetComponent.Optional)
+      if (component) {
+        this.untrackComponent(component)
+      }
+    })
   }
 
   public update() {
     const root = this.getRootComponent()
     this.resetInstances(root)
-    if (this.activeLayers) {
-      this.updateByActiveQuery(root)
-    }
+    this.collectInstances(root)
     this.commitInstances(root)
   }
 
-  private updateByActiveQuery(root: DebugShapeRenderComponent) {
-    for (const entity of this.activeShapes) {
-      const comp = entity.component(DebugShapeComponent)
-      if (!isLayerEnabled(this.activeLayers, comp.layers)) {
+  private trackComponent(component: DebugShapeComponent) {
+    this.untrackComponent(component)
+    component.entity.events.on(DebugShapeComponent.onShapeAdded, this.handleShapeAdded)
+    component.entity.events.on(DebugShapeComponent.onShapeRemoved, this.handleShapeRemoved)
+    for (const entry of component.entries) {
+      this.handleShapeAdded(entry)
+    }
+  }
+
+  private untrackComponent(component: DebugShapeComponent) {
+    component.entity.events.off(DebugShapeComponent.onShapeAdded, this.handleShapeAdded)
+    component.entity.events.off(DebugShapeComponent.onShapeRemoved, this.handleShapeRemoved)
+    for (const entry of component.entries) {
+      this.handleShapeRemoved(entry)
+    }
+  }
+
+  private handleShapeAdded = (entry: DebugShapeEntry) => {
+    if (!this.index.has(entry.layer)) {
+      this.index.set(entry.layer, idMap())
+    }
+    this.index.get(entry.layer).set(entry.id, entry)
+  }
+
+  private handleShapeRemoved = (entry: DebugShapeEntry) => {
+    this.index.get(entry.layer)?.delete(entry.id)
+  }
+
+  private collectInstances(root: DebugShapeRenderComponent) {
+    for (const layer of this.index.keys) {
+      if (!isLayerEnabled(this.activeLayers, layer)) {
         continue
       }
-      for (const ref of comp.entries) {
-        if (!isLayerEnabled(this.activeLayers, ref.layer)) {
+      for (const shape of this.index.get(layer).values) {
+        if (shape.visibleIf && !shape.visibleIf()) {
           continue
         }
 
-        if (ref.visibleIf && !ref.visibleIf()) {
-          continue
-        }
-
-        if (ref.boundsBox) {
-          const box = entity.component(BoundsComponent).world?.box
+        if (shape.boundsBox) {
+          const box = shape.entity.$(BoundsComponent).world?.box
           if (!box) {
             continue
           }
@@ -68,9 +102,9 @@ export class DebugShapeSystem extends GameSystem {
           const world = tmp1
           mat4$initScaleXYZ(world, sizeX, sizeY, sizeZ)
           mat4$setTranslationXYZ(world, box.min.x + sizeX * 0.5, box.min.y + sizeY * 0.5, box.min.z + sizeZ * 0.5)
-          this.writeShapeInstance(root, ref, world)
-        } else if (ref.boundsSphere) {
-          const sphere = entity.component(BoundsComponent).world?.sphere
+          this.writeShapeInstance(root, shape, world)
+        } else if (shape.boundsSphere) {
+          const sphere = shape.entity.$(BoundsComponent).world?.sphere
           if (!sphere) {
             continue
           }
@@ -78,25 +112,24 @@ export class DebugShapeSystem extends GameSystem {
           const world = tmp1
           mat4$initScaleUniform(world, sphere.radius)
           mat4$setTranslation(world, sphere.center)
-          this.writeShapeInstance(root, ref, world)
+          this.writeShapeInstance(root, shape, world)
         } else {
-          for (const instance of ref.transforms) {
+          for (const instance of shape.transforms) {
             const world = tmp1
             mat4$initFrom(world, instance)
-            mat4$premultiply(world, entity.getTransform().world)
-            this.writeShapeInstance(root, ref, world)
+            mat4$premultiply(world, shape.entity.getTransform().world)
+            this.writeShapeInstance(root, shape, world)
           }
         }
       }
     }
   }
 
-  private writeShapeInstance(root: DebugShapeRenderComponent, ref: DebugShapeEntry, world: Mat4) {
-    const shape = this.getShape(root, ref)
-    const mesh = shape.mesh
+  private writeShapeInstance(root: DebugShapeRenderComponent, entry: DebugShapeEntry, world: Mat4) {
+    const mesh = this.getShape(root, entry).mesh
     mesh.startInstance(mesh.getInstanceCount() + 1)
     mesh.writeTransform(world)
-    mesh.writeColor(ref.color)
+    mesh.writeColor(entry.color)
   }
 
   public destroy(): void {
@@ -140,16 +173,14 @@ export class DebugShapeSystem extends GameSystem {
   }
 
   private getShape(root: DebugShapeRenderComponent, ref: DebugShapeEntry): MeshComponent<DebugMesh> {
-    const { type, solid, geometry } = ref
-    const key = geometry ? `custom:${geometry.key}:${solid}` : `${type}:${solid}`
-
+    const key = ref.key
     if (key in root.shapes) {
       return root.shapes[key]
     }
 
     const component = new MeshComponent<DebugMesh>()
     const device = this.world.getSystem(Device)
-    component.mesh = new DebugMesh(device, type, solid, geometry)
+    component.mesh = new DebugMesh(device, ref.geometry(device, ref.solid))
     this.world.createEntity({
       parent: root.entity,
       transform: new TransformComponent({
