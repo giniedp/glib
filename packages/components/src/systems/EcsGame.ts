@@ -4,7 +4,7 @@ import { GameLoop } from '@gglib/game'
 import { createDevice, type CreateDeviceOptions, Device } from '@gglib/graphics'
 import { SpaceBasis } from '@gglib/math'
 import { RenderChannel, Renderer } from '@gglib/render'
-import { EventEmitter } from '@gglib/utils'
+import { EventEmitter, MetricSampler } from '@gglib/utils'
 import { SceneComponent, TransformComponent } from '../components'
 import { BehaviorSystem } from './BehaviorSystem'
 import { BoundsUpdateSystem } from './BoundsUpdateSystem'
@@ -14,10 +14,26 @@ import { TweenSystem } from './TweenSystem'
 
 export interface EcsGameStats {
   /**
+   * CPU time in ms of the last update phase: {@link EcsGame.onUpdate} and {@link EcsGame.onEndUpdate}.
+   * Includes the world update
+   */
+  update: MetricSampler
+
+  /**
    * CPU time in ms of the last draw phase: {@link EcsGame.onDraw} and {@link EcsGame.onEndDraw}.
    * Includes the world render, scene collection, render lists, encoding and present.
    */
-  draw: number
+  draw: MetricSampler
+
+  /**
+   * Full frame time
+   */
+  frameTime: MetricSampler
+
+  /**
+   * Frames per second
+   */
+  fps: MetricSampler
 }
 
 export class EcsGame {
@@ -40,7 +56,10 @@ export class EcsGame {
    * Runtime statistics of this game, updated in place
    */
   public readonly stats: EcsGameStats = {
-    draw: 0,
+    update: new MetricSampler(),
+    draw: new MetricSampler(),
+    frameTime: new MetricSampler(),
+    fps: new MetricSampler(),
   }
 
   /**
@@ -281,8 +300,10 @@ export class EcsGame {
   private handleUpdate(time: number, dt: number) {
     console.assert(this.device.isReady, 'device must be ready')
     if (this.onBeginUpdate(time, dt) !== false) {
+      const start = performance.now()
       this.onUpdate(time, dt)
       this.onEndUpdate(time, dt)
+      this.stats.draw.sample(performance.now() - start)
     }
   }
 
@@ -292,7 +313,11 @@ export class EcsGame {
       const start = performance.now()
       this.onDraw(time, dt)
       this.onEndDraw(time, dt)
-      this.stats.draw = performance.now() - start
+      this.stats.draw.sample(performance.now() - start)
+    }
+    this.stats.frameTime.sample(dt)
+    if (dt > 0) {
+      this.stats.fps.sample(1 / dt)
     }
   }
 }

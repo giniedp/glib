@@ -12,10 +12,10 @@ export function StatsBar(props: { viewer: NwViewer }) {
   return (
     <div class="nw-stats-bar">
       <Stat value={sample(() => viewer.schedulerStats?.total || 0)} unit="Tasks" />
-      <Stat value={sample(() => Math.floor(1 / viewer.frameTime))} width={3} unit="FPS" />
-      <Stat value={sample(() => viewer.frameTime * 1000)} decimals={2} width={5} unit="ms" />
-      <Stat label="upd" value={sample(() => viewer.world.stats.update)} decimals={2} width={5} />
-      <Stat label="draw" value={sample(() => viewer.stats.draw)} decimals={2} width={5} />
+      <Stat value={sample(() => Math.floor(viewer.stats.fps.average))} width={3} unit="FPS" />
+      <Stat value={sample(() => viewer.stats.frameTime.average * 1000)} decimals={2} width={5} unit="ms" />
+      <Stat label="update" value={sample(() => viewer.world.stats.update.average)} decimals={2} width={5} />
+      <Stat label="draw" value={sample(() => viewer.stats.draw.average)} decimals={2} width={5} />
       <Stat value={sample(() => viewer.renderStats?.drawCount ?? 0)} width={4} unit="Draws" />
       <Stat value={sample(() => viewer.sceneStats?.visible ?? 0)} width={4} unit="Visible" />
     </div>

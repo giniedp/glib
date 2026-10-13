@@ -52,16 +52,16 @@ export function StatsPanel(props: { viewer: NwViewer }) {
 function graphRows(viewer: NwViewer): GraphRow[] {
   const mb = (bytes: number) => bytes / 1024 / 1024
   return [
-    { name: 'Frame Time', min: 0, max: 100, smoothing: 0.9, sample: () => viewer.frameTime * 1000 },
+    { name: 'Frame Time', min: 0, max: 100, smoothing: 0.9, sample: () => viewer.stats.frameTime.current * 1000 },
     {
       name: 'FPS',
       min: 0,
       max: 240,
       smoothing: 0.9,
-      sample: () => (viewer.frameTime > 0 ? 1 / viewer.frameTime : 0),
+      sample: () => viewer.stats.fps.current,
     },
-    { name: 'Update (ms)', min: 0, max: 50, smoothing: 0.9, sample: () => viewer.world.stats.update },
-    { name: 'Draw (ms)', min: 0, max: 50, smoothing: 0.9, sample: () => viewer.stats.draw },
+    { name: 'Update (ms)', min: 0, max: 50, smoothing: 0.9, sample: () => viewer.world.stats.update.current },
+    { name: 'Draw (ms)', min: 0, max: 50, smoothing: 0.9, sample: () => viewer.stats.draw.current },
     { name: 'Frame (MB)', min: 0, max: 2048, sample: () => mb(viewer.world.getSystem(Renderer).resourceSizeInBytes) },
     { name: 'Heap (MB)', min: 0, max: 2048, sample: () => mb((performance as any).memory?.usedJSHeapSize ?? 0) },
     { name: 'Textures', min: 0, max: 1000, sample: () => viewer.deviceStats?.textureCount || 0 },
