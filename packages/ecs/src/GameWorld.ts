@@ -1,4 +1,4 @@
-import { EventBus, idMap } from '@gglib/utils'
+import { EventBus, idMap, MetricSampler } from '@gglib/utils'
 import { ComponentTypeIds, type GameComponent, type GameComponentType, getComponentType } from './GameComponent'
 import { GameEntity, type GameEntityId, type NotGameEntity } from './GameEntity'
 import { GameQuery, GameQueryDescriptor } from './GameQuery'
@@ -18,11 +18,16 @@ export interface GameWorldStats {
   /**
    * CPU time in ms spent in the last {@link GameWorld.update} call
    */
-  update: number
+  update: MetricSampler
   /**
    * CPU time in ms spent in the last {@link GameWorld.render} call
    */
-  render: number
+  render: MetricSampler
+
+  /**
+   * CPU time metrics by system
+   */
+  systems: GameSystemCollection['stats']
 }
 
 export class GameWorld {
@@ -38,8 +43,9 @@ export class GameWorld {
    * Runtime statistics of this world, updated in place
    */
   public readonly stats: GameWorldStats = {
-    update: 0,
-    render: 0,
+    update: new MetricSampler(),
+    render: new MetricSampler(),
+    systems: this.systems.stats,
   }
 
   public constructor() {
@@ -230,7 +236,7 @@ export class GameWorld {
     try {
       this.systems.update(time, dt)
     } finally {
-      this.stats.update = performance.now() - start
+      this.stats.update.sample(performance.now() - start)
       this.isUpdating = false
     }
   }
@@ -248,7 +254,7 @@ export class GameWorld {
     try {
       this.systems.render(time, dt)
     } finally {
-      this.stats.render = performance.now() - start
+      this.stats.render.sample(performance.now() - start)
       this.isRendering = false
     }
   }

@@ -23,8 +23,8 @@ export class EventSource<T> extends EventChannel<T> {
   }
 }
 
-export function valueSource<T>() {
-  return new ValueSource<T>()
+export function valueSource<T>(options?: { initialValue: T }) {
+  return new ValueSource<T>(null, options)
 }
 
 export class ValueSource<T> extends EventChannel<T> {
@@ -41,6 +41,7 @@ export class ValueSource<T> extends EventChannel<T> {
       this.value = undefined
       this.hasValue = false
     }
+    this.subscribe((v) => (this.value = v))
   }
 
   protected processPending(): void {
@@ -58,6 +59,18 @@ export class ValueSource<T> extends EventChannel<T> {
           console.error(e)
         }
       }
+    }
+  }
+
+  public getValue() {
+    return this.value
+  }
+
+  public setValue(v: T) {
+    const changed = this.value !== v
+    this.value = v
+    if (changed) {
+      this.emit(this.value)
     }
   }
 }

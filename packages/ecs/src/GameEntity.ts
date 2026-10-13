@@ -1,4 +1,4 @@
-import { addItemIfAbsent, brand, Brand, EventEmitter, EventType, type AbstractType, type Type } from '@gglib/utils'
+import { addItemIfAbsent, Brand, EventEmitter, eventType, type AbstractType, type Type } from '@gglib/utils'
 import {
   ComponentIds,
   ComponentTypeIds,
@@ -58,13 +58,13 @@ export class GameEntity {
   }
 
   public static defaultLayer: number | null = null
-  public static readonly onInitialized = brand<EventType<GameEntity>>(Symbol('initialized'))
-  public static readonly onDestroyed = brand<EventType<GameEntity>>(Symbol('destroyed'))
-  public static readonly onActivating = brand<EventType<GameEntity>>(Symbol('beforeActivate'))
-  public static readonly onActivated = brand<EventType<GameEntity>>(Symbol('activated'))
-  public static readonly onDeactivating = brand<EventType<GameEntity>>(Symbol('beforeDeactivate'))
-  public static readonly onDeactivated = brand<EventType<GameEntity>>(Symbol('deactivated'))
-  public static readonly onArchetypeChanged = brand<EventType<GameEntity>>(Symbol('archetypeChanged'))
+  public static readonly onInitialized = eventType<GameEntity>(Symbol('initialized'))
+  public static readonly onDestroyed = eventType<GameEntity>(Symbol('destroyed'))
+  public static readonly onActivating = eventType<GameEntity>(Symbol('beforeActivate'))
+  public static readonly onActivated = eventType<GameEntity>(Symbol('activated'))
+  public static readonly onDeactivating = eventType<GameEntity>(Symbol('beforeDeactivate'))
+  public static readonly onDeactivated = eventType<GameEntity>(Symbol('deactivated'))
+  public static readonly onArchetypeChanged = eventType<GameEntity>(Symbol('archetypeChanged'))
 
   /**
    * The unique runtime ID of this entity.

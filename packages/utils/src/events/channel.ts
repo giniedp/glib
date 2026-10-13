@@ -1,7 +1,11 @@
-import { Brand, RxJsObserver, RxJsSubscribable, SymbolObservable } from '../types'
+import { brand, Brand, RxJsObserver, RxJsSubscribable, SymbolObservable } from '../types'
 import { EventHandler } from './types'
 
 export type EventType<T> = Brand<string | symbol | number, T>
+
+export function eventType<T>(key: string | symbol | number) {
+  return brand<EventType<T>>(key)
+}
 
 export abstract class EventChannel<T> implements RxJsSubscribable<T> {
   protected type: EventType<T>

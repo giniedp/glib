@@ -1,4 +1,4 @@
-import { Brand } from '@gglib/utils'
+import { Brand, MetricSampler } from '@gglib/utils'
 import type { NotGameEntity } from './GameEntity'
 import type { GameWorld } from './GameWorld'
 import type { AbstractType, GameTypeToken, Type } from './types'
@@ -84,6 +84,8 @@ export class GameSystemCollection {
   protected toUpdate: GameSystem[] = []
   protected toRender: GameSystem[] = []
 
+  public stats = new Map<GameSystem, { update: MetricSampler; render: MetricSampler }>()
+
   public [Symbol.iterator]() {
     return Object.values(this.byTypeId)[Symbol.iterator]()
   }
@@ -145,26 +147,40 @@ export class GameSystemCollection {
       if (initializeSystem(system, this.world)) {
         this.toUpdate.push(system)
         this.toRender.push(system)
+        this.stats.set(system, {
+          render: new MetricSampler(),
+          update: new MetricSampler(),
+        })
       }
     }
   }
 
   public update(time: number, dt: number): void {
+    let start = performance.now()
     for (const system of this.toUpdate) {
       try {
         system.update(time, dt)
       } catch (e) {
         console.error(`Error updating system ${system.constructor.name}`, e)
+      } finally {
+        const end = performance.now()
+        this.stats.get(system).update.sample(end - start)
+        start = end
       }
     }
   }
 
   public render(time: number, dt: number): void {
+    let start = performance.now()
     for (const system of this.toRender) {
       try {
         system.render(time, dt)
       } catch (e) {
         console.error(`Error rendering system ${system.constructor.name}`, e)
+      } finally {
+        const end = performance.now()
+        this.stats.get(system).render.sample(end - start)
+        start = end
       }
     }
   }
