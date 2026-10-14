@@ -221,3 +221,19 @@ export const PLAYER_STEP_HEIGHT = 0.5
  * Constant fall speed in m/s (no acceleration) when the ground is below the feet
  */
 export const PLAYER_FALL_SPEED = 20
+/**
+ * Collider shapes are loaded for the player within this distance (grounded movement mode)
+ */
+export const COLLISION_PLAYER_RANGE = 64
+/**
+ * Maximum number of collider shape assets the collision worker loads at the same time for the player
+ */
+export const COLLISION_PLAYER_LOAD_CONCURRENCY = 16
+/**
+ * Cell size of the collision worker's spatial grid in meters
+ */
+export const COLLISION_GRID_CELL_SIZE = 16
+/**
+ * Collider filters that never block the player (e.g. projectile only colliders), compared to `ViewerColliderComponent.filter`
+ */
+export const COLLISION_NON_BLOCKING_FILTERS: readonly string[] = []

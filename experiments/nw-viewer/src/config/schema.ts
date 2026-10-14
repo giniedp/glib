@@ -109,4 +109,12 @@ export const viewerConfigSchema = defineConfig({
     default: false,
     group: 'Particles',
   }),
+
+  playerCollision: boolean({
+    description:
+      'Walls block the player in grounded movement mode (key G). When off, the player walks through walls but stays on the ground.',
+    editable: true,
+    default: true,
+    group: 'Movement',
+  }),
 })

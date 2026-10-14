@@ -8,6 +8,7 @@ import type { GameComponent, GameEntity } from '@gglib/ecs'
 import { KeyboardKeys } from '@gglib/game'
 import { vec3 } from '@gglib/math'
 import { PLAYER_EYE_HEIGHT } from '../../constants'
+import { ViewerConfig } from '../../config/ViewerConfig'
 import { CollisionSystem } from '../collision/CollisionSystem'
 import { PlayerFlags, type PlayerResult } from '../collision/shared'
 
@@ -19,7 +20,8 @@ export type MovementMode = 'free' | 'grounded'
 const HISTORY = 16
 
 /**
- * Switches the camera between free flight and walking on the ground (key `G`)
+ * Switches the camera between free flight and walking on the ground (key `G`). The viewer starts in free mode,
+ * walls block the player unless the `playerCollision` config is off.
  *
  * @remarks
  * Must be added after the {@link WASDComponent} of the same entity, it takes the horizontal displacement that
@@ -34,10 +36,22 @@ export class PlayerMovementComponent implements GameComponent, BehaviorComponent
     return this._mode
   }
 
+  public set mode(mode: MovementMode) {
+    this.setMode(mode)
+  }
+
+  /**
+   * Whether grounded mode is available, it needs shared memory (cross origin isolation)
+   */
+  public get canWalk() {
+    return !!this.collision.player
+  }
+
   private _mode: MovementMode = 'free'
   private wasd: WASDComponent
   private keyboard: KeyboardInputSystem
   private collision: CollisionSystem
+  private config: ViewerConfig
 
   /**
    * Feet position, integrated from WASD displacement and corrected by worker results
@@ -57,6 +71,7 @@ export class PlayerMovementComponent implements GameComponent, BehaviorComponent
     this.wasd = this.entity.component(WASDComponent)
     this.keyboard = this.entity.service(KeyboardInputSystem)
     this.collision = this.entity.service(CollisionSystem)
+    this.config = this.entity.service(ViewerConfig)
   }
 
   public setMode(mode: MovementMode) {
@@ -69,6 +84,7 @@ export class PlayerMovementComponent implements GameComponent, BehaviorComponent
     }
     this._mode = mode
     this.wasd.planar = mode === 'grounded'
+    this.collision.playerActive = mode === 'grounded'
     this.teleport()
   }
 
@@ -90,7 +106,7 @@ export class PlayerMovementComponent implements GameComponent, BehaviorComponent
     const player = this.collision.player
     const node = this.entity.getTransform<TransformComponent>()
     const position = node.translation
-    let flags = PlayerFlags.Walls
+    let flags = this.config.value.playerCollision ? PlayerFlags.Walls : 0
 
     if (this.teleportPending) {
       this.teleportPending = false

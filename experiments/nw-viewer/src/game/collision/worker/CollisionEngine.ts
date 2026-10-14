@@ -1,21 +1,31 @@
+import { vec3 } from '@gglib/math'
 import type { RegionHeightmap } from '../../terrain/heightSampling'
-import { PlayerBlock, type PlayerRequest, type PlayerResult } from '../shared'
+import { PlayerBlock, PlayerFlags, type PlayerRequest, type PlayerResult } from '../shared'
+import { CollisionWorld } from './CollisionWorld'
 import type { CollisionToMain, MainToCollision } from './protocol'
-import { resolvePlayer, type CollisionWorld } from './resolvePlayer'
+import { resolvePlayer, type PlayerWorld } from './resolvePlayer'
 import { ShapeAssets } from './ShapeAssets'
 
 export interface CollisionEngineOptions {
   post: (message: CollisionToMain, transfer?: Transferable[]) => void
 }
 
-export class CollisionEngine implements CollisionWorld {
+export class CollisionEngine implements PlayerWorld {
   public post: CollisionEngineOptions['post']
 
   public readonly heightmaps = new Map<string, RegionHeightmap>()
+  public colliders: CollisionWorld
   private player: PlayerBlock | null = null
   private assets: ShapeAssets
   private request: PlayerRequest = { x: 0, y: 0, z: 0, dt: 0, flags: 0 }
   private result: PlayerResult = { x: 0, y: 0, z: 0 }
+  /**
+   * Feet position of the previous result, walls are swept from there
+   */
+  private previous = vec3()
+  private resolveTime = 0
+  private resolveMax = 0
+  private resolveCount = 0
 
   public constructor(options: CollisionEngineOptions) {
     this.post = options.post
@@ -25,6 +35,7 @@ export class CollisionEngine implements CollisionWorld {
     switch (message.type) {
       case 'init': {
         this.assets = new ShapeAssets(message.filesUrl)
+        this.colliders = new CollisionWorld(this.assets)
         if (message.player) {
           this.player = new PlayerBlock(message.player)
           this.runPlayerLoop()
@@ -43,6 +54,30 @@ export class CollisionEngine implements CollisionWorld {
       }
       case 'heightmapRemove': {
         this.heightmaps.delete(message.id)
+        break
+      }
+      case 'colliders': {
+        for (const id of message.remove) {
+          this.colliders.remove(id)
+        }
+        for (const info of message.add) {
+          this.colliders.add(info)
+        }
+        break
+      }
+      case 'stats': {
+        this.post({
+          type: 'stats',
+          stats: {
+            ...this.colliders.stats,
+            heightmaps: this.heightmaps.size,
+            resolveMs: this.resolveCount ? this.resolveTime / this.resolveCount : 0,
+            resolveMaxMs: this.resolveMax,
+          },
+        })
+        this.resolveTime = 0
+        this.resolveMax = 0
+        this.resolveCount = 0
         break
       }
       case 'shape': {
@@ -75,8 +110,23 @@ export class CollisionEngine implements CollisionWorld {
       if (!seen || seen === resolved) {
         continue
       }
-      resolvePlayer(this, this.request, this.result)
+      const request = this.request
+      if (request.flags & PlayerFlags.Teleport) {
+        this.previous.x = request.x
+        this.previous.y = request.y
+        this.previous.z = request.z
+      }
+      this.colliders.loadNear(request.x, request.y)
+      const start = performance.now()
+      resolvePlayer(this, request, this.previous, this.result)
+      const time = performance.now() - start
+      this.resolveTime += time
+      this.resolveMax = Math.max(this.resolveMax, time)
+      this.resolveCount++
       player.writeResult(seen, this.result)
+      this.previous.x = this.result.x
+      this.previous.y = this.result.y
+      this.previous.z = this.result.z
       resolved = seen
     }
   }

@@ -110,7 +110,7 @@ export class SliceSystem extends GameSystem {
 
     // systems are added after this one, resolved lazily
     this.collision ??= this.world.getSystem(CollisionSystem, { optional: true })
-    const collisionEnabled = !!this.collision?.isEnabled
+    const collisionEnabled = !!this.collision?.collidersNeeded
     const collisionChanged = collisionEnabled !== this.collisionEnabled
     this.collisionEnabled = collisionEnabled
 

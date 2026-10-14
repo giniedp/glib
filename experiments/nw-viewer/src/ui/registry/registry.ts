@@ -8,6 +8,7 @@ import type { Type } from '@gglib/utils'
 import { DebugShapeComponent } from '../../game/debug/DebugShapeComponent'
 import { DebugShapeSystem } from '../../game/debug/DebugShapeSystem'
 import { LevelSystem } from '../../game/level/LevelSystem'
+import { PlayerMovementComponent } from '../../game/player/PlayerMovementComponent'
 import { TimeOfDay } from '../../game/level/TimeOfDay'
 import { AudioSystem } from '../../audio/AudioSystem'
 import type { UiAnnotation } from './types'
@@ -28,6 +29,7 @@ import uiMesh from './uiMesh'
 import uiMeshComponent from './uiMeshComponent'
 import uiModel from './uiModel'
 import uiModelComponent from './uiModelComponent'
+import uiPlayerMovementComponent from './uiPlayerMovementComponent'
 import uiTimeOfDay from './uiTimeOfDay'
 import uiTransformComponent from './uiTransformComponent'
 
@@ -72,5 +74,6 @@ export function uiRegistry() {
   result.add(TimeOfDay, uiTimeOfDay)
   result.add(LevelSystem, uiLevelSystem)
   result.add(AudioSystem, uiAudioSystem)
+  result.add(PlayerMovementComponent, uiPlayerMovementComponent)
   return result
 }

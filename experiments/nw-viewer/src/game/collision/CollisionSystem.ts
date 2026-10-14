@@ -1,7 +1,7 @@
 import { EcsGame } from '@gglib/components'
 import { GameSystem, type GameQuery, type GameWorld } from '@gglib/ecs'
 import { mat4GetTranslation, vec3, vec3DistanceSquared } from '@gglib/math'
-import { COLLISION_DEBUG_RANGE, COLLISION_LOAD_CONCURRENCY } from '../../constants'
+import { COLLISION_DEBUG_RANGE, COLLISION_LOAD_CONCURRENCY, COLLISION_NON_BLOCKING_FILTERS } from '../../constants'
 import { ContentService } from '../../content'
 import type { RnrAsset } from '../../formats/rnr/types'
 import { DebugLayer } from '../debug/DebugShapeComponent'
@@ -10,13 +10,15 @@ import { isSharedMemoryAvailable } from '../shared/sharedMemory'
 import { TerrainRegionComponent } from '../terrain/TerrainRegionComponent'
 import type { CollisionComponent } from './CollisionComponent'
 import { PlayerBlock } from './shared'
-import type { CollisionToMain, MainToCollision } from './worker/protocol'
+import type { ColliderInfo } from './worker/CollisionWorld'
+import type { CollisionToMain, CollisionWorkerStats, MainToCollision } from './worker/protocol'
 
 /**
  * Registry of the active collision shapes.
  *
  * While a collision debug layer is enabled, shape assets of nearby colliders are loaded (nearest first)
- * so their debug shapes can be drawn. Shape assets are fetched and parsed by the collision worker. Collision chunks are spawned only while collision is enabled.
+ * so their debug shapes can be drawn. Shape assets are fetched and parsed by the collision worker. Collision chunks
+ * are spawned while collision is shown or the player walks.
  *
  * Owns the collision worker, which resolves the player position for the grounded movement mode. Terrain
  * heightmaps of the loaded regions are shared with the worker.
@@ -35,6 +37,17 @@ export class CollisionSystem extends GameSystem {
   private shapes = new Map<string, Promise<RnrAsset>>()
   private shapeRequests = new Map<number, { resolve: (asset: RnrAsset) => void; reject: (err: Error) => void }>()
   private nextRequestId = 1
+  /**
+   * Collider registrations for the worker, sent once per frame
+   */
+  private colliderAdds = new Map<number, ColliderInfo>()
+  private colliderRemoves: number[] = []
+  private colliderIds = new WeakMap<CollisionComponent, number>()
+  private nextColliderId = 1
+  /**
+   * Latest stats of the worker, see requestStats
+   */
+  public workerStats: CollisionWorkerStats | null = null
 
   /**
    * Player position shared with the worker, null if shared memory is not available (page not cross origin isolated)
@@ -52,6 +65,18 @@ export class CollisionSystem extends GameSystem {
   private loading = 0
   private camera = vec3()
   private position = vec3()
+
+  /**
+   * Set while the player walks (grounded movement mode), colliders are needed even when collision is not shown
+   */
+  public playerActive = false
+
+  /**
+   * Whether collision chunks should be spawned: collision is shown or the player walks
+   */
+  public get collidersNeeded() {
+    return this.playerActive || this.isEnabled
+  }
 
   /**
    * Whether collision is shown (any collision debug layer is enabled)
@@ -88,16 +113,34 @@ export class CollisionSystem extends GameSystem {
     if (component.rnr && component.state === 'idle') {
       this.pending.add(component)
     }
+    if (this.player && blocksPlayer(component)) {
+      const id = this.nextColliderId++
+      this.colliderIds.set(component, id)
+      this.colliderAdds.set(id, {
+        id,
+        path: component.rnr ?? undefined,
+        primitive: component.primitive ?? undefined,
+        world: Array.from(component.entity.getTransform().world),
+      })
+    }
   }
 
   public remove(component: CollisionComponent) {
     this.components.delete(component)
     this.pending.delete(component)
+    const id = this.colliderIds.get(component)
+    if (id) {
+      this.colliderIds.delete(component)
+      if (!this.colliderAdds.delete(id)) {
+        this.colliderRemoves.push(id)
+      }
+    }
   }
 
   public update(): void {
     if (this.player) {
       this.syncHeightmaps()
+      this.flushColliders()
     }
     this.updateDebugLoading()
   }
@@ -105,6 +148,9 @@ export class CollisionSystem extends GameSystem {
   private handle(message: CollisionToMain) {
     switch (message.type) {
       case 'ready':
+        break
+      case 'stats':
+        this.workerStats = message.stats
         break
       case 'shape': {
         const request = this.shapeRequests.get(message.requestId)
@@ -117,6 +163,22 @@ export class CollisionSystem extends GameSystem {
         break
       }
     }
+  }
+
+  /**
+   * Asks the worker for its stats, they arrive in {@link workerStats}
+   */
+  public requestStats() {
+    this.post({ type: 'stats' })
+  }
+
+  private flushColliders() {
+    if (!this.colliderAdds.size && !this.colliderRemoves.length) {
+      return
+    }
+    this.post({ type: 'colliders', add: [...this.colliderAdds.values()], remove: this.colliderRemoves })
+    this.colliderAdds.clear()
+    this.colliderRemoves = []
   }
 
   /**
@@ -210,4 +272,15 @@ export class CollisionSystem extends GameSystem {
     this.shapeRequests.clear()
     this.worker.terminate()
   }
+}
+
+/**
+ * Whether a collision component blocks the player in grounded movement mode
+ */
+function blocksPlayer(component: CollisionComponent) {
+  if (component.isVolume || (!component.rnr && !component.primitive)) {
+    return false
+  }
+  const filter = component.data.filter
+  return !filter || !COLLISION_NON_BLOCKING_FILTERS.includes(filter)
 }
