@@ -125,6 +125,36 @@ export class RenderInstanceWriter {
     }
   }
 
+  /**
+   * Reserves a range of instances behind the ones written so far
+   *
+   * @returns the index of the first reserved instance
+   */
+  public reserve(count: number): number {
+    this.begin()
+    const offset = this.transforms.count
+    this.transforms.setCount(offset + count)
+    this.instances.setCount(offset + count)
+    return offset
+  }
+
+  /**
+   * Copies blocks of instances, e.g. into a range from {@link reserve}
+   *
+   * @param index - index of the first instance
+   * @param transforms - 16 floats per instance
+   * @param data - 16 floats per instance, same instance count as the transforms
+   */
+  public writeRange(index: number, transforms: Float32Array<ArrayBufferLike>, data: Float32Array<ArrayBufferLike>) {
+    if (!transforms.length) {
+      return
+    }
+    this.transforms.seek(index)
+    this.transforms.writeFloat32Block(transforms)
+    this.instances.seek(index)
+    this.instances.writeFloat32Block(data)
+  }
+
   public commit() {
     console.assert(!!this.transforms, 'buffers not created')
     this.transforms.commit()

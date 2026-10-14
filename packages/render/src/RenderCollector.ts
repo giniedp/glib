@@ -3,6 +3,7 @@ import { mat4$premultiply } from '@gglib/math'
 import { idMap } from '@gglib/utils'
 import { RenderList } from './RenderList'
 import {
+  InstanceBatchRenderItem,
   MeshPartRenderItem,
   MeshRenderItem,
   ModelRenderItem,
@@ -234,6 +235,36 @@ export class NullRenderCollector implements RenderCollector<RenderItem> {
 
   public add(item: RenderItem): void {
     //
+  }
+
+  public end(): void {
+    //
+  }
+}
+
+/**
+ * Adds instance batches as already batched draws, see {@link RenderList.addInstanced}
+ */
+export class InstanceBatchRenderCollector implements RenderCollector<InstanceBatchRenderItem> {
+  private list: RenderList
+  private variant: RenderVariant
+  public begin(context: RenderContext, list: RenderList): void {
+    this.list = list
+    this.variant = context.renderVariant
+  }
+
+  public add(item: InstanceBatchRenderItem): void {
+    const batch = item.data
+    const material = batch.material
+    const geometry = batch.geometry
+    const effect = material?.getEffect(this.variant)
+    if (!effect || !geometry) {
+      return
+    }
+    const state = this.list.getState(effect.blendState, effect.depthState, effect.offsetState, effect.cullState)
+    // the instances have no common position, depth is left out of the key
+    const sortKey = this.list.getKey(0, item.layer, getMaterialId(material), state, getGeometryId(geometry))
+    this.list.addInstanced(sortKey, geometry, effect, material.inputBlocks, batch.instanceOffset, batch.instanceCount)
   }
 
   public end(): void {

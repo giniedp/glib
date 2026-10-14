@@ -71,6 +71,11 @@ export class RenderList {
   protected transforms: Mat4[] = []
   protected instanceData: Array<Float32Array<ArrayBuffer>> = []
   protected inputs: Array<Record<string, ProgramInputBlock>> = []
+  /**
+   * Instance range of entries that are already batched, see {@link addInstanced}. A count of 0 marks a regular entry.
+   */
+  protected rangeOffset: number[] = []
+  protected rangeCount: number[] = []
 
   protected item: Sortable = {
     depth: 0,
@@ -174,6 +179,38 @@ export class RenderList {
     this.indices[index] = index
     this.transforms[index] = transform
     this.instanceData[index] = instanceData
+    this.rangeCount[index] = 0
+  }
+
+  /**
+   * Adds a draw whose instances are already written to the instance buffers, e.g. into a range
+   * from {@link RenderInstanceWriter.reserve}. The entry is drawn as is and is not merged with other entries.
+   *
+   * @remarks
+   * The effect must read its transforms from the per instance buffer, other effects are skipped.
+   */
+  public addInstanced(
+    key: SortKey,
+    geometry: Geometry,
+    effect: Effect,
+    inputs: Record<string, ProgramInputBlock>,
+    instanceOffset: number,
+    instanceCount: number,
+  ): void {
+    if (!effect.isReady || instanceCount <= 0) {
+      return
+    }
+    const index = this.size++
+    this.items[index] = geometry
+    this.effect[index] = effect
+    this.inputs[index] = inputs
+    this.keysHi[index] = key.hi
+    this.keysLo[index] = key.lo
+    this.indices[index] = index
+    this.transforms[index] = null
+    this.instanceData[index] = null
+    this.rangeOffset[index] = instanceOffset
+    this.rangeCount[index] = instanceCount
   }
 
   public end(): void {
@@ -249,6 +286,21 @@ export class RenderList {
         for (const key in this.viewInputs) {
           program.applyBlock(this.viewInputs[key])
         }
+      }
+
+      if (this.rangeCount[index] > 0) {
+        // already batched, draws its own instance range
+        instanceItem = null
+        instanceEffect = null
+        if (!program.perInstanceTransformBlock) {
+          continue
+        }
+        this.instances.apply(program)
+        this.drawIndices[this.drawCount] = index
+        this.drawInstanceCount[this.drawCount] = this.rangeCount[index]
+        this.drawInstanceOffset[this.drawCount] = this.rangeOffset[index]
+        this.drawCount++
+        continue
       }
 
       if (!program.perInstanceTransformBlock || !(item instanceof Geometry)) {

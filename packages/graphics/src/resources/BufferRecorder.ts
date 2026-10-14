@@ -275,6 +275,17 @@ export class BufferRecorder {
   }
 
   /**
+   * Copies a block of float32 values to the current position and advances by its length.
+   * Faster than {@link writeFloat32Array} for large blocks.
+   */
+  public writeFloat32Block(data: Float32Array<ArrayBufferLike>): this {
+    this.assertCursorSpace(data.length)
+    this.dataFloat32.set(data, this.writeEnd)
+    this.writeEnd += data.length
+    return this
+  }
+
+  /**
    * Writes 1 float32 value at the current position and advances by 1 elements.
    */
   public writeFloat32(c1: number): this {

@@ -28,6 +28,9 @@ import type { ViewerMeshComponent } from '../../api'
 import { COMBINE_INSTANCE_ARRAYS, ENABLE_INSTANCED_LEVEL_OBJECTS } from '../../constants'
 import { ContentService, type CgfLodInfo } from '../../content'
 import { createInstanceData } from '../../material/common'
+import { ViewerConfig } from '../../config'
+import { CulledModelComponent } from '../culling/CulledModelComponent'
+import { CullingSystem } from '../culling/CullingSystem'
 import { DebugLayer, DebugShapeComponent } from '../debug/DebugShapeComponent'
 import { InstancedModelComponent } from '../instancing/InstancedModelComponent'
 import { InstancedRenderSystem } from '../instancing/InstancedRenderSystem'
@@ -95,7 +98,10 @@ export class MeshLoaderComponent implements GameComponent {
         task.context = await this.content.loadModel(this.data.mesh, this.data.material)
       },
       work: (task) => {
-        const createModelComponent = this.modelComponentFactory(task.context)
+        const culled = this.canCullInWorker(task.context)
+        const createModelComponent = this.modelComponentFactory(task.context, culled)
+        // culled models are not part of the spatial index, the culling worker culls and picks them
+        const spatial = !this.data.alwaysRender && !culled
         const combineInstances = COMBINE_INSTANCE_ARRAYS && !task.context.skins?.length
         if (this.data.instances?.length > 0 && !combineInstances) {
           for (const inst of this.data.instances) {
@@ -109,7 +115,7 @@ export class MeshLoaderComponent implements GameComponent {
               }),
               components: [
                 new BoundsComponent(),
-                this.data.alwaysRender ? null : new SpatialNodeComponent(),
+                spatial ? new SpatialNodeComponent() : null,
                 new DebugShapeComponent({
                   type: 'bounds-box',
                   color: Color.LimeGreen,
@@ -158,7 +164,7 @@ export class MeshLoaderComponent implements GameComponent {
             }),
             components: [
               new BoundsComponent(),
-              this.data.alwaysRender ? null : new SpatialNodeComponent(),
+              spatial ? new SpatialNodeComponent() : null,
               new DebugShapeComponent({
                 type: 'box',
                 color: color,
@@ -234,10 +240,31 @@ export class MeshLoaderComponent implements GameComponent {
   }
 
   /**
+   * Whether the model is culled by the culling worker instead of the scene traversal, see {@link CullingSystem}
+   */
+  private canCullInWorker(model: Model): boolean {
+    if (this.data.alwaysRender || model.skins?.length) {
+      return false
+    }
+    if (!this.entity.world.getSystem(ViewerConfig, { optional: true })?.value.workerCulling) {
+      return false
+    }
+    return !!this.entity.world.getSystem(CullingSystem, { optional: true })?.canCull(model)
+  }
+
+  /**
    * Renders static models through the GPU instance batch, falls back to the scene render path otherwise
    */
-  private modelComponentFactory(model: Model): (instance: Model) => GameComponent[] {
+  private modelComponentFactory(model: Model, culled: boolean): (instance: Model) => GameComponent[] {
     const maxViewDistance = (this.data.maxViewDistance || 0) * (this.data.viewDistanceMultiplier || 1)
+    if (culled) {
+      return (instance) => [
+        new CulledModelComponent({
+          model: instance,
+          data: createInstanceData({ maxViewDistance }),
+        }),
+      ]
+    }
     const instanceSystem = this.entity.world.getSystem(InstancedRenderSystem, { optional: true })
     let canInstance = ENABLE_INSTANCED_LEVEL_OBJECTS
 

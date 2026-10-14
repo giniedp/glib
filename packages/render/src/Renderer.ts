@@ -29,6 +29,7 @@ import { eventSource } from '@gglib/utils'
 import { opaquePassMSAA, transparentPassMSAA } from './passes'
 import { createRenderChannelSchema, RenderChannel } from './RenderChannel'
 import {
+  InstanceBatchRenderCollector,
   MeshPartRenderCollector,
   MeshRenderCollector,
   ModelRenderCollector,
@@ -94,7 +95,10 @@ export class Renderer {
   protected collectors: RenderCollectorRegistry
   protected spriteBatch: SpriteBatch
   protected resources: RenderTargetManager
-  protected instances: RenderInstanceWriter
+  /**
+   * Per instance buffers of the current frame, reset in {@link update}
+   */
+  public readonly instances: RenderInstanceWriter
   protected frameInfo: FrameInfo = {
     id: 0,
     time: 0,
@@ -147,6 +151,8 @@ export class Renderer {
     this.collectors.register(RenderItemType.MeshPart, new MeshPartRenderCollector())
     this.collectors.register(RenderItemType.Model, new ModelRenderCollector())
     this.collectors.register(RenderItemType.Sprite, new SpriteRenderCollector())
+    this.collectors.register(RenderItemType.InstanceBatch, new InstanceBatchRenderCollector())
+    this.collectors.register(RenderItemType.InstanceBatch, new InstanceBatchRenderCollector())
     this.resources = new RenderTargetManager(device)
     this.channelDescriptors = createRenderChannelSchema(device)
     this.instances = new RenderInstanceWriter(device)

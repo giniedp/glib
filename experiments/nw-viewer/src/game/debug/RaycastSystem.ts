@@ -24,6 +24,7 @@ import {
   type Transform,
 } from '@gglib/math'
 import { brand, EventEmitter, type EventType } from '@gglib/utils'
+import { CullingSystem } from '../culling/CullingSystem'
 import { InstancedModelComponent } from '../instancing/InstancedModelComponent'
 
 export interface RaySelection {
@@ -43,6 +44,8 @@ export class RaycastSystem extends GameSystem {
   private mouse: MouseInputSystem
   private keyboard: KeyboardInputSystem
   private spatialQuery: GameQuery
+  private culling: CullingSystem | null
+  private pickId = 0
 
   private ignoreList: Array<any> = []
   private selectList: RaySelection[] = []
@@ -58,6 +61,7 @@ export class RaycastSystem extends GameSystem {
     this.mouse = world.getSystem(MouseInputSystem)
     this.keyboard = world.getSystem(KeyboardInputSystem)
     this.spatialQuery = world.query({ scope: 'active', required: [SpatialComponent] })
+    this.culling = world.getSystem(CullingSystem, { optional: true })
   }
 
   public override update() {
@@ -79,16 +83,55 @@ export class RaycastSystem extends GameSystem {
     }
 
     if (this.mouse.buttonJustPressed(MouseButton.Middle)) {
-      this.selectList.length = 0
-      this.raycast(this.selectList)
-      this.selectIndex = 0
-      while (this.ignoreList.includes(this.selection?.node)) {
-        this.selectIndex++
+      this.pick(shiftThrough)
+    }
+  }
+
+  private async pick(shiftThrough: boolean) {
+    const pickId = ++this.pickId
+    const output: RaySelection[] = []
+    this.raycast(output)
+    await this.raycastCulled(output)
+    if (pickId !== this.pickId) {
+      // a newer pick started meanwhile
+      return
+    }
+    output.sort((a, b) => a.distance - b.distance)
+    this.selectList = output
+    this.selectIndex = 0
+    while (this.ignoreList.includes(this.selection?.node)) {
+      this.selectIndex++
+    }
+    if (this.selection && shiftThrough) {
+      this.ignoreList.push(this.selection.node)
+    }
+    this.emitSelection()
+  }
+
+  /**
+   * Picks the models that are culled by the culling worker, they are not part of a spatial index
+   */
+  private async raycastCulled(output: RaySelection[]) {
+    const culling = this.culling
+    if (!culling) {
+      return
+    }
+    const ray = this.camera.createRay(this.mouse.xNormalized, this.mouse.yNormalized)
+    const hits = await culling.raycast(ray.position, ray.direction, this.maxPickDistance)
+    for (const hit of hits) {
+      const model = hit.component.model
+      const node = model.sceneNodes.filter((it) => model.meshes[it.data?.mesh])[hit.node]
+      const mesh = node && model.meshes[node.data.mesh]
+      if (!mesh) {
+        continue
       }
-      if (this.selection && shiftThrough) {
-        this.ignoreList.push(this.selection.node)
-      }
-      this.emitSelection()
+      output.push({
+        distance: hit.distance,
+        entity: hit.component.entity,
+        node,
+        mesh,
+        box: mesh.boundingBox,
+      })
     }
   }
 
@@ -142,8 +185,6 @@ export class RaycastSystem extends GameSystem {
         }
       })
     }
-
-    output.sort((a, b) => a.distance - b.distance)
   }
 
   private emitSelection() {

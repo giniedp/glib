@@ -1,6 +1,8 @@
 import type {
   Device,
+  Geometry,
   GpuTimer,
+  Material,
   Mesh,
   ProgramInputBlockCollection,
   RenderVariant,
@@ -14,6 +16,7 @@ import { Model } from '@gglib/model'
 import { brand, Brand } from '@gglib/utils'
 import type { FrameGraph } from './FrameGraph'
 import type { RenderChannel } from './RenderChannel'
+import type { RenderInstanceWriter } from './RenderInstanceWriter'
 import type { Renderer } from './Renderer'
 import { RenderList, RenderListCache } from './RenderList'
 import { RenderItemFlags } from './RenderListMode'
@@ -82,9 +85,22 @@ export const RenderItemType = {
   Mesh: brand<'mesh', Mesh>('mesh'),
   MeshPart: brand<'meshPart', ResolvedMeshPart>('meshPart'),
   Sprite: brand<'sprite', Sprite>('sprite'),
+  InstanceBatch: brand<'instanceBatch', InstanceBatch>('instanceBatch'),
+}
+
+/**
+ * A geometry and material drawn with a range of instances that is already written to the instance buffers,
+ * see {@link RenderInstanceWriter.reserve}
+ */
+export interface InstanceBatch {
+  geometry: Geometry
+  material: Material
+  instanceOffset: number
+  instanceCount: number
 }
 
 export type LightRenderItem = RenderItem<unknown>
+export type InstanceBatchRenderItem = RenderItem<InstanceBatch>
 export type MeshRenderItem = RenderItem<Mesh>
 export type ModelRenderItem = RenderItem<Model>
 export type MeshPartRenderItem = RenderItem<ResolvedMeshPart>

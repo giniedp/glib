@@ -59,6 +59,16 @@ export interface SceneStats {
   visible: number
 }
 
+/**
+ * Adds render items to a scene that are not collected from its entities, e.g. items culled elsewhere
+ */
+export interface SceneSource {
+  /**
+   * Called at the end of {@link SceneComponent.collect}, once per view
+   */
+  collect(frame: FrameInfo, camera: CameraData, result: RenderItem[], scene: SceneComponent): void
+}
+
 const modelTransformVersion = Symbol('modelTransformVersion')
 const materialIsInstanced = Symbol('materialIsInstanced')
 const materialUpdateFrame = Symbol('materialUpdateFrame')
@@ -69,6 +79,10 @@ export class SceneComponent implements GameComponent, InitializableComponent, Re
   public readonly entity: GameEntity
   public output: Texture | null
   public views: RenderView[] = []
+  /**
+   * Additional sources of render items, see {@link SceneSource}
+   */
+  public readonly sources: SceneSource[] = []
 
   protected qSpatial: GameQuery
   protected qMeshes: GameQuery
@@ -191,6 +205,10 @@ export class SceneComponent implements GameComponent, InitializableComponent, Re
 
     // traverse spatial index for entities
     this.qSpatial.forEach(this.collectSpatial)
+
+    for (const source of this.sources) {
+      source.collect(frame, camera, result, this)
+    }
   }
 
   public stats(result?: SceneStats): SceneStats {
@@ -360,8 +378,9 @@ export class SceneComponent implements GameComponent, InitializableComponent, Re
    * Materials whose effect reads transforms from the per instance buffer don't need the model matrix input.
    * Setting it anyway would invalidate the input block every frame and cause all material inputs to be re-applied.
    * The per frame update runs once per frame, even if the material is shared by many items.
+   * Sources call it for the materials of their items, see {@link SceneSource}.
    */
-  private updateMaterial(material: Material, transform: Mat4) {
+  public updateMaterial(material: Material, transform: Mat4) {
     let isInstanced = material[materialIsInstanced] as boolean | undefined
     if (isInstanced === undefined) {
       const effect = material.effect

@@ -110,6 +110,15 @@ export const viewerConfigSchema = defineConfig({
     group: 'Particles',
   }),
 
+  workerCulling: boolean({
+    description:
+      'Culls static level objects in a worker and draws them as instance batches, instead of the scene traversal. ' +
+      'Needs reload.',
+    editable: true,
+    default: true,
+    group: 'Performance',
+  }),
+
   playerCollision: boolean({
     description:
       'Walls block the player in grounded movement mode (key G). When off, the player walks through walls but stays on the ground.',

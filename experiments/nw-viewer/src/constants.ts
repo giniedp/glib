@@ -237,3 +237,12 @@ export const COLLISION_GRID_CELL_SIZE = 16
  * Collider filters that never block the player (e.g. projectile only colliders), compared to `ViewerColliderComponent.filter`
  */
 export const COLLISION_NON_BLOCKING_FILTERS: readonly string[] = []
+/**
+ * The culling worker culls with a frustum widened by this fraction (tangent of the half field of view), so objects
+ * do not pop in at the screen edges while turning, its results are 1–2 frames late
+ */
+export const WORKER_CULLING_FOV_MARGIN = 0.15
+/**
+ * Maximum number of cull requests that wait for the culling worker
+ */
+export const WORKER_CULLING_IN_FLIGHT = 2
