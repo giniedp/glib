@@ -1,5 +1,4 @@
 import {
-  Color,
   Device,
   FALSE,
   inputSlot,
@@ -81,7 +80,6 @@ export class IblFilterEffect {
     const params = this.params
     params.cubemap = input
     params.lodBias = this.lodBias
-    params.samples = this.samples
     params.distribution = this.distribution
     params.isGeneratingLUT = FALSE
 
@@ -95,19 +93,20 @@ export class IblFilterEffect {
       const mipWidth = output.width >> mipLevel
       params.roughness = mipLevel / (output.mipLevelCount - 1)
       params.width = mipWidth
+      // at roughness 0 every GGX sample is the mirror direction, one sample gives the same result
+      if (params.roughness === 0 && this.distribution === IblDistributionFunction.GGX) {
+        params.samples = 1
+      } else {
+        params.samples = this.samples
+      }
 
       if (device.isWebGPU) {
         this.program.applyBlocks(params.blocks)
         this.program.commit()
       }
 
+      // the fullscreen triangle covers each face, it needs no clear
       pass.setProgram(this.program)
-      for (let i = 0; i < 6; ++i) {
-        pass.setRenderTarget(0, output, mipLevel, i)
-        pass.setViewportState(0, 0, mipWidth, mipWidth)
-        pass.setClearColor(0, Color.Black)
-        pass.clear()
-      }
       for (let i = 0; i < 6; ++i) {
         pass.setRenderTarget(0, output, mipLevel, i)
         pass.setViewportState(0, 0, mipWidth, mipWidth)

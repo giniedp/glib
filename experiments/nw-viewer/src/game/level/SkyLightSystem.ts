@@ -47,7 +47,8 @@ export class SkyLightSystem extends GameSystem {
       this.renderer.inputs.createBlock('sunShafts')
     }
     this.fxSky = new NishitaSkyEffect(this.device, {})
-    this.fxIbl = new IblSampler(this.device, {})
+    // materials only read the GGX map (EnvMap), it is re-filtered every frame
+    this.fxIbl = new IblSampler(this.device, { lambert: false, charlie: false })
     this.skyDomeTexture = this.device.createRenderTarget({
       type: '2d',
       width: 2048,

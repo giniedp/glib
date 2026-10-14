@@ -11,6 +11,14 @@ export interface IblSamplerOptions {
   samplesCharlie?: number
   samplesLambert?: number
   intensity?: number
+  /**
+   * Whether to generate the lambertian (irradiance) map {@link IblSampler.envMapLambert}. Defaults to true
+   */
+  lambert?: boolean
+  /**
+   * Whether to generate the sheen map {@link IblSampler.envMapCharlie} and its BRDF LUT. Defaults to true
+   */
+  charlie?: boolean
 }
 
 export class IblSampler {
@@ -25,10 +33,19 @@ export class IblSampler {
   }
 
   public readonly lutMapGGX: Texture
-  public readonly lutMapCharlie: Texture
-  public readonly envMapLambert: Texture
+  /**
+   * Sheen BRDF LUT, null if disabled by {@link IblSamplerOptions.charlie}
+   */
+  public readonly lutMapCharlie: Texture | null = null
+  /**
+   * Lambertian (irradiance) map, null if disabled by {@link IblSamplerOptions.lambert}
+   */
+  public readonly envMapLambert: Texture | null = null
   public readonly envMapGGX: Texture
-  public readonly envMapCharlie: Texture
+  /**
+   * Sheen map, null if disabled by {@link IblSamplerOptions.charlie}
+   */
+  public readonly envMapCharlie: Texture | null = null
 
   public samplesSheen = 64
   public samplesGGX = 1024
@@ -63,10 +80,12 @@ export class IblSampler {
       ...lutOptions,
     })
 
-    this.lutMapCharlie = device.createRenderTarget({
-      name: 'Sheen BRDF LUT',
-      ...lutOptions,
-    })
+    if (options.charlie ?? true) {
+      this.lutMapCharlie = device.createRenderTarget({
+        name: 'Sheen BRDF LUT',
+        ...lutOptions,
+      })
+    }
 
     const envSize = options?.envSize ?? 256
     const envOptions: TextureOptions = {
@@ -79,20 +98,24 @@ export class IblSampler {
       format: 'rgba16float',
     }
 
-    this.envMapLambert = device.createRenderTarget({
-      name: 'Lambert environment map ',
-      ...envOptions,
-    })
+    if (options.lambert ?? true) {
+      this.envMapLambert = device.createRenderTarget({
+        name: 'Lambert environment map ',
+        ...envOptions,
+      })
+    }
 
     this.envMapGGX = device.createRenderTarget({
       name: 'GGX environment map',
       ...envOptions,
     })
 
-    this.envMapCharlie = device.createRenderTarget({
-      name: 'Charlie environment map',
-      ...envOptions,
-    })
+    if (options.charlie ?? true) {
+      this.envMapCharlie = device.createRenderTarget({
+        name: 'Charlie environment map',
+        ...envOptions,
+      })
+    }
 
     this.cubemap = device.createRenderTarget({
       name: 'IBL Cubemap Source',
@@ -106,12 +129,14 @@ export class IblSampler {
       this.fxLut.samples = this.samplesLut
       this.fxLut.distribution = IblDistributionFunction.GGX
       this.fxLut.render(pass)
-      this.fxLut.textureOut = this.lutMapCharlie
-      this.fxLut.samples = this.samplesLut
-      this.fxLut.distribution = IblDistributionFunction.CHARLIE
-      this.fxLut.render(pass)
       this.lutMapGGX.updateMipmaps()
-      this.lutMapCharlie.updateMipmaps()
+      if (this.lutMapCharlie) {
+        this.fxLut.textureOut = this.lutMapCharlie
+        this.fxLut.samples = this.samplesLut
+        this.fxLut.distribution = IblDistributionFunction.CHARLIE
+        this.fxLut.render(pass)
+        this.lutMapCharlie.updateMipmaps()
+      }
       pass.flush()
     })
   }
@@ -139,10 +164,12 @@ export class IblSampler {
     this.fxFilter.intensity = this.intensity
 
     // LAMBERT
-    this.fxFilter.cubemapOut = this.envMapLambert
-    this.fxFilter.samples = this.samplesLambert
-    this.fxFilter.distribution = IblDistributionFunction.LAMBERT
-    this.fxFilter.render(pass)
+    if (this.envMapLambert) {
+      this.fxFilter.cubemapOut = this.envMapLambert
+      this.fxFilter.samples = this.samplesLambert
+      this.fxFilter.distribution = IblDistributionFunction.LAMBERT
+      this.fxFilter.render(pass)
+    }
 
     // GGX
     this.fxFilter.cubemapOut = this.envMapGGX
@@ -151,10 +178,12 @@ export class IblSampler {
     this.fxFilter.render(pass)
 
     // CHARLIE
-    this.fxFilter.cubemapOut = this.envMapCharlie
-    this.fxFilter.samples = this.samplesSheen
-    this.fxFilter.distribution = IblDistributionFunction.CHARLIE
-    this.fxFilter.render(pass)
+    if (this.envMapCharlie) {
+      this.fxFilter.cubemapOut = this.envMapCharlie
+      this.fxFilter.samples = this.samplesSheen
+      this.fxFilter.distribution = IblDistributionFunction.CHARLIE
+      this.fxFilter.render(pass)
+    }
 
     pass.flush()
   }
@@ -165,10 +194,10 @@ export class IblSampler {
     this.fxLut.dispose()
 
     this.lutMapGGX.dispose()
-    this.lutMapCharlie.dispose()
-    this.envMapLambert.dispose()
+    this.lutMapCharlie?.dispose()
+    this.envMapLambert?.dispose()
     this.envMapGGX.dispose()
-    this.envMapCharlie.dispose()
+    this.envMapCharlie?.dispose()
     this.cubemap.dispose()
   }
 }
