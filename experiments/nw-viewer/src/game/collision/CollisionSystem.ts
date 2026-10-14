@@ -5,6 +5,7 @@ import { COLLISION_DEBUG_RANGE, COLLISION_LOAD_CONCURRENCY } from '../../constan
 import { DebugLayer } from '../debug/DebugShapeComponent'
 import { DebugShapeSystem } from '../debug/DebugShapeSystem'
 import type { CollisionComponent } from './CollisionComponent'
+import type { MainToCollision } from './worker/protocol'
 
 /**
  * Registry of the active collision shapes.
@@ -16,6 +17,8 @@ export class CollisionSystem extends GameSystem {
   private game: EcsGame
   private world: GameWorld
   private debugShapes: DebugShapeSystem
+  private worker: Worker
+
   /**
    * Active collision components
    */
@@ -40,6 +43,10 @@ export class CollisionSystem extends GameSystem {
   public initialize(world: GameWorld): void {
     this.world = world
     this.game = world.getSystem(EcsGame)
+    this.worker = new Worker(new URL('./worker/worker.ts', import.meta.url), {
+      type: 'module',
+      name: 'collision',
+    })
   }
 
   public add(component: CollisionComponent) {
@@ -83,8 +90,13 @@ export class CollisionSystem extends GameSystem {
     }
   }
 
+  public post(message: MainToCollision) {
+    this.worker.postMessage(message)
+  }
+
   public destroy(): void {
     this.components.clear()
     this.pending.clear()
+    this.worker.terminate()
   }
 }

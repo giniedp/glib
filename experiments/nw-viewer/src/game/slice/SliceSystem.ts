@@ -27,36 +27,36 @@ import {
 import {
   assetReferenceKey,
   isTimeOfDayComponent,
+  isViewerAudioAmbienceComponent,
+  isViewerAudioAreaComponent,
+  isViewerAudioTriggerComponent,
   isViewerColliderComponent,
   isViewerLightComponent,
   isViewerMeshComponent,
+  isViewerParticleComponent,
   isViewerPointSpawnerComponent,
   isViewerPrefabSpawnerComponent,
   isViewerRoadComponent,
-  isViewerWaterVolumeComponent,
-  isViewerAudioTriggerComponent,
-  isViewerAudioAmbienceComponent,
-  isViewerAudioAreaComponent,
-  isViewerParticleComponent,
   isViewerVolumeComponent,
+  isViewerWaterVolumeComponent,
   type ViewerRoadComponent,
   type ViewerWaterVolumeComponent,
 } from '../../api'
+import { AudioEmitterComponent, AudioScriptComponent } from '../../audio/AudioEmitterComponent'
 import { CHUNK_MESH_RANGE, IMPOSTOR_HOLD_CHUNK_SIZES, ROAD_VIEW_DISTANCE } from '../../constants'
 import { ContentService } from '../../content'
 import { MaterialLayerMasks } from '../../material'
 import { CollisionComponent } from '../collision/CollisionComponent'
 import { CollisionSystem } from '../collision/CollisionSystem'
-import { DebugLayer, DebugShapeComponent } from '../debug/DebugShapeComponent'
+import { DebugLayer, DebugShapeComponent, type DebugShapeOptions } from '../debug/DebugShapeComponent'
 import { TimeOfDayComponent } from '../level/TimeOfDayComponent'
 import { LightComponent } from '../light/LightComponent'
 import { ParticleComponent, particleRange } from '../particles/ParticleComponent'
-import { AudioEmitterComponent, AudioScriptComponent } from '../../audio/AudioEmitterComponent'
 import { RegionComponent } from '../region/RegionComponent'
+import type { RegionImpostorComponent } from '../region/RegionImpostorComponent'
 import { RoadComponent } from '../road/RoadComponent'
 import { WaterVolumeComponent } from '../water/WaterVolumeComponent'
 import { shapeOutline } from '../water/WaterVolumeMesh'
-import type { RegionImpostorComponent } from '../region/RegionImpostorComponent'
 import { MeshLoaderComponent } from './MeshLoaderComponent'
 import { RangeActivationSystem } from './RangeActivationSystem'
 import { SliceSpawnerComponent } from './SliceSpawnerComponent'
@@ -270,28 +270,30 @@ export function executeSpawner(spawner: SliceSpawnerComponent) {
       }
       if (isTimeOfDayComponent(comp)) {
         console.log('TimeOfDayComponent', comp)
-        const shape = debug.add({
+        const shape: DebugShapeOptions = {
           type: 'box',
           color: vec3((comp.priority ?? 1) / 10),
           alpha: 0.125,
           layer: DebugLayer.TimeOfDay,
           solid: true,
-        })
+        }
+
         if (comp.shape === 'box') {
           shape.type = 'box'
-          shape.transforms = [mat4CreateScaleXYZ(comp.width, comp.depth, comp.height)]
+          shape.instances = [mat4CreateScaleXYZ(comp.width, comp.depth, comp.height)]
           components.push(new TimeOfDayComponent(comp))
         } else if (comp.shape === 'sphere') {
           shape.type = 'sphere'
-          shape.transforms = [mat4CreateScaleUniform(comp.radius)]
+          shape.instances = [mat4CreateScaleUniform(comp.radius)]
           components.push(new TimeOfDayComponent(comp))
         } else if (comp.shape === 'cylinder') {
           shape.type = 'cylinder'
-          shape.transforms = [mat4CreateScaleXYZ(comp.radius, comp.radius, comp.height)]
+          shape.instances = [mat4CreateScaleXYZ(comp.radius, comp.radius, comp.height)]
           components.push(new TimeOfDayComponent(comp))
         } else {
           console.warn('Unknown TimeOfDay shape', comp.shape)
         }
+        debug.add(shape)
         continue
       }
       if (isViewerLightComponent(comp)) {
@@ -400,9 +402,9 @@ export function executeSpawner(spawner: SliceSpawnerComponent) {
         components.push(new RoadComponent(comp))
         debug.add({
           type: 'sphere',
-          color: vec3Copy(Color.Orange),
+          color: vec3(Color.Orange),
           layer: DebugLayer.Roads,
-          instances: comp.spline.vertices.map((v) => mat4$scaleUniform(mat4CreateTranslation(vec3(v[0], v[1], v[2])), 0.5)),
+          instances: comp.spline.vertices.map((v) => mat4CreateTranslation(vec3(v))),
         })
         range = Math.max(range, roadRange(comp))
         continue

@@ -30,7 +30,7 @@ import {
   vec4,
 } from '@gglib/math'
 import { Renderer, type RendererStats } from '@gglib/render'
-import { brand, lfmt, MetricSampler, type EventType } from '@gglib/utils'
+import { brand, lfmt, type EventType } from '@gglib/utils'
 import { getLevelListUrl } from './api'
 import { AudioSystem } from './audio/AudioSystem'
 import { ViewerConfig } from './config'
@@ -40,6 +40,7 @@ import { registerCgf } from './formats/cgf'
 import { registerMtl } from './formats/mtl'
 import { registerRnr } from './formats/rnr'
 import { CollisionSystem } from './game/collision/CollisionSystem'
+import { CullingSystem } from './game/culling/CullingSystem'
 import { DebugLayer, DebugShapeComponent } from './game/debug/DebugShapeComponent'
 import { DebugShapeSystem } from './game/debug/DebugShapeSystem'
 import { RaycastSystem, type RaySelection } from './game/debug/RaycastSystem'
@@ -157,6 +158,7 @@ export class NwViewer extends EcsGame {
     this.world.addSystem(new SliceSystem())
     this.world.addSystem(new RoadSystem())
     this.world.addSystem(new CollisionSystem())
+    this.world.addSystem(new CullingSystem())
     this.world.addSystem(new RangeActivationSystem())
     this.world.addSystem(new SkyLightSystem())
     this.world.addSystem(new LightSystem())

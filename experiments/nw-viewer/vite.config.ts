@@ -43,10 +43,23 @@ export default defineConfig(({ mode }) => {
           rewrite: (path) => path.replace(/^\/nwbt/, ''),
         },
       },
+      headers: {
+        'Cross-Origin-Opener-Policy': 'same-origin',
+        'Cross-Origin-Embedder-Policy': 'credentialless',
+      },
+    },
+    preview: {
+      headers: {
+        'Cross-Origin-Opener-Policy': 'same-origin',
+        'Cross-Origin-Embedder-Policy': 'credentialless',
+      },
     },
     resolve: {
       // the components of tweak-ui and of the viewer must share one reactive runtime
       dedupe: ['solid-js'],
+    },
+    worker: {
+      format: 'es',
     },
     plugins: [
       solidPlugin(),

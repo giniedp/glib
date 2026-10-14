@@ -84,12 +84,14 @@ export interface DebugShapeEntry {
   readonly type: DebugShapeType
   readonly geometry: (device: Device, solid: boolean) => Geometry
   readonly solid: boolean
-  readonly color: IVec4
+
   readonly layer: DebugLayer
   readonly visibleIf?: () => boolean
   readonly boundsBox: boolean
   readonly boundsSphere: boolean
   readonly entity: GameEntity
+
+  color: IVec4
   transforms: Mat4[]
 }
 
