@@ -12,6 +12,7 @@ import {
   vec3$addScalars,
   vec3$applyMat4,
   vec3$applyMat4Rotation,
+  vec3$applyQuat,
   vec3$init,
   vec3$initFrom,
   vec3Copy,
@@ -66,6 +67,11 @@ export class WASDComponent implements GameComponent, InitializableComponent, Beh
 
   public radiusMin: number = 0.001
   public radiusMax: number = Number.POSITIVE_INFINITY
+  /**
+   * Moves on the plane orthogonal to the space up axis, the direction follows the yaw only and the
+   * up/down keys are ignored (e.g. for walking)
+   */
+  public planar: boolean = false
   public orbitMode: boolean = false
   public orbitCenter: IVec3 = vec3(0, 0, 0)
 
@@ -199,18 +205,22 @@ export class WASDComponent implements GameComponent, InitializableComponent, Beh
       vec3$add(vec3.$0, this.space.left)
       isMoving = true
     }
-    if (keyboard.isPressed(this.keyUp)) {
+    if (!this.planar && keyboard.isPressed(this.keyUp)) {
       vec3$add(vec3.$0, this.space.up)
       isMoving = true
     }
-    if (keyboard.isPressed(this.keyDown)) {
+    if (!this.planar && keyboard.isPressed(this.keyDown)) {
       vec3$add(vec3.$0, this.space.down)
       isMoving = true
     }
     if (vec3LengthSquared(vec3.$0) > 0) {
       vec3Lerp(this.translation, vec3.$0, this.moveDamping, this.translation)
       vec3Copy(this.translation, this.direction)
-      vec3$applyMat4Rotation(this.direction, node.world)
+      if (this.planar) {
+        vec3$applyQuat(this.direction, quat$initAxisAngle(vec4.$1, this.space.up, this.horizontal))
+      } else {
+        vec3$applyMat4Rotation(this.direction, node.world)
+      }
     }
 
     const boost = keyboard.isPressed(this.keyBoost) ? this.moveSpeedMultiplier : 1

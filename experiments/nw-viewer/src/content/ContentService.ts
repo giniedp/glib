@@ -13,7 +13,6 @@ import { ViewerConfig, type ViewerConfigValues } from '../config'
 import { CgfGeometryAssetType, isAssetIdRef, type CgfGeometry } from '../formats/cgf'
 import { MtlLoader } from '../formats/mtl'
 import { createAssetIdResolver, normalizeAssetPath, type AssetIdResolver } from './assetIds'
-import { RnrAssetType, type RnrAsset } from '../formats/rnr'
 
 /**
  * Highest level of detail the engine supports (MAX_STATOBJ_LODS_NUM - 1), the upper bound for probing sibling files
@@ -339,17 +338,6 @@ export class ContentService extends GameSystem {
       return Promise.resolve(file)
     }
     return this.resolveAssetId(ref)
-  }
-
-  /**
-   * Loads a RockNRoll `.rnr` collision shape asset, cached by the content loader
-   *
-   * @param url - file path relative to the nwbt file root
-   */
-  public loadCollisionShape(url: string): Promise<RnrAsset> {
-    return this.loader.load(RnrAssetType, url, {
-      baseUrl: this.nwbtFileUrl,
-    })
   }
 
   public loadTexture(url: string) {

@@ -1,4 +1,4 @@
-import { closestPointOnPlane, closestPointOnSegment, distancePlaneToPoint } from './Collision'
+import { closestPointOnPlane, closestPointOnSegment, closestPointsOfSegments, distancePlaneToPoint } from './Collision'
 
 import { describe, expect, it } from 'vitest'
 import { vec3 } from './Vec3'
@@ -19,6 +19,16 @@ describe('Collision', () => {
     expect(closestPointOnPlane(vec3(-1, 0, 0), plane, {})).toEqual(vec3(-1, 2, 0))
     expect(closestPointOnPlane(vec3(1, 0, 0), plane, {})).toEqual(vec3(1, 2, 0))
     expect(closestPointOnPlane(vec3(1, 4, 3), plane, {})).toEqual(vec3(1, 2, 3))
+  })
+
+  it('closestPointsOfSegments', () => {
+    // the closest points have different parameters on each segment (s = 0.25, t = 0.75)
+    const p1 = vec3()
+    const p2 = vec3()
+    const d = closestPointsOfSegments(vec3(-1, 0, 0), vec3(3, 0, 0), vec3(0, -3, 1), vec3(0, 1, 1), p1, p2)
+    expect(p1).toEqual(vec3(0, 0, 0))
+    expect(p2).toEqual(vec3(0, 0, 1))
+    expect(d).toBe(1)
   })
 
   it('distancePlaneToPoint', () => {

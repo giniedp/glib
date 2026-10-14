@@ -2,8 +2,7 @@ import type { ActivatableComponent, GameComponent, GameEntity } from '@gglib/ecs
 import { GetComponent } from '@gglib/ecs'
 import { vec3, type IVec3 } from '@gglib/math'
 import type { ViewerColliderComponent, ViewerShape, ViewerVolumeComponent } from '../../api'
-import { ContentService } from '../../content'
-import type { RnrAsset } from '../../formats/rnr'
+import type { RnrAsset } from '../../formats/rnr/types'
 import { DebugLayer, DebugShapeComponent } from '../debug/DebugShapeComponent'
 import { rnrDebugShapes, viewerShapeDebugShapes, type CollisionDebugShape } from './collisionDebug'
 import { CollisionSystem } from './CollisionSystem'
@@ -35,7 +34,6 @@ export class CollisionComponent implements GameComponent, ActivatableComponent {
   public state: CollisionLoadState = 'idle'
 
   private system: CollisionSystem
-  private content: ContentService
   private debug: DebugShapeComponent | null
 
   public get layer() {
@@ -51,7 +49,6 @@ export class CollisionComponent implements GameComponent, ActivatableComponent {
 
   public initialize(): void {
     this.system = this.entity.world.getSystem(CollisionSystem)
-    this.content = this.entity.service(ContentService)
     this.debug = this.entity.component(DebugShapeComponent, GetComponent.Optional)
     if (this.primitive) {
       this.state = 'loaded'
@@ -72,7 +69,7 @@ export class CollisionComponent implements GameComponent, ActivatableComponent {
   }
 
   /**
-   * Loads the shape asset, called by the CollisionSystem
+   * Loads the shape asset through the collision worker, called by the CollisionSystem
    */
   public async load() {
     if (!this.rnr || this.state !== 'idle') {
@@ -80,7 +77,7 @@ export class CollisionComponent implements GameComponent, ActivatableComponent {
     }
     this.state = 'loading'
     try {
-      this.asset = await this.content.loadCollisionShape(this.rnr)
+      this.asset = await this.system.loadShape(this.rnr)
       this.state = 'loaded'
       for (const shape of this.asset.shapes) {
         this.addDebugShapes(rnrDebugShapes(shape, this.rnr))

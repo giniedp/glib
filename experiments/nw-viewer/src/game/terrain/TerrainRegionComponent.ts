@@ -64,7 +64,7 @@ export class TerrainRegionComponent implements GameComponent {
     return this.origin.y / this.size
   }
 
-  public heightmap: Float16Array
+  public heightmap: Float16Array<ArrayBufferLike>
   public heightmapTask: ScheduledTask | null
   public heightmapReady: boolean
 

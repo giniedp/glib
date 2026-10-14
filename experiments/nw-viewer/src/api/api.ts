@@ -102,7 +102,7 @@ export function getRegionVegetationDataUrl(levelName: string, regionName: string
   return { url: `/levels/${levelName}/${regionName}/vegetation.bin`, type: 'arraybuffer' }
 }
 
-export function getRegionHeightmapUrl(levelName: string, regionName: string): TypedRequest<Float16Array> {
+export function getRegionHeightmapUrl(levelName: string, regionName: string): TypedRequest<ArrayBuffer> {
   return { url: `/levels/${levelName}/${regionName}/heightmap.r16`, type: 'arraybuffer' }
 }
 

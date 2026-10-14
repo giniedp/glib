@@ -282,7 +282,7 @@ export function closestPointsOfSegments(
     }
   }
   vec3AddScaled(segment1Start, d1, s, outP1)
-  vec3AddScaled(segment2Start, d2, s, outP2)
+  vec3AddScaled(segment2Start, d2, t, outP2)
   return vec3DistanceSquared(outP1, outP2)
 }
 

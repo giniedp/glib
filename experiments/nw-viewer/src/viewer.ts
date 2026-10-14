@@ -38,7 +38,6 @@ import { REGION_SIZE } from './constants'
 import { ContentService } from './content'
 import { registerCgf } from './formats/cgf'
 import { registerMtl } from './formats/mtl'
-import { registerRnr } from './formats/rnr'
 import { CollisionSystem } from './game/collision/CollisionSystem'
 import { CullingSystem } from './game/culling/CullingSystem'
 import { DebugLayer, DebugShapeComponent } from './game/debug/DebugShapeComponent'
@@ -50,6 +49,7 @@ import { LevelSystem } from './game/level/LevelSystem'
 import { SkyLightSystem } from './game/level/SkyLightSystem'
 import { LightSystem } from './game/light/LightSystem'
 import { ParticleSystem } from './game/particles'
+import { PlayerMovementComponent } from './game/player/PlayerMovementComponent'
 import { RegionSystem } from './game/region/RegionSystem'
 import { RoadSystem } from './game/road/RoadSystem'
 import { RangeActivationSystem } from './game/slice/RangeActivationSystem'
@@ -182,7 +182,6 @@ export class NwViewer extends EcsGame {
 
     this.content.registerLoader(DDS.Loader)
     this.content.registerLoader(HDR.Loader)
-    registerRnr(this.content)
     registerMtl(this.content)
     registerCgf(this.content)
 
@@ -214,6 +213,8 @@ export class NwViewer extends EcsGame {
         //   ],
         // }),
         new WASDComponent(),
+        // after WASD, takes its displacement in grounded mode
+        new PlayerMovementComponent(),
       ],
     }).component(CameraComponent)
     // runtime inactive entities are hidden by default, the layer can be toggled in the camera UI
@@ -359,6 +360,7 @@ export class NwViewer extends EcsGame {
       .setRotationAxisAngle(0, 0, 1, rot)
       .updateIfNeeded()
     this.camera.entity.component(WASDComponent).setRotation(rot || 0, 0)
+    this.camera.entity.component(PlayerMovementComponent).teleport()
     this.camera.updateBehavior()
   }
 

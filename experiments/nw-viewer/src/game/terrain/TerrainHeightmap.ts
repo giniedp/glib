@@ -21,7 +21,7 @@ export class TerrainHeightmapArray {
     })
   }
 
-  public sync(regions: Array<{ regionName: string; heightmap: Float16Array }>): void {
+  public sync(regions: Array<{ regionName: string; heightmap: Float16Array<ArrayBufferLike> }>): void {
     for (const [regionId, slot] of this.regionToLayer) {
       let found = false
       for (const r of regions) {
@@ -57,7 +57,7 @@ export class TerrainHeightmapArray {
     return this.regionToLayer.get(regionId) ?? -1
   }
 
-  private upload(slot: number, data: Float16Array, target: Texture): void {
+  private upload(slot: number, data: Float16Array<ArrayBufferLike>, target: Texture): void {
     const gpu = (this.device as WebGpuDevice).gpu
     const encoder = gpu.createCommandEncoder({ label: `heightmap-upload-slot${slot}` })
 

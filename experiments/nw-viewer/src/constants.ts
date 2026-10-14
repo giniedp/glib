@@ -201,3 +201,23 @@ export const COLLISION_DEBUG_RANGE = 128
  * Maximum number of collision shape assets that load at the same time
  */
 export const COLLISION_LOAD_CONCURRENCY = 32
+/**
+ * Player capsule radius in grounded movement mode
+ */
+export const PLAYER_RADIUS = 0.4
+/**
+ * Player capsule height (feet to head) in grounded movement mode
+ */
+export const PLAYER_HEIGHT = 1.8
+/**
+ * Camera height above the feet in grounded movement mode
+ */
+export const PLAYER_EYE_HEIGHT = 1.7
+/**
+ * Ground up to this height above the feet is stepped onto instantly
+ */
+export const PLAYER_STEP_HEIGHT = 0.5
+/**
+ * Constant fall speed in m/s (no acceleration) when the ground is below the feet
+ */
+export const PLAYER_FALL_SPEED = 20
