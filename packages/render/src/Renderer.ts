@@ -420,7 +420,8 @@ export class Renderer {
   }
 
   public dispose() {
-    // TODO:
+    this.instances.dispose()
+    this.resources.dispose()
   }
 }
 

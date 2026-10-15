@@ -1,4 +1,4 @@
-import { Device, Mesh } from '@gglib/graphics'
+import { Device, disposeUnclaimed, Mesh, ResourceOwnerSet, type Ownable } from '@gglib/graphics'
 import {
   BoundingBox,
   BoundingSphere,
@@ -18,8 +18,22 @@ import { createSkeletons, createTransformNodes, flattenNodes } from './utils'
 
 /**
  * @public
+ *
+ * @remarks
+ * Meshes that are passed in as instances are borrowed. Meshes created from options
+ * are owned by the model and are owned by a scope together with the model.
  */
-export class Model {
+export class Model implements Ownable {
+  /**
+   * The owners of this model
+   */
+  public readonly owners: ResourceOwnerSet = new ResourceOwnerSet(this)
+
+  /**
+   * Meshes created by this model from options
+   */
+  private createdMeshes = new Set<Mesh>()
+
   /**
    * Autmatically generated unique identifier
    */
@@ -146,6 +160,7 @@ export class Model {
   public constructor(device: Device, options: ModelOptions) {
     this.uid = uuid()
     this.device = device
+    this.owners.onEmpty(() => this.dispose())
     this.name = options.name || null
     this.meta = options.meta || {}
 
@@ -157,7 +172,9 @@ export class Model {
       if (mesh instanceof Mesh) {
         this.meshes.push(mesh)
       } else {
-        this.meshes.push(new Mesh(this.device, mesh))
+        const created = new Mesh(this.device, mesh)
+        this.createdMeshes.add(created)
+        this.meshes.push(created)
       }
     }
 
@@ -323,15 +340,30 @@ export class Model {
   }
 
   /**
-   * Releases GPU resources held by this model's meshes.
+   * Meshes created by this model are owned together with the model
+   */
+  public ownedChildren(): Iterable<Ownable> {
+    return this.createdMeshes
+  }
+
+  /**
+   * Detaches this model from all owners and disposes the meshes it created.
+   * Called automatically when the last owner releases the model.
    *
    * @remarks
-   * Only meshes are disposed; node, skeleton, and scene state are left intact.
+   * Borrowed meshes (passed in as instances) are not touched.
+   * Created meshes are disposed unless a scope explicitly owns them.
+   * Node, skeleton, and scene state are left intact.
    */
   public dispose() {
-    for (const mesh of this.meshes) {
-      mesh.dispose()
+    if (this.owners.isFinalized) {
+      return
     }
+    this.owners.finalize()
+    for (const mesh of this.createdMeshes) {
+      disposeUnclaimed(mesh)
+    }
+    this.createdMeshes.clear()
     this.meshes.length = 0
     // this.hierarchy.dispose()
     // if (this.pose) {
@@ -356,17 +388,25 @@ export class Model {
    * To also instantiate materials for each mesh, pass `true` for `options.materials`
    */
   public instantiate(options?: { meshes: boolean; materials: boolean }) {
-    return new Model(this.device, {
+    const meshes = this.meshes.map((mesh) => {
+      return options?.meshes ? mesh.instantiate(options) : mesh
+    })
+    const result = new Model(this.device, {
       name: this.name || undefined,
       meta: { ...this.meta }, // flat list
-      meshes: this.meshes.map((mesh) => {
-        return options.meshes ? mesh.instantiate(options) : mesh
-      }),
+      meshes: meshes,
       skins: this.skins ? JSON.parse(JSON.stringify(this.skins)) : undefined,
       nodes: this.nodes ? JSON.parse(JSON.stringify(this.nodes)) : undefined,
       animations: this.animations ? JSON.parse(JSON.stringify(this.animations)) : undefined,
       scenes: this.scenes ? JSON.parse(JSON.stringify(this.scenes)) : undefined,
       scene: this.scene,
     })
+    // instantiated meshes belong to the new model, other meshes are borrowed
+    if (options?.meshes) {
+      for (const mesh of meshes) {
+        result.createdMeshes.add(mesh)
+      }
+    }
+    return result
   }
 }

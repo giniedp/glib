@@ -94,6 +94,16 @@ export class RenderInstanceWriter {
   }
 
   /**
+   * Releases the instance buffers. They are recreated on next {@link begin}.
+   */
+  public dispose() {
+    this.transforms?.gpuBuffer?.dispose()
+    this.instances?.gpuBuffer?.dispose()
+    this.transforms = null
+    this.instances = null
+  }
+
+  /**
    * Prepares buffers for next batch. Does not reset the write index.
    */
   public begin() {

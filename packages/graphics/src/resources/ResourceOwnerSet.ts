@@ -246,6 +246,13 @@ export class ResourceOwnerSet implements Iterable<ResourceOwner> {
 }
 
 /**
+ * Whether the given value is an {@link Ownable}
+ */
+export function isOwnable(value: unknown): value is Ownable {
+  return !!value && (value as Ownable).owners instanceof ResourceOwnerSet
+}
+
+/**
  * Disposes a resource that was created by another object, unless a scope owns it explicitly.
  *
  * @remarks

@@ -2,8 +2,11 @@ import {
   BasicMaterial,
   Device,
   isAquirableTextureOptions,
+  isOwnable,
   Material,
+  Mesh,
   MaterialOptions,
+  ResourceScope,
   Texture,
   TextureOptions,
 } from '@gglib/graphics'
@@ -64,6 +67,16 @@ export type LoadOptions = Omit<LoadContext, 'content'> & {
    * Only used by {@link ContentLoader.load}, it is not passed on to the load context.
    */
   index?: number
+
+  /**
+   * The scope that should own the loaded instance
+   *
+   * @remarks
+   * Only used by {@link ContentLoader.load}, it is not passed on to the load context.
+   * Loading the same asset in multiple scopes returns the same instance, owned by all of them.
+   * Once the instance is finalized, it is removed from the cache and the next load creates a new one.
+   */
+  scope?: ResourceScope | null
 }
 export type AssetCreator<Options = any, Instance = any> = (content: ContentLoader, options: Options) => Instance
 
@@ -291,12 +304,13 @@ export class ContentLoader {
       this.assetCache.set(type, new Map())
     }
 
+    const { index, scope, ...context } = options || {}
+    const cache = this.assetCache.get(type)
     const key = this.cacheKey(type, url, options)
-    if (!this.disableCache && this.assetCache.get(type)?.has(key)) {
-      return this.assetCache.get(type).get(key)
+    if (!this.disableCache && cache.has(key)) {
+      return cache.get(key).then((instance) => ownInstance(instance, scope))
     }
 
-    const { index, ...context } = options || {}
     const promise = this.loadContainer(url, context)
       .then((container): Promise<T> => {
         return container.load(type, index ?? 0, {
@@ -305,14 +319,22 @@ export class ContentLoader {
         })
       })
       .then((options) => {
-        return this.create(type, options)
+        const instance = this.create(type, options)
+        if (!this.disableCache && isOwnable(instance)) {
+          instance.owners.onFinalize(() => {
+            if (cache.get(key) === promise) {
+              cache.delete(key)
+            }
+          })
+        }
+        return instance
       })
 
     if (!this.disableCache) {
-      this.assetCache.get(type).set(key, promise)
+      cache.set(key, promise)
     }
 
-    return promise
+    return promise.then((instance) => ownInstance(instance, scope))
   }
 
   /**
@@ -434,15 +456,32 @@ export class ContentLoader {
 }
 
 export const createModel: AssetCreator<ModelOptions, Model> = (content: ContentLoader, data: ModelOptions): Model => {
-  data = { ...data }
-  data.meshes = data.meshes.map((mesh) => {
-    mesh = { ...mesh }
-    mesh.materials = mesh.materials.map((it) => {
-      return content.create(AssetType.Material, it)
-    })
-    return mesh
+  return new Model(content.device, {
+    ...data,
+    meshes: data.meshes?.map((mesh) => {
+      if (mesh instanceof Mesh) {
+        return mesh
+      }
+      return {
+        ...mesh,
+        // meshes create (and own) their materials, routed through the creator registry of the content loader
+        materials: mesh.materials?.map((it) => {
+          if (it instanceof Material) {
+            return it
+          }
+          // the wrapper replaces `factory` on the copy only, `it` keeps its original factory, so this does not recurse
+          return { ...it, factory: () => content.create(AssetType.Material, it) }
+        }),
+      }
+    }),
   })
-  return new Model(content.device, data)
+}
+
+function ownInstance<T>(instance: T, scope: ResourceScope | null | undefined): T {
+  if (scope && isOwnable(instance)) {
+    scope.own(instance)
+  }
+  return instance
 }
 
 export const createMaterial: AssetCreator<MaterialOptions, Material> = (

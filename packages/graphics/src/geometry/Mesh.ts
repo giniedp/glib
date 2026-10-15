@@ -170,10 +170,11 @@ export class Mesh implements Ownable {
     }
 
     this.materials = (options.materials || []).map((it) => {
-      const material = createMaterialInstance(device, it)
-      if (material !== it) {
-        this.created.add(material)
+      if (it instanceof Material) {
+        return it
       }
+      const material = createMaterialInstance(device, it)
+      this.created.add(material)
       return material
     })
 
