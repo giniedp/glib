@@ -9,11 +9,12 @@ import {
   isTextureSourceOption,
   ProgramInputBlock,
   ProgramInputBlockCollection,
+  ResourceOwnerSet,
   Texture,
   type AcquireTextureOptions,
+  type Ownable,
   type TextureOptions,
 } from '../resources'
-import { isDisposable } from '../types'
 import { Effect, type EffectOptions } from './Effect'
 import { MaterialProperties, RenderVariant } from './types'
 
@@ -56,12 +57,30 @@ export interface MaterialOptions {
  * set of parameters that should be used together when rendering.
  * This allows a {@link Effect} instance to be reused across
  * multiple materials each with a different set of parameters.
+ *
+ * Textures that are passed in as instances are borrowed. Textures that are created or acquired
+ * from options are owned by the material and are owned by a scope together with the material.
  */
-export class Material {
+export class Material implements Ownable {
   /**
    * A unique id
    */
   public readonly uid: string = uuid()
+
+  /**
+   * The owners of this material
+   */
+  public readonly owners: ResourceOwnerSet = new ResourceOwnerSet(this)
+
+  /**
+   * Textures created by this material from {@link TextureOptions}. Exclusive to this material.
+   */
+  protected createdTextures = new Set<Texture>()
+
+  /**
+   * Textures acquired by this material from {@link AcquireTextureOptions}. Shared with others.
+   */
+  protected acquiredTextures = new Set<Texture>()
 
   /**
    * The graphics device
@@ -169,22 +188,80 @@ export class Material {
     const old = this.inputs.get(input)
     if (value !== old) {
       if (isAquirableTextureOptions(value)) {
-        value = this.device.acquireTexture(value)
+        const texture = this.device.acquireTexture(value)
+        this.addChild(this.acquiredTextures, texture)
+        value = texture
       } else if (isTextureSourceOption(value)) {
-        value = this.device.createTexture(value)
-      } else if (value instanceof Texture) {
-        value.ref.retain()
+        const texture = this.device.createTexture(value)
+        this.addChild(this.createdTextures, texture)
+        value = texture
       } else if (value == null) {
         console.warn(
           `Setting material parameter ${input.key} to null or undefined is not recommended and may cause unintended consequences.`,
         )
       }
-      if (old instanceof Texture) {
-        old.ref.release()
+      if (old instanceof Texture && old !== value && !this.isInputValue(old, input)) {
+        this.removeChild(old)
       }
     }
 
     this.inputs.set(input, value as any)
+  }
+
+  /**
+   * Whether the texture is used by any input other than the given one
+   */
+  private isInputValue(texture: Texture, except: InputSlot<any>): boolean {
+    for (const blockName in this.inputs.blocks) {
+      const values = this.inputs.blocks[blockName].values
+      for (const key in values) {
+        if (values[key] === texture && !(blockName === except.block && key === except.key)) {
+          return true
+        }
+      }
+    }
+    return false
+  }
+
+  private addChild(set: Set<Texture>, texture: Texture) {
+    if (set.has(texture)) {
+      return
+    }
+    set.add(texture)
+    for (const owner of Array.from(this.owners)) {
+      owner.own(texture)
+    }
+  }
+
+  private removeChild(texture: Texture) {
+    const isCreated = this.createdTextures.delete(texture)
+    const isAcquired = this.acquiredTextures.delete(texture)
+    if (!isCreated && !isAcquired) {
+      return
+    }
+    for (const owner of Array.from(this.owners)) {
+      owner.release(texture)
+    }
+    if (isCreated) {
+      this.releaseFromGlobalScope(texture)
+    }
+  }
+
+  /**
+   * Releases a created texture that is still implicitly owned by the global scope, i.e. no scope took it over
+   */
+  private releaseFromGlobalScope(texture: Texture) {
+    const scope = this.device?.scope
+    if (scope && texture.owners.defaultOwner === scope) {
+      scope.release(texture)
+    }
+  }
+
+  /**
+   * Textures created or acquired by this material and its effects are owned together with the material
+   */
+  public ownedChildren(): Iterable<Ownable> {
+    return [...this.createdTextures, ...this.acquiredTextures, ...Object.values(this.effects)]
   }
 
   /**
@@ -218,18 +295,23 @@ export class Material {
   public update?(time: number, delta: number, frame: number): void
 
   /**
-   * Disposes the underlying effect
+   * Disposes the effects and releases this material from all owners.
+   *
+   * @remarks
+   * - Borrowed textures (passed in as instances) are not touched.
+   * - Created textures are destroyed unless a scope other than the global scope owns them.
+   * - Acquired textures are shared. They live as long as a scope owns them,
+   *   or until the device is disposed if they were acquired without a scope.
    */
   public dispose() {
-    for (const blockName in this.inputs) {
-      const block = this.inputs[blockName]
-      for (const key in block) {
-        const value = block[key]
-        if (isDisposable(value)) {
-          value.dispose()
-        }
-      }
+    for (const owner of Array.from(this.owners)) {
+      owner.release(this)
     }
+    for (const texture of this.createdTextures) {
+      this.releaseFromGlobalScope(texture)
+    }
+    this.createdTextures.clear()
+    this.acquiredTextures.clear()
     for (const variant in this.effects) {
       this.effects[variant].dispose()
     }

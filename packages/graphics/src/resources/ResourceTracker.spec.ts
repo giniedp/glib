@@ -1,49 +1,120 @@
 import { describe, expect, it } from 'vitest'
-import { referenceCounter } from './ReferenceCounter'
+import type { FrameFn } from '../FrameScheduler'
+import { type Ownable, ResourceOwnerSet } from './ResourceOwnerSet'
+import { ResourceScope } from './ResourceScope'
 import { createResourceTracker } from './ResourceTracker'
 
 describe('ResourceTracker', () => {
-  interface DummyResource {
-    ref: ReturnType<typeof referenceCounter>
+  interface DummyResource extends Ownable {
     id: number
   }
 
   function makeResource(id: number): DummyResource {
-    return { ref: referenceCounter(), id }
+    const resource = { id } as DummyResource & { owners: ResourceOwnerSet }
+    resource.owners = new ResourceOwnerSet(resource)
+    return resource
   }
 
-  it('counts active resources', () => {
+  function fakeScheduler() {
+    const tasks = new Set<FrameFn<void>>()
+    return {
+      tasks,
+      schedule(fn: FrameFn<void>) {
+        tasks.add(fn)
+      },
+      tick() {
+        for (const fn of Array.from(tasks)) {
+          fn({
+            frame: 0,
+            time: 0,
+            delta: 0,
+            complete: () => tasks.delete(fn),
+            cancel: () => tasks.delete(fn),
+          } as any)
+        }
+      },
+    }
+  }
+
+  it('finalizes exclusive resources without owners', () => {
     const tracker = createResourceTracker<DummyResource>()
-    const res1 = makeResource(1)
-    const res2 = makeResource(2)
-    res1.ref.retain()
-    res2.ref.retain()
-    tracker.track(res1)
-    tracker.track(res2)
+    const scope = new ResourceScope('a')
+    const res1 = scope.own(tracker.track(makeResource(1)))
+    const res2 = scope.own(tracker.track(makeResource(2)))
     expect(tracker.count).toBe(2)
 
-    res1.ref.release()
-    res1.ref.finalize()
+    scope.release(res1)
+    expect(res1.owners.isFinalized).toBe(true)
     expect(tracker.count).toBe(1)
 
-    res2.ref.release()
-    res2.ref.finalize()
+    res2.owners.finalize()
     expect(tracker.count).toBe(0)
+    expect(tracker.staleCount).toBe(0)
   })
 
-  it('counts stale resources', () => {
+  it('looks up shared resources by key', () => {
     const tracker = createResourceTracker<DummyResource>()
-    const res = makeResource(1)
-    tracker.track(res)
-    res.ref.retain()
-    expect(tracker.staleCount).toBe(0)
-    res.ref.release()
+    const res = tracker.share('key', makeResource(1))
+    expect(tracker.get('key')).toBe(res)
+    expect(tracker.get('other')).toBe(null)
+    expect(() => tracker.share('key', makeResource(2))).toThrow()
+  })
+
+  it('keeps shared resources alive for a number of frames', () => {
+    const scheduler = fakeScheduler()
+    const tracker = createResourceTracker<DummyResource>({ keepAliveFrames: 2, scheduler })
+    const scope = new ResourceScope('a')
+    const res = scope.own(tracker.share('key', makeResource(1)))
+
+    scope.dispose()
     expect(tracker.staleCount).toBe(1)
-    res.ref.retain()
+    expect(tracker.get('key')).toBe(res)
+    expect(scheduler.tasks.size).toBe(1)
+
+    scheduler.tick()
+    expect(res.owners.isFinalized).toBe(false)
+    scheduler.tick()
+    expect(res.owners.isFinalized).toBe(true)
     expect(tracker.staleCount).toBe(0)
-    res.ref.release()
+    expect(tracker.count).toBe(0)
+    expect(tracker.get('key')).toBe(null)
+    expect(scheduler.tasks.size).toBe(0)
+  })
+
+  it('revives stale shared resources', () => {
+    const scheduler = fakeScheduler()
+    const tracker = createResourceTracker<DummyResource>({ keepAliveFrames: 2, scheduler })
+    const a = new ResourceScope('a')
+    const b = new ResourceScope('b')
+    const res = a.own(tracker.share('key', makeResource(1)))
+
+    a.dispose()
     expect(tracker.staleCount).toBe(1)
-    res.ref.finalize()
+    b.own(tracker.get('key'))
     expect(tracker.staleCount).toBe(0)
+
+    scheduler.tick()
+    scheduler.tick()
+    expect(res.owners.isFinalized).toBe(false)
+    expect(scheduler.tasks.size).toBe(0)
+  })
+
+  it('finalizes shared resources immediately without keep alive', () => {
+    const tracker = createResourceTracker<DummyResource>({ keepAliveFrames: 0 })
+    const scope = new ResourceScope('a')
+    const res = scope.own(tracker.share('key', makeResource(1)))
+    scope.dispose()
+    expect(res.owners.isFinalized).toBe(true)
+    expect(tracker.get('key')).toBe(null)
+  })
+
+  it('finalizes all resources', () => {
+    const tracker = createResourceTracker<DummyResource>()
+    const res1 = tracker.track(makeResource(1))
+    const res2 = tracker.share('key', makeResource(2))
+    tracker.finalizeAll()
+    expect(res1.owners.isFinalized).toBe(true)
+    expect(res2.owners.isFinalized).toBe(true)
+    expect(tracker.count).toBe(0)
   })
 })

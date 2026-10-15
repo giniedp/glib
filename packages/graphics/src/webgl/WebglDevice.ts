@@ -7,12 +7,11 @@ import { FrameScheduler } from '../FrameScheduler'
 import { GpuTimer, type GpuTimerOptions } from '../GpuTimer'
 import {
   createResourceTracker,
-  getRefCounter,
-  RefCounterKey,
-  referenceCounter,
+  getKeyName,
   ShaderModule,
   TextureUsage,
   type AcquireTextureOptions,
+  type ResourceTracker,
   type BufferOptions,
   type DepthBufferOptions,
   type DeviceOutput,
@@ -69,6 +68,11 @@ export interface WebglDeviceOptions {
    * @public
    */
   contextAttributes?: WebGLContextAttributes & { xrCompatible?: boolean }
+
+  /**
+   * Number of frames an acquired resource without owners is kept alive before it is destroyed. Defaults to 60.
+   */
+  keepAliveFrames?: number
 }
 
 /**
@@ -114,13 +118,16 @@ export class WebglDevice extends Device<WebGL2RenderingContext> {
   private activeProgram: WebGLProgram = undefined
   private readBackBuffer: WebglFrameBuffer
 
-  protected textures = createResourceTracker<WebglTexture>()
-  protected shaders = createResourceTracker<WebglShaderModule>()
+  protected textures: ResourceTracker<WebglTexture>
+  protected shaders: ResourceTracker<WebglShaderModule>
   protected samplers = new Map<SamplerState, WebglSampler>()
   protected resizeObserver: ResizeObserver
 
   public constructor(options: WebglDeviceOptions) {
     super()
+    const trackerOptions = { keepAliveFrames: options.keepAliveFrames, scheduler: this.scheduler }
+    this.textures = createResourceTracker(trackerOptions)
+    this.shaders = createResourceTracker(trackerOptions)
     this.canvas = getOrCreateCanvas(options)
     this.context = getOrCreateContext(this.canvas, options)
     this.canvas.addEventListener('webglcontextlost', this.handleContextLost)
@@ -147,6 +154,9 @@ export class WebglDevice extends Device<WebGL2RenderingContext> {
       // depth: 6,
       format: 'rgba8unorm',
     })
+    // explicitly owned, so other scopes may share but never take them over
+    this.scope.own(this.defaultTexture)
+    this.scope.own(this.defaultTextureCube)
     this.renderPass = new WebglRenderEncoder(this)
 
     this.resize()
@@ -160,8 +170,10 @@ export class WebglDevice extends Device<WebGL2RenderingContext> {
 
   public dispose() {
     this.scheduler.dispose()
+    this.scope.dispose()
+    this.textures.finalizeAll()
+    this.shaders.finalizeAll()
     this.resizeObserver?.disconnect()
-    // TODO: dispose resources
     this.canvas.removeEventListener('webglcontextlost', this.handleContextLost, false)
     this.canvas.removeEventListener('webglcontextrestored', this.handleContextRestored, false)
     this.capabilities.extension('WEBGL_lose_context')?.loseContext()
@@ -226,12 +238,8 @@ export class WebglDevice extends Device<WebGL2RenderingContext> {
   }
 
   public createTexture(options: TextureOptions): WebglTexture {
-    const result = new WebglTexture(this, {
-      ...options,
-      ...{ [RefCounterKey]: getRefCounter(options) || createRefCounter() },
-    })
-    this.textures.track(result)
-    return result
+    const result = this.textures.track(new WebglTexture(this, { ...options }))
+    return this.claim(result, options.scope)
   }
 
   public createRenderTarget(options: TextureOptions): WebglTexture {
@@ -258,25 +266,16 @@ export class WebglDevice extends Device<WebGL2RenderingContext> {
     return this.createTexture(options)
   }
 
+  /**
+   * Creates an untracked shader module that is owned by the caller
+   */
   public createGlslModule(options: WebglShaderModuleOptions): WebglShaderModule {
-    return new WebglShaderModule(this, {
-      ...options,
-      ...{ [RefCounterKey]: getRefCounter(options) || createRefCounter() },
-    })
+    return new WebglShaderModule(this, options)
   }
 
   public createShaderModule(options: ShaderModuleOptions): WebglShaderModule {
-    if (!('glsl' in options)) {
-      throw new Error('Only GLSL shader source is supported in WebGL')
-    }
-
-    const result = this.createGlslModule({
-      vertex: options.glsl.vertex,
-      fragment: options.glsl.fragment,
-      ...{ [RefCounterKey]: getRefCounter(options) || createRefCounter() },
-    })
-    this.shaders.track(result)
-    return result
+    const result = this.shaders.track(this.allocShaderModule(options))
+    return this.claim(result, options.scope)
   }
 
   public acquireShaderModule(options: ShaderModuleOptions): ShaderModule {
@@ -285,11 +284,17 @@ export class WebglDevice extends Device<WebGL2RenderingContext> {
     }
 
     const key = options.glsl.vertex + options.glsl.fragment
-    return this.shaders.retainOrCreate(key, (ref) => {
-      return this.createShaderModule({
-        ...options,
-        ...{ [RefCounterKey]: ref },
-      })
+    const result = this.shaders.get(key) || this.shaders.share(key, this.allocShaderModule(options))
+    return this.claim(result, options.scope)
+  }
+
+  private allocShaderModule(options: ShaderModuleOptions): WebglShaderModule {
+    if (!('glsl' in options)) {
+      throw new Error('Only GLSL shader source is supported in WebGL')
+    }
+    return this.createGlslModule({
+      vertex: options.glsl.vertex,
+      fragment: options.glsl.fragment,
     })
   }
 
@@ -299,21 +304,14 @@ export class WebglDevice extends Device<WebGL2RenderingContext> {
       throw new Error('key is required for acquiring texture from pool')
     }
 
-    let result: WebglTexture
-    if (options.throwIfMissing) {
-      result = this.textures.retainOrThrow(key)
-    } else {
-      result = this.textures.retainOrCreate(key, (ref) => {
-        return this.createTexture({
-          ...options,
-          ...{ [RefCounterKey]: ref },
-        })
-      })
+    let result = this.textures.get(key)
+    if (!result) {
+      if (options.throwIfMissing) {
+        throw new Error(`Texture not found for key: ${getKeyName(key)}`)
+      }
+      result = this.textures.share(key, new WebglTexture(this, { ...options }))
     }
-    if (options.transient) {
-      result.ref.release()
-    }
-    return result
+    return this.claim(result, options.scope)
   }
 
   public createGpuTimer(options?: GpuTimerOptions): GpuTimer {
@@ -444,10 +442,4 @@ function checkFramebufferStatus(gl: WebGL2RenderingContext, _: WebglFrameBuffer)
     default:
       throw new Error(`Unknown framebuffer status: ${status}`)
   }
-}
-
-function createRefCounter() {
-  const ref = referenceCounter()
-  ref.onZero(() => ref.finalize())
-  return ref
 }

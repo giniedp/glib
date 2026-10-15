@@ -4,7 +4,7 @@ import { type Ownable, type ResourceOwner, ResourceOwnerSet } from './ResourceOw
 describe('ResourceOwnerSet', () => {
   function makeOwner(name: string): ResourceOwner & { detached: Ownable[] } {
     const detached: Ownable[] = []
-    return { name, detached, detach: (r) => detached.push(r) }
+    return { name, detached, detach: (r) => detached.push(r), release: () => {}, own: (r) => r }
   }
 
   function makeResource(defaultOwner?: ResourceOwner): Ownable {

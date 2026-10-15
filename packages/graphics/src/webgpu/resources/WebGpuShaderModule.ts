@@ -1,11 +1,5 @@
 import { BufferUsage, vertexTypeFromDataFormat } from '../../enums'
-import {
-  getRefCounter,
-  ShaderModule,
-  VertexBuffer,
-  type ReferenceCounted,
-  type ReferenceCounter,
-} from '../../resources'
+import { ResourceOwnerSet, ShaderModule, VertexBuffer } from '../../resources'
 import { ShaderConstants } from '../../states'
 import type { GpuResource, Mutable } from '../types'
 import type { WebGpuDevice } from '../WebGpuDevice'
@@ -36,7 +30,7 @@ export interface WebGpuShaderOptions {
   computeConstants?: ShaderConstants
 }
 
-export class WebGpuShaderModule extends ShaderModule implements GpuResource<GPUShaderModule>, ReferenceCounted {
+export class WebGpuShaderModule extends ShaderModule implements GpuResource<GPUShaderModule> {
   /**
    * The graphics device
    */
@@ -71,7 +65,7 @@ export class WebGpuShaderModule extends ShaderModule implements GpuResource<GPUS
    */
   public readonly computeConstants: ShaderConstants | null
 
-  public readonly ref: ReferenceCounter
+  public readonly owners: ResourceOwnerSet
 
   private info: WgslProgramInfo
   private vertexEntry: WgslEntryPointInfo
@@ -105,11 +99,8 @@ export class WebGpuShaderModule extends ShaderModule implements GpuResource<GPUS
       code: options.code,
     })
 
-    this.ref = getRefCounter(options) || null
-    if (this.ref) {
-      this.ref.retain()
-      this.ref.onFinalize(() => this.finalize())
-    }
+    this.owners = new ResourceOwnerSet(this)
+    this.owners.onFinalize(() => this.finalize())
 
     this.isCompiled = false
     this.compiled = this.gpuObject.getCompilationInfo().then((info) => {
@@ -229,11 +220,7 @@ export class WebGpuShaderModule extends ShaderModule implements GpuResource<GPUS
   }
 
   public dispose(): void {
-    if (this.ref) {
-      this.ref.release()
-    } else {
-      this.finalize()
-    }
+    this.owners.finalize()
   }
 
   private finalize(): void {

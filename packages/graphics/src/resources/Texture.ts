@@ -1,8 +1,8 @@
 import { uuid } from '@gglib/utils'
 import { Device } from '../Device'
 import { surfaceFormatInfo, type SurfaceFormat, type TextureType, type TypedArray } from '../enums'
-import type { ReferenceCounter } from './ReferenceCounter'
-import type { ReferenceCounted } from './ResourceTracker'
+import type { Ownable, ResourceOwnerSet } from './ResourceOwnerSet'
+import type { ResourceScopeOption } from './ResourceScope'
 import { DynamicTextureSource, type TextureSource } from './TextureSource'
 
 export const TextureUsage = {
@@ -34,15 +34,6 @@ export type AcquireTextureOptions = TextureOptions & {
    * How to handle a missing texture. Default is `create`
    */
   throwIfMissing?: boolean
-
-  /**
-   * If true, ref counter will be released immediatley
-   *
-   * @remarks
-   * Allows to acquire a texture without holding a reference.
-   * Useful when it is passed to The next owner instantly, e.g. material
-   */
-  transient?: boolean
 }
 
 export interface TextureDescriptor {
@@ -57,7 +48,7 @@ export interface TextureDescriptor {
   usage: number
 }
 
-export interface TextureOptions extends Partial<TextureDescriptor> {
+export interface TextureOptions extends Partial<TextureDescriptor>, ResourceScopeOption {
   /**
    * User defined name
    */
@@ -190,7 +181,7 @@ export class TextureView {
   }
 }
 
-export abstract class Texture implements ReferenceCounted {
+export abstract class Texture implements Ownable {
   /**
    * Value for the `crossOrigin` attribute to be used when fetching image or video by url
    *
@@ -298,9 +289,9 @@ export abstract class Texture implements ReferenceCounted {
   public abstract readonly isMultisampled: boolean
 
   /**
-   *
+   * The owners of this texture
    */
-  public abstract readonly ref: ReferenceCounter
+  public abstract readonly owners: ResourceOwnerSet
 
   /**
    * A default view for this texture to use when binding to shader
@@ -321,7 +312,7 @@ export abstract class Texture implements ReferenceCounted {
   public static videoTypes = ['.mp4', '.ogv', '.ogg', '.webm']
 
   /**
-   * Releases all resources and notifies the device that the texture is being destroyed.
+   * Immediately releases the GPU resources of this texture, regardless of its owners.
    */
   public abstract dispose(): void
 

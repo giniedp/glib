@@ -26,7 +26,7 @@ function runContract(createDevice: () => WebGpuDevice | WebglDevice) {
   let material: BasicMaterial
   beforeEach(async () => {
     device = await createDevice().ready
-    material = new BasicMaterial(device)
+    material = new BasicMaterial(device, { properties: {} })
     await material.effect.program.compiled
   })
 
@@ -72,7 +72,7 @@ function runContract(createDevice: () => WebGpuDevice | WebglDevice) {
   describe('shared blocks', () => {
     let material2: BasicMaterial
     beforeEach(() => {
-      material2 = new BasicMaterial(device)
+      material2 = new BasicMaterial(device, { properties: {} })
     })
 
     it('shares view block', () => {

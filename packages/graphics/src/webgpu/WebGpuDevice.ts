@@ -7,14 +7,13 @@ import type { GpuTimer, GpuTimerOptions } from '../GpuTimer'
 import { BufferUsage, type SurfaceFormat } from '../enums'
 import {
   createResourceTracker,
-  getRefCounter,
-  RefCounterKey,
-  referenceCounter,
+  getKeyName,
   ShaderModule,
   TextureUsage,
   WgslModuleSource,
   type AcquireTextureOptions,
   type BufferOptions,
+  type ResourceTracker,
   type DepthBufferOptions,
   type ShaderModuleOptions,
   type TextureOptions,
@@ -82,6 +81,12 @@ export interface WebGpuDeviceOptions {
    * @public
    */
   deviceOptions?: GPUDeviceDescriptor | ((adapter: GPUAdapter) => GPUDeviceDescriptor)
+
+  /**
+   * Number of frames an acquired resource without owners is kept alive before it is destroyed. Defaults to 60.
+   * @public
+   */
+  keepAliveFrames?: number
 }
 
 export class WebGpuDevice extends Device<GPUCanvasContext> {
@@ -119,8 +124,8 @@ export class WebGpuDevice extends Device<GPUCanvasContext> {
    */
   public readonly timers = new WebGpuTimers()
 
-  protected shaders = createResourceTracker<WebGpuShaderModule>()
-  protected textures = createResourceTracker<WebGpuTexture>()
+  protected shaders: ResourceTracker<WebGpuShaderModule>
+  protected textures: ResourceTracker<WebGpuTexture>
   protected samplers = new Map<SamplerState, WebGpuSampler>()
   protected resizeObserver: ResizeObserver
 
@@ -146,6 +151,9 @@ export class WebGpuDevice extends Device<GPUCanvasContext> {
 
     this.getAdapterOptions = adapterOptionsGetter(options)
     this.getDeviceOptions = deviceOptionsGetter(options)
+    const trackerOptions = { keepAliveFrames: options.keepAliveFrames, scheduler: this.scheduler }
+    this.shaders = createResourceTracker(trackerOptions)
+    this.textures = createResourceTracker(trackerOptions)
 
     this.canvas = getOrCreateCanvas(options)
     this.context = getOrCreateContext(this.canvas, options)
@@ -223,6 +231,9 @@ export class WebGpuDevice extends Device<GPUCanvasContext> {
       generateMipmap: false,
       mipLevelCount: 1,
     })
+    // explicitly owned, so other scopes may share but never take them over
+    this.scope.own(this.defaultTexture)
+    this.scope.own(this.defaultTextureCube)
 
     await this.capabilities.ready
     self.isReady = true
@@ -264,14 +275,19 @@ export class WebGpuDevice extends Device<GPUCanvasContext> {
     return new WebGpuBuffer(this, options)
   }
 
+  /**
+   * Creates an untracked shader module that is owned by the caller
+   */
   public createWgslModule(options: WebGpuShaderOptions): WebGpuShaderModule {
-    return new WebGpuShaderModule(this, {
-      ...options,
-      ...{ [RefCounterKey]: getRefCounter(options) || createRefCounter() },
-    })
+    return new WebGpuShaderModule(this, options)
   }
 
   public createShaderModule(options: ShaderModuleOptions): WebGpuShaderModule {
+    const result = this.shaders.track(this.allocShaderModule(options))
+    return this.claim(result, options.scope)
+  }
+
+  private allocShaderModule(options: ShaderModuleOptions): WebGpuShaderModule {
     if (!options || !('wgsl' in options)) {
       throw new Error('Only WGSL shader code is supported in WebGPU')
     }
@@ -279,16 +295,13 @@ export class WebGpuDevice extends Device<GPUCanvasContext> {
     const fConst = typeof options.wgsl === 'string' ? null : options.wgsl.fragmentConstants
     const vConst = typeof options.wgsl === 'string' ? null : options.wgsl.vertexConstants
     const cConst = typeof options.wgsl === 'string' ? null : options.wgsl.computeConstants
-    const result = this.createWgslModule({
+    return this.createWgslModule({
       name: options.name,
       code,
       fragmentConstants: fConst,
       vertexConstants: vConst,
       computeConstants: cConst,
-      ...{ [RefCounterKey]: getRefCounter(options) || createRefCounter() },
     })
-    this.shaders.track(result)
-    return result
   }
 
   public getSampler(state: SamplerState): WebGpuSampler {
@@ -299,12 +312,8 @@ export class WebGpuDevice extends Device<GPUCanvasContext> {
   }
 
   public createTexture(options: TextureOptions): WebGpuTexture {
-    const result = new WebGpuTexture(this, {
-      ...options,
-      ...{ [RefCounterKey]: getRefCounter(options) || createRefCounter() },
-    })
-    this.textures.track(result)
-    return result
+    const result = this.textures.track(new WebGpuTexture(this, { ...options }))
+    return this.claim(result, options.scope)
   }
 
   public createRenderTarget(options: TextureOptions): WebGpuTexture {
@@ -337,12 +346,8 @@ export class WebGpuDevice extends Device<GPUCanvasContext> {
     }
 
     const key = this.createWgslModuleKey(options.wgsl)
-    return this.shaders.retainOrCreate(key, (ref) => {
-      return this.createShaderModule({
-        ...options,
-        ...{ [RefCounterKey]: ref },
-      })
-    })
+    const result = this.shaders.get(key) || this.shaders.share(key, this.allocShaderModule(options))
+    return this.claim(result, options.scope)
   }
 
   public createWgslModuleKey(wgsl: WgslModuleSource | string) {
@@ -358,21 +363,14 @@ export class WebGpuDevice extends Device<GPUCanvasContext> {
       throw new Error('key is required for acquiring texture from pool')
     }
 
-    let result: WebGpuTexture
-    if (options.throwIfMissing) {
-      result = this.textures.retainOrThrow(key)
-    } else {
-      result = this.textures.retainOrCreate(key, (ref) => {
-        return this.createTexture({
-          ...options,
-          ...{ [RefCounterKey]: ref },
-        })
-      })
+    let result = this.textures.get(key)
+    if (!result) {
+      if (options.throwIfMissing) {
+        throw new Error(`Texture not found for key: ${getKeyName(key)}`)
+      }
+      result = this.textures.share(key, new WebGpuTexture(this, { ...options }))
     }
-    if (options.transient) {
-      result.ref.release()
-    }
-    return result
+    return this.claim(result, options.scope)
   }
 
   public createGpuTimer(options?: GpuTimerOptions): GpuTimer {
@@ -452,6 +450,9 @@ export class WebGpuDevice extends Device<GPUCanvasContext> {
 
   public dispose() {
     this.scheduler.dispose()
+    this.scope.dispose()
+    this.textures.finalizeAll()
+    this.shaders.finalizeAll()
     this.resizeObserver?.disconnect()
     this.timers.destroy()
     this.context.unconfigure()
@@ -499,12 +500,6 @@ function getOrCreateContext(
   }
 
   return context
-}
-
-function createRefCounter() {
-  const ref = referenceCounter()
-  ref.onZero(() => ref.finalize())
-  return ref
 }
 
 function adapterOptionsGetter(options: WebGpuDeviceOptions): () => GPURequestAdapterOptions {

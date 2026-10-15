@@ -10,8 +10,7 @@ import {
 import {
   createTextureSource,
   isCompressedFaceData,
-  RefCounterKey,
-  type ReferenceCounter,
+  ResourceOwnerSet,
   Texture,
   type TextureOptions,
   TextureSource,
@@ -42,7 +41,7 @@ export class WebglTexture extends Texture implements WebglResource<WebGLTexture 
   public readonly isRenderTarget: boolean
   public readonly isMultisampled: boolean
   public readonly isRenderBuffer: boolean
-  public readonly ref: ReferenceCounter
+  public readonly owners: ResourceOwnerSet
 
   /**
    * Constructs an instance of a Texture.
@@ -51,14 +50,11 @@ export class WebglTexture extends Texture implements WebglResource<WebGLTexture 
     super()
     this.device = device
 
-    this.ref = options[RefCounterKey] || null
-    if (this.ref) {
-      this.ref.retain()
-      this.ref.onFinalize(() => {
-        this.unbindSource()
-        this.finalize()
-      })
-    }
+    this.owners = new ResourceOwnerSet(this)
+    this.owners.onFinalize(() => {
+      this.unbindSource()
+      this.finalize()
+    })
 
     options.sampleCount ??= 1
     options.generateMipmap ??= !!options.source
@@ -122,14 +118,10 @@ export class WebglTexture extends Texture implements WebglResource<WebGLTexture 
   }
 
   /**
-   * Releases all resources and notifies the device that the texture is being destroyed.
+   * Immediately releases the GPU resources of this texture, regardless of its owners.
    */
   public dispose(): void {
-    if (this.ref) {
-      this.ref.release()
-    } else {
-      this.finalize()
-    }
+    this.owners.finalize()
   }
 
   public async readPixels(

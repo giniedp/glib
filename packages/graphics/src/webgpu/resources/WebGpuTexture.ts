@@ -10,12 +10,10 @@ import {
   CompressedFaceData,
   createTextureSource,
   isCompressedFaceData,
-  RefCounterKey,
+  ResourceOwnerSet,
   Texture,
   TextureSource,
   TextureUsage,
-  type ReferenceCounted,
-  type ReferenceCounter,
   type TextureOptions,
   type TextureView,
 } from '../../resources'
@@ -27,7 +25,7 @@ import type { WebGpuDevice } from '../WebGpuDevice'
  *
  * @public
  */
-export class WebGpuTexture extends Texture implements GpuResource<GPUTexture>, ReferenceCounted {
+export class WebGpuTexture extends Texture implements GpuResource<GPUTexture> {
   /**
    * The graphics device
    */
@@ -36,7 +34,7 @@ export class WebGpuTexture extends Texture implements GpuResource<GPUTexture>, R
   public readonly isRenderTarget: boolean
   public readonly isMultisampled: boolean
 
-  public readonly ref: ReferenceCounter = null
+  public readonly owners: ResourceOwnerSet
   public readonly gpuObject: GPUTexture
   public readonly gpuFormat: GPUTextureFormat
   public readonly gpuDimension: GPUTextureDimension
@@ -50,14 +48,11 @@ export class WebGpuTexture extends Texture implements GpuResource<GPUTexture>, R
     super()
     this.device = device as WebGpuDevice
 
-    this.ref = options[RefCounterKey] || null
-    if (this.ref) {
-      this.ref.retain()
-      this.ref.onFinalize(() => {
-        this.unbindSource()
-        this.finalize()
-      })
-    }
+    this.owners = new ResourceOwnerSet(this)
+    this.owners.onFinalize(() => {
+      this.unbindSource()
+      this.finalize()
+    })
 
     options.sampleCount ??= 1
     options.generateMipmap ??= !!options.source
@@ -132,14 +127,10 @@ export class WebGpuTexture extends Texture implements GpuResource<GPUTexture>, R
   }
 
   /**
-   * Releases all resources and notifies the device that the texture is being destroyed.
+   * Immediately releases the GPU resources of this texture, regardless of its owners.
    */
   public dispose(): void {
-    if (this.ref) {
-      this.ref.release()
-    } else {
-      this.finalize()
-    }
+    this.owners.finalize()
   }
 
   private finalize(): void {

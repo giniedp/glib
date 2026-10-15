@@ -2,7 +2,9 @@ import type { Device } from '../Device'
 import type { RenderEncoder } from '../RenderEncoder'
 import {
   ProgramInputBlock,
+  ResourceOwnerSet,
   ShaderModule,
+  type Ownable,
   type Program,
   type ProgramOptions,
   type ShaderModuleOptions,
@@ -66,11 +68,16 @@ export interface EffectOptions {
  * @public
  *
  */
-export class Effect implements Disposable {
+export class Effect implements Disposable, Ownable {
   /**
    * The graphics device
    */
   public readonly device: Device
+
+  /**
+   * The owners of this effect
+   */
+  public readonly owners: ResourceOwnerSet = new ResourceOwnerSet(this)
 
   /**
    * The name of the effect
@@ -135,6 +142,11 @@ export class Effect implements Disposable {
 
   protected disposables: Disposable[] = []
 
+  /**
+   * The shader module acquired by this effect, if not passed in as an instance
+   */
+  protected shader: ShaderModule | null = null
+
   public constructor(device: Device, options: EffectOptions) {
     this.device = device
     this.name = options.name
@@ -154,9 +166,8 @@ export class Effect implements Disposable {
     if (shaderOptions instanceof ShaderModule) {
       return shaderOptions.program.clone(options)
     }
-    const shader = this.device.acquireShaderModule(shaderOptions)
-    this.disposables.push(shader)
-    return shader.program.clone(options)
+    this.shader = this.device.acquireShaderModule(shaderOptions)
+    return this.shader.program.clone(options)
   }
 
   /**
@@ -310,11 +321,28 @@ export class Effect implements Disposable {
     }
   }
 
+  /**
+   * The acquired shader module is owned together with this effect
+   */
+  public ownedChildren(): Iterable<Ownable> {
+    return this.shader ? [this.shader] : []
+  }
+
+  /**
+   * Disposes the program bindings and releases this effect from all owners.
+   *
+   * @remarks
+   * The acquired shader module is shared and is not disposed.
+   * It lives as long as a scope owns it, or until the device is disposed if it was acquired without a scope.
+   */
   public dispose(): void {
     this.program.dispose()
     for (const disposable of this.disposables) {
       disposable.dispose()
     }
     this.disposables = []
+    for (const owner of Array.from(this.owners)) {
+      owner.release(this)
+    }
   }
 }

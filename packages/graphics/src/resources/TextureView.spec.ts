@@ -111,31 +111,31 @@ function runContract(createDevice: () => Device, createProgram: (device: Device)
   }
 
   it('caches views by range', () => {
-    expect(texture.subresource({ baseMipLevel: 1, mipLevelCount: 1 })).toBe(
-      texture.subresource({ baseMipLevel: 1, mipLevelCount: 1 }),
+    expect(texture.subresource(1, 1)).toBe(
+      texture.subresource(1, 1),
     )
-    expect(texture.subresource({ baseMipLevel: 1 }).mipLevelCount).toBe(2)
-    expect(texture.subresource({}).isFullRange).toBe(true)
-    expect(() => texture.subresource({ baseMipLevel: 2, mipLevelCount: 2 })).toThrow()
+    expect(texture.subresource(1).mipLevelCount).toBe(2)
+    expect(texture.subresource(0).isFullRange).toBe(true)
+    expect(() => texture.subresource(2, 2)).toThrow()
   })
 
   it('samples the base level of the view', async () => {
     for (let level = 0; level < LEVEL_COLORS.length; level++) {
-      draw(texture.subresource({ baseMipLevel: level, mipLevelCount: 1 }), output)
+      draw(texture.subresource(level, 1), output)
       expect(await readOutput()).toEqual(LEVEL_COLORS[level])
     }
   })
 
   it('restores the full range when bound as texture', async () => {
-    draw(texture.subresource({ baseMipLevel: 2, mipLevelCount: 1 }), output)
+    draw(texture.subresource(2, 1), output)
     draw(texture, output)
     expect(await readOutput()).toEqual(LEVEL_COLORS[0])
   })
 
   it('samples one mip level while rendering into another mip level of the same texture', async () => {
     // copy level 1 into level 2
-    draw(texture.subresource({ baseMipLevel: 1, mipLevelCount: 1 }), texture, 2)
-    draw(texture.subresource({ baseMipLevel: 2, mipLevelCount: 1 }), output)
+    draw(texture.subresource(1, 1), texture, 2)
+    draw(texture.subresource(2, 1), output)
     expect(await readOutput()).toEqual(LEVEL_COLORS[1])
   })
 }

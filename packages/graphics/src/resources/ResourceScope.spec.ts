@@ -6,18 +6,18 @@ describe('ResourceScope', () => {
   interface DummyResource extends Ownable {
     name: string
     children: DummyResource[]
-    onEmpty: ReturnType<typeof vi.fn>
+    onEmpty: ReturnType<typeof vi.fn<() => void>>
   }
 
   function makeResource(name: string, options?: { scope?: ResourceScope; children?: DummyResource[] }): DummyResource {
     const resource = {
       name,
       children: options?.children || [],
-      onEmpty: vi.fn(),
-      ownedChildren() {
+      onEmpty: vi.fn<() => void>(),
+      ownedChildren(this: DummyResource) {
         return this.children
       },
-    } as DummyResource & { owners: ResourceOwnerSet }
+    } as unknown as DummyResource & { owners: ResourceOwnerSet }
     resource.owners = new ResourceOwnerSet(resource, options?.scope)
     resource.owners.onEmpty(resource.onEmpty)
     options?.scope?.adopt(resource)

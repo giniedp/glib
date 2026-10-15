@@ -1,13 +1,15 @@
 import type { Device } from '../Device'
 import { ShaderConstants } from '../states'
 import type { Program } from './Program'
+import type { Ownable, ResourceOwnerSet } from './ResourceOwnerSet'
+import type { ResourceScopeOption } from './ResourceScope'
 
 export type ShaderModuleOptions = WgslModuleOptions | GlslModuleOptions
-export interface WgslModuleOptions {
+export interface WgslModuleOptions extends ResourceScopeOption {
   name?: string
   wgsl: string | WgslModuleSource
 }
-export interface GlslModuleOptions {
+export interface GlslModuleOptions extends ResourceScopeOption {
   name?: string
   glsl: GlslModuleSource
 }
@@ -24,11 +26,16 @@ export type GlslModuleSource = {
   fragment: string
 }
 
-export abstract class ShaderModule {
+export abstract class ShaderModule implements Ownable {
   /**
    * The graphics device
    */
   public abstract readonly device: Device
+
+  /**
+   * The owners of this shader module
+   */
+  public abstract readonly owners: ResourceOwnerSet
 
   /**
    * The default program bindings for this shader module.
@@ -36,7 +43,7 @@ export abstract class ShaderModule {
   public abstract readonly program: Program
 
   /**
-   * Releases GPU resources associated with this program.
+   * Immediately releases GPU resources associated with this program, regardless of its owners.
    */
   public abstract dispose(): void
 

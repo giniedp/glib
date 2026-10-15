@@ -1,34 +1,50 @@
-import { referenceCounter, type ReferenceCounter } from './ReferenceCounter'
+import type { FrameFn } from '../FrameScheduler'
+import type { Ownable } from './ResourceOwnerSet'
 
-export type ResourceKey = any & { ref?: never }
-export interface ReferenceCounted {
-  ref: ReferenceCounter
-}
+export type ResourceKey = any & { owners?: never }
 
-export interface ResourceTracker<T extends ReferenceCounted> {
-  [Symbol.iterator](): IterableIterator<T>
+export interface ResourceTrackerOptions {
   /**
-   * Adds a resource to the collection and removes when it is finalized.
+   * Number of frames a shared resource without owners is kept alive before it is finalized.
+   * A resource that is acquired again within this time is revived instead of recreated.
    *
    * @remarks
-   * The resource must have a reference counter.
+   * Defaults to 60. A value of 0 finalizes the resource immediately.
    */
-  track(resource: T): void
+  keepAliveFrames?: number
+  /**
+   * Schedules the per frame collection of stale resources
+   */
+  scheduler?: { schedule(fn: FrameFn<void>): unknown }
+}
+
+export interface ResourceTracker<T extends Ownable> {
+  [Symbol.iterator](): IterableIterator<T>
+  /**
+   * Tracks an exclusive resource. The resource is finalized as soon as it has no owners.
+   */
+  track(resource: T): T
 
   /**
-   * Retains a resource from the collection if it exists, otherwise creates a new one using the provided factory function.
-   *
-   * @param key
-   * @param factory
+   * Tracks a shared resource under the given key.
+   * The resource is kept alive for {@link ResourceTrackerOptions.keepAliveFrames} after it has no owners.
    */
-  retainOrCreate(key: ResourceKey, factory: (ref: ReferenceCounter) => T): T
+  share(key: ResourceKey, resource: T): T
 
   /**
-   * Retains a resource from the collection if it exists, otherwise throws an exception
-   *
-   * @param key
+   * Gets a shared resource by key, including stale resources.
    */
-  retainOrThrow(key: ResourceKey): T
+  get(key: ResourceKey): T | null
+
+  /**
+   * Advances the keep alive counter of stale resources by one frame and finalizes the expired ones
+   */
+  collect(): void
+
+  /**
+   * Finalizes all tracked resources
+   */
+  finalizeAll(): void
 
   /**
    * The number of tracked resources
@@ -36,78 +52,89 @@ export interface ResourceTracker<T extends ReferenceCounted> {
   readonly count: number
 
   /**
-   * The number of stale resources (ref count zero, not finalized)
+   * The number of stale resources (no owners, not finalized)
    */
   readonly staleCount: number
 }
 
-export function createResourceTracker<T extends ReferenceCounted>(): ResourceTracker<T> {
+export function createResourceTracker<T extends Ownable>(options?: ResourceTrackerOptions): ResourceTracker<T> {
+  const keepAliveFrames = options?.keepAliveFrames ?? 60
+  const scheduler = options?.scheduler
   const set = new Set<T>()
-  const stale = new Set<ReferenceCounter>()
+  const stale = new Map<T, number>()
   const shared = new Map<ResourceKey, T>()
+  let isScheduled = false
+
+  function add(resource: T) {
+    if (!resource.owners) {
+      throw new Error('Resource must have an owner set')
+    }
+    set.add(resource)
+    resource.owners.onRevive(() => stale.delete(resource))
+    resource.owners.onFinalize(() => {
+      set.delete(resource)
+      stale.delete(resource)
+    })
+  }
+
+  function collect() {
+    for (const [resource, frames] of Array.from(stale)) {
+      if (frames <= 1) {
+        resource.owners.finalize()
+      } else {
+        stale.set(resource, frames - 1)
+      }
+    }
+  }
+
+  function scheduleCollect() {
+    if (isScheduled || !scheduler) {
+      return
+    }
+    isScheduled = true
+    scheduler.schedule((ctx) => {
+      collect()
+      if (stale.size === 0) {
+        isScheduled = false
+        ctx.complete()
+      }
+    })
+  }
+
   return {
     [Symbol.iterator]() {
       return set.values()
     },
     track(resource: T) {
-      if (!resource.ref) {
-        throw new Error('Resource must have a reference counter')
-      }
-      set.add(resource)
-      resource.ref.onZero(() => stale.add(resource.ref))
-      resource.ref.onRevive(() => stale.delete(resource.ref))
-      resource.ref.onFinalize(() => {
-        set.delete(resource)
-        stale.delete(resource.ref)
-      })
+      add(resource)
+      resource.owners.onEmpty(() => resource.owners.finalize())
+      return resource
     },
-    retainOrThrow(key: ResourceKey): T {
+    share(key: ResourceKey, resource: T) {
       if (shared.has(key)) {
-        const result = shared.get(key)
-        result.ref.retain()
-        return result
+        throw new Error(`Resource already exists for key: ${getKeyName(key)}`)
       }
-      throw new Error(`Resources not found for key: ${getKeyName(key)}`)
-    },
-    retainOrCreate(key: ResourceKey, factory: (ref: ReferenceCounter) => T): T | null {
-      if (shared.has(key)) {
-        const result = shared.get(key)
-        result.ref.retain()
-        return result
-      }
-
-      let timeout: any
-      function scheduleFinalize() {
-        timeout ||= setTimeout(() => {
-          ref.finalize()
-          timeout = null
-        })
-      }
-      function cancelFinalize() {
-        if (timeout) {
-          clearTimeout(timeout)
-          timeout = null
+      add(resource)
+      shared.set(key, resource)
+      resource.owners.onFinalize(() => shared.delete(key))
+      resource.owners.onEmpty(() => {
+        if (keepAliveFrames <= 0) {
+          resource.owners.finalize()
+        } else {
+          stale.set(resource, keepAliveFrames)
+          scheduleCollect()
         }
+      })
+      return resource
+    },
+    get(key: ResourceKey): T | null {
+      return shared.get(key) || null
+    },
+    collect,
+    finalizeAll() {
+      for (const resource of Array.from(set)) {
+        resource.owners.finalize()
       }
-
-      const ref = referenceCounter()
-      ref.onZero(() => {
-        stale.add(ref)
-        scheduleFinalize()
-      })
-      ref.onRevive(() => {
-        stale.delete(ref)
-        cancelFinalize()
-      })
-      ref.onFinalize(() => {
-        set.delete(result)
-        stale.delete(ref)
-        shared.delete(key)
-        cancelFinalize()
-      })
-      const result = factory(ref)
-      shared.set(key, result)
-      return result
     },
     get count() {
       return set.size
@@ -118,7 +145,7 @@ export function createResourceTracker<T extends ReferenceCounted>(): ResourceTra
   }
 }
 
-function getKeyName(key: any): string {
+export function getKeyName(key: any): string {
   if (typeof key === 'function') {
     return key.name || '(anonymous)'
   } else if (typeof key === 'string') {

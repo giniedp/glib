@@ -1,10 +1,8 @@
 import { InputValueType } from './ProgramInput'
-import { Texture } from './Texture'
 
 export type InputAccessor<Values extends Record<string, InputValueType>> = {
   get<K extends keyof Values, V = Values[K]>(name: K): V | null
   set<K extends keyof Values>(name: K, value: Values[K]): void
-  dispose(): void
 }
 
 export function inputAccessor<Values extends Record<string, InputValueType>>(
@@ -23,25 +21,7 @@ export function inputAccessor<Values extends Record<string, InputValueType>>(
       if (values[name] === value) {
         return
       }
-      const old = values[name]
-      if (value instanceof Texture) {
-        value.ref.retain()
-      }
-      if (old instanceof Texture) {
-        old.ref.release()
-      }
       values[name] = value
-    },
-  })
-  Object.defineProperty(target, 'dispose', {
-    enumerable: false,
-    value: function (): void {
-      for (const key in values) {
-        const value = values[key]
-        if (value instanceof Texture) {
-          value.ref.release()
-        }
-      }
     },
   })
   return values as any

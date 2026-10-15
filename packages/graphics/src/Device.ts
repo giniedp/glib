@@ -4,6 +4,8 @@ import type { Capabilities } from './Capabilities'
 import { FrameFn, FrameScheduler, FrameTask } from './FrameScheduler'
 import type { GpuTimer, GpuTimerOptions } from './GpuTimer'
 import { RenderEncoder } from './RenderEncoder'
+import type { Ownable } from './resources/ResourceOwnerSet'
+import { ResourceScope } from './resources/ResourceScope'
 import type {
   AcquireTextureOptions,
   Buffer,
@@ -113,6 +115,47 @@ export abstract class Device<C extends GPUCanvasContext | WebGL2RenderingContext
    * @public
    */
   public abstract readonly output: DeviceOutput
+
+  /**
+   * The global resource scope.
+   *
+   * @remarks
+   * Resources created or acquired without a scope are implicitly owned by this scope.
+   * The first other scope that owns such a resource takes over the ownership.
+   * Resources that are explicitly owned by this scope stay alive until the device is disposed.
+   * @public
+   */
+  public readonly scope = new ResourceScope('global')
+
+  /**
+   * Creates a resource scope as a child of the global scope
+   *
+   * @remarks
+   * Pass the scope to `create*` and `acquire*` methods, or call {@link ResourceScope.own},
+   * to tie the lifetime of resources to the scope.
+   * @public
+   */
+  public createScope(name?: string): ResourceScope {
+    return this.scope.createScope(name)
+  }
+
+  /**
+   * Assigns the ownership of a freshly created or acquired resource
+   *
+   * @remarks
+   * - With a scope, the scope owns the resource.
+   * - Without a scope, a resource that has no owners is implicitly owned by the global scope.
+   *   An acquired resource that is already owned keeps its owners.
+   */
+  protected claim<T extends Ownable>(resource: T, scope?: ResourceScope | null): T {
+    if (scope) {
+      return scope.own(resource)
+    }
+    if (resource.owners.setDefault(this.scope)) {
+      this.scope.adopt(resource)
+    }
+    return resource
+  }
 
   /**
    * Resets render state, executes the callback with a render encoder, and submits pending commands

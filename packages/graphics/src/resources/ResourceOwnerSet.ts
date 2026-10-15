@@ -7,6 +7,14 @@ export interface ResourceOwner {
    */
   readonly name: string
   /**
+   * Takes ownership of the given resource
+   */
+  own<T extends Ownable>(resource: T): T
+  /**
+   * Releases the ownership of the given resource
+   */
+  release(resource: Ownable): void
+  /**
    * Called by the owner set when this owner loses the resource without releasing it,
    * e.g. when it is displaced as default owner or the resource is finalized.
    *
@@ -126,6 +134,25 @@ export class ResourceOwnerSet implements Iterable<ResourceOwner> {
       displaced.detach(this.target)
     }
     if (wasEmpty && this.wasEmptied) {
+      trigger(this.onReviveHandlers)
+    }
+    return true
+  }
+
+  /**
+   * Sets the implicit default owner of a resource that has no owners.
+   *
+   * @returns true if the default owner was set
+   */
+  public setDefault(owner: ResourceOwner): boolean {
+    if (this.finalized) {
+      throw new Error(`Can not set default owner '${owner.name}' of a finalized resource`)
+    }
+    if (this.size > 0) {
+      return false
+    }
+    this.implicit = owner
+    if (this.wasEmptied) {
       trigger(this.onReviveHandlers)
     }
     return true

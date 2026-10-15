@@ -1,6 +1,17 @@
 import type { Ownable, ResourceOwner } from './ResourceOwnerSet'
 
 /**
+ * Option for device resource creation
+ */
+export interface ResourceScopeOption {
+  /**
+   * The scope that should own the created or acquired resource.
+   * If omitted, the resource is owned by the global scope of the device.
+   */
+  scope?: ResourceScope | null
+}
+
+/**
  * Owns resources and releases them all at once when disposed.
  *
  * @remarks
