@@ -27,7 +27,7 @@ import { mount } from 'tweak-ui'
 export default (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
   const game = new Game({ canvas, platform })
 
-  mount(tools, (ui) => {
+  const panel = mount(tools, (ui) => {
     ui.graph({
       rows: [
         {
@@ -46,7 +46,10 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement, platform: Platfor
     })
   })
   game.run()
-  return () => game.destroy()
+  return () => {
+    game.destroy()
+    panel.dispose()
+  }
 }
 
 const WORLD_SIZE = 64
