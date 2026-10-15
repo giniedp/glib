@@ -528,13 +528,16 @@ export class IllumMaterial extends MaterialWithSchema(SCHEMA) {
       let opacity = attrs.Opacity ?? 1
       this.DecalDiffuseOpacity = opacity
       this.DiffuseColor.w = opacity
-      this.isTransparent = !this.EnabledAlphaTest
+      // decals always blend (illum.cfx %DECAL: ZWriteEnable = false), the alpha test only discards faint pixels
+      this.isTransparent = !this.EnabledAlphaTest || flags.has('DECAL')
       this.EnabledAlphaBlend = TRUE
       this.effect.blendState = BlendState.Alpha
       this.effect.depthState = DepthState.GreaterEqualNoWrite
       if (flags.has('DECAL')) {
         // decals are coplanar with the surface below, pull them towards the camera to avoid z-fighting
         this.effect.offsetState = DECAL_DEPTH_BIAS
+        // keep the linear depth of the surface below (render target 1), AO, fog and soft particles read it
+        this.effect.renderMasks = [null, 0]
       }
     }
 

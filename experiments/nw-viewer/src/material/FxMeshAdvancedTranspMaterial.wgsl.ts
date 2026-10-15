@@ -122,6 +122,8 @@ struct MaterialBlock {
 
 @group(2) @binding(1) var samplerLinear      : sampler;
 @group(2) @binding(2) var samplerPoint       : sampler;
+// sampler of the source map, clamps for rotating texture modifiers
+@group(2) @binding(3) var samplerSource      : sampler;
 
 // @block view
 @group(1) @binding(4) var sceneDepthMap  : texture_2d<f32>;
@@ -229,7 +231,7 @@ fn vs_main(input: VertexInput) -> FragmentInput {
   // --- UV MOD
   var uvBase = vec4f(input.texture.xy, 0.0, 1.0);
   if (material.enabledUvModDiffuse == TRUE) {
-    uvBase = uvBase * material.uvModDiffuse;
+    uvBase = material.uvModDiffuse * uvBase;
   }
 
   var output: FragmentInput;
@@ -270,7 +272,7 @@ fn fs_main(input: FragmentInput) -> FragmentOutput {
     material.source2dSpeedY * time + material.source2dPhaseY,
   );
   let sdfStrength = select(0.0, material.sdf2dStrength, USE_SDF_2D);
-  let sourceMap = textureSample(diffuseMap2, samplerLinear, uvSource + vec2f(sdf2d * sdfStrength));
+  let sourceMap = textureSample(diffuseMap2, samplerSource, uvSource + vec2f(sdf2d * sdfStrength));
 
   var data = vec4f(
     sourceMap.rgb,

@@ -112,6 +112,12 @@ export class Effect implements Disposable {
    */
   public offsetState: DepthBiasState | null
 
+  /**
+   * Color write masks per render target index to be enabled on `apply` (GPUColorWrite flags, 0 disables writing).
+   * Targets without an entry are not changed. Restored to write all on `restoreState`.
+   */
+  public renderMasks: ReadonlyArray<number | null | undefined> | null = null
+
   public get isReady() {
     return this.program.isCompiled
   }
@@ -212,6 +218,13 @@ export class Effect implements Disposable {
     } else {
       restore.cullState = null
     }
+    if (this.renderMasks) {
+      for (let i = 0; i < this.renderMasks.length; i++) {
+        if (this.renderMasks[i] != null) {
+          pass.setRenderMask(i, this.renderMasks[i])
+        }
+      }
+    }
     pass.setProgram(this.program)
   }
 
@@ -241,6 +254,13 @@ export class Effect implements Disposable {
     }
     if (restore.cullState) {
       pass.setCullState(restore.cullState)
+    }
+    if (this.renderMasks) {
+      for (let i = 0; i < this.renderMasks.length; i++) {
+        if (this.renderMasks[i] != null) {
+          pass.setRenderMask(i, 0xf)
+        }
+      }
     }
   }
 

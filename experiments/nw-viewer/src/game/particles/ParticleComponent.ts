@@ -7,7 +7,7 @@ import { forEachParticleEffect, isParticleEffectImmortal, type ParticleEffect, t
 import { ViewerConfig } from '../../config'
 import { PARTICLE_INSTANCE_FLOATS, ParticleEmitter, type ParticleCamera, type ParticleLocation } from './ParticleEmitter'
 import { ParticleMaterial } from './ParticleMaterial'
-import { ParticleSystem, type ParticleUpdatable } from './ParticleSystem'
+import { ParticleSystem, type ParticleSdf2D, type ParticleUpdatable } from './ParticleSystem'
 
 export type ParticleComponentState = 'idle' | 'loading' | 'ready' | 'skipped' | 'failed'
 
@@ -153,18 +153,27 @@ export class ParticleComponent implements GameComponent, ParticleUpdatable {
         }
       }
     })
-    const textures = await Promise.all(sprites.map((p) => this.system.loadSpriteTexture(p.texture, p.material)))
+    const [textures, sdfs, colors] = await Promise.all([
+      Promise.all(sprites.map((p) => this.system.loadSpriteTexture(p.texture, p.material))),
+      Promise.all(sprites.map((p) => this.system.loadSpriteSdf(p.material))),
+      Promise.all(sprites.map((p) => this.system.loadSpriteDiffuseColor(p.material))),
+    ])
     if (!this.entity || this.entity.isDestroyed) {
       return
     }
-    this.build(sprites, textures)
+    this.build(sprites, textures, sdfs, colors)
     this.state = 'ready'
     if (this.isActive) {
       this.system.register(this)
     }
   }
 
-  private build(sprites: ParticleParams[], textures: Array<Texture | null>) {
+  private build(
+    sprites: ParticleParams[],
+    textures: Array<Texture | null>,
+    sdfs: Array<ParticleSdf2D | null>,
+    colors: Array<[number, number, number]>,
+  ) {
     const device = this.entity.service(Device)
     this.updateLocation()
     const spawn = {
@@ -201,6 +210,7 @@ export class ParticleComponent implements GameComponent, ParticleUpdatable {
               iAxisX: { type: 'float32x4', byteOffset: 16 },
               iAxisY: { type: 'float32x4', byteOffset: 32 },
               iColor: { type: 'float32x4', byteOffset: 48 },
+              iExtra: { type: 'float32x4', byteOffset: 64 },
             },
             instanced: true,
             stride: PARTICLE_INSTANCE_FLOATS * 4,
@@ -211,7 +221,7 @@ export class ParticleComponent implements GameComponent, ParticleUpdatable {
         instanceCount: 0,
       })
       geometries.push(geometry)
-      materials.push(new ParticleMaterial(device, sprites[i], texture))
+      materials.push(new ParticleMaterial(device, sprites[i], texture, sdfs[i], colors[i]))
       this.slots.push({ emitter, geometry, data })
     }
     if (!this.slots.length) {

@@ -114,6 +114,12 @@ export interface ParticleParams {
   textureTiling: TextureTiling
   softParticle: boolean
   softness: number
+  /**
+   * CameraNonFacingFade: fades sprites that are not camera facing by the angle to the camera,
+   * alpha *= curve(|dot(to camera, sprite normal)|)
+   */
+  cameraNonFacingFade: boolean
+  cameraNonFacingFadeCurve: ParticleCurve | null
   alpha: VarParam
   color: ColorParam
 
@@ -344,6 +350,7 @@ export function readParticleParams(attrs: Record<string, string>, group: Particl
   const shape = isGpu ? parseEnum(a.EmitterGpuShape, SHAPES, 'ANGLE') : parseEnum(a.EmitterShape, SHAPES, 'ANGLE')
   const isGroup = parseBool(a.Group, false)
   const soft = parseTypeInfo(a.SoftParticle)
+  const nonFacingFade = parseTypeInfo(a.CameraNonFacingFade)
   const air = parseTypeInfo(a.AirResistance)
   const stretch = parseTypeInfo(a.LocalStretch ?? a.Stretch)
 
@@ -395,6 +402,8 @@ export function readParticleParams(attrs: Record<string, string>, group: Particl
     textureTiling: parseTiling(a.TextureTiling),
     softParticle: parseBool(soft.base, false),
     softness: parseNumber(soft.named.Softness, 1),
+    cameraNonFacingFade: parseBool(nonFacingFade.base, false),
+    cameraNonFacingFadeCurve: parseCurve(nonFacingFade.named.FadeCurve, 1),
     alpha: parseVarParam(a.Alpha, 1),
     color: parseColorParam(a.Color, [1, 1, 1]),
 

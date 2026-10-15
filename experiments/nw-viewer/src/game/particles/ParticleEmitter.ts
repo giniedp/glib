@@ -18,6 +18,7 @@ import {
   vec3Normalize,
   vec3Subtract,
   vec4,
+  vec4$init,
   vec4$initFrom,
   type IVec3,
   type IVec4,
@@ -34,7 +35,7 @@ const GRAVITY = -9.81
 /**
  * Number of floats per particle in the instance buffer, see ParticleMaterial.wgsl VertexInput
  */
-export const PARTICLE_INSTANCE_FLOATS = 16
+export const PARTICLE_INSTANCE_FLOATS = 20
 
 /**
  * Hard limit of particles per emitter
@@ -82,6 +83,11 @@ class Particle {
    * Velocity of the shape emitters (point, box …) added on top of the physics
    */
   public userVel = vec3()
+  /**
+   * Center of the circle and sphere emitters in world space (m_originalEmitterLocation), their velocity moves the
+   * particle around it
+   */
+  public center = vec3()
   public rot = vec4(0, 0, 0, 1)
   public rotVel = vec3()
   public angle = 0
@@ -451,6 +457,9 @@ export class ParticleEmitter {
     // to world
     const pos = vec3$initFrom(pt.pos, loc.position)
     const s = loc.scale
+    if (shape === 'CIRCLE' || shape === 'SPHERE') {
+      vec3$addScaled(vec3$initFrom(pt.center, loc.position), vec3ApplyQuat(offset, loc.rotation, tmpA), s)
+    }
     if (p.moveRelEmitter) {
       vec3$addScaled(vec3$initFrom(tmpA, offset), local, 1)
       vec3$addScaled(pos, vec3$applyQuat(tmpA, loc.rotation), s)
@@ -598,6 +607,86 @@ export class ParticleEmitter {
   /**
    * Moves a particle, see `CParticle::Move` and `CParticle::UpdateAlignment`
    */
+  /**
+   * Velocity of the circle and sphere emitters, see `CParticle::Move`. The velocity is polar around the particle center
+   * in emitter space: x moves away from the center, y along the (horizontal) circumference, z up (circle) or along the
+   * vertical circumference (sphere).
+   *
+   * @param step - velocity times the time step
+   */
+  private moveAroundCenter(pt: Particle, step: IVec3) {
+    const loc = this.location
+    // emitter space rotation, the original works in world space for particles that do not move with the emitter
+    const q = this.params.moveRelEmitter ? loc.rotation : null
+    if (q) {
+      vec3$multiplyScalar(step, loc.scale)
+    }
+    const origin = vec3Subtract(pt.pos, pt.center, tmpD)
+    if (q) {
+      vec3$applyQuat(origin, vec4$init(tmpQ2, -q.x, -q.y, -q.z, q.w))
+    }
+
+    if (this.params.emitterShape === 'SPHERE') {
+      const radius = vec3Length(origin) + step.x
+      if (radius > 0) {
+        // rotation about z by the horizontal, then about y by the vertical circumference step
+        quat$initRotationXYZ(tmpQ, 0, step.z / radius, step.y / radius)
+        vec3$multiplyScalar(vec3$normalize(vec3$applyQuat(origin, tmpQ)), radius)
+      } else {
+        vec3$multiplyScalar(vec3$normalize(origin), radius)
+      }
+    } else {
+      const radius = Math.hypot(origin.x, origin.y)
+      const newRadius = radius + step.x
+      if (radius > 0 && newRadius > 0) {
+        const x = (origin.x / radius) * newRadius
+        const y = (origin.y / radius) * newRadius
+        const angle = step.y / newRadius
+        const cos = Math.cos(angle)
+        const sin = Math.sin(angle)
+        origin.x = x * cos - y * sin
+        origin.y = x * sin + y * cos
+      }
+      origin.z += step.z
+    }
+
+    if (q) {
+      vec3$applyQuat(origin, q)
+    }
+    vec3$addScaled(vec3$initFrom(pt.pos, pt.center), origin, 1)
+  }
+
+  /**
+   * Facing "Shape" (`CParticle::GetRenderMatrix`): the sprite faces away from the emitter. Circles keep the up axis
+   * of the emitter, points and spheres face along the direction from the emitter.
+   *
+   * @returns false if the facing is undefined (the particle sits on the emitter, or a box shape), use free facing then
+   */
+  private shapeFacing(pt: Particle, vX: IVec3, vY: IVec3, vZ: IVec3): boolean {
+    const shape = this.params.emitterShape
+    if (shape !== 'CIRCLE' && shape !== 'SPHERE' && shape !== 'POINT') {
+      return false
+    }
+    const emitPos = shape === 'POINT' ? this.location.position : pt.center
+    const dir = vec3Subtract(pt.pos, emitPos, vY)
+    if (vec3Length(dir) < 1e-6) {
+      return false
+    }
+    vec3$normalize(dir)
+    // CreateRotationVDir: y along the direction, x horizontal, z up
+    vec3$init(vX, dir.y, -dir.x, 0)
+    if (vec3Length(vX) < 1e-6) {
+      vec3$init(vX, 1, 0, 0)
+    }
+    vec3$normalize(vX)
+    if (shape === 'CIRCLE') {
+      vec3ApplyQuat(AXIS_Z, this.location.rotation, vZ)
+    } else {
+      vec3Cross(vX, vY, vZ)
+    }
+    return true
+  }
+
   private updateParticle(pt: Particle, dt: number) {
     if (dt <= 0) {
       return
@@ -616,10 +705,14 @@ export class ParticleEmitter {
         ageValue(p.velocity[1], 1, age) * curveStrength(p.velocity[1], rel) + pt.userVel.y,
         ageValue(p.velocity[2], 1, age) * curveStrength(p.velocity[2], rel) + pt.userVel.z,
       )
-      if (p.moveRelEmitter) {
-        vec3$multiplyScalar(vec3$applyQuat(move, loc.rotation), loc.scale)
+      if (shape === 'CIRCLE' || shape === 'SPHERE') {
+        this.moveAroundCenter(pt, vec3$multiplyScalar(move, dt))
+      } else {
+        if (p.moveRelEmitter) {
+          vec3$multiplyScalar(vec3$applyQuat(move, loc.rotation), loc.scale)
+        }
+        vec3$addScaled(pt.pos, move, dt)
       }
-      vec3$addScaled(pt.pos, move, dt)
     }
 
     // forces
@@ -727,6 +820,8 @@ export class ParticleEmitter {
             vec3Cross(vX, vY, vZ)
           }
         }
+      } else if (p.facing === 'Shape' && this.shapeFacing(pt, vX, vY, vZ)) {
+        // axes written by shapeFacing
       } else if (p.facing === 'CameraX') {
         vec3ApplyQuat(AXIS_Z, pt.rot, vZ)
         vec3$normalize(vec3Cross(vec3Subtract(pos, cam, vY), vZ, vX))
@@ -744,6 +839,14 @@ export class ParticleEmitter {
         vec3$initFrom(tmpE, vX)
         vec3$addScaled(vec3$multiplyScalar(vX, c), vZ, -s)
         vec3$addScaled(vec3$multiplyScalar(vZ, c), tmpE, s)
+      }
+
+      // CParticle::ApplyCameraNonFacingFade, vY is the unit sprite normal here
+      let facingFade = 1
+      if (p.cameraNonFacingFade && p.facing !== 'Camera' && p.facing !== 'Decal') {
+        const toCam = vec3$normalize(vec3Subtract(cam, pos, tmpE))
+        const dot = Math.abs(vec3Dot(toCam, vY))
+        facingFade = p.cameraNonFacingFadeCurve ? Math.max(0, p.cameraNonFacingFadeCurve.value(dot)) : dot
       }
 
       // size, the engine stores the y size as particle size and the x size as aspect
@@ -825,7 +928,7 @@ export class ParticleEmitter {
 
       // color and alpha
       colorValue(tmpColor, p.color, pt.color, age, pt.lerp)
-      const alpha = ageValue(p.alpha, pt.alpha, age, pt.lerp) * spawn.alphaScale
+      const alpha = ageValue(p.alpha, pt.alpha, age, pt.lerp) * spawn.alphaScale * facingFade
 
       // soft particle thickness factor (1 - exp(-d * d * k))
       const thickness = Math.max(1e-3, Math.abs(size) * p.softness)
@@ -847,6 +950,11 @@ export class ParticleEmitter {
       out[o++] = tmpColor[1] * spawn.color[1]
       out[o++] = tmpColor[2] * spawn.color[2]
       out[o++] = Math.max(0, Math.min(1, alpha))
+      // relative particle age (IN.age.x of particles.cfi)
+      out[o++] = age
+      out[o++] = 0
+      out[o++] = 0
+      out[o++] = 0
     }
     return count
   }

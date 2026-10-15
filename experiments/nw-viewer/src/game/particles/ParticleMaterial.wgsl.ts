@@ -15,6 +15,16 @@ struct MaterialBlock {
   lighting : vec4f,
   // x = anim blend, y = soft particle, z = color scale, w = unused
   options  : vec4f,
+  // rgb = material diffuse color (USE_MATERIAL)
+  diffuseColor : vec4f,
+  // %SIGNED_DISTANCE_FIELD_2D, x = enabled, y = strength, zw = noise tile
+  sdf0     : vec4f,
+  // xy = noise speed, zw = noise phase
+  sdf1     : vec4f,
+  // xy = source tile, zw = source speed
+  sdf2     : vec4f,
+  // xy = source phase, zw = mask tile
+  sdf3     : vec4f,
 }
 
 // @private
@@ -26,10 +36,13 @@ struct MaterialBlock {
 
 @group(2) @binding(0) var<uniform>       material: MaterialBlock;
 @group(2) @binding(1) var samplerLinear  : sampler;
+@group(2) @binding(2) var samplerWrap    : sampler;
 
 // @block view
 @group(1) @binding(8) var sceneDepthMap : texture_2d<f32>;
 @group(3) @binding(0) var diffuseMap    : texture_2d<f32>;
+@group(3) @binding(1) var sdfNoiseMap   : texture_2d<f32>;
+@group(3) @binding(2) var sdfMaskMap    : texture_2d<f32>;
 
 struct VertexInput {
   // quad corner in -1..1
@@ -42,6 +55,8 @@ struct VertexInput {
   @location(3) iAxisY    : vec4f,
   // rgb = color, a = alpha
   @location(4) iColor    : vec4f,
+  // x = relative particle age 0..1
+  @location(5) iExtra    : vec4f,
 };
 
 struct FragmentInput {
@@ -53,6 +68,8 @@ struct FragmentInput {
   @location(3)       params   : vec2f,
   @location(4)       uvScreen : vec4f,
   @location(5)       worldPos : vec3f,
+  // relative particle age 0..1
+  @location(6)       age      : f32,
 };
 
 fn tileUv(uv: vec2f, tile: f32) -> vec2f {
@@ -78,7 +95,20 @@ fn vs_main(input: VertexInput) -> FragmentInput {
   output.params = vec2f(input.iPosition.w - frame0, input.iAxisY.w);
   output.uvScreen = clipPosToSceenUv(clipPos);
   output.worldPos = worldPos;
+  output.age = input.iExtra.x;
   return output;
+}
+
+// %SIGNED_DISTANCE_FIELD_2D (particles.cfi, FXSDFFloatDomain): the diffuse map tiles and scrolls through the sprite,
+// distorted by a scrolling noise, the sprite shape comes from the mask. The noise scrolls with the time
+// (PerFrame_Time.x), the source with the relative particle age.
+fn sampleSdfDiffuse(uv: vec2f, age: f32) -> vec4f {
+  let noiseUv = uv * material.sdf0.zw + frame.elapsedTime * material.sdf1.xy + material.sdf1.zw;
+  let sdf = textureSample(sdfNoiseMap, samplerWrap, noiseUv).x * material.sdf0.y;
+  let sourceUv = uv * material.sdf2.xy + vec2f(sdf) + age * material.sdf2.zw + material.sdf3.xy;
+  var tex = textureSample(diffuseMap, samplerWrap, sourceUv);
+  tex.a *= textureSample(sdfMaskMap, samplerLinear, uv * material.sdf3.zw).r;
+  return tex;
 }
 
 @fragment
@@ -87,6 +117,10 @@ fn fs_main(input: FragmentInput) -> FragmentOutput {
   let tex1 = textureSample(diffuseMap, samplerLinear, input.uv1);
   if (material.options.x > 0.0) {
     tex = mix(tex, tex1, input.params.x);
+  }
+  let sdfTex = sampleSdfDiffuse(input.uv0, input.age);
+  if (material.sdf0.x > 0.0) {
+    tex = sdfTex;
   }
 
   // debug views, options.w: 1 = quad coverage, 2 = texture color, 3 = texture alpha
@@ -112,7 +146,7 @@ fn fs_main(input: FragmentInput) -> FragmentOutput {
   let ambient = global.volFog2Ambient.rgb + global.fakeProbeAmbient;
   let sun = global.sunColor.rgb * mix(0.25, 0.5, material.lighting.z);
   let lit = vec3f(material.lighting.x) + (ambient + sun) * material.lighting.y;
-  var color = tex.rgb * input.color.rgb * lit * material.options.z;
+  var color = tex.rgb * material.diffuseColor.rgb * input.color.rgb * lit * material.options.z;
 
   if (material.options.y > 0.0) {
     let sceneDepth = sampleSceneDepth(input.uvScreen, sceneDepthMap);

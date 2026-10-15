@@ -199,7 +199,7 @@ export class XeGtaoPass implements RenderPass {
     const height = ctx.viewHeight
     const mipCount = Math.min(XE_GTAO_DEPTH_MIP_LEVELS, Math.floor(Math.log2(Math.max(width, height))) + 1)
 
-    this.texDepthMipsDesc ||= textureDesc('r16float')
+    this.texDepthMipsDesc ||= textureDesc('r32float')
     this.texDepthMipsDesc.width = width
     this.texDepthMipsDesc.height = height
     this.texDepthMipsDesc.mipLevelCount = mipCount

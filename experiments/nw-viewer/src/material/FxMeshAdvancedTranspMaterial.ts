@@ -17,7 +17,7 @@ import { getShaderConstants, InputBlocks, MaterialLayerMasks, type FeatureFlag }
 import SCHEMA from './FxMeshAdvancedTranspMaterial.meta'
 import WGSL from './FxMeshAdvancedTranspMaterial.wgsl'
 import type { NwMaterialProps } from './GltfExtension'
-import { TextureModifier } from './TexMod'
+import { TextureModifier, type TexMod } from './TexMod'
 import { MtlFlag } from './types'
 import { MtlUtil, paramValue, paramVec4 } from './utils'
 
@@ -163,6 +163,7 @@ export class FxMeshAdvancedTranspMaterial extends MaterialWithSchema(SCHEMA) {
   private setDefaults() {
     this.SamplerLinear = SamplerState.LinearWrap
     this.SamplerPoint = SamplerState.PointWrap
+    this.SamplerSource = SamplerState.LinearWrap
 
     this.DiffuseColor = vec4(1)
     this.EmissiveColor = vec4(0)
@@ -343,12 +344,19 @@ export class FxMeshAdvancedTranspMaterial extends MaterialWithSchema(SCHEMA) {
       this.EnabledUvModDiffuse = TRUE
       this.updateModDiffuse(0)
     }
-    // TODO: Custom maps have modifiers but doesn't look right when applied.
-    // if (TextureModifier.isModified(mods.Custom)) {
-    //   this.modDiffuse = new TextureModifier(mods.Custom)
-    //   this.EnabledUvModDiffuse = TRUE
-    //   this.updateModDiffuse(0)
-    // }
+    // _ModifyUV_1 uses the modifier of the first texture of the shader, $CustomMap (the source map) in fxmeshadvancedtransp.
+    // It moves baseTC, so the SDF lookup moves along like in the original.
+    if (!this.modDiffuse && TextureModifier.isModified(mods.Custom)) {
+      // only the animated rotation of the source map applies, its static tiling, offset, rotation and oscillators would
+      // move a single sprite (triangle_sdf of the oneway portal) off the plane
+      this.modDiffuse = new TextureModifier(rotationOnly(mods.Custom))
+      this.EnabledUvModDiffuse = TRUE
+      this.updateModDiffuse(0)
+      // a rotated single sprite (rings, glyphs, triangle) must not pull in the neighbor tiles outside of 0..1
+      if (mods.Custom.TexMod_RotateType) {
+        this.SamplerSource = SamplerState.LinearClamp
+      }
+    }
     // if (TextureModifier.isModified(mods.Heightmap)) {
     //   this.modDiffuse = new TextureModifier(mods.Heightmap)
     //   this.EnabledUvModDiffuse = TRUE
@@ -459,4 +467,17 @@ export class FxMeshAdvancedTranspMaterial extends MaterialWithSchema(SCHEMA) {
     this.modDiffuse.update(time)
     this.UvModDiffuse = this.modDiffuse.matrix
   }
+}
+
+/**
+ * The animated rotation part of a texture modifier, without tiling, offsets, static rotation and oscillators
+ */
+function rotationOnly(mod: TexMod): TexMod {
+  const result: TexMod = {}
+  for (const key in mod) {
+    if (/^TexMod_(RotateType|[UVW]Rotate(Center|Rate|Phase|Amplitude))$/.test(key)) {
+      ;(result as any)[key] = (mod as any)[key]
+    }
+  }
+  return result
 }

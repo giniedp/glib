@@ -206,7 +206,7 @@ fn vs_main(input: VertexInput) -> FragmentInput {
   var uvBase = vec4f(input.texture, 0.0, 1.0);
   var uvBaseMod = uvBase;
   if (material.enabledUvModDiffuse != 0u) {
-    uvBaseMod = uvBase * material.uvModDiffuse;
+    uvBaseMod = material.uvModDiffuse * uvBase;
   }
   // --- UV MOD EMITTANCE/EMISSIVE --
   var uvEmittance = vec4f(0.0);
@@ -214,10 +214,10 @@ fn vs_main(input: VertexInput) -> FragmentInput {
     var uv1 = uvBase;
     var uv2 = uvBase;
     if (material.enabledUvModEmittance != 0u) {
-      uv1 = uv1 * material.uvModEmittance;
+      uv1 = material.uvModEmittance * uv1;
     }
     if (material.enabledUvModDecalEmissive != 0u) {
-      uv2 = uv2 * material.uvModDecalEmissive;
+      uv2 = material.uvModDecalEmissive * uv2;
     }
     uvEmittance = vec4f(uv1.xy, uv2.xy);
   }

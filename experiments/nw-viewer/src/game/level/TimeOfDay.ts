@@ -687,6 +687,8 @@ export class TimeOfDay {
     // of the skybox preset. The mapping is unknown, so the observed exponent is used as long as fading is enabled.
     this.volFog2Zenith.x = this.getParamValue(TodParams.VOLFOG2_ZENITH_FADE_FACTOR)
     this.volFog2Zenith.y = ZENITH_FADE_CURVE_EXPONENT
+    // sGetVolumetricFogDistanceParams.w: end of the froxel ray-marching, the analytical fog continues beyond
+    this.volFog2Zenith.z = Math.max(this.getParamValue(TodParams.VOLFOG2_RANGE), 0.0001)
 
     // sGetVolumetricFogScatteringColor / SecondaryColor: sun color * albedo, anisotropy of the sun radial lobe
     const k2 = clampAnisotropy(this.getParamValue(TodParams.VOLFOG2_ANISOTROPIC2))

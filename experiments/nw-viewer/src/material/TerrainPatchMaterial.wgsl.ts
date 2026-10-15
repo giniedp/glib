@@ -190,8 +190,14 @@ fn fs_main(input: VertexOutput) -> FragmentOutput {
   // region local position in world units, kept inside the region so page lookups stay in range
   let local      = clamp(input.vWorldPos.xy - instance.regionParams.xy, vec2f(0.0), vec2f(regionSize * 0.999999));
 
-  // tangent frame, page uv runs along +x and -y
-  let tbn = getCotangentFrame(input.vWorldPos, normalize(input.vNormal), vec2f(local.x, -local.y));
+  // tangent frame, page uv runs along +x and -y. Built analytically: screen derivatives of the world position
+  // (getCotangentFrame) are f32 noise near the camera at world coordinates in the thousands
+  let n   = normalize(input.vNormal);
+  let tbn = mat3x3f(
+    normalize(vec3f(1.0, 0.0, 0.0) - n * n.x),
+    normalize(vec3f(0.0, -1.0, 0.0) + n * n.y),
+    n,
+  );
 
   // virtual texture
   let vt = vtSample(local, max(layer, 0));

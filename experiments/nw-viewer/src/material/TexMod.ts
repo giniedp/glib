@@ -33,6 +33,7 @@
 // CenterU and CenterV - Centers the texture on the model in U and V direction separately.
 
 import {
+  DEGREE_TO_RAD,
   mat4,
   type Mat4,
   mat4$initIdentity,
@@ -172,15 +173,10 @@ export class TextureModifier {
     this.applyOscillatorV(m, seconds)
 
     if (hasValues) {
-      if (mod.RotateU) {
-        mat4$premultiply(m, mat4$initRotationX(tmp, mod.RotateU))
-      }
-      if (mod.RotateV) {
-        mat4$premultiply(m, mat4$initRotationY(tmp, mod.RotateV))
-      }
-      if (mod.RotateW) {
-        mat4$premultiply(m, mat4$initRotationZ(tmp, mod.RotateW))
-      }
+      // CreateRotationX(degrees to radians)
+      premultiplyRotation(m, tmp, AXIS_X, DEGREE_TO_RAD * (mod.RotateU || 0), true)
+      premultiplyRotation(m, tmp, AXIS_Y, DEGREE_TO_RAD * (mod.RotateV || 0), true)
+      premultiplyRotation(m, tmp, AXIS_Z, DEGREE_TO_RAD * (mod.RotateW || 0), true)
 
       mat4$initIdentity(tmp)
       tmp[0] = mod.TileU ?? 1
@@ -191,68 +187,93 @@ export class TextureModifier {
     }
   }
 
+  /**
+   * Port of the rotation part of `SEfResTexture::UpdateWithModifier` (ShaderCore.cpp).
+   *
+   * The engine builds the matrix for row vectors (`uv * M`), the viewer for column vectors (`M * uv`). Each factor X
+   * of the engine chain becomes X transposed here, multiplied in the same order with premultiply.
+   */
   private applyRotation(m: Mat4, tmp: Mat4, time: number): void {
     const mod = this.mod
-    const centerU = mod.TexMod_URotateCenter || 0
-    const centerV = mod.TexMod_VRotateCenter || 0
+    // unset centers default to the texture center, sprites of the oneway portal (glyph_sdf, triangle_sdf) set none or only U
+    const centerU = mod.TexMod_URotateCenter ?? 0.5
+    const centerV = mod.TexMod_VRotateCenter ?? 0.5
 
     switch (mod.TexMod_RotateType) {
       case RotateType.Disabled:
         break
 
-      case RotateType.Fixed:
+      case RotateType.Fixed: {
+        // CreateRotationX(degrees to radians)
         mat4$initTranslationXYZ(m, -centerU, -centerV, 0)
-        if (mod.TexMod_URotateAmplitude) {
-          mat4$premultiply(m, mat4$initRotationX(tmp, mod.TexMod_URotateAmplitude))
-        }
-        if (mod.TexMod_VRotateAmplitude) {
-          mat4$premultiply(m, mat4$initRotationY(tmp, mod.TexMod_VRotateAmplitude))
-        }
-        if (mod.TexMod_WRotateAmplitude) {
-          mat4$premultiply(m, mat4$initRotationZ(tmp, mod.TexMod_WRotateAmplitude))
-        }
+        premultiplyRotation(m, tmp, AXIS_X, DEGREE_TO_RAD * (mod.TexMod_URotateAmplitude || 0), true)
+        premultiplyRotation(m, tmp, AXIS_Y, DEGREE_TO_RAD * (mod.TexMod_VRotateAmplitude || 0), true)
+        premultiplyRotation(m, tmp, AXIS_Z, DEGREE_TO_RAD * (mod.TexMod_WRotateAmplitude || 0), true)
         mat4$premultiply(m, mat4$initTranslationXYZ(tmp, centerU, centerV, 0))
         break
+      }
 
-      case RotateType.Constant:
-        const fxAmp = ((mod.TexMod_URotateAmplitude || 0) * time * Math.PI) / 180 + (mod.TexMod_URotatePhase || 0)
-        const fyAmp = ((mod.TexMod_VRotateAmplitude || 0) * time * Math.PI) / 180 + (mod.TexMod_VRotatePhase || 0)
-        const fzAmp = ((mod.TexMod_WRotateAmplitude || 0) * time * Math.PI) / 180 + (mod.TexMod_WRotatePhase || 0)
+      case RotateType.Constant: {
+        // the engine scales the time to milliseconds here (fTime *= 1000), the amplitude is degrees per millisecond.
+        // CreateRotationX(a).GetTransposed()
+        const ms = time * 1000
         mat4$initTranslationXYZ(m, -centerU, -centerV, 0)
-        if (fxAmp) {
-          mat4$premultiply(m, mat4$transpose(mat4$initRotationX(tmp, fxAmp)))
-        }
-        if (fyAmp) {
-          mat4$premultiply(m, mat4$transpose(mat4$initRotationY(tmp, fyAmp)))
-        }
-        if (fzAmp) {
-          mat4$premultiply(m, mat4$transpose(mat4$initRotationZ(tmp, fzAmp)))
-        }
+        premultiplyRotation(
+          m,
+          tmp,
+          AXIS_X,
+          DEGREE_TO_RAD * (mod.TexMod_URotateAmplitude || 0) * ms + (mod.TexMod_URotatePhase || 0),
+          false,
+        )
+        premultiplyRotation(
+          m,
+          tmp,
+          AXIS_Y,
+          DEGREE_TO_RAD * (mod.TexMod_VRotateAmplitude || 0) * ms + (mod.TexMod_VRotatePhase || 0),
+          false,
+        )
+        premultiplyRotation(
+          m,
+          tmp,
+          AXIS_Z,
+          DEGREE_TO_RAD * (mod.TexMod_WRotateAmplitude || 0) * ms + (mod.TexMod_WRotatePhase || 0),
+          false,
+        )
         mat4$premultiply(m, mat4$initTranslationXYZ(tmp, centerU, centerV, 0))
         break
+      }
 
-      case RotateType.Oscilated:
+      case RotateType.Oscilated: {
+        // amplitude * sin(2 PI * (frac(time * rate) + phase)), the engine passes the amplitude without conversion
+        const angle = (amp: number, rate: number, phase: number) => {
+          const s = time * (rate || 0)
+          return (amp || 0) * Math.sin(2 * Math.PI * (s - Math.floor(s) + (phase || 0)))
+        }
         mat4$initTranslationXYZ(m, -centerU, -centerV, 0)
-        const sx = time * (mod.TexMod_UOscillatorRate || 0)
-        const sy = time * (mod.TexMod_VOscillatorRate || 0)
-        const dx =
-          (mod.TexMod_URotateAmplitude || 0) * Math.sin(2 * Math.PI * (sx - Math.floor(sx))) +
-          (mod.TexMod_URotatePhase || 0)
-        const dy =
-          (mod.TexMod_VRotateAmplitude || 0) * Math.sin(2 * Math.PI * (sy - Math.floor(sy))) +
-          (mod.TexMod_VRotatePhase || 0)
-        const dz = mod.TexMod_WRotateAmplitude || 0 // sz was always 0
-        if (dx) {
-          mat4$premultiply(m, mat4$initRotationX(tmp, dx))
-        }
-        if (dy) {
-          mat4$premultiply(m, mat4$initRotationY(tmp, dy))
-        }
-        if (dz) {
-          mat4$premultiply(m, mat4$initRotationZ(tmp, dz))
-        }
+        premultiplyRotation(
+          m,
+          tmp,
+          AXIS_X,
+          angle(mod.TexMod_URotateAmplitude, mod.TexMod_URotateRate, mod.TexMod_URotatePhase),
+          true,
+        )
+        premultiplyRotation(
+          m,
+          tmp,
+          AXIS_Y,
+          angle(mod.TexMod_VRotateAmplitude, mod.TexMod_VRotateRate, mod.TexMod_VRotatePhase),
+          true,
+        )
+        premultiplyRotation(
+          m,
+          tmp,
+          AXIS_Z,
+          angle(mod.TexMod_WRotateAmplitude, mod.TexMod_WRotateRate, mod.TexMod_WRotatePhase),
+          true,
+        )
         mat4$premultiply(m, mat4$initTranslationXYZ(tmp, centerU, centerV, 0))
         break
+      }
     }
   }
 
@@ -346,4 +367,25 @@ export class TextureModifier {
     m[13] = translate
     m[5] = scale
   }
+}
+
+const AXIS_X = 0
+const AXIS_Y = 1
+const AXIS_Z = 2
+
+/**
+ * Multiplies a rotation onto the matrix: m = R * m, or R transposed if `transpose` is set
+ */
+function premultiplyRotation(m: Mat4, tmp: Mat4, axis: number, angle: number, transpose: boolean) {
+  if (!angle) {
+    return
+  }
+  if (axis === AXIS_X) {
+    mat4$initRotationX(tmp, angle)
+  } else if (axis === AXIS_Y) {
+    mat4$initRotationY(tmp, angle)
+  } else {
+    mat4$initRotationZ(tmp, angle)
+  }
+  mat4$premultiply(m, transpose ? mat4$transpose(tmp) : tmp)
 }

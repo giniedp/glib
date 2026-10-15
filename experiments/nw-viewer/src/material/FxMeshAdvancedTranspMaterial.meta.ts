@@ -73,6 +73,7 @@ export default {
   DeformWave1: inputSlot('material', 'deformwave1', 'vec4'),
   SamplerLinear: inputSlot('', 'samplerLinear', 'sampler'),
   SamplerPoint: inputSlot('', 'samplerPoint', 'sampler'),
+  SamplerSource: inputSlot('', 'samplerSource', 'sampler'),
   SceneDepthMap: inputSlot('view', 'sceneDepthMap', 'texture'),
   DiffuseMap: inputSlot('', 'diffuseMap', 'texture'),
   NormalMap: inputSlot('', 'normalMap', 'texture'),
