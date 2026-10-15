@@ -1,5 +1,5 @@
 import { Color, createDevice, Device, PlatformId, SamplerState, SpriteBatch } from '@gglib/graphics'
-import { mountUi } from 'tweak-ui'
+import { mount } from 'tweak-ui'
 
 const settings = {
   sampler: SamplerState.PointClamp,
@@ -21,7 +21,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     source: '/textures/formats/uv_checker.png',
   })
 
-  mountUi(tools, (ui) => {
+  const panel = mount(tools, (ui) => {
     ui.select(settings, 'sampler', {
       options: [
         { value: SamplerState.PointClamp, label: 'Point + Clamp' },
@@ -80,5 +80,6 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   device.schedule(frame)
   return () => {
     device.dispose()
+    panel.dispose()
   }
 }

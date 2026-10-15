@@ -11,7 +11,7 @@ import {
   mat4Invert,
 } from '@gglib/math'
 import { Model } from '@gglib/model'
-import { mountUi } from 'tweak-ui'
+import { mount } from 'tweak-ui'
 import { PixelsLoader } from './pixels-loader'
 
 export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
@@ -44,10 +44,10 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
 
   // load initial asset and mount the ui options
   loadModel(assets[0])
-  mountUi(tools, (ui) => {
+  mount(tools, (ui) => {
     ui.select({ model: assets[0] }, 'model', {
       options: assets,
-      onchange: (_, value) => loadModel(value),
+      onChange: (value) => loadModel(value),
     })
   })
 

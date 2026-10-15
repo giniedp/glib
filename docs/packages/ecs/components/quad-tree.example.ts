@@ -22,12 +22,12 @@ import { CommonInputs, DeviceStats, PlatformId } from '@gglib/graphics'
 import { GLTF } from '@gglib/loaders'
 import { vec3, vec3Format, vec3Normalize } from '@gglib/math'
 import { RenderChannel, Renderer } from '@gglib/render'
-import { mountUi } from 'tweak-ui'
+import { mount } from 'tweak-ui'
 
 export default (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
   const game = new Game({ canvas, platform })
 
-  mountUi(tools, (ui) => {
+  mount(tools, (ui) => {
     ui.graph({
       rows: [
         {

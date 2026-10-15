@@ -8,7 +8,7 @@ import {
   mat4Multiply,
   vec3,
 } from '@gglib/math'
-import { mountUi } from 'tweak-ui'
+import { mount } from 'tweak-ui'
 
 const settings = {
   residentMipLevel: 0,
@@ -27,7 +27,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     source: '/textures/formats/uv_checker.png',
   })
 
-  mountUi(tools, (ui) => {
+  const panel = mount(tools, (ui) => {
     ui.scalar(settings, 'residentMipLevel', {
       label: 'Resident mip level',
       range: true,
@@ -92,5 +92,6 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   device.schedule(frame)
   return () => {
     device.dispose()
+    panel.dispose()
   }
 }

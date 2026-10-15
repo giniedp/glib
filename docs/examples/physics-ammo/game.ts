@@ -16,7 +16,7 @@ import { MTL, OBJ } from '@gglib/loaders'
 import { vec3, vec3Normalize, vec4 } from '@gglib/math'
 import { Renderer } from '@gglib/render'
 import Ammo from 'ammojs-typed'
-import { mountUi } from 'tweak-ui'
+import { mount } from 'tweak-ui'
 import { GameComponent } from './game-object'
 import { PhysicsProxy, PhysicsShape } from './physics-proxy'
 import { PhysicsWorld } from './physics-world'
@@ -27,9 +27,9 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement, platform: Platfor
     game = new Game({ canvas, platform, autosize: true })
     game.run()
 
-    mountUi(tools, (ui) => {
+    mount(tools, (ui) => {
       ui.button('Reset Cubes', {
-        onclick: () => game?.resetCubes(),
+        onClick: () => game?.resetCubes(),
       })
     })
   })

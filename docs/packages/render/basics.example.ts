@@ -13,7 +13,7 @@ import {
 } from '@gglib/math'
 
 import { BloomPass, opaquePassMSAA, PixelatePass, Renderer, TonemapPass, transparentPassMSAA } from '@gglib/render'
-import { mountUi } from 'tweak-ui'
+import { mount } from 'tweak-ui'
 import { createCamera, createObject, createScene } from './basics-scene'
 
 const SIZE = 20
@@ -92,7 +92,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     renderer.render(scene)
   }
 
-  mountUi(tools, (ui) => {
+  const panel = mount(tools, (ui) => {
     ui.group('Settings', { collapsible: true, collapsed: true }, () => {
       ui.tabs(() => {
         ui.group('Pixelate', {}, (ui) => {
@@ -124,5 +124,6 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   device.schedule(frame)
   return () => {
     device.dispose()
+    panel.dispose()
   }
 }

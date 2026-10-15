@@ -2,14 +2,14 @@ import { ContentLoader } from '@gglib/content'
 import { Game, MouseInput, MouseListener } from '@gglib/game'
 import { BlendState, Color, PlatformId, SpriteBatch, SpriteMode, Texture } from '@gglib/graphics'
 import { clamp, IRect, Mat4, mat4CreateOrthographicOffCenter, rectGetX, rectGetY } from '@gglib/math'
-import { mountUi } from 'tweak-ui'
+import { mount } from 'tweak-ui'
 import { getCircleRectHit, HitAxis } from './collision'
 
 export default (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
   const game = new BreakoutGame({ canvas, platform, autosize: true })
   game.run()
 
-  mountUi(tools, (ui) => {
+  mount(tools, (ui) => {
     ui.bool(game.loop, 'useFixedTimeStep', {
       label: 'Fixed time step',
     })

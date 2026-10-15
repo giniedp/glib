@@ -1,6 +1,6 @@
 import { BlendState, Color, createDevice, Device, PlatformId, SpriteBatch } from '@gglib/graphics'
 import { vec4 } from '@gglib/math'
-import { mountUi } from 'tweak-ui'
+import { mount } from 'tweak-ui'
 
 export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
   const device: Device = await createDevice({ canvas, platform, autosize: true }).ready
@@ -15,7 +15,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     alpha: 0.8,
   }
 
-  mountUi(tools, (ui) => {
+  const panel = mount(tools, (ui) => {
     ui.select(settings, 'blend', {
       options: [
         { value: BlendState.Disabled, label: 'Disabled' },
@@ -75,5 +75,6 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   device.schedule(frame)
   return () => {
     device.dispose()
+    panel.dispose()
   }
 }

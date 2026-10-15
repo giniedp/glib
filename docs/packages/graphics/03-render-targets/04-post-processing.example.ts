@@ -20,7 +20,7 @@ import {
   mat4Identity,
   vec3,
 } from '@gglib/math'
-import { mountUi } from 'tweak-ui'
+import { mount } from 'tweak-ui'
 
 const EFFECTS = { None: 0, Grayscale: 1, Invert: 2, Vignette: 3 }
 
@@ -48,7 +48,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   console.log(quad)
 
   const settings = { effect: 'Vignette' as keyof typeof EFFECTS }
-  mountUi(tools, (ui) => {
+  const panel = mount(tools, (ui) => {
     ui.select(settings, 'effect', { options: Object.keys(EFFECTS) })
   })
 
@@ -114,6 +114,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   device.schedule(frame)
   return () => {
     device.dispose()
+    panel.dispose()
   }
 }
 

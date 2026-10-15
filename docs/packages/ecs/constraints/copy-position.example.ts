@@ -5,7 +5,7 @@ import { PlatformId } from '@gglib/graphics'
 import { GLTF } from '@gglib/loaders'
 import { vec3 } from '@gglib/math'
 import { Renderer } from '@gglib/render'
-import { mountUi } from 'tweak-ui'
+import { mount } from 'tweak-ui'
 
 const settings = {
   speed: 1,
@@ -17,12 +17,15 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement, platform: Platfor
   const game = new Game({ canvas, platform, autosize: true })
   game.run()
 
-  mountUi(tools, (ui) => {
+  const panel = mount(tools, (ui) => {
     ui.scalar(settings, 'speed', { min: -5, max: 5, range: true })
     ui.scalar(settings, 'radius', { min: 0, max: 5, range: true })
     ui.scalar(settings, 'distance', { min: 0, max: 10, range: true })
   })
-  return () => game.destroy()
+  return () => {
+    game.destroy()
+    panel.dispose()
+  }
 }
 
 class Game extends EcsGame {

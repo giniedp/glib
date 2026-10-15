@@ -1,5 +1,5 @@
 import { Color, createDevice, CullState, Device, FrameContext, PlatformId, vertexLayout } from '@gglib/graphics'
-import { mountUi } from 'tweak-ui'
+import { mount } from 'tweak-ui'
 
 const settings = {
   cull: CullState.CullBack,
@@ -43,7 +43,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     ]),
   })
 
-  mountUi(tools, (ui) => {
+  const panel = mount(tools, (ui) => {
     ui.select(settings, 'cull', {
       options: [
         { value: CullState.Disabled, label: 'Disabled' },
@@ -74,6 +74,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   device.schedule(frame)
   return () => {
     device.dispose()
+    panel.dispose()
   }
 }
 

@@ -23,7 +23,7 @@ import {
   mat4Identity,
   vec3,
 } from '@gglib/math'
-import { mountUi } from 'tweak-ui'
+import { mount } from 'tweak-ui'
 
 const BUILDERS: Record<string, (device: Device) => Geometry> = {
   Box: (device) => boxGeometry(device, { size: 1, segments: 1 }),
@@ -68,10 +68,10 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
 
   const settings = { shape: 'Box' }
   let geometry = BUILDERS[settings.shape](device)
-  mountUi(tools, (ui) => {
+  const panel = mount(tools, (ui) => {
     ui.select(settings, 'shape', {
       options: Object.keys(BUILDERS),
-      onchange: () => {
+      onChange: () => {
         geometry.dispose()
         geometry = BUILDERS[settings.shape](device)
       },
@@ -121,6 +121,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   return () => {
     device.dispose()
     geometry.dispose()
+    panel.dispose()
   }
 }
 

@@ -24,7 +24,7 @@ import {
   vec3$initSpherical,
 } from '@gglib/math'
 import { Model } from '@gglib/model'
-import { mountUi, redrawUi } from 'tweak-ui'
+import { mount } from 'tweak-ui'
 
 const models = {
   Tower: '/models/obj/tower-complete-large.obj',
@@ -52,10 +52,10 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   const mouse = new MouseInput()
 
   const stats = device.stats()
-  mountUi(tools, (ui) => {
+  const panel = mount(tools, (ui) => {
     loadModel(params.model)
 
-    ui.select(params, 'model', { options: models, onchange: () => loadModel(params.model) })
+    ui.select(params, 'model', { options: models, onChange: () => loadModel(params.model) })
     ui.scalar(params, 'fov', { range: true, min: 10, max: 120, step: 1 })
     ui.scalar(params, 'phi', { range: true, min: 0, max: 180, step: 1 })
     ui.scalar(params, 'theta', { range: true, min: 0, max: 360, step: 1 })
@@ -191,7 +191,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     spriteBatch.draw()
 
     device.stats(stats)
-    redrawUi()
+    panel.redraw()
   }
 
   device.schedule(frame)

@@ -12,7 +12,7 @@ import { PlatformId } from '@gglib/graphics'
 import { GLTF } from '@gglib/loaders'
 import { DEGREE_TO_RAD, quatCreateAxisAngle, vec3 } from '@gglib/math'
 import { Renderer } from '@gglib/render'
-import { mountUi } from 'tweak-ui'
+import { mount } from 'tweak-ui'
 
 const settings = {
   speedX: 0.0,
@@ -24,12 +24,15 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement, platform: Platfor
   const game = new Game({ canvas, platform })
   game.run()
 
-  mountUi(tools, (ui) => {
+  const panel = mount(tools, (ui) => {
     ui.scalar(settings, 'speedX', { range: true, min: -5, max: 5 })
     ui.scalar(settings, 'speedY', { range: true, min: -5, max: 5 })
     ui.scalar(settings, 'speedZ', { range: true, min: -5, max: 5 })
   })
-  return () => game.destroy()
+  return () => {
+    game.destroy()
+    panel.dispose()
+  }
 }
 
 class Game extends EcsGame {

@@ -1,5 +1,4 @@
 import { ModelViewer } from '@gglib/viewer'
-import { mountUi } from 'tweak-ui'
 
 const baseUrl = 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models'
 const githubUrl = 'https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models'

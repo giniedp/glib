@@ -28,7 +28,7 @@ import {
   vec3$initSpherical,
 } from '@gglib/math'
 import { Model } from '@gglib/model'
-import { mountUi, redrawUi } from 'tweak-ui'
+import { mount } from 'tweak-ui'
 
 const PANORAMA_IMAGES = {
   Court: '/textures/hdr/footprint_court.hdr',
@@ -64,7 +64,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     const material = new CommonMaterial(ctx.device, options)
     material.UseIBL = TRUE
     material.IblBrdfMap = iblSampler.lutMapGGX
-    material.IblLambertianMap = iblSampler.envMapLambert
+    material.IblLambertianMap = iblSampler.envMapLambert!
     material.IblEnvironmentMap = iblSampler.envMapGGX
     material.IblMipCount = iblSampler.envMapGGX.mipLevelCount
     material.IblIntensity = 1
@@ -99,10 +99,10 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
 
   loadEnvFile(PANORAMA_IMAGES.Court)
   loadModel(MODELS.ShaderBall)
-  mountUi(tools, (ui) => {
+  const panel = mount(tools, (ui) => {
     ui.select({ model: MODELS.ShaderBall }, 'model', {
       options: MODELS,
-      onchange: (it, value) => loadModel(value as string),
+      onChange: (value) => loadModel(value as string),
     })
   })
 
@@ -129,7 +129,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
         model.update(world)
         sphere = model.boundingSphere.copy()
         console.log(sphere)
-        redrawUi()
+        panel.redraw()
       })
       .catch((e) => {
         model = null!

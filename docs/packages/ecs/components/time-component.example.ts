@@ -13,7 +13,7 @@ import { PlatformId } from '@gglib/graphics'
 import { GLTF, MTL, OBJ } from '@gglib/loaders'
 import { DEGREE_TO_RAD, vec3 } from '@gglib/math'
 import { Renderer } from '@gglib/render'
-import { mountUi } from 'tweak-ui'
+import { mount } from 'tweak-ui'
 
 export default (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
   const game = new Game({ canvas, platform, autosize: true })
@@ -22,14 +22,17 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement, platform: Platfor
   const timeB = timeSystem.getOrCreate('timeB')
   const timeC = timeSystem.getOrCreate('timeC')
 
-  mountUi(tools, (ui) => {
+  const panel = mount(tools, (ui) => {
     ui.scalar(timeA, 'factor', { range: true, min: -2, max: 2, step: 0.1, label: 'Time A' })
     ui.scalar(timeB, 'factor', { range: true, min: -2, max: 2, step: 0.1, label: 'Time B' })
     ui.scalar(timeC, 'factor', { range: true, min: -2, max: 2, step: 0.1, label: 'Time C' })
   })
 
   game.run()
-  return () => game.destroy()
+  return () => {
+    game.destroy()
+    panel.dispose()
+  }
 }
 
 class Game extends EcsGame {

@@ -1,5 +1,5 @@
 import { Color, createDevice, Device, FrameContext, PlatformId, vertexLayout } from '@gglib/graphics'
-import { mountUi } from 'tweak-ui'
+import { mount } from 'tweak-ui'
 
 const settings = {
   instances: true,
@@ -9,7 +9,7 @@ const settings = {
 export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
   const device: Device = await createDevice({ canvas, platform, autosize: true }).ready
 
-  mountUi(tools, (ui) => {
+  const panel = mount(tools, (ui) => {
     ui.bool(settings, 'instances', { label: 'Instanced' })
     ui.bool(settings, 'instantSubmit', { label: 'Instant submit' })
   })
@@ -94,6 +94,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   device.schedule(frame)
   return () => {
     device.dispose()
+    panel.dispose()
   }
 }
 

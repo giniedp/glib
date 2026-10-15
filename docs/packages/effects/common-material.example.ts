@@ -28,7 +28,7 @@ import {
   vec3$initSpherical,
 } from '@gglib/math'
 import { Model } from '@gglib/model'
-import { mountUi, redrawUi } from 'tweak-ui'
+import { colorObject, mount } from 'tweak-ui'
 
 // https://cdn.nw-buddy.de/models/weaponappearances/1hstraightwaterloggedsirens-meshoverride.glb
 
@@ -65,13 +65,13 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   }).ready
   const iblSampler = await new IblSampler(device, {}).compiled
 
-  mountUi(tools, (ui) => {
+  const panel = mount(tools, (ui) => {
     ui.group('Settings', { collapsible: true, collapsed: true }, () => {
-      ui.color(SETTINGS, 'baseColor', { format: '{n}xyz' })
+      ui.color(SETTINGS, 'baseColor', { format: colorObject('xyz') })
       ui.scalar(SETTINGS, 'alpha', { range: true, min: 0, max: 1, decimals: 2 })
-      ui.color(SETTINGS, 'specularColor', { format: '{n}xyz' })
+      ui.color(SETTINGS, 'specularColor', { format: colorObject('xyz') })
       ui.scalar(SETTINGS, 'specularWeight', { range: true, min: 0, max: 1, decimals: 2 })
-      ui.color(SETTINGS, 'emissiveColor', { format: '{n}xyz' })
+      ui.color(SETTINGS, 'emissiveColor', { format: colorObject('xyz') })
       ui.scalar(SETTINGS, 'emissiveStrength', { range: true, min: 0, max: 10, decimals: 2 })
 
       ui.scalar(SETTINGS, 'metallic', { range: true, min: 0, max: 1, decimals: 2 })
@@ -119,7 +119,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     const material = new CommonMaterial(ctx.device, options)
     material.UseIBL = TRUE
     material.IblBrdfMap = iblSampler.lutMapGGX
-    material.IblLambertianMap = iblSampler.envMapLambert
+    material.IblLambertianMap = iblSampler.envMapLambert!
     material.IblEnvironmentMap = iblSampler.envMapGGX
     material.IblMipCount = iblSampler.envMapGGX.mipLevelCount
     material.IblIntensity = 1
@@ -177,7 +177,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
         model.update(world)
         sphere = model.boundingSphere.copy()
         console.log(sphere)
-        redrawUi()
+        panel.redraw()
       })
       .catch((e) => {
         model = null!
@@ -293,5 +293,6 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   device.schedule(frame)
   return () => {
     device.dispose()
+    panel.dispose()
   }
 }

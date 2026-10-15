@@ -1,12 +1,11 @@
 import { CameraComponent, EcsGame, SpriteComponent } from '@gglib/components'
 import { PlatformId } from '@gglib/graphics'
-import {} from '@gglib/loaders'
-import { mountUi } from 'tweak-ui'
+import { mount } from 'tweak-ui'
 
 export default (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
   const game = new Game({ canvas, platform })
 
-  mountUi(tools, (ui) => {
+  const panel = mount(tools, (ui) => {
     ui.scalar(game, 'sizeX', { range: true, min: 0.1, max: 20, step: 0.01 })
     ui.scalar(game, 'sizeY', { range: true, min: 0.1, max: 20, step: 0.01 })
     ui.scalar(game, 'angle', { range: true, min: 0, max: Math.PI * 2, step: 0.01 })
@@ -26,6 +25,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement, platform: Platfor
   game.run()
   return () => {
     game.stop()
+    panel.dispose()
   }
 }
 

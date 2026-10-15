@@ -13,7 +13,7 @@ import { PlatformId } from '@gglib/graphics'
 import { GLTF, MTL, OBJ } from '@gglib/loaders'
 import { easeInCubic, easeInOutCubic, easeLinear, easeOutCubic, vec3 } from '@gglib/math'
 import { Renderer } from '@gglib/render'
-import { mountUi } from 'tweak-ui'
+import { mount } from 'tweak-ui'
 
 class Game extends EcsGame {
   public cube!: GameEntity
@@ -130,7 +130,7 @@ class CubeComponent implements GameComponent, InitializableComponent {
 export default (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
   const game = new Game(canvas, platform)
 
-  mountUi(tools, (ui) => {
+  const panel = mount(tools, (ui) => {
     const positionOptions: TweenOptions<any> = {
       from: null,
       to: null,
@@ -148,7 +148,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement, platform: Platfor
         { label: 'InOutCubic', value: easeInOutCubic },
       ],
     })
-    ui.button('Move', { onclick: () => game.tweenPosition(positionOptions) })
+    ui.button('Move', { onClick: () => game.tweenPosition(positionOptions) })
     const scaleOptions: TweenOptions<any> = {
       from: null,
       to: null,
@@ -166,9 +166,12 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement, platform: Platfor
         { label: 'InOutCubic', value: easeInOutCubic },
       ],
     })
-    ui.button('Scale', { onclick: () => game.tweenScale(scaleOptions) })
+    ui.button('Scale', { onClick: () => game.tweenScale(scaleOptions) })
   })
 
   game.run()
-  return () => game.stop()
+  return () => {
+    game.destroy()
+    panel.dispose()
+  }
 }

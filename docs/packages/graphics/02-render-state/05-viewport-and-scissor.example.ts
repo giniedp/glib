@@ -1,6 +1,6 @@
 import { Color, createDevice, Device, FrameContext, PlatformId, vertexLayout } from '@gglib/graphics'
 import { mat4$initRotationZ, mat4Identity } from '@gglib/math'
-import { mountUi } from 'tweak-ui'
+import { mount } from 'tweak-ui'
 
 export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
   const device: Device = await createDevice({ canvas, platform, autosize: true }).ready
@@ -33,7 +33,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   const settings = {
     scissor: true,
   }
-  mountUi(tools, (ui) => {
+  const panel = mount(tools, (ui) => {
     ui.bool(settings, 'scissor', { label: 'Scissor (inset clip rect)' })
   })
 
@@ -91,6 +91,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   device.schedule(frame)
   return () => {
     device.dispose()
+    panel.dispose()
   }
 }
 

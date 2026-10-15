@@ -12,11 +12,11 @@ import { GamepadAxes, KeyboardKeys } from '@gglib/game'
 import { Color, PlatformId, Texture } from '@gglib/graphics'
 import { IVec4, mat4$initOrthographicOffCenter, mat4Identity, vec4 } from '@gglib/math'
 import { BloomPass, LayerMask, opaquePassMSAA, PixelatePass, Renderer, transparentPassMSAA } from '@gglib/render'
-import { mountUi } from 'tweak-ui'
+import { mount } from 'tweak-ui'
 export default (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
   const game = new PongGame({ canvas, platform, autosize: true })
   game.run().then(() => {
-    mountUi(tools, (ui) => {
+    mount(tools, (ui) => {
       ui.group('bloom', () => {
         ui.bool(game.bloom, 'enabled')
         ui.scalar(game.bloom, 'threshold', { range: true, min: 0, max: 2 })

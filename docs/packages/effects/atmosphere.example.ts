@@ -1,9 +1,9 @@
 import { ContentLoader } from '@gglib/content'
 import { NishitaSkyEffect } from '@gglib/effects'
-import { Color, createDevice, PlatformId, SpriteBatch, FrameContext, TextureUsage } from '@gglib/graphics'
+import { Color, createDevice, FrameContext, PlatformId, SpriteBatch, TextureUsage } from '@gglib/graphics'
 import { HDR } from '@gglib/loaders'
 import { vec3 } from '@gglib/math'
-import { mountUi } from 'tweak-ui'
+import { colorObject, mount } from 'tweak-ui'
 
 const files = {
   Court: '/textures/hdr/footprint_court.hdr',
@@ -27,7 +27,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   const content = new ContentLoader(device)
   content.registerLoader(HDR.Loader)
 
-  mountUi(tools, (ui) => {
+  const panel = mount(tools, (ui) => {
     ui.group('Settings', { collapsible: true, collapsed: true }, () => {
       ui.scalar(params, 'sunLatitude', { range: true, min: 0, max: Math.PI })
       ui.scalar(params, 'sunLongitude', { range: true, min: 0, max: Math.PI * 2 })
@@ -35,7 +35,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
       ui.scalar(params, 'mieScattering', { range: true, min: 0.0001, max: 0.01, decimals: 5 })
       ui.scalar(params, 'rayleighScattering', { range: true, min: 0.00005, max: 0.001, decimals: 5 })
       ui.scalar(params, 'phaseAsymmetry', { range: true, min: -0.999, max: 0.999, decimals: 5 })
-      ui.color(params, 'groundColor', { format: '{n}xyz' })
+      ui.color(params, 'groundColor', { format: colorObject('xyz') })
     })
   })
 
@@ -112,5 +112,6 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   device.schedule(frame)
   return () => {
     device.dispose()
+    panel.dispose()
   }
 }

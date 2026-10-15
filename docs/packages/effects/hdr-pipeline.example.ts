@@ -15,15 +15,15 @@ import {
   BlendState,
   Color,
   createDevice,
+  FrameContext,
   PlatformId,
   SpriteBatch,
-  FrameContext,
   Texture,
   TextureUsage,
 } from '@gglib/graphics'
 import { HDR } from '@gglib/loaders'
 import { vec3 } from '@gglib/math'
-import { mountUi } from 'tweak-ui'
+import { mount } from 'tweak-ui'
 
 const files = {
   Court: '/textures/hdr/footprint_court.hdr',
@@ -69,19 +69,19 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   content.registerLoader(HDR.Loader)
 
   let texture: Texture
-  mountUi(tools, (ui) => {
+  const panel = mount(tools, (ui) => {
     loadTexture(params.texture)
 
     ui.group('Settings', { collapsible: true, collapsed: true }, () => {
       ui.select(params, 'texture', {
         options: files,
-        onchange: () => loadTexture(params.texture),
+        onChange: () => loadTexture(params.texture),
       })
       ui.scalar(params, 'zoom', { range: true, min: 0.1, max: 10 })
       ui.bool(params, 'animate')
       ui.select(params, 'output', {
         options: ['scene', 'extract', 'downsample', 'blur', 'combine', 'result'] satisfies Array<Output>,
-        onchange: () => loadTexture(params.texture),
+        onChange: () => loadTexture(params.texture),
       })
       ui.group('Extract', { collapsible: true }, () => {
         ui.select(params, 'operatorId', {
@@ -91,11 +91,11 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
         ui.scalar(params, 'knee', { range: true, min: 0, max: 1 })
         ui.scalar(params, 'threshold', { range: true, min: 0, max: 1 })
         ui.scalar(params, 'range', { range: true, min: 0, max: 1 })
-        ui.flex({ flow: 'row' }, () => {
-          ui.scalarInput(params, 'colorKeyR', { range: true, min: 0, max: 1 })
-          ui.scalarInput(params, 'colorKeyG', { range: true, min: 0, max: 1 })
-          ui.scalarInput(params, 'colorKeyB', { range: true, min: 0, max: 1 })
-        })
+        // ui.flex({ row: true }, () => {
+        //   ui.scalarInput(params, 'colorKeyR', { range: true, min: 0, max: 1 })
+        //   ui.scalarInput(params, 'colorKeyG', { range: true, min: 0, max: 1 })
+        //   ui.scalarInput(params, 'colorKeyB', { range: true, min: 0, max: 1 })
+        // })
       })
       ui.group('Blur', () => {
         ui.scalar(params, 'downsampleSteps', { range: true, min: 1, max: 10, step: 1 })
@@ -321,5 +321,6 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   device.schedule(frame)
   return () => {
     device.dispose()
+    panel.dispose()
   }
 }

@@ -1,6 +1,6 @@
 import { Color, createDevice, Device, PlatformId, StencilState, Texture, vertexLayout } from '@gglib/graphics'
 import { DEGREE_TO_RAD, mat4$rotateZ, mat4$scale, mat4CreateScaleUniform, mat4Identity, vec3 } from '@gglib/math'
-import { mountUi } from 'tweak-ui'
+import { mount } from 'tweak-ui'
 
 // Writes a `1` into the stencil buffer everywhere this draw call's pixels
 // land, and never touches the color buffer (that is handled separately via
@@ -89,7 +89,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   const settings = {
     masked: true,
   }
-  mountUi(tools, (ui) => {
+  const panel = mount(tools, (ui) => {
     ui.bool(settings, 'masked')
   })
 
@@ -159,6 +159,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   device.schedule(frame)
   return () => {
     device.dispose()
+    panel.dispose()
   }
 }
 

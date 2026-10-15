@@ -26,7 +26,7 @@ import {
   vec3,
   vec3$normalize,
 } from '@gglib/math'
-import { mountUi } from 'tweak-ui'
+import { mount } from 'tweak-ui'
 
 const settings = {
   fov: 60,
@@ -39,7 +39,7 @@ const settings = {
 export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
   const device: Device = await createDevice({ canvas, platform, autosize: true }).ready
 
-  mountUi(tools, (ui) => {
+  const panel = mount(tools, (ui) => {
     ui.scalar(settings, 'fov', { label: 'Field of View', unit: '°', range: true, min: 1, max: 170, step: 1 })
     ui.scalar(settings, 'aspect', { label: 'Aspect', range: true, min: 0.1, max: 4, step: 0.01 })
     ui.scalar(settings, 'near', { label: 'Near', range: true, min: 0.1, max: 10, step: 0.1 })
@@ -190,5 +190,6 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   device.schedule(frame)
   return () => {
     device.dispose()
+    panel.dispose()
   }
 }

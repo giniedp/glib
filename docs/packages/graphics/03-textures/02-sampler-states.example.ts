@@ -1,5 +1,5 @@
 import { Color, createDevice, Device, PlatformId, SamplerState, vertexLayout } from '@gglib/graphics'
-import { mountUi } from 'tweak-ui'
+import { mount } from 'tweak-ui'
 
 export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
   const device: Device = await createDevice({ canvas, platform }).ready
@@ -45,7 +45,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   const settings = {
     sampler: SamplerState.PointWrap,
   }
-  mountUi(tools, (ui) => {
+  const panel = mount(tools, (ui) => {
     ui.select(settings, 'sampler', {
       options: [
         { value: SamplerState.PointClamp, label: 'Point + Clamp' },
@@ -96,6 +96,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   device.schedule(frame)
   return () => {
     device.dispose()
+    panel.dispose()
   }
 }
 

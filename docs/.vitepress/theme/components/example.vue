@@ -128,7 +128,7 @@ canvas {
 /// <reference types="vite/client" />
 import { PlatformId } from '@gglib/graphics'
 import { mergeUri } from '@gglib/utils'
-import { mountUi, unmountUi } from 'tweak-ui'
+import { mount, MountedPanel } from 'tweak-ui'
 import { useRoute } from 'vitepress'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { locationSearch } from '../location-search'
@@ -209,7 +209,7 @@ function isSupported(platform: PlatformId) {
 
 const route = useRoute()
 const showCapture = computed(() => import.meta.env.DEV && route.path.includes('/examples/'))
-
+let panel: MountedPanel
 onMounted(async () => {
   isMounted = true
   supportsWebGPU = await detectWebGPU()
@@ -220,32 +220,32 @@ onMounted(async () => {
     activePlatform = supportsWebGPU ? 'webgpu' : 'webgl2'
   }
   loadExample(activePlatform)
-  mountUi(fsTools.value!, (ui) => {
-    ui.flex({ flow: 'row' }, (ui) => {
+  panel = mount(fsTools.value!, (ui) => {
+    ui.flex({ row: true }, (ui) => {
       ui.button('WebGPU', {
-        flex: '1',
+        style: { flex: '1' },
         get accent() {
           return activePlatform === 'webgpu'
         },
         disabled: requestedPlatform === 'webgl2' || !supportsWebGPU,
-        onclick: () => switchPlatform('webgpu'),
+        onClick: () => switchPlatform('webgpu'),
       })
       ui.button('WebGL', {
-        flex: '1',
+        style: { flex: '1' },
         get accent() {
           return activePlatform === 'webgl2'
         },
         disabled: requestedPlatform === 'webgpu' || !supportsWebGL2,
-        onclick: () => switchPlatform('webgl2'),
+        onClick: () => switchPlatform('webgl2'),
       })
       ui.button('FS', {
-        flex: 'none',
-        onclick: toggleFullscreen,
+        style: { flex: 'none' },
+        onClick: toggleFullscreen,
       })
       if (showCapture.value) {
         ui.button('CA', {
-          flex: 'none',
-          onclick: captureCanvas,
+          style: { flex: 'none' },
+          onClick: captureCanvas,
         })
       }
     })
@@ -263,6 +263,7 @@ watch(locationSearch, (search) => {
 onUnmounted(() => {
   isMounted = false
   unloadExample()
+  panel?.dispose()
 })
 
 function switchPlatform(platform: PlatformId) {
@@ -336,9 +337,6 @@ function unloadExample() {
   const dispose = toDispose
   canvas = null
   toDispose = null
-  if (tools.value) {
-    unmountUi(tools.value)
-  }
   oldCanvas?.classList.add('leaving')
   // let the canvas fade out before tearing down the example
   const fadeOut = new Promise((resolve) => setTimeout(resolve, oldCanvas ? FADE_DURATION : 0))

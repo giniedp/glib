@@ -1,4 +1,4 @@
-import { mountUi, redrawUi } from 'tweak-ui'
+import { mount } from 'tweak-ui'
 import { sceneNames } from './scene'
 
 export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
@@ -12,12 +12,12 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   client.onprogress = () => {
     redrawRequest ||= requestAnimationFrame(() => {
       redrawRequest = 0
-      redrawUi()
+      panel.redraw()
     })
   }
   client.update()
 
-  mountUi(tools, (ui) => {
+  const panel = mount(tools, (ui) => {
     ui.group('Stats', { collapsed: true, collapsible: true }, () => {
       ui.widget('Workers', () => String(client.workerCount))
       ui.scalar(client, 'progress', { range: true, min: 0, max: 100, readonly: true, decimals: 0, unit: '%' })
@@ -29,13 +29,13 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
     ui.group('Settings', { collapsible: true, collapsed: true }, () => {
       ui.select(client, 'scene', {
         options: sceneNames,
-        onchange: () => client.update(),
+        onChange: () => client.update(),
       })
       ui.scalar(client, 'samples', { range: true, min: 1, max: 1000, step: 1, label: 'Num Samples' })
       ui.scalar(client, 'depth', { range: true, min: 0, max: 1000, step: 1, label: 'Max Depth' })
       ui.scalar(client, 'width', { range: true, min: 300, max: 2400, step: 1, label: 'Width' })
       ui.button('Render', {
-        onclick: () => {
+        onClick: () => {
           client.height = client.width
           client.update()
         },
@@ -46,6 +46,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   return () => {
     cancelAnimationFrame(redrawRequest)
     client.dispose()
+    panel.dispose()
   }
 }
 

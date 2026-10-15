@@ -8,7 +8,7 @@ import {
   mat4Identity,
   vec3,
 } from '@gglib/math'
-import { mountUi } from 'tweak-ui'
+import { mount } from 'tweak-ui'
 
 const settings = {
   depthEnabled: true,
@@ -56,7 +56,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     color: Color.Blue,
   }
 
-  mountUi(tools, (ui) => {
+  const panel = mount(tools, (ui) => {
     ui.bool(settings, 'depthEnabled', { label: 'Depth Test' })
     ui.bool(settings, 'drawNearFirst', { label: 'Draw Near Quad First' })
   })
@@ -130,6 +130,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   device.schedule(frame)
   return () => {
     device.dispose()
+    panel.dispose()
   }
 }
 

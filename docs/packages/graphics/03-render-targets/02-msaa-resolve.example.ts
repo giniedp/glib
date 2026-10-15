@@ -19,7 +19,7 @@ import {
   mat4Identity,
   vec3,
 } from '@gglib/math'
-import { mountUi } from 'tweak-ui'
+import { mount } from 'tweak-ui'
 
 export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
   const device: Device = await createDevice({ canvas, platform }).ready
@@ -32,7 +32,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   const cube = boxGeometry(device)
 
   const settings = { msaa: true }
-  mountUi(tools, (ui) => {
+  const panel = mount(tools, (ui) => {
     ui.bool(settings, 'msaa', { label: 'MSAA (4 samples)' })
   })
 
@@ -115,6 +115,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   device.schedule(frame)
   return () => {
     device.dispose()
+    panel.dispose()
   }
 }
 

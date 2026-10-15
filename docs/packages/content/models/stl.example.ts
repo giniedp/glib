@@ -14,7 +14,7 @@ import {
   vec3$initSpherical,
 } from '@gglib/math'
 import { Model } from '@gglib/model'
-import { mountUi } from 'tweak-ui'
+import { mount } from 'tweak-ui'
 
 const models = {
   Logo: '/logo/gglib.stl',
@@ -145,11 +145,11 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     pass.submit()
   }
 
-  mountUi(tools, (ui) => {
+  mount(tools, (ui) => {
     loadModel(models.Bottle)
     ui.select({ model: models.Bottle }, 'model', {
       options: models,
-      onchange: (_, value) => loadModel(value as string),
+      onChange: (value) => loadModel(value as string),
     })
   })
 

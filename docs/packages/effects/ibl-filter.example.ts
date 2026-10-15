@@ -18,7 +18,7 @@ import {
 } from '@gglib/graphics'
 import { HDR } from '@gglib/loaders'
 import { DEGREE_TO_RAD, mat4$initPerspectiveFieldOfView, mat4$rotateY, mat4Identity } from '@gglib/math'
-import { mountUi } from 'tweak-ui'
+import { mount } from 'tweak-ui'
 
 const files = {
   Court: '/textures/hdr/footprint_court.hdr',
@@ -48,14 +48,14 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   content.registerLoader(HDR.Loader)
 
   let texture: Texture
-  mountUi(tools, (ui) => {
+  const panel = mount(tools, (ui) => {
     loadTexture(params.texture)
 
     ui.group('Settings', { collapsible: true, collapsed: true }, () => {
       ui.group('Input', () => {
         ui.select(params, 'texture', {
           options: files,
-          onchange: () => loadTexture(params.texture),
+          onChange: () => loadTexture(params.texture),
         })
       })
 
@@ -287,5 +287,6 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   device.schedule(frame)
   return () => {
     device.dispose()
+    panel?.dispose()
   }
 }

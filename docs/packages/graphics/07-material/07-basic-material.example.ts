@@ -23,7 +23,7 @@ import {
   mat4Identity,
   vec3,
 } from '@gglib/math'
-import { mountUi } from 'tweak-ui'
+import { colorObject, mount } from 'tweak-ui'
 
 const params = {
   ambientColorTop: vec3(1),
@@ -37,11 +37,11 @@ const params = {
 export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
   const device: Device = await createDevice({ canvas, platform, autosize: true }).ready
 
-  mountUi(tools, (ui) => {
+  const panel = mount(tools, (ui) => {
     ui.group('Material', { collapsed: true, collapsible: true }, () => {
-      ui.color(params, 'baseColor', { format: '{n}xyz' })
-      ui.color(params, 'ambientColorTop', { format: '{n}xyz' })
-      ui.color(params, 'ambientColor', { format: '{n}xyz' })
+      ui.color(params, 'baseColor', { format: colorObject('xyz') })
+      ui.color(params, 'ambientColorTop', { format: colorObject('xyz') })
+      ui.color(params, 'ambientColor', { format: colorObject('xyz') })
       ui.spherical(params, 'ambientDirection')
       ui.scalar(params, 'alpha', { range: true, min: 0, max: 1, decimals: 2 })
       ui.bool(params, 'textured')
@@ -122,5 +122,6 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   device.schedule(frame)
   return () => {
     device.dispose()
+    panel.dispose()
   }
 }

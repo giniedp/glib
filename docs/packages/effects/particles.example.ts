@@ -12,7 +12,7 @@ import {
   vec3,
   vec3$initSpherical,
 } from '@gglib/math'
-import { mountUi } from 'tweak-ui'
+import { colorObject, mount } from 'tweak-ui'
 
 export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
   const device = await createDevice({ canvas, platform, autosize: true }).ready
@@ -59,10 +59,10 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     projection: mat4Identity(),
   }
 
-  mountUi(tools, (ui) => {
+  const panel = mount(tools, (ui) => {
     ui.group('Settings', { collapsible: true, collapsed: true }, () => {
-      ui.color(channel.settings, 'minColor', { format: '{n}xyz' })
-      ui.color(channel.settings, 'maxColor', { format: '{n}xyz' })
+      ui.color(channel.settings, 'minColor', { format: colorObject('xyz') })
+      ui.color(channel.settings, 'maxColor', { format: colorObject('xyz') })
       ui.scalar(channel.settings, 'minStartSize', { range: true, min: 0, max: 2, step: 0.1 })
       ui.scalar(channel.settings, 'maxStartSize', { range: true, min: 0, max: 5, step: 0.1 })
       ui.scalar(channel.settings, 'minEndSize', { range: true, min: 0, max: 2, step: 0.1 })
@@ -140,5 +140,6 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   device.schedule(frame)
   return () => {
     device.dispose()
+    panel.dispose()
   }
 }
