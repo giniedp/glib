@@ -26,7 +26,7 @@ export type MainToCollision =
       /**
        * Shared with the main thread (copied if shared memory is not available)
        */
-      heightmap: Float16Array<ArrayBufferLike>
+      heightmap: Uint16Array<ArrayBufferLike>
     }
   | {
       type: 'heightmapRemove'

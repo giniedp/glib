@@ -65,7 +65,7 @@ struct InstanceBlock {
 @group(1) @binding(3) var colorMapSampler:  sampler;
 
 // @block material
-@group(1) @binding(4) var heightMap: texture_2d_array<f32>;
+@group(1) @binding(4) var heightMap: texture_2d_array<u32>;
 // @block material
 @group(1) @binding(5) var pageMap1: texture_2d_array<f32>;
 // @block material
@@ -449,9 +449,22 @@ fn remapUV(params3: vec4f, uv: vec2f) -> vec3f {
   return vec3f(sampleUV, f32(layer));
 }
 
+// heightMap is r16uint (raw samples, float16 can not hold them exactly), so filter by hand.
+// Same as a linear clamp sampler: texel centers at +0.5, edge texels clamped
 fn sampleHeight(params3: vec4f, uv: vec2f) -> f32 {
   let remapped = remapUV(params3, uv);
-  return textureSampleLevel(heightMap, heightMapSampler, remapped.xy, i32(remapped.z), 0.0).r / 65535.0 * material.mountainHeight;
+  let layer = i32(remapped.z);
+  let dims  = vec2i(textureDimensions(heightMap));
+  let p     = remapped.xy * vec2f(dims) - 0.5;
+  let f     = fract(p);
+  let i0    = clamp(vec2i(floor(p)), vec2i(0), dims - 1);
+  let i1    = min(i0 + 1, dims - 1);
+  let h00   = f32(textureLoad(heightMap, i0, layer, 0).r);
+  let h10   = f32(textureLoad(heightMap, vec2i(i1.x, i0.y), layer, 0).r);
+  let h01   = f32(textureLoad(heightMap, vec2i(i0.x, i1.y), layer, 0).r);
+  let h11   = f32(textureLoad(heightMap, i1, layer, 0).r);
+  let h     = mix(mix(h00, h10, f.x), mix(h01, h11, f.x), f.y);
+  return h / 65535.0 * material.mountainHeight;
 }
 
 fn readMapData(uv: vec2f, params3: vec4f) -> vec4f {

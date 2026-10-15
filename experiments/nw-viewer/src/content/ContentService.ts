@@ -139,7 +139,7 @@ export class ContentService extends GameSystem {
       height: 1,
       depth: 4,
       type: '2d-array',
-      format: 'r16float',
+      format: 'r16uint',
       mipLevelCount: 1,
     })
 

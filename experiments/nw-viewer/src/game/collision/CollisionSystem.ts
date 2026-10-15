@@ -29,7 +29,7 @@ export class CollisionSystem extends GameSystem {
   private debugShapes: DebugShapeSystem
   private worker: Worker
   private terrainQuery: GameQuery
-  private sentHeightmaps = new Map<string, Float16Array<ArrayBufferLike>>()
+  private sentHeightmaps = new Map<string, Uint16Array<ArrayBufferLike>>()
   private activeHeightmaps = new Set<string>()
   /**
    * Parsed shape assets requested from the worker (debug view), by file path

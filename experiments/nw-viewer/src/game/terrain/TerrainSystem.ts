@@ -321,7 +321,7 @@ export class TerrainSystem extends GameSystem {
       (result) => {
         region.heightmapReady = true
         region.heightmapTask = null
-        region.heightmap = result || new Float16Array(region.size * region.size)
+        region.heightmap = result || new Uint16Array(region.size * region.size)
       },
     )
   }

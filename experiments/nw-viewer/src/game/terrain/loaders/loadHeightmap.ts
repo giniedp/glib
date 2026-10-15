@@ -8,15 +8,15 @@ export function loadHeightmap(
   scheduler: SchedulerSystem,
   level: string,
   regionName: string,
-  done: (result: Float16Array<ArrayBufferLike>) => void,
+  done: (result: Uint16Array<ArrayBufferLike>) => void,
 ): ScheduledTask {
-  return scheduler.schedule<Float16Array<ArrayBufferLike>>({
+  return scheduler.schedule<Uint16Array<ArrayBufferLike>>({
     lane: PriorityLane.Critical,
     context: null,
     load: async (task) => {
       const request = getRegionHeightmapUrl(level, regionName)
       // shared memory, so the collision worker can sample it without a copy
-      task.context = await content.fetchTypedRequest(request).then((buffer) => new Float16Array(copyToShared(buffer)))
+      task.context = await content.fetchTypedRequest(request).then((buffer) => new Uint16Array(copyToShared(buffer)))
     },
     finalize: (task, err) => {
       done(err ? null : task.context)

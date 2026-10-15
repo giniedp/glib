@@ -43,7 +43,7 @@ export interface DistributionPlacement {
   /**
    * Region heightmap, row major with flipped y axis
    */
-  heightmap: Float16Array
+  heightmap: Uint16Array
   mountainHeight: number
 }
 
