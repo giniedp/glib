@@ -120,6 +120,7 @@ export class WebglDevice extends Device<WebGL2RenderingContext> {
 
   protected textures: ResourceTracker<WebglTexture>
   protected shaders: ResourceTracker<WebglShaderModule>
+  protected buffers = createResourceTracker<WebglBuffer | WebglVertexBuffer>()
   protected samplers = new Map<SamplerState, WebglSampler>()
   protected resizeObserver: ResizeObserver
 
@@ -173,6 +174,7 @@ export class WebglDevice extends Device<WebGL2RenderingContext> {
     this.scope.dispose()
     this.textures.finalizeAll()
     this.shaders.finalizeAll()
+    this.buffers.finalizeAll()
     this.resizeObserver?.disconnect()
     this.canvas.removeEventListener('webglcontextlost', this.handleContextLost, false)
     this.canvas.removeEventListener('webglcontextrestored', this.handleContextRestored, false)
@@ -209,25 +211,25 @@ export class WebglDevice extends Device<WebGL2RenderingContext> {
 
   public createIndexBuffer(options: BufferOptions): WebglBuffer {
     options.indexType ??= 'uint16'
-    return new WebglBuffer(this, {
+    return this.createBuffer({
       ...options,
       usage: (options.usage ?? 0) | BufferUsage.INDEX,
     })
   }
 
   public createUniformBuffer(options: BufferOptions): WebglBuffer {
-    return new WebglBuffer(this, {
+    return this.createBuffer({
       ...options,
       usage: (options.usage ?? 0) | BufferUsage.UNIFORM,
     })
   }
 
   public createVertexBuffer(options: VertexBufferOptions): WebglVertexBuffer {
-    return new WebglVertexBuffer(this, options)
+    return this.claim(this.buffers.track(new WebglVertexBuffer(this, options)))
   }
 
   public createBuffer(options: BufferOptions): WebglBuffer {
-    return new WebglBuffer(this, options)
+    return this.claim(this.buffers.track(new WebglBuffer(this, options)), options.scope)
   }
 
   public getSampler(state: SamplerState): WebglSampler {
@@ -329,6 +331,7 @@ export class WebglDevice extends Device<WebGL2RenderingContext> {
     result.textureStaleCount = this.textures.staleCount
     result.shaderCount = this.shaders.count
     result.shaderStaleCount = this.shaders.staleCount
+    result.bufferCount = this.buffers.count
     result.textureByteCount = 0
     for (const texture of this.textures) {
       result.textureByteCount += texture.sizeInBytes

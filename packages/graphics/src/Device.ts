@@ -328,4 +328,9 @@ export interface DeviceStats {
 
   shaderCount: number
   shaderStaleCount: number
+
+  /**
+   * Number of buffers and vertex buffers created by the device
+   */
+  bufferCount: number
 }

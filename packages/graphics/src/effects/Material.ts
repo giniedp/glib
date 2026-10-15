@@ -9,6 +9,7 @@ import {
   isTextureSourceOption,
   ProgramInputBlock,
   ProgramInputBlockCollection,
+  disposeUnclaimed,
   ResourceOwnerSet,
   Texture,
   type AcquireTextureOptions,
@@ -145,6 +146,7 @@ export class Material implements Ownable {
 
   public constructor(device: Device, options: MaterialOptions) {
     this.device = device
+    this.owners.onEmpty(() => this.dispose())
     options ||= { properties: {} }
     options.name ||= ''
     options.meta ||= {}
@@ -243,17 +245,7 @@ export class Material implements Ownable {
       owner.release(texture)
     }
     if (isCreated) {
-      this.releaseFromGlobalScope(texture)
-    }
-  }
-
-  /**
-   * Releases a created texture that is still implicitly owned by the global scope, i.e. no scope took it over
-   */
-  private releaseFromGlobalScope(texture: Texture) {
-    const scope = this.device?.scope
-    if (scope && texture.owners.defaultOwner === scope) {
-      scope.release(texture)
+      disposeUnclaimed(texture)
     }
   }
 
@@ -295,25 +287,27 @@ export class Material implements Ownable {
   public update?(time: number, delta: number, frame: number): void
 
   /**
-   * Disposes the effects and releases this material from all owners.
+   * Detaches this material from all owners and disposes what it created.
+   * Called automatically when the last owner releases the material.
    *
    * @remarks
    * - Borrowed textures (passed in as instances) are not touched.
-   * - Created textures are destroyed unless a scope other than the global scope owns them.
+   * - Created textures and effects are disposed unless a scope explicitly owns them.
    * - Acquired textures are shared. They live as long as a scope owns them,
    *   or until the device is disposed if they were acquired without a scope.
    */
   public dispose() {
-    for (const owner of Array.from(this.owners)) {
-      owner.release(this)
+    if (this.owners.isFinalized) {
+      return
     }
+    this.owners.finalize()
     for (const texture of this.createdTextures) {
-      this.releaseFromGlobalScope(texture)
+      disposeUnclaimed(texture)
     }
     this.createdTextures.clear()
     this.acquiredTextures.clear()
     for (const variant in this.effects) {
-      this.effects[variant].dispose()
+      disposeUnclaimed(this.effects[variant])
     }
   }
 }

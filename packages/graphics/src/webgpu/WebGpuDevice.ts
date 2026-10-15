@@ -126,6 +126,7 @@ export class WebGpuDevice extends Device<GPUCanvasContext> {
 
   protected shaders: ResourceTracker<WebGpuShaderModule>
   protected textures: ResourceTracker<WebGpuTexture>
+  protected buffers = createResourceTracker<WebGpuBuffer | WebGpuVertexBuffer>()
   protected samplers = new Map<SamplerState, WebGpuSampler>()
   protected resizeObserver: ResizeObserver
 
@@ -264,15 +265,15 @@ export class WebGpuDevice extends Device<GPUCanvasContext> {
   public createIndexBuffer(options: BufferOptions): WebGpuBuffer {
     options.usage = (options.usage ?? 0) | BufferUsage.INDEX
     options.indexType ||= 'uint16'
-    return new WebGpuBuffer(this, options)
+    return this.createBuffer(options)
   }
 
   public createVertexBuffer(options: VertexBufferOptions): WebGpuVertexBuffer {
-    return new WebGpuVertexBuffer(this, options)
+    return this.claim(this.buffers.track(new WebGpuVertexBuffer(this, options)))
   }
 
   public createBuffer(options: BufferOptions): WebGpuBuffer {
-    return new WebGpuBuffer(this, options)
+    return this.claim(this.buffers.track(new WebGpuBuffer(this, options)), options.scope)
   }
 
   /**
@@ -387,6 +388,7 @@ export class WebGpuDevice extends Device<GPUCanvasContext> {
     result.textureStaleCount = this.textures.staleCount
     result.shaderCount = this.shaders.count
     result.shaderStaleCount = this.shaders.staleCount
+    result.bufferCount = this.buffers.count
     result.textureByteCount = 0
     for (const texture of this.textures) {
       result.textureByteCount += texture.sizeInBytes
@@ -453,6 +455,7 @@ export class WebGpuDevice extends Device<GPUCanvasContext> {
     this.scope.dispose()
     this.textures.finalizeAll()
     this.shaders.finalizeAll()
+    this.buffers.finalizeAll()
     this.resizeObserver?.disconnect()
     this.timers.destroy()
     this.context.unconfigure()

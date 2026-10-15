@@ -1,7 +1,8 @@
 import { BoundingBox, BoundingSphere } from '@gglib/math'
 import { uuid } from '@gglib/utils'
 import { Device } from '../Device'
-import { createMaterials, Material, MaterialOptions } from '../effects'
+import { createMaterialInstance, Material, MaterialOptions } from '../effects'
+import { disposeUnclaimed, ResourceOwnerSet, type Ownable } from '../resources'
 import { RenderEncoder } from '../RenderEncoder'
 import { Geometry, GeometryOptions } from './Geometry'
 
@@ -73,9 +74,22 @@ export interface MeshOptions {
  * explicit {@link RenderEncoder}, and parts can be resolved into {@link ResolvedMeshPart}
  * objects for use in external render pipelines.
  *
+ * Geometries and materials that are passed in as instances are borrowed. Those created from options
+ * are owned by the mesh and are owned by a scope together with the mesh.
+ *
  * @public
  */
-export class Mesh {
+export class Mesh implements Ownable {
+  /**
+   * The owners of this mesh
+   */
+  public readonly owners: ResourceOwnerSet = new ResourceOwnerSet(this)
+
+  /**
+   * Geometries and materials created by this mesh from options
+   */
+  private created = new Set<Geometry | Material>()
+
   /**
    * Automatically generated unique identifier
    */
@@ -129,6 +143,7 @@ export class Mesh {
   public constructor(device: Device, options: MeshOptions) {
     this.uid = uuid()
     this.device = device
+    this.owners.onEmpty(() => this.dispose())
     this.name = options.name
     this.meta = options.meta || {}
 
@@ -141,7 +156,7 @@ export class Mesh {
 
     if (hasImports) {
       this.geometries = options.partImports.map((it) => {
-        return convertGeometry(device, it.geometry)
+        return this.convertGeometry(it.geometry)
       })
       this.parts = options.partImports.map((it, index) => {
         return {
@@ -150,11 +165,17 @@ export class Mesh {
         }
       })
     } else {
-      this.geometries = convertGeometries(device, options.geometries)
+      this.geometries = (options.geometries || []).map((it) => this.convertGeometry(it))
       this.parts = options.parts.map((part) => ({ ...part }))
     }
 
-    this.materials = createMaterials(device, options.materials)
+    this.materials = (options.materials || []).map((it) => {
+      const material = createMaterialInstance(device, it)
+      if (material !== it) {
+        this.created.add(material)
+      }
+      return material
+    })
 
     if (options.boundingBox) {
       this.boundingBox = BoundingBox.convert(options.boundingBox)
@@ -184,17 +205,25 @@ export class Mesh {
    * To instantiate materials, pass `true` for `options.materials`.
    */
   public instantiate(options?: { materials: boolean }) {
-    return new Mesh(this.device, {
+    const materials = this.materials.map((material) => {
+      return options?.materials ? material.instantiate() : material
+    })
+    const result = new Mesh(this.device, {
       name: this.name,
       meta: { ...(this.meta || {}) },
       boundingBox: this.boundingBox?.copy(),
       boundingSphere: this.boundingSphere?.copy(),
-      materials: this.materials.map((material) => {
-        return options?.materials ? material.instantiate() : material
-      }),
+      materials: materials,
       geometries: [...this.geometries],
       parts: this.parts.map((it) => ({ ...it })),
     })
+    // instantiated materials belong to the new mesh, geometries and other materials are borrowed
+    if (options?.materials) {
+      for (const material of materials) {
+        result.created.add(material)
+      }
+    }
+    return result
   }
 
   /**
@@ -243,32 +272,40 @@ export class Mesh {
   }
 
   /**
-   * Releases all geometries and materials owned by this mesh.
+   * Geometries and materials created by this mesh are owned together with the mesh
+   */
+  public ownedChildren(): Iterable<Ownable> {
+    return this.created
+  }
+
+  /**
+   * Detaches this mesh from all owners and disposes the geometries and materials it created.
+   * Called automatically when the last owner releases the mesh.
+   *
+   * @remarks
+   * Borrowed geometries and materials (passed in as instances) are not touched.
+   * Created ones are disposed unless a scope explicitly owns them.
    */
   public dispose(): void {
-    for (const geometry of this.geometries) {
-      geometry.dispose()
+    if (this.owners.isFinalized) {
+      return
     }
-    for (const material of this.materials) {
-      material.dispose()
+    this.owners.finalize()
+    for (const child of this.created) {
+      disposeUnclaimed(child)
     }
+    this.created.clear()
     this.geometries = []
     this.materials = []
   }
-}
 
-function convertGeometries(device: Device, parts: Array<Geometry | GeometryOptions>): Geometry[] {
-  if (!parts || !parts.length) {
-    return []
-  }
-  return parts.map((part) => convertGeometry(device, part))
-}
-
-function convertGeometry(device: Device, part: Geometry | GeometryOptions): Geometry {
-  if (part instanceof Geometry) {
-    return part
-  } else {
-    return new Geometry(device, part)
+  private convertGeometry(part: Geometry | GeometryOptions): Geometry {
+    if (part instanceof Geometry) {
+      return part
+    }
+    const geometry = new Geometry(this.device, part)
+    this.created.add(geometry)
+    return geometry
   }
 }
 

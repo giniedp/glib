@@ -149,6 +149,7 @@ export class Effect implements Disposable, Ownable {
 
   public constructor(device: Device, options: EffectOptions) {
     this.device = device
+    this.owners.onEmpty(() => this.dispose())
     this.name = options.name
     this.meta = options.meta || {}
     this.cullState = options.cullState ? CullState.get(options.cullState) : null
@@ -329,20 +330,22 @@ export class Effect implements Disposable, Ownable {
   }
 
   /**
-   * Disposes the program bindings and releases this effect from all owners.
+   * Detaches this effect from all owners and disposes the program bindings.
+   * Called automatically when the last owner releases the effect.
    *
    * @remarks
    * The acquired shader module is shared and is not disposed.
    * It lives as long as a scope owns it, or until the device is disposed if it was acquired without a scope.
    */
   public dispose(): void {
+    if (this.owners.isFinalized) {
+      return
+    }
+    this.owners.finalize()
     this.program.dispose()
     for (const disposable of this.disposables) {
       disposable.dispose()
     }
     this.disposables = []
-    for (const owner of Array.from(this.owners)) {
-      owner.release(this)
-    }
   }
 }

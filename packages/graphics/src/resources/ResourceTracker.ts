@@ -23,13 +23,13 @@ export interface ResourceTracker<T extends Ownable> {
   /**
    * Tracks an exclusive resource. The resource is finalized as soon as it has no owners.
    */
-  track(resource: T): T
+  track<R extends T>(resource: R): R
 
   /**
    * Tracks a shared resource under the given key.
    * The resource is kept alive for {@link ResourceTrackerOptions.keepAliveFrames} after it has no owners.
    */
-  share(key: ResourceKey, resource: T): T
+  share<R extends T>(key: ResourceKey, resource: R): R
 
   /**
    * Gets a shared resource by key, including stale resources.
@@ -105,12 +105,12 @@ export function createResourceTracker<T extends Ownable>(options?: ResourceTrack
     [Symbol.iterator]() {
       return set.values()
     },
-    track(resource: T) {
+    track<R extends T>(resource: R) {
       add(resource)
       resource.owners.onEmpty(() => resource.owners.finalize())
       return resource
     },
-    share(key: ResourceKey, resource: T) {
+    share<R extends T>(key: ResourceKey, resource: R) {
       if (shared.has(key)) {
         throw new Error(`Resource already exists for key: ${getKeyName(key)}`)
       }

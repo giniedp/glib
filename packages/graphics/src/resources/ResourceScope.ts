@@ -97,13 +97,14 @@ export class ResourceScope implements ResourceOwner, Disposable {
       resource.owners.delete(this)
       return
     }
+    // capture children first, losing the last owner may dispose the resource and clear its children
+    const children = resource.ownedChildren ? Array.from(resource.ownedChildren()) : null
     if (count === 1) {
       this.resources.delete(resource)
       resource.owners.delete(this)
     } else {
       this.resources.set(resource, count - 1)
     }
-    const children = resource.ownedChildren?.()
     if (children) {
       for (const child of children) {
         this.release(child)

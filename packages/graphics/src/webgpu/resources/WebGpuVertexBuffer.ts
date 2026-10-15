@@ -24,11 +24,10 @@ export class WebGpuVertexBuffer extends VertexBuffer {
       this.buffers.push(buffer)
     }
   }
-  public dispose(): this {
+  protected destroy(): void {
     for (const buffer of this.buffers) {
       buffer.dispose()
     }
     this.buffers = []
-    return this
   }
 }

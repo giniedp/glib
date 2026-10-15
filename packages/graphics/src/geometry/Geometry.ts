@@ -3,7 +3,15 @@ import { uuid } from '@gglib/utils'
 import { Device } from '../Device'
 import type { RenderEncoder } from '../RenderEncoder'
 import type { PrimitiveType } from '../enums'
-import { Buffer, VertexBuffer, type BufferOptions, type VertexBufferOptions } from '../resources'
+import {
+  Buffer,
+  disposeUnclaimed,
+  ResourceOwnerSet,
+  VertexBuffer,
+  type BufferOptions,
+  type Ownable,
+  type VertexBufferOptions,
+} from '../resources'
 import type { Disposable, Renderable } from '../types'
 
 /**
@@ -85,12 +93,26 @@ export interface GeometryOptions {
 
 /**
  * @public
+ *
+ * @remarks
+ * Buffers that are passed in as instances are borrowed. Buffers that are created from options
+ * are owned by the geometry and are owned by a scope together with the geometry.
  */
-export class Geometry implements Renderable, Disposable {
+export class Geometry implements Renderable, Disposable, Ownable {
   /**
    * A unique id
    */
   public uid: string = uuid()
+
+  /**
+   * The owners of this geometry
+   */
+  public readonly owners: ResourceOwnerSet = new ResourceOwnerSet(this)
+
+  /**
+   * Buffers created by this geometry from options
+   */
+  private createdBuffers: Array<Buffer | VertexBuffer> = []
 
   /**
    * The graphics device
@@ -169,6 +191,7 @@ export class Geometry implements Renderable, Disposable {
 
   constructor(device: Device, options: GeometryOptions) {
     this.device = device
+    this.owners.onEmpty(() => this.dispose())
 
     this.name = options.name
     this.meta = options.meta || {}
@@ -180,20 +203,20 @@ export class Geometry implements Renderable, Disposable {
       this.boundingSphere = BoundingSphere.convert(options.boundingSphere)
     }
 
-    this.indexBuffer?.dispose()
     if (options.indexBuffer instanceof Buffer) {
       this.indexBuffer = options.indexBuffer
     } else if (options.indexBuffer) {
       this.indexBuffer = this.device.createIndexBuffer(options.indexBuffer)
+      this.createdBuffers.push(this.indexBuffer)
     } else {
       this.indexBuffer = null
     }
 
-    this.vertexBuffer?.dispose()
     if (options.vertexBuffer instanceof VertexBuffer) {
       this.vertexBuffer = options.vertexBuffer
     } else if (options.vertexBuffer) {
       this.vertexBuffer = this.device.createVertexBuffer(options.vertexBuffer)
+      this.createdBuffers.push(this.vertexBuffer)
     } else {
       this.vertexBuffer = null
       throw new Error(`'vertexBuffer' option is missing`)
@@ -234,12 +257,30 @@ export class Geometry implements Renderable, Disposable {
   }
 
   /**
-   * Releases the index and vertex buffers
+   * Buffers created by this geometry are owned together with the geometry
+   */
+  public ownedChildren(): Iterable<Ownable> {
+    return this.createdBuffers
+  }
+
+  /**
+   * Detaches this geometry from all owners and disposes the buffers it created.
+   * Called automatically when the last owner releases the geometry.
+   *
+   * @remarks
+   * Borrowed buffers (passed in as instances) are not touched.
+   * Created buffers are disposed unless a scope explicitly owns them.
    */
   public dispose() {
-    this.indexBuffer?.dispose()
+    if (this.owners.isFinalized) {
+      return
+    }
+    this.owners.finalize()
+    for (const buffer of this.createdBuffers) {
+      disposeUnclaimed(buffer)
+    }
+    this.createdBuffers = []
     this.indexBuffer = null
-    this.vertexBuffer?.dispose()
     this.vertexBuffer = null
   }
 }

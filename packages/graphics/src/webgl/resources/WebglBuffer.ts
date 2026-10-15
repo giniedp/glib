@@ -45,9 +45,9 @@ export class WebglBuffer extends Buffer implements WebglResource<WebGLBuffer> {
   }
 
   /**
-   * Releases any graphics resources.
+   * Releases the WebGL buffer object. The buffer may be recreated with {@link create}.
    */
-  public dispose(): void {
+  protected destroy(): void {
     if (this.device.context.isBuffer(this.glHandle)) {
       this.device.context.deleteBuffer(this.glHandle)
       ;(this as Mutable<this>).glHandle = null
@@ -70,7 +70,7 @@ export class WebglBuffer extends Buffer implements WebglResource<WebGLBuffer> {
     srcLength ??= src.byteLength / srcElementSize - srcOffset
     const srcByteSize = srcLength * srcElementSize
     if (self.size !== srcByteSize) {
-      self.dispose()
+      this.destroy()
       self.size = srcByteSize
       self.elementCount = self.size / self.stride
       self.create()

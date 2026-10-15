@@ -29,7 +29,7 @@ export class WebglVertexBuffer extends VertexBuffer {
     }
   }
 
-  public dispose(): void {
+  protected destroy(): void {
     for (const buffer of this.buffers) {
       buffer.dispose()
     }

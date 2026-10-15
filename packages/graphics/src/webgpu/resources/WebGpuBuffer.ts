@@ -29,7 +29,7 @@ export class WebGpuBuffer extends Buffer {
     }
   }
 
-  public dispose() {
+  protected destroy() {
     const self = this as Mutable<this>
     self.resource?.destroy()
     self.resource = null

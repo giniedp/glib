@@ -15,13 +15,15 @@ import {
   type VertexLayout,
   vertexLayoutSize,
 } from './VertexLayout'
+import { type Ownable, ResourceOwnerSet } from './ResourceOwnerSet'
+import type { ResourceScopeOption } from './ResourceScope'
 
 /**
  * Constructor options for {@link Buffer}
  *
  * @public
  */
-export interface BufferOptions<T = TypedArray | ArrayBuffer | PlainBufferData> {
+export interface BufferOptions<T = TypedArray | ArrayBuffer | PlainBufferData> extends ResourceScopeOption {
   /**
    *
    */
@@ -84,8 +86,17 @@ export interface BufferOptions<T = TypedArray | ArrayBuffer | PlainBufferData> {
 /**
  * @public
  */
-export abstract class Buffer {
+export abstract class Buffer implements Ownable {
   public abstract readonly device: Device
+
+  /**
+   * The owners of this buffer
+   */
+  public readonly owners: ResourceOwnerSet = new ResourceOwnerSet(this)
+
+  public constructor() {
+    this.owners.onFinalize(() => this.destroy())
+  }
 
   /**
    *
@@ -205,7 +216,17 @@ export abstract class Buffer {
 
   public abstract create(): void
 
-  public abstract dispose(): void
+  /**
+   * Releases the GPU object. The buffer may be recreated with {@link create}.
+   */
+  protected abstract destroy(): void
+
+  /**
+   * Immediately releases the GPU resources of this buffer, regardless of its owners.
+   */
+  public dispose(): void {
+    this.owners.finalize()
+  }
 
   /**
    * Sets the buffer data to exactly the given data (portion).

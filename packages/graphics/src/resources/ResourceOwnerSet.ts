@@ -85,6 +85,13 @@ export class ResourceOwnerSet implements Iterable<ResourceOwner> {
   }
 
   /**
+   * Whether the resource has at least one explicit owner, i.e. not only the implicit default owner
+   */
+  public get isExplicitlyOwned(): boolean {
+    return this.explicit.size > 0
+  }
+
+  /**
    * Whether the resource has been finalized
    */
   public get isFinalized(): boolean {
@@ -235,6 +242,19 @@ export class ResourceOwnerSet implements Iterable<ResourceOwner> {
       yield this.implicit
     }
     yield* this.explicit
+  }
+}
+
+/**
+ * Disposes a resource that was created by another object, unless a scope owns it explicitly.
+ *
+ * @remarks
+ * Used by composite objects (e.g. Material, Mesh) to free the resources they created when they are disposed.
+ * A resource that is only implicitly owned by the global scope, or not owned at all, is disposed.
+ */
+export function disposeUnclaimed(resource: Ownable & { dispose(): void }): void {
+  if (!resource.owners.isExplicitlyOwned) {
+    resource.dispose()
   }
 }
 
