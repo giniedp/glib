@@ -15,7 +15,7 @@ import {
   type VertexLayout,
   vertexLayoutSize,
 } from './VertexLayout'
-import { type Ownable, ResourceOwnerSet } from './ResourceOwnerSet'
+import { type Ownable, ResourceOwnership } from './ResourceOwnership'
 import type { ResourceScopeOption } from './ResourceScope'
 
 /**
@@ -90,12 +90,12 @@ export abstract class Buffer implements Ownable {
   public abstract readonly device: Device
 
   /**
-   * The owners of this buffer
+   * The ownership state of this buffer
    */
-  public readonly owners: ResourceOwnerSet = new ResourceOwnerSet(this)
+  public readonly ownership: ResourceOwnership = new ResourceOwnership(this)
 
   public constructor() {
-    this.owners.onFinalize(() => this.destroy())
+    this.ownership.onFinalize(() => this.destroy())
   }
 
   /**
@@ -225,7 +225,7 @@ export abstract class Buffer implements Ownable {
    * Immediately releases the GPU resources of this buffer, regardless of its owners.
    */
   public dispose(): void {
-    this.owners.finalize()
+    this.ownership.finalize()
   }
 
   /**

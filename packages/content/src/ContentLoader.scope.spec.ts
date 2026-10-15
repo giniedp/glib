@@ -64,11 +64,11 @@ describe('@gglib/content/ContentLoader scopes', () => {
     const t1 = await content.loadTexture('a.test', { scope: a })
     const t2 = await content.loadTexture('a.test', { scope: b })
     expect(t1).toBe(t2)
-    expect(t1.owners.size).toBe(2)
+    expect(t1.ownership.size).toBe(2)
     a.dispose()
-    expect(t1.owners.isFinalized).toBe(false)
+    expect(t1.ownership.isFinalized).toBe(false)
     b.dispose()
-    expect(t1.owners.isFinalized).toBe(true)
+    expect(t1.ownership.isFinalized).toBe(true)
   })
 
   it('evicts finalized instances from the cache', async () => {
@@ -77,7 +77,7 @@ describe('@gglib/content/ContentLoader scopes', () => {
     a.dispose()
     const t2 = await content.loadTexture('a.test')
     expect(t2).not.toBe(t1)
-    expect(t2.owners.isFinalized).toBe(false)
+    expect(t2.ownership.isFinalized).toBe(false)
   })
 
   it('creates model materials owned by their mesh', async () => {
@@ -92,9 +92,9 @@ describe('@gglib/content/ContentLoader scopes', () => {
     expect(scope.has(geometry.vertexBuffer)).toBe(true)
 
     scope.dispose()
-    expect(model.owners.isFinalized).toBe(true)
-    expect(mesh.owners.isFinalized).toBe(true)
-    expect(material.owners.isFinalized).toBe(true)
-    expect(geometry.owners.isFinalized).toBe(true)
+    expect(model.ownership.isFinalized).toBe(true)
+    expect(mesh.ownership.isFinalized).toBe(true)
+    expect(material.ownership.isFinalized).toBe(true)
+    expect(geometry.ownership.isFinalized).toBe(true)
   })
 })

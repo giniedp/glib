@@ -54,7 +54,7 @@ export function runContract(createDevice: () => Device) {
 
     it('is owned by the global scope', () => {
       const texture = device.createTexture({ width: 1, height: 1 })
-      expect(texture.owners.defaultOwner).toBe(device.scope)
+      expect(texture.ownership.defaultOwner).toBe(device.scope)
       expect(device.scope.has(texture)).toBe(true)
     })
 
@@ -62,12 +62,12 @@ export function runContract(createDevice: () => Device) {
       const initialCount = device.stats().textureCount
       const scope = device.createScope('test')
       const texture = device.createTexture({ width: 1, height: 1, scope })
-      expect(texture.owners.defaultOwner).toBe(null)
+      expect(texture.ownership.defaultOwner).toBe(null)
       expect(device.scope.has(texture)).toBe(false)
       expect(scope.has(texture)).toBe(true)
 
       scope.dispose()
-      expect(texture.owners.isFinalized).toBe(true)
+      expect(texture.ownership.isFinalized).toBe(true)
       expect(device.stats().textureCount).toBe(initialCount)
     })
 
@@ -76,14 +76,14 @@ export function runContract(createDevice: () => Device) {
       const texture = scope.own(device.createTexture({ width: 1, height: 1 }))
       expect(device.scope.has(texture)).toBe(false)
       scope.dispose()
-      expect(texture.owners.isFinalized).toBe(true)
+      expect(texture.ownership.isFinalized).toBe(true)
     })
 
     it('keeps default textures owned by the global scope', () => {
       const scope = device.createScope('test')
       scope.own(device.defaultTexture)
       scope.dispose()
-      expect(device.defaultTexture.owners.isFinalized).toBe(false)
+      expect(device.defaultTexture.ownership.isFinalized).toBe(false)
       expect(device.scope.has(device.defaultTexture)).toBe(true)
     })
   })
@@ -97,7 +97,7 @@ export function runContract(createDevice: () => Device) {
       const t1 = device.acquireTexture({ key: 'test', width: 1, height: 1, scope: a })
       const t2 = device.acquireTexture({ key: 'test', width: 1, height: 1, scope: b })
       expect(t1).toBe(t2)
-      expect(t1.owners.size).toBe(2)
+      expect(t1.ownership.size).toBe(2)
       expect(device.stats().textureCount).toBe(initialCount + 1)
 
       a.dispose()
@@ -120,14 +120,14 @@ export function runContract(createDevice: () => Device) {
       // finalized after keep alive frames
       await expect.poll(() => device.stats().textureCount).toBe(initialCount)
       expect(device.stats().textureStaleCount).toBe(0)
-      expect(t1.owners.isFinalized).toBe(true)
+      expect(t1.ownership.isFinalized).toBe(true)
     })
 
     it('is owned by the global scope without a scope', () => {
       const texture = device.acquireTexture({ key: 'global', width: 1, height: 1 })
-      expect(texture.owners.defaultOwner).toBe(device.scope)
+      expect(texture.ownership.defaultOwner).toBe(device.scope)
       expect(device.acquireTexture({ key: 'global' })).toBe(texture)
-      expect(texture.owners.size).toBe(1)
+      expect(texture.ownership.size).toBe(1)
     })
 
     it('throws if missing', () => {

@@ -1,6 +1,6 @@
 import type { Device } from '../Device'
 import type { Buffer, BufferOptions } from './Buffer'
-import { type Ownable, ResourceOwnerSet } from './ResourceOwnerSet'
+import { type Ownable, ResourceOwnership } from './ResourceOwnership'
 
 /**
  * Constructor options for {@link VertexBuffer}
@@ -17,12 +17,12 @@ export abstract class VertexBuffer implements Ownable {
   public abstract readonly buffers: Buffer[]
 
   /**
-   * The owners of this vertex buffer
+   * The ownership state of this vertex buffer
    */
-  public readonly owners: ResourceOwnerSet = new ResourceOwnerSet(this)
+  public readonly ownership: ResourceOwnership = new ResourceOwnership(this)
 
   public constructor() {
-    this.owners.onFinalize(() => this.destroy())
+    this.ownership.onFinalize(() => this.destroy())
   }
 
   /**
@@ -34,7 +34,7 @@ export abstract class VertexBuffer implements Ownable {
    * Immediately releases the GPU resources of this vertex buffer, regardless of its owners.
    */
   public dispose(): void {
-    this.owners.finalize()
+    this.ownership.finalize()
   }
 
   public getMaxVertexCount(): number {

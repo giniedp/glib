@@ -132,7 +132,7 @@ export class WebGpuProgram extends Program {
     }
   }
 
-  public dispose(): void {
+  protected destroy(): void {
     for (const resource of this.ownedResources) {
       resource.dispose()
     }

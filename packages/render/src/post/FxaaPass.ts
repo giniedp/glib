@@ -1,5 +1,5 @@
 import { FxaaEffect } from '@gglib/effects'
-import { Device } from '@gglib/graphics'
+import { Device, type Ownable, ResourceOwnership } from '@gglib/graphics'
 import { FrameGraph, FrameResource } from '../FrameGraph'
 import { RenderChannel } from '../RenderChannel'
 import { RenderContext, RenderPass } from '../Types'
@@ -11,7 +11,12 @@ export interface FxaaOptions {
   thresholdMax?: number
   quality?: number
 }
-export class FxaaPass implements RenderPass {
+export class FxaaPass implements RenderPass, Ownable {
+  /**
+   * The ownership state of this pass
+   */
+  public readonly ownership: ResourceOwnership = new ResourceOwnership(this)
+
   public name: string = 'Fxaa Pass'
 
   public enabled = false
@@ -28,7 +33,7 @@ export class FxaaPass implements RenderPass {
   public constructor(device: Device, options: FxaaOptions = {}) {
     this.device = device
     if (device.isReady) {
-      this.effect = new FxaaEffect(device)
+      this.effect = this.ownership.adopt(new FxaaEffect(device))
     }
 
     this.enabled = options.enabled ?? this.enabled
@@ -38,7 +43,7 @@ export class FxaaPass implements RenderPass {
   }
 
   public setup(frame: FrameGraph<RenderPass>, ctx: RenderContext): void {
-    this.effect ||= new FxaaEffect(this.device)
+    this.effect ||= this.ownership.adopt(new FxaaEffect(this.device))
     this.active = this.enabled && this.effect.isCompiled
 
     if (this.active) {
@@ -68,5 +73,12 @@ export class FxaaPass implements RenderPass {
 
   public cleanup(ctx: RenderContext): void {
     //
+  }
+
+  /**
+   * Immediately finalizes this pass and its effects
+   */
+  public dispose() {
+    this.ownership.finalize()
   }
 }

@@ -1,8 +1,10 @@
 import {
   Device,
+  type Ownable,
   Program,
   Renderable,
   RenderEncoder,
+  ResourceOwnership,
   ShaderModuleOptions,
   Texture,
   typedInputAccessor,
@@ -48,7 +50,12 @@ export function vignetteShaderParams(): VignetteShaderParams {
   }
 }
 
-export class VignetteShader implements Renderable {
+export class VignetteShader implements Renderable, Ownable {
+  /**
+   * The ownership state of this effect
+   */
+  public readonly ownership: ResourceOwnership = new ResourceOwnership(this)
+
   public textureInput: Texture
   public textureOuput: Texture
   public get isReady(): boolean {
@@ -70,7 +77,8 @@ export class VignetteShader implements Renderable {
   private params: TypedInputAccessor<VignetteShaderParams>
   public constructor(device: Device) {
     this.params = typedInputAccessor(vignetteShaderParams())
-    this.program = device.createShaderModule(vignetteShaderOptions()).program.clone()
+    const shader = this.ownership.adopt(device.acquireShaderModule(vignetteShaderOptions()))
+    this.program = this.ownership.adopt(shader.program.clone())
   }
 
   public render(pass: RenderEncoder): void {
@@ -92,5 +100,12 @@ export class VignetteShader implements Renderable {
     pass.setProgram(this.program)
     pass.draw(3)
     pass.submit()
+  }
+
+  /**
+   * Immediately finalizes this effect and its program
+   */
+  public dispose() {
+    this.ownership.finalize()
   }
 }

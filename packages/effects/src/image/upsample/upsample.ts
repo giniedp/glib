@@ -2,8 +2,10 @@ import {
   Device,
   DeviceOutput,
   inputSlot,
+  type Ownable,
   Program,
   RenderEncoder,
+  ResourceOwnership,
   ShaderModuleOptions,
   Texture,
   typedProgramInputs,
@@ -29,7 +31,12 @@ export const UpsampleOperator = {
   BICUBIC: brand<UpsampleOperator>(3),
 }
 
-export class UpsampleEffect {
+export class UpsampleEffect implements Ownable {
+  /**
+   * The ownership state of this effect
+   */
+  public readonly ownership: ResourceOwnership = new ResourceOwnership(this)
+
   public readonly program: Program
   public readonly params = typedProgramInputs({
     texture: inputSlot('', 'colorMap', 'texture'),
@@ -51,7 +58,8 @@ export class UpsampleEffect {
   public operator: UpsampleOperator = UpsampleOperator.PASSTHROUGH
 
   public constructor(device: Device) {
-    this.program = device.createShaderModule(upsampleShaderOptions()).program.clone()
+    const shader = this.ownership.adopt(device.acquireShaderModule(upsampleShaderOptions()))
+    this.program = this.ownership.adopt(shader.program.clone())
     this.compiled = this.program.compiled.then(() => this)
   }
 
@@ -72,5 +80,12 @@ export class UpsampleEffect {
     pass.draw(3)
     pass.submit()
     pass.setRenderTarget(0, null)
+  }
+
+  /**
+   * Immediately finalizes this effect and its program
+   */
+  public dispose() {
+    this.ownership.finalize()
   }
 }

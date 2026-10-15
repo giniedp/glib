@@ -15,7 +15,7 @@ export interface ResourceOwner {
    */
   release(resource: Ownable): void
   /**
-   * Called by the owner set when this owner loses the resource without releasing it,
+   * Called by the ownership when this owner loses the resource without releasing it,
    * e.g. when it is displaced as default owner or the resource is finalized.
    *
    * @internal
@@ -28,38 +28,41 @@ export interface ResourceOwner {
  */
 export interface Ownable {
   /**
-   * The owners of this object
+   * The ownership state of this object
    */
-  readonly owners: ResourceOwnerSet
-  /**
-   * Resources created (not borrowed) by this object.
-   * These are owned and released together with this object.
-   */
-  ownedChildren?(): Iterable<Ownable>
+  readonly ownership: ResourceOwnership
 }
 
 /**
- * Holds the owners of a single resource.
+ * Holds the ownership state of a single resource: its owners, the resources it created (children)
+ * and what happens when it ends.
  *
  * @remarks
- * A resource may have an implicit default owner (usually the global scope of the device).
- * The first explicit owner displaces the default owner, i.e. ownership is moved.
- * If the default owner claims the resource explicitly, it stays an owner and later owners are added.
+ * Owners:
+ * - A resource may have an implicit default owner (usually the global scope of the device).
+ * - The first explicit owner displaces the default owner, i.e. ownership is moved.
+ * - If the default owner claims the resource explicitly, it stays an owner and later owners are added.
+ * - When the last owner is removed, the resource is finalized, unless it is shared.
+ *   Shared resources are kept alive by the device pool, see {@link markShared}.
  *
- * The owner set does not destroy anything itself. The creator of the resource subscribes to {@link onEmpty}
- * and decides when to finalize.
+ * Children:
+ * - Resources created or acquired by the target are adopted with {@link adopt}.
+ *   Owners of the target own the children as well.
+ * - On {@link finalize}, children that are neither shared nor explicitly owned by a scope are finalized too.
  */
-export class ResourceOwnerSet implements Iterable<ResourceOwner> {
+export class ResourceOwnership implements Iterable<ResourceOwner> {
   private explicit = new Set<ResourceOwner>()
   private implicit: ResourceOwner | null = null
+  private childSet = new Set<Ownable>()
   private finalized = false
+  private shared = false
   private wasEmptied = false
   private onEmptyHandlers: Array<() => void> = []
   private onReviveHandlers: Array<() => void> = []
   private onFinalizeHandlers: Array<() => void> = []
 
   /**
-   * The resource this set belongs to
+   * The resource this ownership belongs to
    */
   public readonly target: Ownable
 
@@ -98,6 +101,20 @@ export class ResourceOwnerSet implements Iterable<ResourceOwner> {
     return this.finalized
   }
 
+  /**
+   * Whether the resource is shared through a pool, see {@link markShared}
+   */
+  public get isShared(): boolean {
+    return this.shared
+  }
+
+  /**
+   * The resources adopted by the target
+   */
+  public get children(): Iterable<Ownable> {
+    return this.childSet
+  }
+
   public constructor(target: Ownable, defaultOwner?: ResourceOwner | null) {
     this.target = target
     this.implicit = defaultOwner || null
@@ -115,6 +132,17 @@ export class ResourceOwnerSet implements Iterable<ResourceOwner> {
    */
   public isExplicit(owner: ResourceOwner): boolean {
     return this.explicit.has(owner)
+  }
+
+  /**
+   * Marks the resource as shared.
+   *
+   * @remarks
+   * A shared resource is not finalized when its last owner is removed, the pool that shares it decides when.
+   * It is also not finalized together with the objects that adopted it.
+   */
+  public markShared(): void {
+    this.shared = true
   }
 
   /**
@@ -166,7 +194,8 @@ export class ResourceOwnerSet implements Iterable<ResourceOwner> {
   }
 
   /**
-   * Removes an owner, explicit or implicit. Triggers {@link onEmpty} when the last owner is removed.
+   * Removes an owner, explicit or implicit.
+   * Triggers {@link onEmpty} when the last owner is removed and finalizes the resource, unless it is shared.
    *
    * @returns true if the owner was removed
    */
@@ -183,14 +212,59 @@ export class ResourceOwnerSet implements Iterable<ResourceOwner> {
     if (this.size === 0) {
       this.wasEmptied = true
       trigger(this.onEmptyHandlers)
+      if (!this.shared) {
+        this.finalize()
+      }
     }
     return true
   }
 
   /**
-   * Immediately finalizes the resource. All owners are detached.
+   * Adopts a resource that was created or acquired by the target.
    *
    * @remarks
+   * Current and future explicit owners of the target own the child as well.
+   * The child is finalized together with the target, unless it is shared or explicitly owned by a scope.
+   *
+   * @returns the given child
+   */
+  public adopt<T extends Ownable>(child: T): T {
+    if (this.finalized) {
+      throw new Error(`Can not adopt a resource into a finalized resource`)
+    }
+    if (this.childSet.has(child)) {
+      return child
+    }
+    this.childSet.add(child)
+    // the implicit default owner is not passed on, children have their own default owner
+    for (const owner of Array.from(this.explicit)) {
+      owner.own(child)
+    }
+    return child
+  }
+
+  /**
+   * Drops an adopted child, e.g. when it is replaced.
+   *
+   * @remarks
+   * Owners of the target release the child. The child is finalized, unless it is shared or explicitly owned by a scope.
+   */
+  public drop(child: Ownable): void {
+    if (!this.childSet.delete(child)) {
+      return
+    }
+    for (const owner of Array.from(this.explicit)) {
+      owner.release(child)
+    }
+    finalizeUnclaimed(child)
+  }
+
+  /**
+   * Immediately finalizes the resource, regardless of its owners.
+   *
+   * @remarks
+   * All owners are detached, the {@link onFinalize} handlers are called and
+   * adopted children are finalized, unless they are shared or explicitly owned by a scope.
    * Does not trigger {@link onEmpty}. Calling this multiple times has no effect.
    */
   public finalize(): void {
@@ -205,6 +279,11 @@ export class ResourceOwnerSet implements Iterable<ResourceOwner> {
       owner.detach(this.target)
     }
     trigger(this.onFinalizeHandlers)
+    const children = Array.from(this.childSet).reverse()
+    this.childSet.clear()
+    for (const child of children) {
+      finalizeUnclaimed(child)
+    }
     this.onEmptyHandlers.length = 0
     this.onReviveHandlers.length = 0
     this.onFinalizeHandlers.length = 0
@@ -249,19 +328,13 @@ export class ResourceOwnerSet implements Iterable<ResourceOwner> {
  * Whether the given value is an {@link Ownable}
  */
 export function isOwnable(value: unknown): value is Ownable {
-  return !!value && (value as Ownable).owners instanceof ResourceOwnerSet
+  return !!value && (value as Ownable).ownership instanceof ResourceOwnership
 }
 
-/**
- * Disposes a resource that was created by another object, unless a scope owns it explicitly.
- *
- * @remarks
- * Used by composite objects (e.g. Material, Mesh) to free the resources they created when they are disposed.
- * A resource that is only implicitly owned by the global scope, or not owned at all, is disposed.
- */
-export function disposeUnclaimed(resource: Ownable & { dispose(): void }): void {
-  if (!resource.owners.isExplicitlyOwned) {
-    resource.dispose()
+function finalizeUnclaimed(resource: Ownable) {
+  const ownership = resource.ownership
+  if (!ownership.isShared && !ownership.isExplicitlyOwned) {
+    ownership.finalize()
   }
 }
 

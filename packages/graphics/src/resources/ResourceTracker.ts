@@ -1,7 +1,7 @@
 import type { FrameFn } from '../FrameScheduler'
-import type { Ownable } from './ResourceOwnerSet'
+import type { Ownable } from './ResourceOwnership'
 
-export type ResourceKey = any & { owners?: never }
+export type ResourceKey = any & { ownership?: never }
 
 export interface ResourceTrackerOptions {
   /**
@@ -66,12 +66,12 @@ export function createResourceTracker<T extends Ownable>(options?: ResourceTrack
   let isScheduled = false
 
   function add(resource: T) {
-    if (!resource.owners) {
+    if (!resource.ownership) {
       throw new Error('Resource must have an owner set')
     }
     set.add(resource)
-    resource.owners.onRevive(() => stale.delete(resource))
-    resource.owners.onFinalize(() => {
+    resource.ownership.onRevive(() => stale.delete(resource))
+    resource.ownership.onFinalize(() => {
       set.delete(resource)
       stale.delete(resource)
     })
@@ -80,7 +80,7 @@ export function createResourceTracker<T extends Ownable>(options?: ResourceTrack
   function collect() {
     for (const [resource, frames] of Array.from(stale)) {
       if (frames <= 1) {
-        resource.owners.finalize()
+        resource.ownership.finalize()
       } else {
         stale.set(resource, frames - 1)
       }
@@ -107,7 +107,6 @@ export function createResourceTracker<T extends Ownable>(options?: ResourceTrack
     },
     track<R extends T>(resource: R) {
       add(resource)
-      resource.owners.onEmpty(() => resource.owners.finalize())
       return resource
     },
     share<R extends T>(key: ResourceKey, resource: R) {
@@ -115,11 +114,12 @@ export function createResourceTracker<T extends Ownable>(options?: ResourceTrack
         throw new Error(`Resource already exists for key: ${getKeyName(key)}`)
       }
       add(resource)
+      resource.ownership.markShared()
       shared.set(key, resource)
-      resource.owners.onFinalize(() => shared.delete(key))
-      resource.owners.onEmpty(() => {
+      resource.ownership.onFinalize(() => shared.delete(key))
+      resource.ownership.onEmpty(() => {
         if (keepAliveFrames <= 0) {
-          resource.owners.finalize()
+          resource.ownership.finalize()
         } else {
           stale.set(resource, keepAliveFrames)
           scheduleCollect()
@@ -133,7 +133,7 @@ export function createResourceTracker<T extends Ownable>(options?: ResourceTrack
     collect,
     finalizeAll() {
       for (const resource of Array.from(set)) {
-        resource.owners.finalize()
+        resource.ownership.finalize()
       }
     },
     get count() {

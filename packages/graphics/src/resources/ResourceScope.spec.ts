@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { type Ownable, ResourceOwnerSet } from './ResourceOwnerSet'
+import { type Ownable, ResourceOwnership } from './ResourceOwnership'
 import { ResourceScope } from './ResourceScope'
 
 describe('ResourceScope', () => {
@@ -14,12 +14,12 @@ describe('ResourceScope', () => {
       name,
       children: options?.children || [],
       onEmpty: vi.fn<() => void>(),
-      ownedChildren(this: DummyResource) {
-        return this.children
-      },
-    } as unknown as DummyResource & { owners: ResourceOwnerSet }
-    resource.owners = new ResourceOwnerSet(resource, options?.scope)
-    resource.owners.onEmpty(resource.onEmpty)
+    } as unknown as DummyResource & { ownership: ResourceOwnership }
+    resource.ownership = new ResourceOwnership(resource, options?.scope)
+    resource.ownership.onEmpty(resource.onEmpty)
+    for (const child of resource.children) {
+      resource.ownership.adopt(child)
+    }
     options?.scope?.adopt(resource)
     return resource
   }
@@ -28,7 +28,7 @@ describe('ResourceScope', () => {
     const global = new ResourceScope('global')
     const r = makeResource('r', { scope: global })
     expect(global.has(r)).toBe(true)
-    expect(r.owners.isExplicit(global)).toBe(false)
+    expect(r.ownership.isExplicit(global)).toBe(false)
     global.dispose()
     expect(r.onEmpty).toHaveBeenCalledTimes(1)
   })
@@ -57,7 +57,7 @@ describe('ResourceScope', () => {
     const r = makeResource('r', { scope: global })
     global.own(r)
     a.own(r)
-    expect(r.owners.size).toBe(2)
+    expect(r.ownership.size).toBe(2)
     a.dispose()
     expect(r.onEmpty).not.toHaveBeenCalled()
     expect(global.has(r)).toBe(true)
@@ -72,7 +72,7 @@ describe('ResourceScope', () => {
     const r = makeResource('r', { scope: global })
     a.own(r)
     b.own(r)
-    expect(r.owners.size).toBe(2)
+    expect(r.ownership.size).toBe(2)
     a.dispose()
     expect(r.onEmpty).not.toHaveBeenCalled()
     b.dispose()
@@ -84,7 +84,7 @@ describe('ResourceScope', () => {
     const r = makeResource('r')
     a.own(r)
     a.own(r)
-    expect(r.owners.size).toBe(1)
+    expect(r.ownership.size).toBe(1)
     a.release(r)
     expect(r.onEmpty).not.toHaveBeenCalled()
     a.release(r)
@@ -155,7 +155,7 @@ describe('ResourceScope', () => {
     const r = makeResource('r')
     a.own(r)
     b.own(r)
-    r.owners.finalize()
+    r.ownership.finalize()
     expect(a.has(r)).toBe(false)
     expect(b.has(r)).toBe(false)
     a.dispose()
@@ -165,7 +165,7 @@ describe('ResourceScope', () => {
   it('throws when owning a finalized resource', () => {
     const a = new ResourceScope('a')
     const r = makeResource('r')
-    r.owners.finalize()
+    r.ownership.finalize()
     expect(() => a.own(r)).toThrow()
     expect(a.has(r)).toBe(false)
   })
@@ -175,8 +175,8 @@ describe('ResourceScope', () => {
     const order: string[] = []
     const r1 = makeResource('r1')
     const r2 = makeResource('r2')
-    r1.owners.onEmpty(() => order.push('r1'))
-    r2.owners.onEmpty(() => order.push('r2'))
+    r1.ownership.onEmpty(() => order.push('r1'))
+    r2.ownership.onEmpty(() => order.push('r2'))
     a.own(r1)
     a.own(r2)
     a.dispose()
@@ -189,8 +189,8 @@ describe('ResourceScope', () => {
     const order: string[] = []
     const r1 = makeResource('r1')
     const r2 = makeResource('r2')
-    r1.owners.onEmpty(() => order.push('global'))
-    r2.owners.onEmpty(() => order.push('a'))
+    r1.ownership.onEmpty(() => order.push('global'))
+    r2.ownership.onEmpty(() => order.push('a'))
     global.own(r1)
     a.own(r2)
     global.dispose()

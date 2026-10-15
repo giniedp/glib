@@ -31,14 +31,14 @@ describe('@gglib/model/Model', () => {
       const model = new Model(device, { meshes: [meshOptions()] })
       const mesh = model.meshes[0]
       model.dispose()
-      expect(mesh.owners.isFinalized).toBe(true)
+      expect(mesh.ownership.isFinalized).toBe(true)
     })
 
     it('does not dispose borrowed meshes', () => {
       const mesh = new Mesh(device, meshOptions())
       const model = new Model(device, { meshes: [mesh] })
       model.dispose()
-      expect(mesh.owners.isFinalized).toBe(false)
+      expect(mesh.ownership.isFinalized).toBe(false)
     })
 
     it('keeps the original when an instance is disposed', () => {
@@ -47,9 +47,9 @@ describe('@gglib/model/Model', () => {
       const mesh = model.meshes[0]
       const instanceMesh = instance.meshes[0]
       instance.dispose()
-      expect(instanceMesh.owners.isFinalized).toBe(true)
-      expect(mesh.owners.isFinalized).toBe(false)
-      expect(mesh.geometries[0].owners.isFinalized).toBe(false)
+      expect(instanceMesh.ownership.isFinalized).toBe(true)
+      expect(mesh.ownership.isFinalized).toBe(false)
+      expect(mesh.geometries[0].ownership.isFinalized).toBe(false)
     })
 
     it('shares meshes with instances by default', () => {
@@ -57,7 +57,7 @@ describe('@gglib/model/Model', () => {
       const instance = model.instantiate()
       expect(instance.meshes[0]).toBe(model.meshes[0])
       instance.dispose()
-      expect(model.meshes[0].owners.isFinalized).toBe(false)
+      expect(model.meshes[0].ownership.isFinalized).toBe(false)
     })
 
     it('owns materials created by a material factory', () => {
@@ -77,7 +77,7 @@ describe('@gglib/model/Model', () => {
       expect(created.length).toBe(1)
       expect(model.meshes[0].materials[0]).toBe(created[0])
       model.dispose()
-      expect(created[0].owners.isFinalized).toBe(true)
+      expect(created[0].ownership.isFinalized).toBe(true)
     })
 
     it('is disposed with its scope', () => {
@@ -86,9 +86,9 @@ describe('@gglib/model/Model', () => {
       const mesh = model.meshes[0]
       const material = mesh.materials[0]
       scope.dispose()
-      expect(model.owners.isFinalized).toBe(true)
-      expect(mesh.owners.isFinalized).toBe(true)
-      expect(material.owners.isFinalized).toBe(true)
+      expect(model.ownership.isFinalized).toBe(true)
+      expect(mesh.ownership.isFinalized).toBe(true)
+      expect(material.ownership.isFinalized).toBe(true)
     })
   })
 })

@@ -1,6 +1,6 @@
 import { brand, eventSource, EventType } from '@gglib/utils'
 import type { FrameTask } from '../../FrameScheduler'
-import { ResourceOwnerSet, ShaderModule, type ProgramOptions } from '../../resources'
+import { ResourceOwnership, ShaderModule, type ProgramOptions } from '../../resources'
 import { WebglDevice } from '../WebglDevice'
 import type { WebglResource } from '../types'
 import { WebglProgram } from './WebglProgram'
@@ -86,7 +86,7 @@ export class WebglShaderModule extends ShaderModule implements WebglResource<Web
 
   public readonly reflection: WebglReflection
   public readonly textureUnitBase: number = 1
-  public readonly owners: ResourceOwnerSet
+  public readonly ownership: ResourceOwnership
 
   private info: string
   private attached: WebglShader[] = []
@@ -98,8 +98,8 @@ export class WebglShaderModule extends ShaderModule implements WebglResource<Web
     this.device.onContextLost.add(this.handleContextLost)
     this.device.onContextRestored.add(this.handleContextRestored)
 
-    this.owners = new ResourceOwnerSet(this)
-    this.owners.onFinalize(() => this.finalize())
+    this.ownership = new ResourceOwnership(this)
+    this.ownership.onFinalize(() => this.finalize())
 
     this.name = options.name || `WebglProgram`
     this.textureUnitBase = Math.max(0, options.textureUnitBase ?? this.textureUnitBase)
@@ -140,7 +140,7 @@ export class WebglShaderModule extends ShaderModule implements WebglResource<Web
    * Immediately releases the `WebGLProgram` resource, regardless of its owners
    */
   public dispose(): void {
-    this.owners.finalize()
+    this.ownership.finalize()
   }
 
   private finalize(): void {

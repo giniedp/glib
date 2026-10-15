@@ -8,7 +8,16 @@ import {
   UpsampleEffect,
   UpsampleOperator,
 } from '@gglib/effects'
-import { BlendState, Color, Device, Texture, TextureDescriptor, TextureUsage } from '@gglib/graphics'
+import {
+  BlendState,
+  Color,
+  Device,
+  type Ownable,
+  ResourceOwnership,
+  Texture,
+  TextureDescriptor,
+  TextureUsage,
+} from '@gglib/graphics'
 import { FrameGraph, FrameResource } from '../FrameGraph'
 import { RenderChannel } from '../RenderChannel'
 import { RenderContext, RenderPass } from '../Types'
@@ -29,7 +38,12 @@ export function bloomPass(device: Device, options: BloomPassOptions = {}): Bloom
   return new BloomPass(device, options)
 }
 
-export class BloomPass implements RenderPass {
+export class BloomPass implements RenderPass, Ownable {
+  /**
+   * The ownership state of this pass
+   */
+  public readonly ownership: ResourceOwnership = new ResourceOwnership(this)
+
   /**
    * Pass name and debug label
    */
@@ -106,10 +120,10 @@ export class BloomPass implements RenderPass {
   }
 
   private createEffects() {
-    this.fxExtract ||= new ExtractEffect(this.device)
-    this.fxDownsample ||= new DownsampleEffect(this.device)
-    this.fxUpsample ||= new UpsampleEffect(this.device)
-    this.fxCombine ||= new CombineEffect(this.device)
+    this.fxExtract ||= this.ownership.adopt(new ExtractEffect(this.device))
+    this.fxDownsample ||= this.ownership.adopt(new DownsampleEffect(this.device))
+    this.fxUpsample ||= this.ownership.adopt(new UpsampleEffect(this.device))
+    this.fxCombine ||= this.ownership.adopt(new CombineEffect(this.device))
   }
 
   public setup(frame: FrameGraph<RenderPass>, ctx: RenderContext): void {
@@ -239,5 +253,12 @@ export class BloomPass implements RenderPass {
         this.texDownUp[i] = null
       }
     }
+  }
+
+  /**
+   * Immediately finalizes this pass and its effects
+   */
+  public dispose() {
+    this.ownership.finalize()
   }
 }

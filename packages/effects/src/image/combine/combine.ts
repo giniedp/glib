@@ -2,8 +2,10 @@ import {
   Device,
   DeviceOutput,
   inputSlot,
+  type Ownable,
   Program,
   RenderEncoder,
+  ResourceOwnership,
   ShaderModuleOptions,
   Texture,
   typedProgramInputs,
@@ -37,7 +39,12 @@ export const CombineOperator = {
   LINEAR_BURN: brand<CombineOperator>(11),
 }
 
-export class CombineEffect {
+export class CombineEffect implements Ownable {
+  /**
+   * The ownership state of this effect
+   */
+  public readonly ownership: ResourceOwnership = new ResourceOwnership(this)
+
   public readonly program: Program
   public readonly params = typedProgramInputs({
     texture1: inputSlot('', 'colorMapA', 'texture'),
@@ -65,7 +72,8 @@ export class CombineEffect {
   public operator: CombineOperator = CombineOperator.ADD
 
   public constructor(device: Device) {
-    this.program = device.createShaderModule(combineShaderOptions()).program.clone()
+    const shader = this.ownership.adopt(device.acquireShaderModule(combineShaderOptions()))
+    this.program = this.ownership.adopt(shader.program.clone())
     this.compiled = this.program.compiled.then(() => this)
   }
 
@@ -90,5 +98,12 @@ export class CombineEffect {
     pass.draw(3)
     pass.submit()
     pass.setRenderTarget(0, null)
+  }
+
+  /**
+   * Immediately finalizes this effect and its program
+   */
+  public dispose() {
+    this.ownership.finalize()
   }
 }

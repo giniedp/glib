@@ -4,7 +4,7 @@ import type { Capabilities } from './Capabilities'
 import { FrameFn, FrameScheduler, FrameTask } from './FrameScheduler'
 import type { GpuTimer, GpuTimerOptions } from './GpuTimer'
 import { RenderEncoder } from './RenderEncoder'
-import type { Ownable } from './resources/ResourceOwnerSet'
+import type { Ownable } from './resources/ResourceOwnership'
 import { ResourceScope } from './resources/ResourceScope'
 import type {
   AcquireTextureOptions,
@@ -151,7 +151,7 @@ export abstract class Device<C extends GPUCanvasContext | WebGL2RenderingContext
     if (scope) {
       return scope.own(resource)
     }
-    if (resource.owners.setDefault(this.scope)) {
+    if (resource.ownership.setDefault(this.scope)) {
       this.scope.adopt(resource)
     }
     return resource

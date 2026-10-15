@@ -6,9 +6,11 @@ import {
   DepthState,
   Device,
   DeviceOutput,
+  type Ownable,
   ProgramInputBlockCollection,
   ProgramInputBlockOptions,
   RenderVariant,
+  ResourceOwnership,
   SpriteBatch,
   surfaceFormatIsSrgb,
   Texture,
@@ -66,7 +68,12 @@ export interface RendererOptions {
   inputs?: ProgramInputBlockCollection | ProgramInputBlockOptions
 }
 
-export class Renderer {
+export class Renderer implements Ownable {
+  /**
+   * The ownership state of this renderer
+   */
+  public readonly ownership: ResourceOwnership = new ResourceOwnership(this)
+
   /**
    * The graphics device
    */
@@ -121,11 +128,13 @@ export class Renderer {
     if (options?.pipeline instanceof RenderPipeline) {
       this.pipeline = options?.pipeline
     } else {
-      this.pipeline = new RenderPipeline(
-        options?.pipeline || {
-          name: 'Default Pipeline',
-          passes: [opaquePassMSAA(), transparentPassMSAA()],
-        },
+      this.pipeline = this.ownership.adopt(
+        new RenderPipeline(
+          options?.pipeline || {
+            name: 'Default Pipeline',
+            passes: [opaquePassMSAA(), transparentPassMSAA()],
+          },
+        ),
       )
     }
 
@@ -150,12 +159,15 @@ export class Renderer {
     this.collectors.register(RenderItemType.Mesh, new MeshRenderCollector())
     this.collectors.register(RenderItemType.MeshPart, new MeshPartRenderCollector())
     this.collectors.register(RenderItemType.Model, new ModelRenderCollector())
-    this.collectors.register(RenderItemType.Sprite, new SpriteRenderCollector())
-    this.collectors.register(RenderItemType.InstanceBatch, new InstanceBatchRenderCollector())
+    this.collectors.register(RenderItemType.Sprite, this.ownership.adopt(new SpriteRenderCollector()))
     this.collectors.register(RenderItemType.InstanceBatch, new InstanceBatchRenderCollector())
     this.resources = new RenderTargetManager(device)
     this.channelDescriptors = createRenderChannelSchema(device)
     this.instances = new RenderInstanceWriter(device)
+    this.ownership.onFinalize(() => {
+      this.instances.dispose()
+      this.resources.dispose()
+    })
 
     this.context = {
       device: this.device,
@@ -328,7 +340,7 @@ export class Renderer {
    * Skips views that have no presentable channels or have {@link RenderView.present} set to false.
    */
   public present(views: RenderView[], target: Texture = null): void {
-    this.spriteBatch ||= new SpriteBatch(this.device)
+    this.spriteBatch ||= this.ownership.adopt(new SpriteBatch(this.device))
 
     const output = target || this.device.output
     const isSRGB = surfaceFormatIsSrgb(output.format)
@@ -419,9 +431,11 @@ export class Renderer {
     }
   }
 
+  /**
+   * Immediately finalizes this renderer, its render targets, instance buffers and the pipeline it created
+   */
   public dispose() {
-    this.instances.dispose()
-    this.resources.dispose()
+    this.ownership.finalize()
   }
 }
 

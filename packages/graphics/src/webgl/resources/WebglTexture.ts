@@ -10,7 +10,7 @@ import {
 import {
   createTextureSource,
   isCompressedFaceData,
-  ResourceOwnerSet,
+  ResourceOwnership,
   Texture,
   type TextureOptions,
   TextureSource,
@@ -41,7 +41,7 @@ export class WebglTexture extends Texture implements WebglResource<WebGLTexture 
   public readonly isRenderTarget: boolean
   public readonly isMultisampled: boolean
   public readonly isRenderBuffer: boolean
-  public readonly owners: ResourceOwnerSet
+  public readonly ownership: ResourceOwnership
 
   /**
    * Constructs an instance of a Texture.
@@ -50,8 +50,8 @@ export class WebglTexture extends Texture implements WebglResource<WebGLTexture 
     super()
     this.device = device
 
-    this.owners = new ResourceOwnerSet(this)
-    this.owners.onFinalize(() => {
+    this.ownership = new ResourceOwnership(this)
+    this.ownership.onFinalize(() => {
       this.unbindSource()
       this.finalize()
     })
@@ -121,7 +121,7 @@ export class WebglTexture extends Texture implements WebglResource<WebGLTexture 
    * Immediately releases the GPU resources of this texture, regardless of its owners.
    */
   public dispose(): void {
-    this.owners.finalize()
+    this.ownership.finalize()
   }
 
   public async readPixels(

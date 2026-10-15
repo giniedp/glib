@@ -2,8 +2,10 @@ import {
   Device,
   DeviceOutput,
   inputSlot,
+  type Ownable,
   Program,
   RenderEncoder,
+  ResourceOwnership,
   ShaderModuleOptions,
   Texture,
   typedProgramInputs,
@@ -34,7 +36,12 @@ export const ExtractOperator = {
   COLOR_KEY_CHROMA: brand<ExtractOperator>(7),
 }
 
-export class ExtractEffect {
+export class ExtractEffect implements Ownable {
+  /**
+   * The ownership state of this effect
+   */
+  public readonly ownership: ResourceOwnership = new ResourceOwnership(this)
+
   public readonly program: Program
   public readonly params = typedProgramInputs({
     texture: inputSlot('', 'colorMap', 'texture'),
@@ -62,7 +69,8 @@ export class ExtractEffect {
   public operatorId = ExtractOperator.PASSTHROUGH
 
   public constructor(device: Device) {
-    this.program = device.createShaderModule(extractShaderOptions()).program.clone()
+    const shader = this.ownership.adopt(device.acquireShaderModule(extractShaderOptions()))
+    this.program = this.ownership.adopt(shader.program.clone())
     this.compiled = this.program.compiled.then(() => this)
   }
 
@@ -83,5 +91,12 @@ export class ExtractEffect {
     pass.draw(3)
     pass.submit()
     pass.setRenderTarget(0, null)
+  }
+
+  /**
+   * Immediately finalizes this effect and its program
+   */
+  public dispose() {
+    this.ownership.finalize()
   }
 }

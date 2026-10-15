@@ -1,4 +1,4 @@
-import type { Ownable, ResourceOwner } from './ResourceOwnerSet'
+import type { Ownable, ResourceOwner } from './ResourceOwnership'
 
 /**
  * Option for device resource creation
@@ -19,7 +19,7 @@ export interface ResourceScopeOption {
  * Calling {@link own} on any other scope moves the ownership to that scope.
  * When multiple scopes own the same resource, it lives until all of them released it.
  *
- * Owning an object also owns its {@link Ownable.ownedChildren} recursively.
+ * Owning an object also owns its {@link ResourceOwnership.children} recursively.
  */
 export class ResourceScope implements ResourceOwner, Disposable {
   /**
@@ -66,16 +66,13 @@ export class ResourceScope implements ResourceOwner, Disposable {
    */
   public own<T extends Ownable>(resource: T): T {
     this.assertNotDisposed()
-    if (!resource.owners.isExplicit(this)) {
-      resource.owners.add(this)
+    if (!resource.ownership.isExplicit(this)) {
+      resource.ownership.add(this)
     }
     const count = this.resources.get(resource) ?? 0
     this.resources.set(resource, count + 1)
-    const children = resource.ownedChildren?.()
-    if (children) {
-      for (const child of children) {
-        this.own(child)
-      }
+    for (const child of Array.from(resource.ownership.children)) {
+      this.own(child)
     }
     return resource
   }
@@ -94,21 +91,19 @@ export class ResourceScope implements ResourceOwner, Disposable {
     if (count === 0) {
       // implicitly owned, children were adopted on their own
       this.resources.delete(resource)
-      resource.owners.delete(this)
+      resource.ownership.delete(this)
       return
     }
-    // capture children first, losing the last owner may dispose the resource and clear its children
-    const children = resource.ownedChildren ? Array.from(resource.ownedChildren()) : null
+    // capture children first, losing the last owner may finalize the resource and clear its children
+    const children = Array.from(resource.ownership.children)
     if (count === 1) {
       this.resources.delete(resource)
-      resource.owners.delete(this)
+      resource.ownership.delete(this)
     } else {
       this.resources.set(resource, count - 1)
     }
-    if (children) {
-      for (const child of children) {
-        this.release(child)
-      }
+    for (const child of children) {
+      this.release(child)
     }
   }
 
@@ -128,7 +123,7 @@ export class ResourceScope implements ResourceOwner, Disposable {
    */
   public adopt<T extends Ownable>(resource: T): T {
     this.assertNotDisposed()
-    if (resource.owners.defaultOwner !== this) {
+    if (resource.ownership.defaultOwner !== this) {
       throw new Error(`Scope '${this.name}' is not the default owner of the resource`)
     }
     if (!this.resources.has(resource)) {
@@ -161,7 +156,7 @@ export class ResourceScope implements ResourceOwner, Disposable {
     const resources = Array.from(this.resources.keys()).reverse()
     for (const resource of resources) {
       if (this.resources.delete(resource)) {
-        resource.owners.delete(this)
+        resource.ownership.delete(this)
       }
     }
     this.disposed = true

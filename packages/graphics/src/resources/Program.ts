@@ -2,6 +2,7 @@ import { IVec2, IVec3, IVec4 } from '@gglib/math'
 import { SamplerState } from '../states'
 import type { InputValueType, ProgramInput } from './ProgramInput'
 import { ProgramInputBlock } from './ProgramInputSource'
+import { type Ownable, ResourceOwnership } from './ResourceOwnership'
 import type { ShaderModule } from './ShaderModule'
 import { Texture, type TextureView } from './Texture'
 
@@ -32,11 +33,20 @@ export interface ProgramOptions {
 
 let idCounter = 1
 
-export abstract class Program {
+export abstract class Program implements Ownable {
   /**
    * The unique runtime identifier for this program instance.
    */
   public readonly id = idCounter++
+
+  /**
+   * The ownership state of this program
+   */
+  public readonly ownership: ResourceOwnership = new ResourceOwnership(this)
+
+  public constructor() {
+    this.ownership.onFinalize(() => this.destroy())
+  }
 
   /**
    * The shader module that this program is based on.
@@ -155,9 +165,16 @@ export abstract class Program {
   public abstract commit(): void
 
   /**
-   * Releases any GPU resources.
+   * Releases the GPU resources owned by this program
    */
-  public abstract dispose(): void
+  protected abstract destroy(): void
+
+  /**
+   * Immediately releases the GPU resources of this program, regardless of its owners.
+   */
+  public dispose(): void {
+    this.ownership.finalize()
+  }
 
   /**
    * Creates a new program instance that may share resources with the default program.

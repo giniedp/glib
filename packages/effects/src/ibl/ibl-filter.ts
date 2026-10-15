@@ -2,8 +2,10 @@ import {
   Device,
   FALSE,
   inputSlot,
+  type Ownable,
   Program,
   RenderEncoder,
+  ResourceOwnership,
   ShaderModuleOptions,
   surfaceFormatDataType,
   Texture,
@@ -30,7 +32,12 @@ export const IblDistributionFunction = {
   CHARLIE: brand<IblDistributionFunction>(2),
 }
 
-export class IblFilterEffect {
+export class IblFilterEffect implements Ownable {
+  /**
+   * The ownership state of this effect
+   */
+  public readonly ownership: ResourceOwnership = new ResourceOwnership(this)
+
   public readonly program: Program
   public readonly params = typedProgramInputs({
     cubemap: inputSlot('', 'cubemap', 'texture'),
@@ -62,7 +69,8 @@ export class IblFilterEffect {
   public cubemapOut: Texture
 
   constructor(device: Device) {
-    this.program = device.createShaderModule(iblFilterShaderOptions()).program.clone()
+    const shader = this.ownership.adopt(device.acquireShaderModule(iblFilterShaderOptions()))
+    this.program = this.ownership.adopt(shader.program.clone())
     this.compiled = this.program.compiled.then(() => this)
     this.params.cubemap = device.defaultTextureCube
   }
@@ -129,7 +137,10 @@ export class IblFilterEffect {
     }
   }
 
+  /**
+   * Immediately finalizes this effect and its program
+   */
   public dispose() {
-    this.program.dispose()
+    this.ownership.finalize()
   }
 }

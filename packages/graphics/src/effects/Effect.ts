@@ -2,7 +2,7 @@ import type { Device } from '../Device'
 import type { RenderEncoder } from '../RenderEncoder'
 import {
   ProgramInputBlock,
-  ResourceOwnerSet,
+  ResourceOwnership,
   ShaderModule,
   type Ownable,
   type Program,
@@ -75,9 +75,9 @@ export class Effect implements Disposable, Ownable {
   public readonly device: Device
 
   /**
-   * The owners of this effect
+   * The ownership state of this effect
    */
-  public readonly owners: ResourceOwnerSet = new ResourceOwnerSet(this)
+  public readonly ownership: ResourceOwnership = new ResourceOwnership(this)
 
   /**
    * The name of the effect
@@ -140,16 +140,8 @@ export class Effect implements Disposable, Ownable {
     offsetState?: DepthBiasState
   }
 
-  protected disposables: Disposable[] = []
-
-  /**
-   * The shader module acquired by this effect, if not passed in as an instance
-   */
-  protected shader: ShaderModule | null = null
-
   public constructor(device: Device, options: EffectOptions) {
     this.device = device
-    this.owners.onEmpty(() => this.dispose())
     this.name = options.name
     this.meta = options.meta || {}
     this.cullState = options.cullState ? CullState.get(options.cullState) : null
@@ -164,11 +156,12 @@ export class Effect implements Disposable, Ownable {
     if (!shaderOptions) {
       throw new Error('Shader program is required to create an Effect')
     }
-    if (shaderOptions instanceof ShaderModule) {
-      return shaderOptions.program.clone(options)
-    }
-    this.shader = this.device.acquireShaderModule(shaderOptions)
-    return this.shader.program.clone(options)
+    // a passed in shader module is borrowed, an acquired one is adopted
+    const shader =
+      shaderOptions instanceof ShaderModule
+        ? shaderOptions
+        : this.ownership.adopt(this.device.acquireShaderModule(shaderOptions))
+    return this.ownership.adopt(shader.program.clone(options))
   }
 
   /**
@@ -323,14 +316,7 @@ export class Effect implements Disposable, Ownable {
   }
 
   /**
-   * The acquired shader module is owned together with this effect
-   */
-  public ownedChildren(): Iterable<Ownable> {
-    return this.shader ? [this.shader] : []
-  }
-
-  /**
-   * Detaches this effect from all owners and disposes the program bindings.
+   * Immediately finalizes this effect and its program.
    * Called automatically when the last owner releases the effect.
    *
    * @remarks
@@ -338,14 +324,6 @@ export class Effect implements Disposable, Ownable {
    * It lives as long as a scope owns it, or until the device is disposed if it was acquired without a scope.
    */
   public dispose(): void {
-    if (this.owners.isFinalized) {
-      return
-    }
-    this.owners.finalize()
-    this.program.dispose()
-    for (const disposable of this.disposables) {
-      disposable.dispose()
-    }
-    this.disposables = []
+    this.ownership.finalize()
   }
 }

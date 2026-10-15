@@ -1,7 +1,7 @@
 import { uuid } from '@gglib/utils'
 import { Device } from '../Device'
 import { surfaceFormatInfo, type SurfaceFormat, type TextureType, type TypedArray } from '../enums'
-import type { Ownable, ResourceOwnerSet } from './ResourceOwnerSet'
+import type { Ownable, ResourceOwnership } from './ResourceOwnership'
 import type { ResourceScopeOption } from './ResourceScope'
 import { DynamicTextureSource, type TextureSource } from './TextureSource'
 
@@ -289,9 +289,9 @@ export abstract class Texture implements Ownable {
   public abstract readonly isMultisampled: boolean
 
   /**
-   * The owners of this texture
+   * The ownership state of this texture
    */
-  public abstract readonly owners: ResourceOwnerSet
+  public abstract readonly ownership: ResourceOwnership
 
   /**
    * A default view for this texture to use when binding to shader

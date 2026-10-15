@@ -2,9 +2,11 @@ import {
   Device,
   Disposable,
   inputSlot,
+  type Ownable,
   Program,
   Renderable,
   RenderEncoder,
+  ResourceOwnership,
   ShaderModuleOptions,
   Texture,
   typedProgramInputs,
@@ -34,7 +36,12 @@ export const PixelateShaderSchema = {
   Texture: inputSlot('', 'texture', 'texture'),
 }
 
-export class PixelateShader implements Renderable, Disposable {
+export class PixelateShader implements Renderable, Disposable, Ownable {
+  /**
+   * The ownership state of this effect
+   */
+  public readonly ownership: ResourceOwnership = new ResourceOwnership(this)
+
   public readonly program: Program
   public readonly inputs = typedProgramInputs(PixelateShaderSchema)
   public get isReady(): boolean {
@@ -57,7 +64,8 @@ export class PixelateShader implements Renderable, Disposable {
   public gap = 0
 
   public constructor(device: Device) {
-    this.program = device.createShaderModule(pixelateShaderOptions()).program.clone()
+    const shader = this.ownership.adopt(device.acquireShaderModule(pixelateShaderOptions()))
+    this.program = this.ownership.adopt(shader.program.clone())
     this.combiled = this.program.compiled.then(() => this)
   }
 
@@ -82,7 +90,10 @@ export class PixelateShader implements Renderable, Disposable {
     pass.submit()
   }
 
+  /**
+   * Immediately finalizes this effect and its program
+   */
   public dispose() {
-    this.program.dispose()
+    this.ownership.finalize()
   }
 }

@@ -1,8 +1,10 @@
 import {
   Device,
   inputSlot,
+  type Ownable,
   Program,
   RenderEncoder,
+  ResourceOwnership,
   ShaderModuleOptions,
   Texture,
   typedProgramInputs,
@@ -19,7 +21,12 @@ export function panoramaToCubemapShaderOptions(): ShaderModuleOptions {
   }
 }
 
-export class PanoramaToCubemapEffect {
+export class PanoramaToCubemapEffect implements Ownable {
+  /**
+   * The ownership state of this effect
+   */
+  public readonly ownership: ResourceOwnership = new ResourceOwnership(this)
+
   public readonly program: Program
   public readonly params = typedProgramInputs({
     texture: inputSlot('', 'colorMap', 'texture'),
@@ -38,7 +45,8 @@ export class PanoramaToCubemapEffect {
   public textureOut: Texture
 
   public constructor(device: Device) {
-    this.program = device.createShaderModule(panoramaToCubemapShaderOptions()).program.clone()
+    const shader = this.ownership.adopt(device.acquireShaderModule(panoramaToCubemapShaderOptions()))
+    this.program = this.ownership.adopt(shader.program.clone())
     this.compiled = this.program.compiled.then(() => this)
   }
 
@@ -75,7 +83,10 @@ export class PanoramaToCubemapEffect {
     pass.setRenderTarget(0, null)
   }
 
+  /**
+   * Immediately finalizes this effect and its program
+   */
   public dispose() {
-    this.program.dispose()
+    this.ownership.finalize()
   }
 }

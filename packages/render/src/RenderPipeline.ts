@@ -1,3 +1,4 @@
+import { isOwnable, type Ownable, ResourceOwnership } from '@gglib/graphics'
 import { FrameGraph, FrameResource } from './FrameGraph'
 import { type RenderContext, type RenderPass } from './Types'
 
@@ -6,7 +7,19 @@ export interface RenderPipelineOptions {
   passes?: RenderPass[]
 }
 
-export class RenderPipeline {
+/**
+ * Executes a list of render passes
+ *
+ * @remarks
+ * The pipeline owns the passes it is constructed with, if they are {@link Ownable}.
+ * They are finalized together with the pipeline, or when removed with {@link RenderPipeline.clear}.
+ */
+export class RenderPipeline implements Ownable {
+  /**
+   * The ownership state of this pipeline
+   */
+  public readonly ownership: ResourceOwnership = new ResourceOwnership(this)
+
   /**
    * Name of this pipeline
    */
@@ -20,12 +33,22 @@ export class RenderPipeline {
   public constructor(options?: RenderPipelineOptions) {
     this.name = options?.name ?? 'Render Pipeline'
     this.passes = options?.passes || []
+    for (const pass of this.passes) {
+      if (isOwnable(pass)) {
+        this.ownership.adopt(pass)
+      }
+    }
   }
 
   /**
    * Removes all passes from this pipeline
    */
   public clear(): void {
+    for (const pass of this.passes) {
+      if (isOwnable(pass)) {
+        this.ownership.drop(pass)
+      }
+    }
     this.passes = []
     this.graph.begin([], 1, 1)
     this.graph.compile()
@@ -81,5 +104,12 @@ export class RenderPipeline {
       }
       ctx.view.exports[resource.channel] = newTexture
     }
+  }
+
+  /**
+   * Immediately finalizes this pipeline and its passes
+   */
+  public dispose() {
+    this.ownership.finalize()
   }
 }

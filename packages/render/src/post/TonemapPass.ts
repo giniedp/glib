@@ -1,5 +1,5 @@
 import { TonemapEffect, TonemapOperator } from '@gglib/effects'
-import { Device } from '@gglib/graphics'
+import { Device, type Ownable, ResourceOwnership } from '@gglib/graphics'
 import { FrameGraph, FrameResource } from '../FrameGraph'
 import { RenderChannel } from '../RenderChannel'
 import { RenderContext, RenderPass } from '../Types'
@@ -18,7 +18,12 @@ export function tonemapPass(device: Device, options?: TonemapPassOptions): Tonem
   return new TonemapPass(device, options)
 }
 
-export class TonemapPass implements RenderPass {
+export class TonemapPass implements RenderPass, Ownable {
+  /**
+   * The ownership state of this pass
+   */
+  public readonly ownership: ResourceOwnership = new ResourceOwnership(this)
+
   public name: string = 'Tonemap Pass'
 
   public enabled: boolean = true
@@ -36,7 +41,7 @@ export class TonemapPass implements RenderPass {
   public constructor(device: Device, options?: TonemapPassOptions) {
     this.device = device
     if (device.isReady) {
-      this.effect = new TonemapEffect(device)
+      this.effect = this.ownership.adopt(new TonemapEffect(device))
     }
 
     this.enabled = options.enabled ?? this.enabled
@@ -47,7 +52,7 @@ export class TonemapPass implements RenderPass {
   }
 
   public setup(frame: FrameGraph<RenderPass>, ctx: RenderContext): void {
-    this.effect ||= new TonemapEffect(this.device)
+    this.effect ||= this.ownership.adopt(new TonemapEffect(this.device))
     this.active = this.enabled && this.effect.isCompiled
     if (!this.active) {
       this.source = null
@@ -79,5 +84,12 @@ export class TonemapPass implements RenderPass {
 
   public cleanup(ctx: RenderContext): void {
     //
+  }
+
+  /**
+   * Immediately finalizes this pass and its effects
+   */
+  public dispose() {
+    this.ownership.finalize()
   }
 }

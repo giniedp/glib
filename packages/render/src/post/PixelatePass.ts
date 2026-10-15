@@ -1,5 +1,5 @@
 import { PixelateShader } from '@gglib/effects'
-import { Device } from '@gglib/graphics'
+import { Device, type Ownable, ResourceOwnership } from '@gglib/graphics'
 import { FrameGraph, FrameResource } from '../FrameGraph'
 import { RenderChannel } from '../RenderChannel'
 import { RenderContext, RenderPass } from '../Types'
@@ -13,7 +13,12 @@ export interface PixelatePassOptions {
   aspect?: number
   gap?: number
 }
-export class PixelatePass implements RenderPass {
+export class PixelatePass implements RenderPass, Ownable {
+  /**
+   * The ownership state of this pass
+   */
+  public readonly ownership: ResourceOwnership = new ResourceOwnership(this)
+
   public name: string = 'Pixelate Pass'
 
   public enabled = false
@@ -32,7 +37,7 @@ export class PixelatePass implements RenderPass {
   public constructor(device: Device, options: PixelatePassOptions = {}) {
     this.device = device
     if (device.isReady) {
-      this.pixelate = new PixelateShader(device)
+      this.pixelate = this.ownership.adopt(new PixelateShader(device))
     }
 
     this.enabled = options.enabled ?? this.enabled
@@ -44,7 +49,7 @@ export class PixelatePass implements RenderPass {
   }
 
   public setup(frame: FrameGraph<RenderPass>, ctx: RenderContext): void {
-    this.pixelate ||= new PixelateShader(this.device)
+    this.pixelate ||= this.ownership.adopt(new PixelateShader(this.device))
     this.active = this.enabled && this.pixelate.isReady
 
     if (this.active) {
@@ -77,5 +82,12 @@ export class PixelatePass implements RenderPass {
 
   public cleanup(ctx: RenderContext): void {
     //
+  }
+
+  /**
+   * Immediately finalizes this pass and its effects
+   */
+  public dispose() {
+    this.ownership.finalize()
   }
 }

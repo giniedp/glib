@@ -5,6 +5,8 @@ import {
   bufferRecorder,
   BufferRecorder,
   Device,
+  type Ownable,
+  ResourceOwnership,
   Texture,
   VertexBuffer,
 } from '@gglib/graphics'
@@ -131,7 +133,12 @@ const defaultOptions = Object.freeze<Required<ParticleChannelOptions>>({
 /**
  * @public
  */
-export class ParticleChannel {
+export class ParticleChannel implements Ownable {
+  /**
+   * The ownership state of this channel
+   */
+  public readonly ownership: ResourceOwnership = new ResourceOwnership(this)
+
   public readonly settings: ParticleChannelOptions
 
   /**
@@ -175,16 +182,18 @@ export class ParticleChannel {
       recordByteSize: this.layout.byteSize,
     })
 
-    this.vertexBuffer = this.device.createVertexBuffer([
-      {
-        layout: this.layout.vertex,
-        instanced: true,
-        stride: this.layout.byteSize,
-        size: this.layout.byteSize * this.capacity,
-      },
-    ])
+    this.vertexBuffer = this.ownership.adopt(
+      this.device.createVertexBuffer([
+        {
+          layout: this.layout.vertex,
+          instanced: true,
+          stride: this.layout.byteSize,
+          size: this.layout.byteSize * this.capacity,
+        },
+      ]),
+    )
 
-    this.material = new ParticleMaterial(this.device, { properties: {} })
+    this.material = this.ownership.adopt(new ParticleMaterial(this.device, { properties: {} }))
   }
 
   private updateParameters() {
@@ -337,5 +346,12 @@ export class ParticleChannel {
         this.startRetired = 0
       }
     }
+  }
+
+  /**
+   * Immediately finalizes this channel, its vertex buffer and material
+   */
+  public dispose() {
+    this.ownership.finalize()
   }
 }

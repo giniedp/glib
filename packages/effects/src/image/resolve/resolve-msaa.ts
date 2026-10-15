@@ -2,8 +2,10 @@ import {
   Device,
   DeviceOutput,
   inputSlot,
+  type Ownable,
   Program,
   RenderEncoder,
+  ResourceOwnership,
   ShaderModuleOptions,
   Texture,
   typedProgramInputs,
@@ -27,7 +29,12 @@ export const ResolveMsaaOperator = {
   MAX: brand<ResolveMsaaOperator>(3),
 }
 
-export class ResolveMsaaEffect {
+export class ResolveMsaaEffect implements Ownable {
+  /**
+   * The ownership state of this effect
+   */
+  public readonly ownership: ResourceOwnership = new ResourceOwnership(this)
+
   public program: Program
   public readonly params = typedProgramInputs({
     texture: inputSlot('params', 'colorMap', 'texture'),
@@ -53,7 +60,11 @@ export class ResolveMsaaEffect {
     },
   ) {
     device.ready.then(() => {
-      this.program = device.createShaderModule(resolveMsaaShaderOptions()).program.clone()
+      if (this.ownership.isFinalized) {
+        return
+      }
+      const shader = this.ownership.adopt(device.acquireShaderModule(resolveMsaaShaderOptions()))
+      this.program = this.ownership.adopt(shader.program.clone())
     })
     this.compiled = device.ready.then(() => this.program.compiled).then(() => this)
     this.operatorId = options?.operator ?? ResolveMsaaOperator.PASSTHROUGH
@@ -79,5 +90,12 @@ export class ResolveMsaaEffect {
     this.textureIn = input
     this.textureOut = output
     this.render(pass)
+  }
+
+  /**
+   * Immediately finalizes this effect and its program
+   */
+  public dispose() {
+    this.ownership.finalize()
   }
 }

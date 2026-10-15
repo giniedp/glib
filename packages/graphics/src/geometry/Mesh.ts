@@ -2,7 +2,7 @@ import { BoundingBox, BoundingSphere } from '@gglib/math'
 import { uuid } from '@gglib/utils'
 import { Device } from '../Device'
 import { createMaterialInstance, Material, MaterialOptions } from '../effects'
-import { disposeUnclaimed, ResourceOwnerSet, type Ownable } from '../resources'
+import { ResourceOwnership, type Ownable } from '../resources'
 import { RenderEncoder } from '../RenderEncoder'
 import { Geometry, GeometryOptions } from './Geometry'
 
@@ -81,14 +81,9 @@ export interface MeshOptions {
  */
 export class Mesh implements Ownable {
   /**
-   * The owners of this mesh
+   * The ownership state of this mesh
    */
-  public readonly owners: ResourceOwnerSet = new ResourceOwnerSet(this)
-
-  /**
-   * Geometries and materials created by this mesh from options
-   */
-  private created = new Set<Geometry | Material>()
+  public readonly ownership: ResourceOwnership = new ResourceOwnership(this)
 
   /**
    * Automatically generated unique identifier
@@ -143,7 +138,6 @@ export class Mesh implements Ownable {
   public constructor(device: Device, options: MeshOptions) {
     this.uid = uuid()
     this.device = device
-    this.owners.onEmpty(() => this.dispose())
     this.name = options.name
     this.meta = options.meta || {}
 
@@ -173,9 +167,7 @@ export class Mesh implements Ownable {
       if (it instanceof Material) {
         return it
       }
-      const material = createMaterialInstance(device, it)
-      this.created.add(material)
-      return material
+      return this.ownership.adopt(createMaterialInstance(device, it))
     })
 
     if (options.boundingBox) {
@@ -221,7 +213,7 @@ export class Mesh implements Ownable {
     // instantiated materials belong to the new mesh, geometries and other materials are borrowed
     if (options?.materials) {
       for (const material of materials) {
-        result.created.add(material)
+        result.ownership.adopt(material)
       }
     }
     return result
@@ -273,40 +265,22 @@ export class Mesh implements Ownable {
   }
 
   /**
-   * Geometries and materials created by this mesh are owned together with the mesh
-   */
-  public ownedChildren(): Iterable<Ownable> {
-    return this.created
-  }
-
-  /**
-   * Detaches this mesh from all owners and disposes the geometries and materials it created.
+   * Immediately finalizes this mesh and the geometries and materials it created.
    * Called automatically when the last owner releases the mesh.
    *
    * @remarks
    * Borrowed geometries and materials (passed in as instances) are not touched.
-   * Created ones are disposed unless a scope explicitly owns them.
+   * Created ones are finalized unless a scope explicitly owns them.
    */
   public dispose(): void {
-    if (this.owners.isFinalized) {
-      return
-    }
-    this.owners.finalize()
-    for (const child of this.created) {
-      disposeUnclaimed(child)
-    }
-    this.created.clear()
-    this.geometries = []
-    this.materials = []
+    this.ownership.finalize()
   }
 
   private convertGeometry(part: Geometry | GeometryOptions): Geometry {
     if (part instanceof Geometry) {
       return part
     }
-    const geometry = new Geometry(this.device, part)
-    this.created.add(geometry)
-    return geometry
+    return this.ownership.adopt(new Geometry(this.device, part))
   }
 }
 

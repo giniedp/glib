@@ -149,7 +149,7 @@ export class WebglProgram extends Program {
     }
   }
 
-  public dispose(): void {
+  protected destroy(): void {
     this.module.onCompiled.remove(this.createResources)
     for (const block of this.blocks) {
       if (!isSharedBlock(this.module, this.sharedBlocks, block.name)) {

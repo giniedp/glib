@@ -3,8 +3,10 @@ import {
   Device,
   FALSE,
   inputSlot,
+  type Ownable,
   Program,
   RenderEncoder,
+  ResourceOwnership,
   ShaderModuleOptions,
   surfaceFormatDataType,
   Texture,
@@ -45,7 +47,12 @@ export function createGGXLutTexture(device: Device, options?: TextureOptions) {
   return texture
 }
 
-export class IblBRDFLutEffect {
+export class IblBRDFLutEffect implements Ownable {
+  /**
+   * The ownership state of this effect
+   */
+  public readonly ownership: ResourceOwnership = new ResourceOwnership(this)
+
   public readonly program: Program
   public readonly params = typedProgramInputs({
     samples: inputSlot('params', 'samples', 'scalar'),
@@ -69,7 +76,8 @@ export class IblBRDFLutEffect {
   public textureOut: Texture
 
   constructor(device: Device) {
-    this.program = device.createShaderModule(iblBrdfLutShaderOptions()).program.clone()
+    const shader = this.ownership.adopt(device.acquireShaderModule(iblBrdfLutShaderOptions()))
+    this.program = this.ownership.adopt(shader.program.clone())
     this.compiled = this.program.compiled.then(() => this)
   }
 
@@ -101,7 +109,10 @@ export class IblBRDFLutEffect {
     pass.setRenderTarget(0, null)
   }
 
+  /**
+   * Immediately finalizes this effect and its program
+   */
   public dispose() {
-    this.program.dispose()
+    this.ownership.finalize()
   }
 }

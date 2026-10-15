@@ -1,5 +1,5 @@
 import { VignetteShader } from '@gglib/effects'
-import { Device } from '@gglib/graphics'
+import { Device, type Ownable, ResourceOwnership } from '@gglib/graphics'
 import { IVec3, vec3, vec3$initFrom } from '@gglib/math'
 import { FrameGraph, FrameResource } from '../FrameGraph'
 import { RenderChannel } from '../RenderChannel'
@@ -18,7 +18,12 @@ export interface VignettePassOptions {
   color?: IVec3
 }
 
-export class VignettePass implements RenderPass {
+export class VignettePass implements RenderPass, Ownable {
+  /**
+   * The ownership state of this pass
+   */
+  public readonly ownership: ResourceOwnership = new ResourceOwnership(this)
+
   public name: string = 'Vignette Pass'
 
   public centerX = 0.5
@@ -40,7 +45,7 @@ export class VignettePass implements RenderPass {
   public constructor(device: Device, options: VignettePassOptions = {}) {
     this.device = device
     if (device.isReady) {
-      this.shader = new VignetteShader(device)
+      this.shader = this.ownership.adopt(new VignetteShader(device))
     }
 
     this.enabled = options.enabled ?? this.enabled
@@ -57,7 +62,7 @@ export class VignettePass implements RenderPass {
   }
 
   public setup(frame: FrameGraph<RenderPass>, ctx: RenderContext): void {
-    this.shader ||= new VignetteShader(this.device)
+    this.shader ||= this.ownership.adopt(new VignetteShader(this.device))
     this.active = this.enabled && this.shader.isReady
 
     if (this.active) {
@@ -93,5 +98,12 @@ export class VignettePass implements RenderPass {
 
   public cleanup(ctx: RenderContext): void {
     //
+  }
+
+  /**
+   * Immediately finalizes this pass and its effects
+   */
+  public dispose() {
+    this.ownership.finalize()
   }
 }

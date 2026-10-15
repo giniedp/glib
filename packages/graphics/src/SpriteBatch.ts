@@ -4,6 +4,7 @@ import { Device } from './Device'
 import type { RenderEncoder } from './RenderEncoder'
 import { bufferField, bufferLayout, bufferRecorder, BufferRecorder, ShaderModule, vertexLayout } from './resources'
 import { Buffer } from './resources/Buffer'
+import { type Ownable, ResourceOwnership } from './resources/ResourceOwnership'
 import { Texture, TextureView } from './resources/Texture'
 import { VertexBuffer } from './resources/VertexBuffer'
 import { SpriteBuilder } from './Sprite'
@@ -63,7 +64,12 @@ export interface SpriteBatchOptions {
 /**
  * @public
  */
-export class SpriteBatch implements Renderable {
+export class SpriteBatch implements Renderable, Ownable {
+  /**
+   * The ownership state of this sprite batch
+   */
+  public readonly ownership: ResourceOwnership = new ResourceOwnership(this)
+
   private device: Device
   private mode: SpriteMode
 
@@ -112,33 +118,41 @@ export class SpriteBatch implements Renderable {
       capacity,
       recordByteSize: this.layout.byteSize,
     })
-    this.indexBuffer = device.createIndexBuffer({
-      data: new Uint16Array([0, 1, 2, 3]),
-    })
-    this.vertexBuffer = this.device.createVertexBuffer([
-      {
-        name: 'SpriteBatch Positions',
-        layout: vertexLayout({
-          position: 'float32x3',
-        }),
-        // prettier-ignore
-        data: new Float32Array([
+    this.indexBuffer = this.ownership.adopt(
+      device.createIndexBuffer({
+        data: new Uint16Array([0, 1, 2, 3]),
+      }),
+    )
+    this.vertexBuffer = this.ownership.adopt(
+      this.device.createVertexBuffer([
+        {
+          name: 'SpriteBatch Positions',
+          layout: vertexLayout({
+            position: 'float32x3',
+          }),
+          // prettier-ignore
+          data: new Float32Array([
           -0.5, -0.5, 0,
            0.5, -0.5, 0,
           -0.5,  0.5, 0,
            0.5,  0.5, 0
         ]),
-      },
-      {
-        layout: this.layout.vertex,
-        instanced: true,
-        stride: this.layout.byteSize,
-        size: this.layout.byteSize * capacity,
-      },
-    ])
+        },
+        {
+          layout: this.layout.vertex,
+          instanced: true,
+          stride: this.layout.byteSize,
+          size: this.layout.byteSize * capacity,
+        },
+      ]),
+    )
 
     this.matrix = mat4Identity()
-    this.shader = options.program || device.createShaderModule(spriteBatchShader())
+    // a custom shader is borrowed
+    this.shader = options.program || this.ownership.adopt(device.createShaderModule(spriteBatchShader()))
+    this.ownership.onFinalize(() => {
+      this.sprites.length = 0
+    })
   }
 
   /**
@@ -300,8 +314,10 @@ export class SpriteBatch implements Renderable {
     }
   }
 
+  /**
+   * Immediately finalizes this sprite batch, its buffers and the shader it created
+   */
   public dispose() {
-    this.shader.dispose()
-    this.sprites.length = 0
+    this.ownership.finalize()
   }
 }

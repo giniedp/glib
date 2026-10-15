@@ -2,8 +2,10 @@ import {
   Device,
   DeviceOutput,
   inputSlot,
+  type Ownable,
   Program,
   RenderEncoder,
+  ResourceOwnership,
   ShaderModuleOptions,
   Texture,
   typedProgramInputs,
@@ -29,7 +31,12 @@ export function flameShaderOptions(): ShaderModuleOptions {
  * with matching alpha, so it also works on transparent targets. Output is HDR,
  * run it before bloom and tonemapping.
  */
-export class FlameEffect {
+export class FlameEffect implements Ownable {
+  /**
+   * The ownership state of this effect
+   */
+  public readonly ownership: ResourceOwnership = new ResourceOwnership(this)
+
   public readonly program: Program
   public readonly params = typedProgramInputs({
     texture: inputSlot('', 'colorMap', 'texture'),
@@ -81,7 +88,8 @@ export class FlameEffect {
   public refraction: number = 0.03
 
   public constructor(device: Device) {
-    this.program = device.createShaderModule(flameShaderOptions()).program.clone()
+    const shader = this.ownership.adopt(device.acquireShaderModule(flameShaderOptions()))
+    this.program = this.ownership.adopt(shader.program.clone())
     this.compiled = this.program.compiled.then(() => this)
   }
 
@@ -112,5 +120,12 @@ export class FlameEffect {
     pass.draw(3)
     pass.submit()
     pass.setRenderTarget(0, null)
+  }
+
+  /**
+   * Immediately finalizes this effect and its program
+   */
+  public dispose() {
+    this.ownership.finalize()
   }
 }

@@ -1,4 +1,4 @@
-import { Device, disposeUnclaimed, Mesh, ResourceOwnerSet, type Ownable } from '@gglib/graphics'
+import { Device, Mesh, ResourceOwnership, type Ownable } from '@gglib/graphics'
 import {
   BoundingBox,
   BoundingSphere,
@@ -25,14 +25,9 @@ import { createSkeletons, createTransformNodes, flattenNodes } from './utils'
  */
 export class Model implements Ownable {
   /**
-   * The owners of this model
+   * The ownership state of this model
    */
-  public readonly owners: ResourceOwnerSet = new ResourceOwnerSet(this)
-
-  /**
-   * Meshes created by this model from options
-   */
-  private createdMeshes = new Set<Mesh>()
+  public readonly ownership: ResourceOwnership = new ResourceOwnership(this)
 
   /**
    * Autmatically generated unique identifier
@@ -160,7 +155,6 @@ export class Model implements Ownable {
   public constructor(device: Device, options: ModelOptions) {
     this.uid = uuid()
     this.device = device
-    this.owners.onEmpty(() => this.dispose())
     this.name = options.name || null
     this.meta = options.meta || {}
 
@@ -173,7 +167,7 @@ export class Model implements Ownable {
         this.meshes.push(mesh)
       } else {
         const created = new Mesh(this.device, mesh)
-        this.createdMeshes.add(created)
+        this.ownership.adopt(created)
         this.meshes.push(created)
       }
     }
@@ -340,30 +334,16 @@ export class Model implements Ownable {
   }
 
   /**
-   * Meshes created by this model are owned together with the model
-   */
-  public ownedChildren(): Iterable<Ownable> {
-    return this.createdMeshes
-  }
-
-  /**
-   * Detaches this model from all owners and disposes the meshes it created.
+   * Immediately finalizes this model and the meshes it created.
    * Called automatically when the last owner releases the model.
    *
    * @remarks
    * Borrowed meshes (passed in as instances) are not touched.
-   * Created meshes are disposed unless a scope explicitly owns them.
+   * Created meshes are finalized unless a scope explicitly owns them.
    * Node, skeleton, and scene state are left intact.
    */
   public dispose() {
-    if (this.owners.isFinalized) {
-      return
-    }
-    this.owners.finalize()
-    for (const mesh of this.createdMeshes) {
-      disposeUnclaimed(mesh)
-    }
-    this.createdMeshes.clear()
+    this.ownership.finalize()
     this.meshes.length = 0
     // this.hierarchy.dispose()
     // if (this.pose) {
@@ -404,7 +384,7 @@ export class Model implements Ownable {
     // instantiated meshes belong to the new model, other meshes are borrowed
     if (options?.meshes) {
       for (const mesh of meshes) {
-        result.createdMeshes.add(mesh)
+        result.ownership.adopt(mesh)
       }
     }
     return result

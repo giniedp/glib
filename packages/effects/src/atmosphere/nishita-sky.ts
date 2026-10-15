@@ -2,8 +2,10 @@ import {
   Color,
   Device,
   inputSlot,
+  type Ownable,
   Program,
   RenderEncoder,
+  ResourceOwnership,
   SamplerState,
   ShaderModuleOptions,
   Texture,
@@ -140,7 +142,12 @@ export interface NishitaSkyOptions {
   scatteringMapSize?: [number, number]
 }
 
-export class NishitaSkyEffect {
+export class NishitaSkyEffect implements Ownable {
+  /**
+   * The ownership state of this effect
+   */
+  public readonly ownership: ResourceOwnership = new ResourceOwnership(this)
+
   public readonly opticalLutProgram: Program
   public readonly opticalLutParams = typedProgramInputs({
     radius: inputSlot('params', 'radius', 'scalar'),
@@ -289,9 +296,9 @@ export class NishitaSkyEffect {
     this.sunLongitude = options.sunLongitude ?? this.sunLongitude
     this.groundColor = options.groundColor ?? this.groundColor
 
-    this.opticalLutProgram = device.createShaderModule(nishitaLutShaderOptions()).program.clone()
-    this.scatteringProgram = device.createShaderModule(nishitaScatteringShaderOptions()).program.clone()
-    this.panoramaProgram = device.createShaderModule(nishitaPanoramaShaderOptions()).program.clone()
+    this.opticalLutProgram = this.createProgram(device, nishitaLutShaderOptions())
+    this.scatteringProgram = this.createProgram(device, nishitaScatteringShaderOptions())
+    this.panoramaProgram = this.createProgram(device, nishitaPanoramaShaderOptions())
     this.compiled = Promise.all([
       this.opticalLutProgram.compiled,
       this.scatteringProgram.compiled,
@@ -299,33 +306,44 @@ export class NishitaSkyEffect {
     ]).then(() => this)
 
     const [lutWidth, lutHeight] = options?.opticalMapSize ?? [256, 32]
-    this.opticalLUT = device.createRenderTarget({
-      width: lutWidth,
-      height: lutHeight,
-      format: 'rgba16float',
-      type: '2d',
-      usage: TextureUsage.TextureBinding | TextureUsage.RenderTarget,
-      mipLevelCount: 1,
-    })
+    this.opticalLUT = this.ownership.adopt(
+      device.createRenderTarget({
+        width: lutWidth,
+        height: lutHeight,
+        format: 'rgba16float',
+        type: '2d',
+        usage: TextureUsage.TextureBinding | TextureUsage.RenderTarget,
+        mipLevelCount: 1,
+      }),
+    )
 
     const [scatteringWidth, scatteringHeight] = options?.scatteringMapSize ?? [64, 32]
-    this.mieScatteringMap = device.createRenderTarget({
-      width: scatteringWidth,
-      height: scatteringHeight,
-      format: 'rgba16float',
-      type: '2d',
-      usage: TextureUsage.TextureBinding | TextureUsage.RenderTarget,
-      mipLevelCount: 1,
-    })
+    this.mieScatteringMap = this.ownership.adopt(
+      device.createRenderTarget({
+        width: scatteringWidth,
+        height: scatteringHeight,
+        format: 'rgba16float',
+        type: '2d',
+        usage: TextureUsage.TextureBinding | TextureUsage.RenderTarget,
+        mipLevelCount: 1,
+      }),
+    )
 
-    this.rayleighScatteringMap = device.createRenderTarget({
-      width: scatteringWidth,
-      height: scatteringHeight,
-      format: 'rgba16float',
-      type: '2d',
-      usage: TextureUsage.TextureBinding | TextureUsage.RenderTarget,
-      mipLevelCount: 1,
-    })
+    this.rayleighScatteringMap = this.ownership.adopt(
+      device.createRenderTarget({
+        width: scatteringWidth,
+        height: scatteringHeight,
+        format: 'rgba16float',
+        type: '2d',
+        usage: TextureUsage.TextureBinding | TextureUsage.RenderTarget,
+        mipLevelCount: 1,
+      }),
+    )
+  }
+
+  private createProgram(device: Device, options: ShaderModuleOptions): Program {
+    const shader = this.ownership.adopt(device.acquireShaderModule(options))
+    return this.ownership.adopt(shader.program.clone())
   }
 
   private renderOpticalLUT(pass: RenderEncoder) {
@@ -471,12 +489,10 @@ export class NishitaSkyEffect {
     }
   }
 
+  /**
+   * Immediately finalizes this effect and its programs and render targets
+   */
   public dispose() {
-    this.panoramaProgram.dispose()
-    this.opticalLutProgram.dispose()
-    this.scatteringProgram.dispose()
-    this.opticalLUT.dispose()
-    this.mieScatteringMap.dispose()
-    this.rayleighScatteringMap.dispose()
+    this.ownership.finalize()
   }
 }

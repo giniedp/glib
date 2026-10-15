@@ -1,7 +1,7 @@
 import type { Device } from '../Device'
 import { ShaderConstants } from '../states'
 import type { Program } from './Program'
-import type { Ownable, ResourceOwnerSet } from './ResourceOwnerSet'
+import type { Ownable, ResourceOwnership } from './ResourceOwnership'
 import type { ResourceScopeOption } from './ResourceScope'
 
 export type ShaderModuleOptions = WgslModuleOptions | GlslModuleOptions
@@ -33,9 +33,9 @@ export abstract class ShaderModule implements Ownable {
   public abstract readonly device: Device
 
   /**
-   * The owners of this shader module
+   * The ownership state of this shader module
    */
-  public abstract readonly owners: ResourceOwnerSet
+  public abstract readonly ownership: ResourceOwnership
 
   /**
    * The default program bindings for this shader module.

@@ -1,4 +1,12 @@
-import { Device, getMipmapCount, Texture, TextureOptions, TextureUsage } from '@gglib/graphics'
+import {
+  Device,
+  getMipmapCount,
+  type Ownable,
+  ResourceOwnership,
+  Texture,
+  TextureOptions,
+  TextureUsage,
+} from '@gglib/graphics'
 import { PanoramaToCubemapEffect } from './cubemap'
 import { IblBRDFLutEffect } from './ibl-brdf-lut'
 import { IblDistributionFunction, IblFilterEffect } from './ibl-filter'
@@ -21,7 +29,12 @@ export interface IblSamplerOptions {
   charlie?: boolean
 }
 
-export class IblSampler {
+export class IblSampler implements Ownable {
+  /**
+   * The ownership state of this sampler
+   */
+  public readonly ownership: ResourceOwnership = new ResourceOwnership(this)
+
   private device: Device
   private fxLut: IblBRDFLutEffect
   private fxFilter: IblFilterEffect
@@ -57,9 +70,9 @@ export class IblSampler {
 
   public constructor(device: Device, options: IblSamplerOptions) {
     this.device = device
-    this.fxLut = new IblBRDFLutEffect(device)
-    this.fxFilter = new IblFilterEffect(device)
-    this.fxCube = new PanoramaToCubemapEffect(device)
+    this.fxLut = this.ownership.adopt(new IblBRDFLutEffect(device))
+    this.fxFilter = this.ownership.adopt(new IblFilterEffect(device))
+    this.fxCube = this.ownership.adopt(new PanoramaToCubemapEffect(device))
     this.compiled = Promise.all([this.fxLut.compiled, this.fxFilter.compiled, this.fxCube.compiled]).then(() => this)
     this.samplesLut = options.samplesLut ?? this.samplesLut
     this.samplesGGX = options.samplesGGX ?? this.samplesGGX
@@ -75,16 +88,20 @@ export class IblSampler {
       format: 'rg16float',
     }
 
-    this.lutMapGGX = device.createRenderTarget({
-      name: 'GGX BRDF LUT',
-      ...lutOptions,
-    })
+    this.lutMapGGX = this.ownership.adopt(
+      device.createRenderTarget({
+        name: 'GGX BRDF LUT',
+        ...lutOptions,
+      }),
+    )
 
     if (options.charlie ?? true) {
-      this.lutMapCharlie = device.createRenderTarget({
-        name: 'Sheen BRDF LUT',
-        ...lutOptions,
-      })
+      this.lutMapCharlie = this.ownership.adopt(
+        device.createRenderTarget({
+          name: 'Sheen BRDF LUT',
+          ...lutOptions,
+        }),
+      )
     }
 
     const envSize = options?.envSize ?? 256
@@ -99,29 +116,37 @@ export class IblSampler {
     }
 
     if (options.lambert ?? true) {
-      this.envMapLambert = device.createRenderTarget({
-        name: 'Lambert environment map ',
-        ...envOptions,
-      })
+      this.envMapLambert = this.ownership.adopt(
+        device.createRenderTarget({
+          name: 'Lambert environment map ',
+          ...envOptions,
+        }),
+      )
     }
 
-    this.envMapGGX = device.createRenderTarget({
-      name: 'GGX environment map',
-      ...envOptions,
-    })
+    this.envMapGGX = this.ownership.adopt(
+      device.createRenderTarget({
+        name: 'GGX environment map',
+        ...envOptions,
+      }),
+    )
 
     if (options.charlie ?? true) {
-      this.envMapCharlie = device.createRenderTarget({
-        name: 'Charlie environment map',
-        ...envOptions,
-      })
+      this.envMapCharlie = this.ownership.adopt(
+        device.createRenderTarget({
+          name: 'Charlie environment map',
+          ...envOptions,
+        }),
+      )
     }
 
-    this.cubemap = device.createRenderTarget({
-      name: 'IBL Cubemap Source',
-      ...envOptions,
-      mipLevelCount: getMipmapCount(envSize, envSize, envSize),
-    })
+    this.cubemap = this.ownership.adopt(
+      device.createRenderTarget({
+        name: 'IBL Cubemap Source',
+        ...envOptions,
+        mipLevelCount: getMipmapCount(envSize, envSize, envSize),
+      }),
+    )
 
     this.compiled.then(() => {
       const pass = this.device.renderPass
@@ -188,16 +213,10 @@ export class IblSampler {
     pass.flush()
   }
 
+  /**
+   * Immediately finalizes this sampler, its effects and environment maps
+   */
   public dispose() {
-    this.fxCube.dispose()
-    this.fxFilter.dispose()
-    this.fxLut.dispose()
-
-    this.lutMapGGX.dispose()
-    this.lutMapCharlie?.dispose()
-    this.envMapLambert?.dispose()
-    this.envMapGGX.dispose()
-    this.envMapCharlie?.dispose()
-    this.cubemap.dispose()
+    this.ownership.finalize()
   }
 }

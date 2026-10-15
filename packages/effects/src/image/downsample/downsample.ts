@@ -2,8 +2,10 @@ import {
   Device,
   DeviceOutput,
   inputSlot,
+  type Ownable,
   Program,
   RenderEncoder,
+  ResourceOwnership,
   ShaderModuleOptions,
   Texture,
   typedProgramInputs,
@@ -30,7 +32,12 @@ export const DownsampleOperator = {
   JIMENEZ_13TAP_KARIS: brand<DownsampleOperator>(4),
 }
 
-export class DownsampleEffect {
+export class DownsampleEffect implements Ownable {
+  /**
+   * The ownership state of this effect
+   */
+  public readonly ownership: ResourceOwnership = new ResourceOwnership(this)
+
   public readonly program: Program
   public readonly params = typedProgramInputs({
     texture: inputSlot('', 'colorMap', 'texture'),
@@ -50,7 +57,8 @@ export class DownsampleEffect {
   public operator: DownsampleOperator = DownsampleOperator.BILINEAR_2X2
 
   public constructor(device: Device) {
-    this.program = device.createShaderModule(downsampleShaderOptions()).program.clone()
+    const shader = this.ownership.adopt(device.acquireShaderModule(downsampleShaderOptions()))
+    this.program = this.ownership.adopt(shader.program.clone())
     this.compiled = this.program.compiled.then(() => this)
   }
 
@@ -70,5 +78,12 @@ export class DownsampleEffect {
     pass.draw(3)
     pass.submit()
     pass.setRenderTarget(0, null)
+  }
+
+  /**
+   * Immediately finalizes this effect and its program
+   */
+  public dispose() {
+    this.ownership.finalize()
   }
 }

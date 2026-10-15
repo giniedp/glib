@@ -10,7 +10,7 @@ import {
   CompressedFaceData,
   createTextureSource,
   isCompressedFaceData,
-  ResourceOwnerSet,
+  ResourceOwnership,
   Texture,
   TextureSource,
   TextureUsage,
@@ -34,7 +34,7 @@ export class WebGpuTexture extends Texture implements GpuResource<GPUTexture> {
   public readonly isRenderTarget: boolean
   public readonly isMultisampled: boolean
 
-  public readonly owners: ResourceOwnerSet
+  public readonly ownership: ResourceOwnership
   public readonly gpuObject: GPUTexture
   public readonly gpuFormat: GPUTextureFormat
   public readonly gpuDimension: GPUTextureDimension
@@ -48,8 +48,8 @@ export class WebGpuTexture extends Texture implements GpuResource<GPUTexture> {
     super()
     this.device = device as WebGpuDevice
 
-    this.owners = new ResourceOwnerSet(this)
-    this.owners.onFinalize(() => {
+    this.ownership = new ResourceOwnership(this)
+    this.ownership.onFinalize(() => {
       this.unbindSource()
       this.finalize()
     })
@@ -130,7 +130,7 @@ export class WebGpuTexture extends Texture implements GpuResource<GPUTexture> {
    * Immediately releases the GPU resources of this texture, regardless of its owners.
    */
   public dispose(): void {
-    this.owners.finalize()
+    this.ownership.finalize()
   }
 
   private finalize(): void {

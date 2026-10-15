@@ -1,4 +1,13 @@
-import { Effect, Geometry, Material, RenderVariant, SpriteBatch, SpriteMode } from '@gglib/graphics'
+import {
+  Effect,
+  Geometry,
+  Material,
+  type Ownable,
+  RenderVariant,
+  ResourceOwnership,
+  SpriteBatch,
+  SpriteMode,
+} from '@gglib/graphics'
 import { mat4$premultiply } from '@gglib/math'
 import { idMap } from '@gglib/utils'
 import { RenderList } from './RenderList'
@@ -189,12 +198,17 @@ export class MeshPartRenderCollector implements RenderCollector<MeshPartRenderIt
   }
 }
 
-export class SpriteRenderCollector implements RenderCollector<SpriteRenderItem> {
+export class SpriteRenderCollector implements RenderCollector<SpriteRenderItem>, Ownable {
+  /**
+   * The ownership state of this collector
+   */
+  public readonly ownership: ResourceOwnership = new ResourceOwnership(this)
+
   private list: RenderList
   private spriteBatch: SpriteBatch
   public begin(context: RenderContext, list: RenderList): void {
     this.list = list
-    this.spriteBatch ||= new SpriteBatch(context.device)
+    this.spriteBatch ||= this.ownership.adopt(new SpriteBatch(context.device))
     this.spriteBatch.begin(SpriteMode.Deferred, context.view.camera.projection)
   }
 

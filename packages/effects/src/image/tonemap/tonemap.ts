@@ -4,9 +4,11 @@ import {
   Disposable,
   FALSE,
   inputSlot,
+  type Ownable,
   Program,
   Renderable,
   RenderEncoder,
+  ResourceOwnership,
   ShaderModuleOptions,
   Texture,
   TRUE,
@@ -39,7 +41,12 @@ export const TonemapOperator = {
   HEJL_BURGESS: brand<TonemapOperator>(9),
 }
 
-export class TonemapEffect implements Renderable, Disposable {
+export class TonemapEffect implements Renderable, Disposable, Ownable {
+  /**
+   * The ownership state of this effect
+   */
+  public readonly ownership: ResourceOwnership = new ResourceOwnership(this)
+
   public readonly program: Program
   public readonly params = typedProgramInputs({
     Texture1: inputSlot('', 'texture1', 'texture'),
@@ -99,7 +106,8 @@ export class TonemapEffect implements Renderable, Disposable {
   public srgb = false
 
   public constructor(device: Device) {
-    this.program = device.createShaderModule(tonemapShaderOptions()).program.clone()
+    const shader = this.ownership.adopt(device.acquireShaderModule(tonemapShaderOptions()))
+    this.program = this.ownership.adopt(shader.program.clone())
     this.compiled = this.program.compiled.then(() => this)
   }
 
@@ -129,7 +137,10 @@ export class TonemapEffect implements Renderable, Disposable {
     pass.setRenderTarget(0, null)
   }
 
+  /**
+   * Immediately finalizes this effect and its program
+   */
   public dispose() {
-    this.program.dispose()
+    this.ownership.finalize()
   }
 }

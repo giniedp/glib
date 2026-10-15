@@ -9,8 +9,7 @@ import {
   isTextureSourceOption,
   ProgramInputBlock,
   ProgramInputBlockCollection,
-  disposeUnclaimed,
-  ResourceOwnerSet,
+  ResourceOwnership,
   Texture,
   type AcquireTextureOptions,
   type Ownable,
@@ -69,19 +68,9 @@ export class Material implements Ownable {
   public readonly uid: string = uuid()
 
   /**
-   * The owners of this material
+   * The ownership state of this material
    */
-  public readonly owners: ResourceOwnerSet = new ResourceOwnerSet(this)
-
-  /**
-   * Textures created by this material from {@link TextureOptions}. Exclusive to this material.
-   */
-  protected createdTextures = new Set<Texture>()
-
-  /**
-   * Textures acquired by this material from {@link AcquireTextureOptions}. Shared with others.
-   */
-  protected acquiredTextures = new Set<Texture>()
+  public readonly ownership: ResourceOwnership = new ResourceOwnership(this)
 
   /**
    * The graphics device
@@ -146,7 +135,6 @@ export class Material implements Ownable {
 
   public constructor(device: Device, options: MaterialOptions) {
     this.device = device
-    this.owners.onEmpty(() => this.dispose())
     options ||= { properties: {} }
     options.name ||= ''
     options.meta ||= {}
@@ -162,7 +150,7 @@ export class Material implements Ownable {
     this.name = options.name ?? this.name
     this.meta = options.meta ?? this.meta
     if (options.effect) {
-      this.effects[RenderVariant.Forward] = new Effect(this.device, options.effect)
+      this.setEffect(RenderVariant.Forward, new Effect(this.device, options.effect))
     } else if (options.effect === null) {
       // no effect specified, this is a valid case, no error
       // creation of the effect is deferred to the subclass
@@ -190,20 +178,17 @@ export class Material implements Ownable {
     const old = this.inputs.get(input)
     if (value !== old) {
       if (isAquirableTextureOptions(value)) {
-        const texture = this.device.acquireTexture(value)
-        this.addChild(this.acquiredTextures, texture)
-        value = texture
+        value = this.ownership.adopt(this.device.acquireTexture(value))
       } else if (isTextureSourceOption(value)) {
-        const texture = this.device.createTexture(value)
-        this.addChild(this.createdTextures, texture)
-        value = texture
+        value = this.ownership.adopt(this.device.createTexture(value))
       } else if (value == null) {
         console.warn(
           `Setting material parameter ${input.key} to null or undefined is not recommended and may cause unintended consequences.`,
         )
       }
       if (old instanceof Texture && old !== value && !this.isInputValue(old, input)) {
-        this.removeChild(old)
+        // no-op for borrowed textures
+        this.ownership.drop(old)
       }
     }
 
@@ -225,35 +210,22 @@ export class Material implements Ownable {
     return false
   }
 
-  private addChild(set: Set<Texture>, texture: Texture) {
-    if (set.has(texture)) {
-      return
-    }
-    set.add(texture)
-    for (const owner of Array.from(this.owners)) {
-      owner.own(texture)
-    }
-  }
-
-  private removeChild(texture: Texture) {
-    const isCreated = this.createdTextures.delete(texture)
-    const isAcquired = this.acquiredTextures.delete(texture)
-    if (!isCreated && !isAcquired) {
-      return
-    }
-    for (const owner of Array.from(this.owners)) {
-      owner.release(texture)
-    }
-    if (isCreated) {
-      disposeUnclaimed(texture)
-    }
-  }
-
   /**
-   * Textures created or acquired by this material and its effects are owned together with the material
+   * Sets the effect for a specific render variant. The material owns the effect, a replaced effect is dropped.
    */
-  public ownedChildren(): Iterable<Ownable> {
-    return [...this.createdTextures, ...this.acquiredTextures, ...Object.values(this.effects)]
+  protected setEffect(variant: RenderVariant, effect: Effect | null) {
+    const old = this.effects[variant]
+    if (old === effect) {
+      return
+    }
+    if (effect) {
+      this.effects[variant] = this.ownership.adopt(effect)
+    } else {
+      delete this.effects[variant]
+    }
+    if (old) {
+      this.ownership.drop(old)
+    }
   }
 
   /**
@@ -287,27 +259,16 @@ export class Material implements Ownable {
   public update?(time: number, delta: number, frame: number): void
 
   /**
-   * Detaches this material from all owners and disposes what it created.
+   * Immediately finalizes this material and what it created.
    * Called automatically when the last owner releases the material.
    *
    * @remarks
    * - Borrowed textures (passed in as instances) are not touched.
-   * - Created textures and effects are disposed unless a scope explicitly owns them.
+   * - Created textures and effects are finalized unless a scope explicitly owns them.
    * - Acquired textures are shared. They live as long as a scope owns them,
    *   or until the device is disposed if they were acquired without a scope.
    */
   public dispose() {
-    if (this.owners.isFinalized) {
-      return
-    }
-    this.owners.finalize()
-    for (const texture of this.createdTextures) {
-      disposeUnclaimed(texture)
-    }
-    this.createdTextures.clear()
-    this.acquiredTextures.clear()
-    for (const variant in this.effects) {
-      disposeUnclaimed(this.effects[variant])
-    }
+    this.ownership.finalize()
   }
 }

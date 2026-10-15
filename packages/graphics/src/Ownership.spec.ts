@@ -40,10 +40,10 @@ function runContract(createDevice: () => Device) {
     it('is owned by the global scope', () => {
       const count = device.stats().bufferCount
       const buffer = device.createIndexBuffer({ data: new Uint16Array([0, 1, 2, 0]) })
-      expect(buffer.owners.defaultOwner).toBe(device.scope)
+      expect(buffer.ownership.defaultOwner).toBe(device.scope)
       expect(device.stats().bufferCount).toBe(count + 1)
       buffer.dispose()
-      expect(buffer.owners.isFinalized).toBe(true)
+      expect(buffer.ownership.isFinalized).toBe(true)
       expect(device.stats().bufferCount).toBe(count)
     })
 
@@ -53,13 +53,13 @@ function runContract(createDevice: () => Device) {
       expect(scope.has(buffer)).toBe(true)
       expect(device.scope.has(buffer)).toBe(false)
       scope.dispose()
-      expect(buffer.owners.isFinalized).toBe(true)
+      expect(buffer.ownership.isFinalized).toBe(true)
     })
 
     it('keeps the owners when recreated with a different size', () => {
       const buffer = device.createIndexBuffer({ data: new Uint16Array([0, 1, 2, 0]) })
       buffer.setData(new Uint16Array([0, 1, 2, 3, 4, 5]))
-      expect(buffer.owners.isFinalized).toBe(false)
+      expect(buffer.ownership.isFinalized).toBe(false)
       expect(buffer.elementCount).toBe(6)
     })
   })
@@ -69,8 +69,8 @@ function runContract(createDevice: () => Device) {
       const geometry = new Geometry(device, geometryOptions())
       const { vertexBuffer, indexBuffer } = geometry
       geometry.dispose()
-      expect(vertexBuffer.owners.isFinalized).toBe(true)
-      expect(indexBuffer.owners.isFinalized).toBe(true)
+      expect(vertexBuffer.ownership.isFinalized).toBe(true)
+      expect(indexBuffer.ownership.isFinalized).toBe(true)
     })
 
     it('does not dispose borrowed buffers', () => {
@@ -80,8 +80,8 @@ function runContract(createDevice: () => Device) {
         indexBuffer: source.indexBuffer,
       })
       geometry.dispose()
-      expect(source.vertexBuffer.owners.isFinalized).toBe(false)
-      expect(source.indexBuffer.owners.isFinalized).toBe(false)
+      expect(source.vertexBuffer.ownership.isFinalized).toBe(false)
+      expect(source.indexBuffer.ownership.isFinalized).toBe(false)
     })
 
     it('is disposed with its scope', () => {
@@ -91,9 +91,9 @@ function runContract(createDevice: () => Device) {
       expect(scope.has(vertexBuffer)).toBe(true)
       expect(device.scope.has(vertexBuffer)).toBe(false)
       scope.dispose()
-      expect(geometry.owners.isFinalized).toBe(true)
-      expect(vertexBuffer.owners.isFinalized).toBe(true)
-      expect(indexBuffer.owners.isFinalized).toBe(true)
+      expect(geometry.ownership.isFinalized).toBe(true)
+      expect(vertexBuffer.ownership.isFinalized).toBe(true)
+      expect(indexBuffer.ownership.isFinalized).toBe(true)
     })
   })
 
@@ -103,16 +103,16 @@ function runContract(createDevice: () => Device) {
       const material = new BasicMaterial(device, { properties: {} })
       material.set('texture', 'baseMap', texture)
       material.dispose()
-      expect(texture.owners.isFinalized).toBe(false)
+      expect(texture.ownership.isFinalized).toBe(false)
     })
 
     it('disposes created textures', () => {
       const material = new BasicMaterial(device, { properties: {} })
       material.set('texture', 'baseMap', { width: 1, height: 1, source: new Uint8Array(4) })
       const texture = material.get('texture', 'baseMap') as any
-      expect(texture.owners.isFinalized).toBe(false)
+      expect(texture.ownership.isFinalized).toBe(false)
       material.dispose()
-      expect(texture.owners.isFinalized).toBe(true)
+      expect(texture.ownership.isFinalized).toBe(true)
     })
 
     it('disposes a created texture when replaced', () => {
@@ -120,7 +120,7 @@ function runContract(createDevice: () => Device) {
       material.set('texture', 'baseMap', { width: 1, height: 1, source: new Uint8Array(4) })
       const texture = material.get('texture', 'baseMap') as any
       material.set('texture', 'baseMap', device.defaultTexture)
-      expect(texture.owners.isFinalized).toBe(true)
+      expect(texture.ownership.isFinalized).toBe(true)
     })
 
     it('does not dispose acquired textures', () => {
@@ -128,7 +128,7 @@ function runContract(createDevice: () => Device) {
       material.set('texture', 'baseMap', { key: 'shared', width: 1, height: 1, source: new Uint8Array(4) })
       const texture = material.get('texture', 'baseMap') as any
       material.dispose()
-      expect(texture.owners.isFinalized).toBe(false)
+      expect(texture.ownership.isFinalized).toBe(false)
     })
 
     it('passes its owners to textures created later', () => {
@@ -147,9 +147,9 @@ function runContract(createDevice: () => Device) {
       const texture = material.get('texture', 'baseMap') as any
       const effect = material.effect
       scope.dispose()
-      expect(material.owners.isFinalized).toBe(true)
-      expect(effect.owners.isFinalized).toBe(true)
-      expect(texture.owners.isFinalized).toBe(true)
+      expect(material.ownership.isFinalized).toBe(true)
+      expect(effect.ownership.isFinalized).toBe(true)
+      expect(texture.ownership.isFinalized).toBe(true)
     })
   })
 
@@ -167,8 +167,8 @@ function runContract(createDevice: () => Device) {
       const [geometry] = mesh.geometries
       const [material] = mesh.materials
       mesh.dispose()
-      expect(geometry.owners.isFinalized).toBe(true)
-      expect(material.owners.isFinalized).toBe(true)
+      expect(geometry.ownership.isFinalized).toBe(true)
+      expect(material.ownership.isFinalized).toBe(true)
     })
 
     it('keeps the original when an instance is disposed', () => {
@@ -178,10 +178,10 @@ function runContract(createDevice: () => Device) {
       const [material] = mesh.materials
       const [instanceMaterial] = instance.materials
       instance.dispose()
-      expect(geometry.owners.isFinalized).toBe(false)
-      expect(geometry.vertexBuffer.owners.isFinalized).toBe(false)
-      expect(material.owners.isFinalized).toBe(false)
-      expect(instanceMaterial.owners.isFinalized).toBe(true)
+      expect(geometry.ownership.isFinalized).toBe(false)
+      expect(geometry.vertexBuffer.ownership.isFinalized).toBe(false)
+      expect(material.ownership.isFinalized).toBe(false)
+      expect(instanceMaterial.ownership.isFinalized).toBe(true)
     })
 
     it('is disposed with its scope', () => {
@@ -191,10 +191,10 @@ function runContract(createDevice: () => Device) {
       const [material] = mesh.materials
       const vertexBuffer = geometry.vertexBuffer
       scope.dispose()
-      expect(mesh.owners.isFinalized).toBe(true)
-      expect(geometry.owners.isFinalized).toBe(true)
-      expect(material.owners.isFinalized).toBe(true)
-      expect(vertexBuffer.owners.isFinalized).toBe(true)
+      expect(mesh.ownership.isFinalized).toBe(true)
+      expect(geometry.ownership.isFinalized).toBe(true)
+      expect(material.ownership.isFinalized).toBe(true)
+      expect(vertexBuffer.ownership.isFinalized).toBe(true)
     })
 
     it('shares an instance between scopes', () => {
@@ -204,11 +204,11 @@ function runContract(createDevice: () => Device) {
       b.own(mesh)
       const [geometry] = mesh.geometries
       a.dispose()
-      expect(mesh.owners.isFinalized).toBe(false)
-      expect(geometry.owners.isFinalized).toBe(false)
+      expect(mesh.ownership.isFinalized).toBe(false)
+      expect(geometry.ownership.isFinalized).toBe(false)
       b.dispose()
-      expect(mesh.owners.isFinalized).toBe(true)
-      expect(geometry.owners.isFinalized).toBe(true)
+      expect(mesh.ownership.isFinalized).toBe(true)
+      expect(geometry.ownership.isFinalized).toBe(true)
     })
   })
 }

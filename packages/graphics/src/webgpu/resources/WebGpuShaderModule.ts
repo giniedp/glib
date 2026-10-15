@@ -1,5 +1,5 @@
 import { BufferUsage, vertexTypeFromDataFormat } from '../../enums'
-import { ResourceOwnerSet, ShaderModule, VertexBuffer } from '../../resources'
+import { ResourceOwnership, ShaderModule, VertexBuffer } from '../../resources'
 import { ShaderConstants } from '../../states'
 import type { GpuResource, Mutable } from '../types'
 import type { WebGpuDevice } from '../WebGpuDevice'
@@ -65,7 +65,7 @@ export class WebGpuShaderModule extends ShaderModule implements GpuResource<GPUS
    */
   public readonly computeConstants: ShaderConstants | null
 
-  public readonly owners: ResourceOwnerSet
+  public readonly ownership: ResourceOwnership
 
   private info: WgslProgramInfo
   private vertexEntry: WgslEntryPointInfo
@@ -99,8 +99,8 @@ export class WebGpuShaderModule extends ShaderModule implements GpuResource<GPUS
       code: options.code,
     })
 
-    this.owners = new ResourceOwnerSet(this)
-    this.owners.onFinalize(() => this.finalize())
+    this.ownership = new ResourceOwnership(this)
+    this.ownership.onFinalize(() => this.finalize())
 
     this.isCompiled = false
     this.compiled = this.gpuObject.getCompilationInfo().then((info) => {
@@ -220,7 +220,7 @@ export class WebGpuShaderModule extends ShaderModule implements GpuResource<GPUS
   }
 
   public dispose(): void {
-    this.owners.finalize()
+    this.ownership.finalize()
   }
 
   private finalize(): void {

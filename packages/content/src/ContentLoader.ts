@@ -321,7 +321,7 @@ export class ContentLoader {
       .then((options) => {
         const instance = this.create(type, options)
         if (!this.disableCache && isOwnable(instance)) {
-          instance.owners.onFinalize(() => {
+          instance.ownership.onFinalize(() => {
             if (cache.get(key) === promise) {
               cache.delete(key)
             }
