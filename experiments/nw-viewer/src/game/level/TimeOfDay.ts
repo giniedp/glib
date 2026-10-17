@@ -1,4 +1,4 @@
-import type { Texture } from '@gglib/graphics'
+import type { ResourceScope, Texture } from '@gglib/graphics'
 import {
   clamp,
   lerp,
@@ -154,7 +154,10 @@ export class TimeOfDay {
     }
   }
 
-  public async setLevelInfo(info: LevelInfo, ctx: { content: ContentService; signal: AbortSignal }) {
+  public async setLevelInfo(
+    info: LevelInfo,
+    ctx: { content: ContentService; scope: ResourceScope; signal: AbortSignal },
+  ) {
     this.reset(info.mission?.timeOfDay || null)
 
     // #region set lighting
@@ -181,7 +184,7 @@ export class TimeOfDay {
       this.moonRotationLongitude = moon.longitude
       this.moonSize = moon.size
 
-      const moonTexture = await ctx.content.loadTexture(moon.texture)
+      const moonTexture = await ctx.content.loadTexture(moon.texture, ctx.scope)
       ctx.signal.throwIfAborted()
 
       this.moonTexture = moonTexture

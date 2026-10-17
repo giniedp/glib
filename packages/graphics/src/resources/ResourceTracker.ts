@@ -70,7 +70,6 @@ export function createResourceTracker<T extends Ownable>(options?: ResourceTrack
       throw new Error('Resource must have an owner set')
     }
     set.add(resource)
-    resource.ownership.onRevive(() => stale.delete(resource))
     resource.ownership.onFinalize(() => {
       set.delete(resource)
       stale.delete(resource)
@@ -78,8 +77,12 @@ export function createResourceTracker<T extends Ownable>(options?: ResourceTrack
   }
 
   function collect() {
-    for (const [resource, frames] of Array.from(stale)) {
-      if (frames <= 1) {
+    // removing the current entry and updating a value are both safe while iterating
+    for (const [resource, frames] of stale) {
+      if (resource.ownership.isOwned) {
+        // acquired again
+        stale.delete(resource)
+      } else if (frames <= 1) {
         resource.ownership.finalize()
       } else {
         stale.set(resource, frames - 1)
@@ -114,10 +117,9 @@ export function createResourceTracker<T extends Ownable>(options?: ResourceTrack
         throw new Error(`Resource already exists for key: ${getKeyName(key)}`)
       }
       add(resource)
-      resource.ownership.markShared()
       shared.set(key, resource)
       resource.ownership.onFinalize(() => shared.delete(key))
-      resource.ownership.onEmpty(() => {
+      resource.ownership.setReleaseHandler(() => {
         if (keepAliveFrames <= 0) {
           resource.ownership.finalize()
         } else {
@@ -140,7 +142,13 @@ export function createResourceTracker<T extends Ownable>(options?: ResourceTrack
       return set.size
     },
     get staleCount() {
-      return stale.size
+      let count = 0
+      for (const resource of stale.keys()) {
+        if (!resource.ownership.isOwned) {
+          count++
+        }
+      }
+      return count
     },
   }
 }

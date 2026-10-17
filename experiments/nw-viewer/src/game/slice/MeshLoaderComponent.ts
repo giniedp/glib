@@ -10,7 +10,7 @@ import {
   type ScheduledTask,
 } from '@gglib/components'
 import type { GameComponent, GameEntity } from '@gglib/ecs'
-import { Color } from '@gglib/graphics'
+import { Color, type ResourceScope } from '@gglib/graphics'
 import {
   mat4CreateFromArray,
   mat4CreateFromRTS,
@@ -57,6 +57,10 @@ export class MeshLoaderComponent implements GameComponent {
   public readonly data: ViewerMeshComponent
 
   private content: ContentService
+  /**
+   * Owns everything this component loads, the scope of the region or level
+   */
+  private scope: ResourceScope
   private scheduler: SchedulerSystem
 
   private isLoaded: boolean = false
@@ -77,6 +81,7 @@ export class MeshLoaderComponent implements GameComponent {
 
   public initialize(): void {
     this.content = this.entity.service(ContentService)
+    this.scope = this.content.scopeOf(this.entity)
     this.scheduler = this.entity.service(SchedulerSystem)
   }
 
@@ -95,7 +100,7 @@ export class MeshLoaderComponent implements GameComponent {
       lane: this.lane,
       context: null,
       load: async (task) => {
-        task.context = await this.content.loadModel(this.data.mesh, this.data.material)
+        task.context = await this.content.loadModel(this.data.mesh, this.data.material, this.scope)
       },
       work: (task) => {
         const culled = this.canCullInWorker(task.context)
@@ -233,7 +238,7 @@ export class MeshLoaderComponent implements GameComponent {
       // NW specific, interpreted as the maximum screen size per level (the game data is -1, 0.675, 0.55, …, 0.175)
       maxScreenSize: this.data.lodMinScreenPct,
       load: async (level) => {
-        const model = await this.content.loadModelLod(this.data.mesh, this.data.material, level)
+        const model = await this.content.loadModelLod(this.data.mesh, this.data.material, level, this.scope)
         return model ? instantiate(model) : null
       },
     })
@@ -331,6 +336,8 @@ function createInstanceArrayModel(source: Model, instances: ArrayLike<number>[])
       })
     }
   }
+  // only needed for the node transforms
+  base.dispose()
   return new Model(source.device, {
     name: source.name,
     meta: { ...source.meta },

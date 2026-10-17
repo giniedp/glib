@@ -35,7 +35,12 @@ export function createAssetIdResolver(loader: ContentLoader, nwbtUrl: string): A
  * so that differently spelled references share the same content cache entry
  */
 export function normalizeAssetPath(path: string) {
-  return path.trim().toLowerCase().replace(/\\/g, '/').replace(/\/{2,}/g, '/').replace(/^\//, '')
+  return path
+    .trim()
+    .toLowerCase()
+    .replace(/\\/g, '/')
+    .replace(/\/{2,}/g, '/')
+    .replace(/^\//, '')
 }
 
 /**

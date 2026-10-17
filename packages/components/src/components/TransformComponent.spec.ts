@@ -55,6 +55,32 @@ describe('@gglib/ecs/TransformComponent', () => {
       expect(child.state).toBe(GameEntityState.Destroyed)
     })
 
+    it('should destroy children regardless of life cycle flags', () => {
+      const root = world.createEntity({
+        name: 'root',
+        transform: new TransformComponent({ lifeCycle: LifeCycleFlags.None }),
+      })
+      const parent = world.createEntity({
+        name: 'parent',
+        parent: root,
+        transform: new TransformComponent({ lifeCycle: LifeCycleFlags.PropagateOnly }),
+      })
+      const child = world.createEntity({
+        name: 'child',
+        parent: parent,
+        transform: new TransformComponent({ lifeCycle: LifeCycleFlags.None }),
+      })
+      root.initialize()
+      parent.initialize()
+      child.initialize()
+
+      root.destroy()
+
+      expect(root.state).toBe(GameEntityState.Destroyed)
+      expect(parent.state).toBe(GameEntityState.Destroyed)
+      expect(child.state).toBe(GameEntityState.Destroyed)
+    })
+
     describe('when parent changes', () => {
       let root1: GameEntity
       let root2: GameEntity

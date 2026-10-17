@@ -25,7 +25,16 @@ import {
 } from '@gglib/math'
 import type { ParticleParams, VarParam } from '../../formats/particles'
 import { ageValue, colorMod, colorValue, hasAgeCurve, varMod, varValue } from './eval'
-import { AXIS_X, AXIS_Y, AXIS_Z, quat$initFromTo, quat$initRotationXYZ, quat$integrate, quat$rotateToUp, random } from './math'
+import {
+  AXIS_X,
+  AXIS_Y,
+  AXIS_Z,
+  quat$initFromTo,
+  quat$initRotationXYZ,
+  quat$integrate,
+  quat$rotateToUp,
+  random,
+} from './math'
 
 /**
  * World gravity, the physics environment of the engine
@@ -522,7 +531,10 @@ export class ParticleEmitter {
       }
     }
     if (p.focusAngle.base) {
-      quat$multiply(q, quat$initRotationXYZ(tmpQ2, this.focusAngle * DEGREE_TO_RAD, 0, this.focusAzimuth * DEGREE_TO_RAD))
+      quat$multiply(
+        q,
+        quat$initRotationXYZ(tmpQ2, this.focusAngle * DEGREE_TO_RAD, 0, this.focusAzimuth * DEGREE_TO_RAD),
+      )
       vec3ApplyQuat(AXIS_Z, q, out)
     }
     if (rot) {
@@ -1021,4 +1033,3 @@ function travel(pos: IVec3, vel: IVec3, dt: number, accel: IVec3, drag: number) 
     vec3$addScaled(vel, force, dt)
   }
 }
-

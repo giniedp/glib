@@ -20,8 +20,9 @@ import { createSkeletons, createTransformNodes, flattenNodes } from './utils'
  * @public
  *
  * @remarks
- * Meshes that are passed in as instances are borrowed. Meshes created from options
- * are owned by the model and are owned by a scope together with the model.
+ * The model owns its meshes, whether they are created from options or passed in as instances.
+ * Meshes may be shared between models (see {@link Model.instantiate}), they live as long as any model (or scope) holds them.
+ * The model also owns the models of its levels of detail, see {@link ModelLod}.
  */
 export class Model implements Ownable {
   /**
@@ -54,6 +55,7 @@ export class Model implements Ownable {
    *
    * @remarks
    * Not copied by {@link instantiate}: levels hold per instance models, the owner of an instance assigns its own.
+   * The level models are owned by this model.
    */
   public lod: ModelLod | null = null
 
@@ -155,6 +157,7 @@ export class Model implements Ownable {
   public constructor(device: Device, options: ModelOptions) {
     this.uid = uuid()
     this.device = device
+    device.scope.adoptUntilClaimed(this)
     this.name = options.name || null
     this.meta = options.meta || {}
 
@@ -163,13 +166,7 @@ export class Model implements Ownable {
 
     this.meshes = []
     for (const mesh of options.meshes || []) {
-      if (mesh instanceof Mesh) {
-        this.meshes.push(mesh)
-      } else {
-        const created = new Mesh(this.device, mesh)
-        this.ownership.adopt(created)
-        this.meshes.push(created)
-      }
+      this.meshes.push(this.ownership.adopt(mesh instanceof Mesh ? mesh : new Mesh(this.device, mesh)))
     }
 
     this.scene = options.scene || 0
@@ -334,12 +331,11 @@ export class Model implements Ownable {
   }
 
   /**
-   * Immediately finalizes this model and the meshes it created.
+   * Immediately finalizes this model and releases its meshes and level of detail models.
    * Called automatically when the last owner releases the model.
    *
    * @remarks
-   * Borrowed meshes (passed in as instances) are not touched.
-   * Created meshes are finalized unless a scope explicitly owns them.
+   * Meshes that are still held by another owner (e.g. another model or a scope) are kept.
    * Node, skeleton, and scene state are left intact.
    */
   public dispose() {
@@ -362,7 +358,8 @@ export class Model implements Ownable {
    * @remarks
    * Copies the properties and returns a new Models instance.
    *
-   * Mesh instances are kept and shared with the original mesh.
+   * Mesh instances are kept and shared with the original mesh. Shared meshes stay alive as long as either model holds them.
+   * Like any other new model, the instance is owned by the global scope until it is given to a scope.
    *
    * To instantiate meshes, pass `true` for `options.meshes`
    * To also instantiate materials for each mesh, pass `true` for `options.materials`
@@ -371,7 +368,7 @@ export class Model implements Ownable {
     const meshes = this.meshes.map((mesh) => {
       return options?.meshes ? mesh.instantiate(options) : mesh
     })
-    const result = new Model(this.device, {
+    return new Model(this.device, {
       name: this.name || undefined,
       meta: { ...this.meta }, // flat list
       meshes: meshes,
@@ -381,12 +378,5 @@ export class Model implements Ownable {
       scenes: this.scenes ? JSON.parse(JSON.stringify(this.scenes)) : undefined,
       scene: this.scene,
     })
-    // instantiated meshes belong to the new model, other meshes are borrowed
-    if (options?.meshes) {
-      for (const mesh of meshes) {
-        result.ownership.adopt(mesh)
-      }
-    }
-    return result
   }
 }

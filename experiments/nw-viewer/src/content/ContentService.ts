@@ -1,18 +1,14 @@
 import { AssetType, BoundedAsyncExecutor, ContentLoader } from '@gglib/content'
-import { GameEntity, GameSystem, GameWorld } from '@gglib/ecs'
-import { Device, Material, Texture } from '@gglib/graphics'
+import { GameEntity, GameSystem, GameWorld, GetComponent } from '@gglib/ecs'
+import { Device, Texture, type ResourceScope } from '@gglib/graphics'
 import { Model } from '@gglib/model'
 import { fetchTypedRequest, type TypedRequest, type ViewerSlice } from '../api'
-import {
-  ENABLE_MODEL_LOD,
-  LOD_PROBE_MIN_TRIANGLES,
-  PARTIAL_TEXTURE_SIZE,
-  PARTIAL_TEXTURES,
-} from '../constants'
 import { ViewerConfig, type ViewerConfigValues } from '../config'
+import { ENABLE_MODEL_LOD, LOD_PROBE_MIN_TRIANGLES, PARTIAL_TEXTURE_SIZE, PARTIAL_TEXTURES } from '../constants'
 import { CgfGeometryAssetType, isAssetIdRef, type CgfGeometry } from '../formats/cgf'
 import { MtlLoader } from '../formats/mtl'
 import { createAssetIdResolver, normalizeAssetPath, type AssetIdResolver } from './assetIds'
+import { ResourceScopeComponent } from './ResourceScopeComponent'
 
 /**
  * Highest level of detail the engine supports (MAX_STATOBJ_LODS_NUM - 1), the upper bound for probing sibling files
@@ -39,12 +35,28 @@ export class ContentService extends GameSystem {
   public loader: ContentLoader
   public device: Device
 
-  private modelCache = new Map<string, Promise<Model>>()
+  /**
+   * Assembled models and levels of detail by key, entries are evicted when their model is finalized
+   */
+  private modelCache = new Map<string, Promise<Model | null>>()
+  private modelCacheKeys = new Map<Model, Set<string>>()
 
   /**
    * Resolves asset ids with the nwbt catalog, see {@link createAssetIdResolver}
    */
   public resolveAssetId: AssetIdResolver
+
+  /**
+   * The resource scope of an entity: the scope of the nearest {@link ResourceScopeComponent} in the hierarchy
+   * (region), else the global scope
+   *
+   * @remarks
+   * Components call this on initialize and pass the scope to every load.
+   */
+  public scopeOf(entity: GameEntity): ResourceScope {
+    const provider = entity.$(ResourceScopeComponent, GetComponent.OptionalFollowParent)
+    return provider?.scope ?? this.device.scope
+  }
 
   // empty: same origin (vite proxy), otherwise the nwbt server directly, e.g. https://localhost:8443 for HTTP/2
   public nwbtUrl: string = import.meta.env.VITE_NWBT_URL ?? ''
@@ -175,6 +187,22 @@ export class ContentService extends GameSystem {
     })
 
     await Promise.all(loads.map((it) => it()))
+
+    // engine textures live as long as the device, other scopes may share but never take them over
+    for (const texture of [
+      this.whitePixel,
+      this.grayPixel,
+      this.flatNormalPixel,
+      this.blackPixel,
+      this.nullHeightmapArray,
+      this.noise2d,
+      this.noise3d,
+      this.waterFoamMap,
+      this.waterFoamNormalMap,
+      this.waterGlossMap,
+    ]) {
+      device.scope.adopt(texture)
+    }
   }
 
   /**
@@ -182,12 +210,32 @@ export class ContentService extends GameSystem {
    *
    * @param model - path of the `.cgf` file
    * @param material - path of the `.mtl` file (override), empty to use the material of the `.cgf` file
+   * @param scope - the scope that owns the model, see {@link scopeOf}
    */
-  public loadModel(model: string, material: string): Promise<Model> {
+  public loadModel(model: string, material: string, scope: ResourceScope): Promise<Model> {
     if (!model || extName(model) !== '.cgf') {
       return Promise.reject(new Error(`unsupported model type: ${model}`))
     }
-    return this.loadCgfModel(model, material)
+    return this.ownModel(() => this.loadCgfModel(model, material), scope)
+  }
+
+  /**
+   * Loads a model and gives it to the scope. A model that was finalized while the load was pending is loaded again.
+   */
+  private async ownModel<T extends Model | null>(load: () => Promise<T>, scope: ResourceScope): Promise<T> {
+    let model = await load()
+    if (model?.ownership.isFinalized) {
+      // the cached model lost its last owner while the load was pending (e.g. a released probe), assemble it again
+      model = await load()
+    }
+    if (model && scope.isDisposed) {
+      // the region was unloaded while loading, a model nobody owns would stay cached forever
+      if (!model.ownership.isClaimed) {
+        model.dispose()
+      }
+      throw new Error(`scope '${scope.name}' was disposed while loading`)
+    }
+    return model ? scope.adopt(model) : model
   }
 
   /**
@@ -205,9 +253,40 @@ export class ContentService extends GameSystem {
     material = material ? normalizeAssetPath(material) : ''
     const key = cgfModelKey(model, material, inlineLod)
     if (!this.modelCache.has(key)) {
-      this.modelCache.set(key, this.assembleCgfModel(model, material, inlineLod))
+      this.cacheModel(key, this.assembleCgfModel(model, material, inlineLod))
     }
-    return this.modelCache.get(key)
+    return this.modelCache.get(key) as Promise<Model>
+  }
+
+  /**
+   * Caches a model under the key until the model is finalized
+   */
+  private cacheModel(key: string, promise: Promise<Model | null>) {
+    this.modelCache.set(key, promise)
+    promise.then(
+      (model) => {
+        if (!model || this.modelCache.get(key) !== promise) {
+          return
+        }
+        if (model.ownership.isFinalized) {
+          this.modelCache.delete(key)
+          return
+        }
+        let keys = this.modelCacheKeys.get(model)
+        if (!keys) {
+          keys = new Set()
+          this.modelCacheKeys.set(model, keys)
+          model.ownership.onFinalize(() => {
+            for (const it of keys) {
+              this.modelCache.delete(it)
+            }
+            this.modelCacheKeys.delete(model)
+          })
+        }
+        keys.add(key)
+      },
+      () => null,
+    )
   }
 
   /**
@@ -222,28 +301,36 @@ export class ContentService extends GameSystem {
    * @param model - path of the `.cgf` file of level 0
    * @param material - same as for {@link loadModel}
    * @param level - the level of detail, 1 or higher
+   * @param scope - the scope that owns the model, see {@link scopeOf}
    */
-  public loadModelLod(model: string, material: string, level: number): Promise<Model | null> {
-    const key = `lod:${level}:${cgfModelKey(model, material, 0)}`
-    if (!this.lodCache.has(key)) {
-      this.lodCache.set(key, this.findModelLod(model, material, level))
-    }
-    return this.lodCache.get(key)
+  public loadModelLod(model: string, material: string, level: number, scope: ResourceScope): Promise<Model | null> {
+    return this.ownModel(() => this.loadCgfModelLod(model, material, level), scope)
   }
 
-  private lodCache = new Map<string, Promise<Model | null>>()
+  private loadCgfModelLod(model: string, material: string, level: number): Promise<Model | null> {
+    const key = `lod:${level}:${cgfModelKey(model, material, 0)}`
+    if (!this.modelCache.has(key)) {
+      this.cacheModel(key, this.findModelLod(model, material, level))
+    }
+    return this.modelCache.get(key)
+  }
 
   private async findModelLod(model: string, material: string, level: number): Promise<Model | null> {
-    const base = await this.loadModel(model, material)
+    const base = await this.loadCgfModel(model, material)
     const info = base.meta.lod as CgfLodInfo | null
     if (!info || level > info.maxLevel) {
+      releaseProbe(base)
       return null
     }
     if (info.inline) {
+      releaseProbe(base)
       return this.loadCgfModel(model, info.material, level)
     }
-    const previous = level > 1 ? await this.loadModelLod(model, material, level - 1) : base
-    if (!previous || countTriangles(previous) <= LOD_PROBE_MIN_TRIANGLES) {
+    const previous = level > 1 ? await this.loadCgfModelLod(model, material, level - 1) : base
+    const worthIt = !!previous && countTriangles(previous) > LOD_PROBE_MIN_TRIANGLES
+    releaseProbe(base)
+    releaseProbe(previous)
+    if (!worthIt) {
       return null
     }
     return this.loadCgfModel(siblingLodPath(model, level), info.material).catch(() => null)
@@ -263,7 +350,7 @@ export class ContentService extends GameSystem {
     // models with and without override that end up with the same material share the Model
     const key = cgfModelKey(model, material, inlineLod)
     if (override !== material && this.modelCache.has(key)) {
-      return this.modelCache.get(key)
+      return this.modelCache.get(key) as Promise<Model>
     }
 
     // only the sub materials that are used by the subsets, an .mtl file often holds more
@@ -298,8 +385,11 @@ export class ContentService extends GameSystem {
         parts: parts[i],
       })),
     })
+    // the meshes own the geometries and materials. The model also holds the cached geometry container,
+    // so the content loader evicts the container together with its last model.
+    result.ownership.adopt(geometry)
     if (override !== material) {
-      this.modelCache.set(key, Promise.resolve(result))
+      this.cacheModel(key, Promise.resolve(result))
     }
     return result
   }
@@ -340,18 +430,30 @@ export class ContentService extends GameSystem {
     return this.resolveAssetId(ref)
   }
 
-  public loadTexture(url: string) {
+  /**
+   * Loads a texture owned by the given scope, see {@link scopeOf}
+   */
+  public loadTexture(url: string, scope: ResourceScope) {
     return this.loader.loadTexture(url, {
       baseUrl: this.nwbtFileUrl,
+      scope,
     })
   }
 
-  public loadMaterialAsset(url: string, entity?: GameEntity) {
+  /**
+   * Loads a material (first of the `.mtl` file) owned by the given scope, see {@link scopeOf}
+   */
+  public loadMaterialAsset(url: string, scope: ResourceScope) {
     return this.loader.loadMaterial(url, {
       baseUrl: this.nwbtFileUrl,
+      scope,
     })
   }
-  public loadAsset(url: string, entity?: GameEntity) {
+
+  /**
+   * Loads an asset container. Containers hold data only, instances created from them must be owned by the caller.
+   */
+  public loadAsset(url: string) {
     return this.loader.loadContainer(url, {
       baseUrl: this.nwbtFileUrl,
     })
@@ -359,6 +461,23 @@ export class ContentService extends GameSystem {
 
   public fetchTypedRequest<T>(url: TypedRequest<T>): Promise<T> {
     return fetchTypedRequest(this.nwbtUrl, url)
+  }
+
+  /**
+   * Cache sizes of the content service and its loader
+   */
+  public get cacheStats() {
+    return {
+      /**
+       * Model and level of detail cache entries, including pending loads
+       */
+      modelEntries: this.modelCache.size,
+      /**
+       * Distinct loaded models in the cache
+       */
+      models: this.modelCacheKeys.size,
+      ...this.loader.cacheStats,
+    }
   }
 
   public destroy(): void {
@@ -456,6 +575,16 @@ function cgfModelKey(model: string, material: string, inlineLod: number) {
  */
 function siblingLodPath(model: string, level: number) {
   return model.replace(/\.cgf$/i, `_lod${level}.cgf`)
+}
+
+/**
+ * Disposes a cached model that was only loaded to probe levels of detail, i.e. no scope owns it.
+ * Otherwise it would stay in the global scope with its geometry and materials. It is assembled again when needed.
+ */
+function releaseProbe(model: Model | null) {
+  if (model && !model.ownership.isClaimed) {
+    model.dispose()
+  }
 }
 
 function countTriangles(model: Model) {

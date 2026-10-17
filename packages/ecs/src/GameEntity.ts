@@ -276,6 +276,10 @@ export class GameEntity {
 
   /**
    * Deactivates this entity and destroys all components.
+   *
+   * @remarks
+   * Components that were never initialized are not destroyed, destroy is the counterpart of initialize.
+   * The transform is always destroyed, so that the destruction reaches the child entities.
    */
   public destroy(): void {
     if (this.canDeactivate) {
@@ -286,9 +290,14 @@ export class GameEntity {
     }
 
     this.assertNotState(GameEntityState.Destroyed)
+    const wasInitialized = this.state !== GameEntityState.Created
+    const transform = this.getTransform()
     this.setState(GameEntityState.Destroying)
     for (const component of this.components) {
-      destroyComponent(component)
+      const isInitialized = wasInitialized && !this.toInitialize.includes(component)
+      if (isInitialized || component === (transform as unknown as GameComponent)) {
+        destroyComponent(component)
+      }
     }
     this.setState(GameEntityState.Destroyed)
     this.onDestroyed.emit(this)
@@ -573,7 +582,7 @@ function initializeComponent(component: GameComponent, entity: GameEntity): bool
   try {
     component.initialize?.()
   } catch (e) {
-    console.error('Error initializing component', component, e)
+    console.error(`Error initializing component ${getTypeName(component?.constructor)}`, e)
     return false
   }
   return true
@@ -583,7 +592,7 @@ function activateComponent(component: GameComponent): boolean {
   try {
     component.activate?.()
   } catch (e) {
-    console.error('Error enabling component', component, e)
+    console.error(`Error enabling component ${getTypeName(component?.constructor)}`, e)
     return false
   }
   return true
@@ -593,7 +602,7 @@ function deactivateComponent(component: GameComponent): boolean {
   try {
     component.deactivate?.()
   } catch (e) {
-    console.error('Error disabling component', component, e)
+    console.error(`Error disabling component ${getTypeName(component?.constructor)}`, e)
     return false
   }
   return true
@@ -603,7 +612,8 @@ function destroyComponent(component: GameComponent): boolean {
   try {
     component.destroy?.()
   } catch (e) {
-    console.error('Error destroying component', component, e)
+    // log the name only, dev tooling serializes logged objects (slow for large component graphs)
+    console.error(`Error destroying component ${getTypeName(component?.constructor)}`, e)
     return false
   }
   return true

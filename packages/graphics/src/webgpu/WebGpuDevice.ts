@@ -233,8 +233,8 @@ export class WebGpuDevice extends Device<GPUCanvasContext> {
       mipLevelCount: 1,
     })
     // explicitly owned, so other scopes may share but never take them over
-    this.scope.own(this.defaultTexture)
-    this.scope.own(this.defaultTextureCube)
+    this.scope.adopt(this.defaultTexture)
+    this.scope.adopt(this.defaultTextureCube)
 
     await this.capabilities.ready
     self.isReady = true
@@ -348,7 +348,7 @@ export class WebGpuDevice extends Device<GPUCanvasContext> {
 
     const key = this.createWgslModuleKey(options.wgsl)
     const result = this.shaders.get(key) || this.shaders.share(key, this.allocShaderModule(options))
-    return this.claim(result, options.scope)
+    return (options.scope ?? this.scope).adopt(result)
   }
 
   public createWgslModuleKey(wgsl: WgslModuleSource | string) {

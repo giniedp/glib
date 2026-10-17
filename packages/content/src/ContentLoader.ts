@@ -235,6 +235,17 @@ export class ContentLoader {
     return this.uriResolver(assetUri, options || {})
   }
 
+  /**
+   * Number of cached containers and asset instances
+   */
+  public get cacheStats(): { containers: number; assets: number } {
+    let assets = 0
+    for (const cache of this.assetCache.values()) {
+      assets += cache.size
+    }
+    return { containers: this.containerCache.size, assets }
+  }
+
   protected disableCache = false
   protected containerCache: Map<string, Promise<AssetContainer>> = new Map()
   protected assetCache: Map<string, Map<string, Promise<any>>> = new Map()
@@ -308,7 +319,13 @@ export class ContentLoader {
     const cache = this.assetCache.get(type)
     const key = this.cacheKey(type, url, options)
     if (!this.disableCache && cache.has(key)) {
-      return cache.get(key).then((instance) => ownInstance(instance, scope))
+      return cache.get(key).then((instance) => {
+        if (isOwnable(instance) && instance.ownership.isFinalized) {
+          // finalized while the request was pending, the entry is evicted by now
+          return this.load(type, url, options)
+        }
+        return ownInstance(instance, scope, this.device)
+      })
     }
 
     const promise = this.loadContainer(url, context)
@@ -325,6 +342,8 @@ export class ContentLoader {
             if (cache.get(key) === promise) {
               cache.delete(key)
             }
+            // the container may have released its data after creating the instance, load the file again next time
+            this.containerCache.delete(this.resolveUri(url, { baseUri: context.baseUrl }))
           })
         }
         return instance
@@ -334,7 +353,7 @@ export class ContentLoader {
       cache.set(key, promise)
     }
 
-    return promise.then((instance) => ownInstance(instance, scope))
+    return promise.then((instance) => ownInstance(instance, scope, this.device))
   }
 
   /**
@@ -477,11 +496,18 @@ export const createModel: AssetCreator<ModelOptions, Model> = (content: ContentL
   })
 }
 
-function ownInstance<T>(instance: T, scope: ResourceScope | null | undefined): T {
-  if (scope && isOwnable(instance)) {
-    scope.own(instance)
+function ownInstance<T>(instance: T, scope: ResourceScope | null | undefined, device: Device): T {
+  if (!scope || !isOwnable(instance)) {
+    return instance
   }
-  return instance
+  if (scope.isDisposed) {
+    // the scope was disposed while loading, an instance nobody claimed would stay alive with the cache
+    if (!instance.ownership.isClaimed) {
+      device.scope.drop(instance)
+    }
+    throw new Error(`scope '${scope.name}' was disposed while loading`)
+  }
+  return scope.adopt(instance)
 }
 
 export const createMaterial: AssetCreator<MaterialOptions, Material> = (

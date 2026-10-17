@@ -12,7 +12,7 @@ import {
 } from '@gglib/components'
 import { GameEntity, type CreateEntityOptions, type GameComponent } from '@gglib/ecs'
 
-import { Color } from '@gglib/graphics'
+import { Color, type ResourceScope } from '@gglib/graphics'
 import { mat4CreateTranslation, vec3AddScalars, vec4$initFrom, type IVec3 } from '@gglib/math'
 import type { Model } from '@gglib/model'
 import { ContentService } from '../../content'
@@ -68,6 +68,10 @@ export interface ImpostorContentMember {
 
 export class RegionImpostorComponent implements GameComponent {
   private content: ContentService
+  /**
+   * Owns everything this component loads, the scope of the region or level
+   */
+  private scope: ResourceScope
   private scheduler: SchedulerSystem
 
   public readonly entity: GameEntity
@@ -129,6 +133,7 @@ export class RegionImpostorComponent implements GameComponent {
 
   public initialize(): void {
     this.content = this.entity.service(ContentService)
+    this.scope = this.content.scopeOf(this.entity)
     this.scheduler = this.entity.service(SchedulerSystem)
     this.instance = this.entity.component(InstanceDataComponent)
     this.updateDissolve()
@@ -246,7 +251,7 @@ export class RegionImpostorComponent implements GameComponent {
       label: this.modelUrl,
       context: null,
       load: async (task) => {
-        task.context = await this.content.loadModel(this.modelUrl, null)
+        task.context = await this.content.loadModel(this.modelUrl, null, this.scope)
       },
       work: (task) => {
         this.model = task.context

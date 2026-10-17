@@ -139,7 +139,14 @@ describe('SplineWidth', () => {
   })
 
   it('uses the default width without per vertex widths', () => {
-    const spline = new Spline({ type: 'Linear', closed: false, vertices: [[0, 0, 0], [10, 0, 0]] })
+    const spline = new Spline({
+      type: 'Linear',
+      closed: false,
+      vertices: [
+        [0, 0, 0],
+        [10, 0, 0],
+      ],
+    })
     expect(new SplineWidth(8, undefined, spline).at(3)).toBe(8)
   })
 })

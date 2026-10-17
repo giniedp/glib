@@ -1,5 +1,6 @@
 import { BoundsComponent, TransformComponent } from '@gglib/components'
 import { GetComponent, type GameComponent, type GameEntity } from '@gglib/ecs'
+import { ResourceOwnership, type Ownable } from '@gglib/graphics'
 import type { Model } from '@gglib/model'
 import { CullingSystem } from './CullingSystem'
 
@@ -21,8 +22,12 @@ export interface CulledModelComponentOptions {
  * The model is culled in the culling worker while the entity is active. It is not part of a spatial index,
  * picking is done by the worker as well. The model is kept up to date with the entity transform.
  */
-export class CulledModelComponent implements GameComponent {
+export class CulledModelComponent implements GameComponent, Ownable {
   public readonly entity: GameEntity
+  /**
+   * The ownership state of this component, holds the model until the component is destroyed
+   */
+  public readonly ownership: ResourceOwnership = new ResourceOwnership(this)
   public readonly model: Model
   public readonly data: Float32Array<ArrayBuffer>
   /**
@@ -34,7 +39,7 @@ export class CulledModelComponent implements GameComponent {
   private transform: TransformComponent
 
   public constructor(options: CulledModelComponentOptions) {
-    this.model = options.model
+    this.model = this.ownership.adopt(options.model)
     this.data = options.data
   }
 
@@ -59,6 +64,7 @@ export class CulledModelComponent implements GameComponent {
 
   public destroy(): void {
     this.deactivate()
+    this.ownership.finalize()
   }
 
   private onTransformUpdated = () => {

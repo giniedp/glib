@@ -1,6 +1,6 @@
 import { MeshComponent, PriorityLane, SchedulerSystem, TaskCancelledError, type ScheduledTask } from '@gglib/components'
 import { type GameComponent, type GameEntity } from '@gglib/ecs'
-import { Device } from '@gglib/graphics'
+import { Device, type ResourceScope } from '@gglib/graphics'
 import { type IVec3 } from '@gglib/math'
 import type { Model } from '@gglib/model'
 import { lfmt } from '@gglib/utils'
@@ -33,6 +33,10 @@ export class VegetationComponent implements GameComponent {
 
   private scheduler: SchedulerSystem
   private content: ContentService
+  /**
+   * Owns everything this component loads, the scope of the region or level
+   */
+  private scope: ResourceScope
   private task: ScheduledTask | null = null
   private groupTasks = new Map<VegetationGroup, ScheduledTask>()
   private logTag = lfmt.badge('#8CD17D', 'Vegetation')
@@ -45,6 +49,7 @@ export class VegetationComponent implements GameComponent {
   public initialize(): void {
     this.scheduler = this.entity.service(SchedulerSystem)
     this.content = this.entity.service(ContentService)
+    this.scope = this.content.scopeOf(this.entity)
   }
 
   public activate(): void {
@@ -166,7 +171,8 @@ export class VegetationComponent implements GameComponent {
       entity: this.entity,
       context: null,
       load: async (task) => {
-        task.context = (await this.content.loadModel(group.model, group.material)?.catch(() => null)) ?? null
+        task.context =
+          (await this.content.loadModel(group.model, group.material, this.scope)?.catch(() => null)) ?? null
       },
       work: (task) => {
         batch.enableGroup(group, task.context)

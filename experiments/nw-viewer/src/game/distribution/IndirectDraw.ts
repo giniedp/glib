@@ -66,10 +66,6 @@ export class IndirectGeometry extends Geometry {
       encoder.drawIndirect(this.source.getArgsBuffer(), this.drawIndex * BYTES_PER_DRAW)
     }
   }
-
-  public override dispose(): void {
-    // buffers are owned by the source geometry
-  }
 }
 
 /**

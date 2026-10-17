@@ -120,9 +120,9 @@ export abstract class Device<C extends GPUCanvasContext | WebGL2RenderingContext
    * The global resource scope.
    *
    * @remarks
-   * Resources created or acquired without a scope are implicitly owned by this scope.
-   * The first other scope that owns such a resource takes over the ownership.
-   * Resources that are explicitly owned by this scope stay alive until the device is disposed.
+   * Resources created or acquired without a scope are held here until they are claimed,
+   * see {@link ResourceScope.adoptUntilClaimed}. Resources owned by this scope with {@link ResourceScope.adopt}
+   * stay alive until the device is disposed.
    * @public
    */
   public readonly scope = new ResourceScope('global')
@@ -131,12 +131,12 @@ export abstract class Device<C extends GPUCanvasContext | WebGL2RenderingContext
    * Creates a resource scope as a child of the global scope
    *
    * @remarks
-   * Pass the scope to `create*` and `acquire*` methods, or call {@link ResourceScope.own},
+   * Pass the scope to `create*` and `acquire*` methods, or call {@link ResourceScope.adopt},
    * to tie the lifetime of resources to the scope.
    * @public
    */
   public createScope(name?: string): ResourceScope {
-    return this.scope.createScope(name)
+    return this.scope.createChild(name)
   }
 
   /**
@@ -144,17 +144,11 @@ export abstract class Device<C extends GPUCanvasContext | WebGL2RenderingContext
    *
    * @remarks
    * - With a scope, the scope owns the resource.
-   * - Without a scope, a resource that has no owners is implicitly owned by the global scope.
+   * - Without a scope, the global scope holds the resource until it is claimed.
    *   An acquired resource that is already owned keeps its owners.
    */
   protected claim<T extends Ownable>(resource: T, scope?: ResourceScope | null): T {
-    if (scope) {
-      return scope.own(resource)
-    }
-    if (resource.ownership.setDefault(this.scope)) {
-      this.scope.adopt(resource)
-    }
-    return resource
+    return scope ? scope.adopt(resource) : this.scope.adoptUntilClaimed(resource)
   }
 
   /**
@@ -230,6 +224,10 @@ export abstract class Device<C extends GPUCanvasContext | WebGL2RenderingContext
   /**
    * Acquires a pooled shader module identified by the source code and compilation options.
    * Use {@link createShaderModule} for exclusive ownership.
+   *
+   * @remarks
+   * Without a scope, the global scope owns the shader module explicitly and keeps it until the device is disposed.
+   * Shader modules are shared by effects of any scope, a scope never takes them over from the global scope.
    * @public
    */
   public abstract acquireShaderModule(options: ShaderModuleOptions): ShaderModule

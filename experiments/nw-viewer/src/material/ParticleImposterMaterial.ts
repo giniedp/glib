@@ -75,7 +75,7 @@ export class ParticleImposterMaterial extends MaterialWithSchema(SCHEMA) {
     this.name = `${attrs.Shader} (${attrs.Name})`
     const shaderConst = getShaderConstants(shaderFlags)
 
-    this.effects[RenderVariant.Forward] = new Effect(this.device, particleImposterEffectOptions(shaderConst))
+    this.setEffect(RenderVariant.Forward, new Effect(this.device, particleImposterEffectOptions(shaderConst)))
     this.effect.depthState = DepthState.GreaterEqualNoWrite
     this.effect.cullState = CullState.None
     this.effect.blendState = BlendState.Alpha

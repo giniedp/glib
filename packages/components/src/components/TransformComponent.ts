@@ -68,8 +68,11 @@ export interface TransformComponentOptions {
 }
 
 /**
- * Bit flags controlling how entity life cycle calls (initialize, activate, deactivate, destroy)
+ * Bit flags controlling how entity life cycle calls (initialize, activate, deactivate)
  * travel along the transform hierarchy. See {@link LifeCycleFlags}.
+ *
+ * @remarks
+ * Destruction is not controlled by the flags, destroying an entity always destroys its children.
  *
  * @public
  */
@@ -79,7 +82,7 @@ export type LifeCycleFlags = number
  *
  * @public
  * @remarks
- * The entity is initialized, activated, deactivated and destroyed along with its parent.
+ * The entity is initialized, activated and deactivated along with its parent.
  * On re-parenting, the entity state is synced to the state of the new parent.
  */
 export const LifeCycleInherit = 1 as const
@@ -103,7 +106,7 @@ export const LifeCycleFlags = {
    * Accept life cycle calls from the parent.
    *
    * @remarks
-   * The entity is initialized, activated, deactivated and destroyed along with its parent.
+   * The entity is initialized, activated and deactivated along with its parent.
    * On re-parenting, the entity state is synced to the state of the new parent.
    */
   InheritOnly: LifeCycleInherit,
@@ -230,15 +233,17 @@ export class TransformComponent
     }
   }
 
+  /**
+   * Destroys all child entities, regardless of their life cycle flags
+   *
+   * @remarks
+   * The flags only control initialization, activation and deactivation. A child never outlives its parent.
+   */
   public destroy(): void {
-    if (!(this.lifeCycle & LifeCyclePropagate)) {
-      return
-    }
-    for (const child of this.children) {
-      if (!(child.lifeCycle & LifeCycleInherit)) {
-        continue
+    for (const child of Array.from(this.children)) {
+      if (child.entity && !child.entity.isDestroyed) {
+        child.entity.destroy()
       }
-      child.entity.destroy()
     }
   }
 

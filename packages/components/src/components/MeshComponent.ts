@@ -1,5 +1,5 @@
 import { type GameComponent, GameEntity, GetComponent, InitializableComponent } from '@gglib/ecs'
-import { Mesh } from '@gglib/graphics'
+import { Mesh, ResourceOwnership, type Ownable } from '@gglib/graphics'
 import { BoundsComponent } from './BoundsComponent'
 import { InstanceDataComponent } from './InstanceDataComponent'
 
@@ -9,12 +9,20 @@ export interface MeshComponentOptions<MESH extends Mesh = Mesh> {
 
 /**
  * @public
+ *
+ * @remarks
+ * The component owns the mesh it holds. A replaced mesh is released, the mesh is released when the component is destroyed.
  */
-export class MeshComponent<MESH extends Mesh = Mesh> implements GameComponent, InitializableComponent {
+export class MeshComponent<MESH extends Mesh = Mesh> implements GameComponent, InitializableComponent, Ownable {
   /**
    * The entity that owns this component
    */
   public readonly entity: GameEntity
+
+  /**
+   * The ownership state of this component, holds the mesh
+   */
+  public readonly ownership: ResourceOwnership = new ResourceOwnership(this)
 
   /**
    * Gets and sets the mesh to render
@@ -23,7 +31,14 @@ export class MeshComponent<MESH extends Mesh = Mesh> implements GameComponent, I
     return this.value
   }
   public set mesh(value: MESH) {
+    const previous = this.value
+    if (value) {
+      this.ownership.adopt(value)
+    }
     this.value = value
+    if (previous && previous !== value) {
+      this.ownership.drop(previous)
+    }
     this.handleMeshChanged()
   }
 
@@ -50,7 +65,7 @@ export class MeshComponent<MESH extends Mesh = Mesh> implements GameComponent, I
   }
 
   public destroy(): void {
-    //
+    this.ownership.finalize()
   }
 
   private handleMeshChanged() {

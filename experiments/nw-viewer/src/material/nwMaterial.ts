@@ -1,4 +1,4 @@
-import type { MaterialOptions } from '@gglib/graphics'
+import { Texture, type MaterialOptions } from '@gglib/graphics'
 import { DistanceCloudsMaterial } from './DistanceCloudsMaterial'
 import { FxMeshAdvancedMaterial } from './FxMeshAdvancedMaterial'
 import { FxMeshAdvancedTranspMaterial } from './FxMeshAdvancedTranspMaterial'
@@ -26,6 +26,23 @@ import { WaterVolumeMaterial } from './WaterVolumeMaterial'
  * @param stringGenMask - only used to log unknown shaders
  */
 export function nwMaterialFactory(shader: string, stringGenMask?: string): MaterialOptions['factory'] {
+  const factory = shaderMaterialFactory(shader, stringGenMask)
+  return (device, options) => {
+    const material = factory(device, options)
+    // the textures were loaded for this material (see the mtl loader). Assigned maps are owned through setInput,
+    // this also covers maps the shader does not use, they would stay in the global scope otherwise
+    const textures = (options?.properties as { textures?: Record<string, unknown> })?.textures
+    for (const key in textures || {}) {
+      const texture = textures[key]
+      if (texture instanceof Texture) {
+        material.ownership.adopt(texture)
+      }
+    }
+    return material
+  }
+}
+
+function shaderMaterialFactory(shader: string, stringGenMask?: string): MaterialOptions['factory'] {
   switch (shader?.toLocaleLowerCase()) {
     case 'terraintilecomposite':
       return (device, asset) => new TerrainCompositeMaterial(device, asset)

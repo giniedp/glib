@@ -9,7 +9,7 @@ import {
   type ScheduledTask,
 } from '@gglib/components'
 import type { GameComponent, GameEntity } from '@gglib/ecs'
-import { Device, Mesh, type Material } from '@gglib/graphics'
+import { Device, type Material, Mesh, type ResourceScope } from '@gglib/graphics'
 import { mat4Identity } from '@gglib/math'
 import { Model } from '@gglib/model'
 import type { ViewerRoadComponent } from '../../api'
@@ -29,6 +29,10 @@ export class RoadComponent implements GameComponent {
   public state: RoadState = 'idle'
 
   private content: ContentService
+  /**
+   * Owns everything this component loads, the scope of the region or level
+   */
+  private scope: ResourceScope
   private scheduler: SchedulerSystem
   private system: RoadSystem
   private task: ScheduledTask
@@ -42,6 +46,7 @@ export class RoadComponent implements GameComponent {
 
   public initialize(): void {
     this.content = this.entity.service(ContentService)
+    this.scope = this.content.scopeOf(this.entity)
     this.scheduler = this.entity.service(SchedulerSystem)
     this.system = this.entity.world.getSystem(RoadSystem)
   }
@@ -56,7 +61,10 @@ export class RoadComponent implements GameComponent {
       lane: PriorityLane.Low,
       context: null,
       load: async (task) => {
-        task.context = (await this.content.loadMaterialAsset(materialAssetPath(this.data.material))) as Material
+        task.context = (await this.content.loadMaterialAsset(
+          materialAssetPath(this.data.material),
+          this.scope,
+        )) as Material
       },
       finalize: (task, err) => {
         if (this.task === task) {
@@ -87,7 +95,7 @@ export class RoadComponent implements GameComponent {
     this.system?.cancelBuild(this)
     this.child?.destroy()
     this.child = null
-    this.model?.meshes?.forEach((mesh) => mesh.geometries.forEach((geometry) => geometry.dispose()))
+    this.model?.dispose()
     this.model = null
   }
 

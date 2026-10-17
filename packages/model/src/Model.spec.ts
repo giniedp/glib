@@ -34,11 +34,13 @@ describe('@gglib/model/Model', () => {
       expect(mesh.ownership.isFinalized).toBe(true)
     })
 
-    it('does not dispose borrowed meshes', () => {
+    it('owns passed in meshes', () => {
       const mesh = new Mesh(device, meshOptions())
       const model = new Model(device, { meshes: [mesh] })
+      expect(device.scope.has(mesh)).toBe(false)
+      expect(device.scope.has(model)).toBe(true)
       model.dispose()
-      expect(mesh.ownership.isFinalized).toBe(false)
+      expect(mesh.ownership.isFinalized).toBe(true)
     })
 
     it('keeps the original when an instance is disposed', () => {
@@ -58,6 +60,21 @@ describe('@gglib/model/Model', () => {
       expect(instance.meshes[0]).toBe(model.meshes[0])
       instance.dispose()
       expect(model.meshes[0].ownership.isFinalized).toBe(false)
+    })
+
+    it('keeps an instance intact when the scope of the original is disposed', () => {
+      const a = device.createScope('a')
+      const b = device.createScope('b')
+      const model = a.adopt(new Model(device, { meshes: [meshOptions()] }))
+      const instance = b.adopt(model.instantiate())
+      const mesh = model.meshes[0]
+      a.dispose()
+      expect(model.ownership.isFinalized).toBe(true)
+      expect(mesh.ownership.isFinalized).toBe(false)
+      expect(mesh.geometries[0].vertexBuffer.ownership.isFinalized).toBe(false)
+      b.dispose()
+      expect(instance.ownership.isFinalized).toBe(true)
+      expect(mesh.ownership.isFinalized).toBe(true)
     })
 
     it('owns materials created by a material factory', () => {
@@ -82,7 +99,7 @@ describe('@gglib/model/Model', () => {
 
     it('is disposed with its scope', () => {
       const scope = device.createScope('test')
-      const model = scope.own(new Model(device, { meshes: [meshOptions()] }))
+      const model = scope.adopt(new Model(device, { meshes: [meshOptions()] }))
       const mesh = model.meshes[0]
       const material = mesh.materials[0]
       scope.dispose()

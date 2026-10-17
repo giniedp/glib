@@ -1,5 +1,6 @@
 import { BoundsComponent, TransformComponent } from '@gglib/components'
 import { GetComponent, type GameComponent, type GameEntity } from '@gglib/ecs'
+import { ResourceOwnership, type Ownable } from '@gglib/graphics'
 import type { Model } from '@gglib/model'
 import { InstancedRenderSystem } from './InstancedRenderSystem'
 
@@ -25,8 +26,12 @@ export interface InstancedModelComponentOptions {
  * Each mesh node of the model becomes an instance in the GPU instance batch while the entity is active.
  * The model is kept up to date with the entity transform, so it can be used for picking.
  */
-export class InstancedModelComponent implements GameComponent {
+export class InstancedModelComponent implements GameComponent, Ownable {
   public readonly entity: GameEntity
+  /**
+   * The ownership state of this component, holds the model until the component is destroyed
+   */
+  public readonly ownership: ResourceOwnership = new ResourceOwnership(this)
   public readonly model: Model
   public readonly key: string
   public readonly maxViewDistance: number
@@ -36,7 +41,7 @@ export class InstancedModelComponent implements GameComponent {
   private handles: number[] = []
 
   public constructor(options: InstancedModelComponentOptions) {
-    this.model = options.model
+    this.model = this.ownership.adopt(options.model)
     this.key = options.key
     this.maxViewDistance = options.maxViewDistance
   }
@@ -75,6 +80,7 @@ export class InstancedModelComponent implements GameComponent {
 
   public destroy(): void {
     this.deactivate()
+    this.ownership.finalize()
   }
 
   private onTransformUpdated = () => {

@@ -379,6 +379,8 @@ export class GpuInstanceBatch {
       this.drawBuffer.setSubData(0, new Uint32Array(draws))
     }
 
+    // the geometries are recreated with every mesh, the previous mesh releases them
+    const previous = this.mesh
     this.mesh = parts.length
       ? new Mesh(this.device, {
           name: this.name,
@@ -390,6 +392,7 @@ export class GpuInstanceBatch {
         })
       : null
     this.onMeshChanged?.(this.mesh)
+    previous?.dispose()
   }
 
   private growRecords(capacity: number) {
@@ -484,6 +487,8 @@ export class GpuInstanceBatch {
     }
     this.effects.clear()
     this.materialProxies.clear()
+    this.mesh?.dispose()
+    this.mesh = null
     for (const buffer of [
       this.recordBuffer,
       this.groupBuffer,

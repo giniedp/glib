@@ -74,8 +74,8 @@ export interface MeshOptions {
  * explicit {@link RenderEncoder}, and parts can be resolved into {@link ResolvedMeshPart}
  * objects for use in external render pipelines.
  *
- * Geometries and materials that are passed in as instances are borrowed. Those created from options
- * are owned by the mesh and are owned by a scope together with the mesh.
+ * The mesh owns its geometries and materials, whether they are created from options or passed in as instances.
+ * Geometries and materials may be shared between meshes, they live as long as any mesh (or scope) holds them.
  *
  * @public
  */
@@ -138,6 +138,7 @@ export class Mesh implements Ownable {
   public constructor(device: Device, options: MeshOptions) {
     this.uid = uuid()
     this.device = device
+    device.scope.adoptUntilClaimed(this)
     this.name = options.name
     this.meta = options.meta || {}
 
@@ -164,10 +165,7 @@ export class Mesh implements Ownable {
     }
 
     this.materials = (options.materials || []).map((it) => {
-      if (it instanceof Material) {
-        return it
-      }
-      return this.ownership.adopt(createMaterialInstance(device, it))
+      return this.ownership.adopt(it instanceof Material ? it : createMaterialInstance(device, it))
     })
 
     if (options.boundingBox) {
@@ -194,6 +192,7 @@ export class Mesh implements Ownable {
    * Copies the properties and returns a new Mesh instance.
    *
    * Geometry and Materials instances are kept and shared with the original mesh.
+   * Shared parts stay alive as long as either mesh holds them.
    *
    * To instantiate materials, pass `true` for `options.materials`.
    */
@@ -201,7 +200,7 @@ export class Mesh implements Ownable {
     const materials = this.materials.map((material) => {
       return options?.materials ? material.instantiate() : material
     })
-    const result = new Mesh(this.device, {
+    return new Mesh(this.device, {
       name: this.name,
       meta: { ...(this.meta || {}) },
       boundingBox: this.boundingBox?.copy(),
@@ -210,13 +209,6 @@ export class Mesh implements Ownable {
       geometries: [...this.geometries],
       parts: this.parts.map((it) => ({ ...it })),
     })
-    // instantiated materials belong to the new mesh, geometries and other materials are borrowed
-    if (options?.materials) {
-      for (const material of materials) {
-        result.ownership.adopt(material)
-      }
-    }
-    return result
   }
 
   /**
@@ -265,22 +257,18 @@ export class Mesh implements Ownable {
   }
 
   /**
-   * Immediately finalizes this mesh and the geometries and materials it created.
+   * Immediately finalizes this mesh and releases its geometries and materials.
    * Called automatically when the last owner releases the mesh.
    *
    * @remarks
-   * Borrowed geometries and materials (passed in as instances) are not touched.
-   * Created ones are finalized unless a scope explicitly owns them.
+   * Geometries and materials that are still held by another owner (e.g. another mesh or a scope) are kept.
    */
   public dispose(): void {
     this.ownership.finalize()
   }
 
   private convertGeometry(part: Geometry | GeometryOptions): Geometry {
-    if (part instanceof Geometry) {
-      return part
-    }
-    return this.ownership.adopt(new Geometry(this.device, part))
+    return this.ownership.adopt(part instanceof Geometry ? part : new Geometry(this.device, part))
   }
 }
 

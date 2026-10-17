@@ -1,6 +1,6 @@
 import { EcsGame } from '@gglib/components'
 import { GameSystem, type GameWorld } from '@gglib/ecs'
-import type { Texture } from '@gglib/graphics'
+import type { ResourceScope, Texture } from '@gglib/graphics'
 import { mat4GetTranslation, vec3, type IVec3 } from '@gglib/math'
 import { MATERIAL_TEXTURE_SIZE } from '../../constants'
 import { ContentService, normalizeAssetPath } from '../../content'
@@ -37,6 +37,11 @@ export interface ParticleSdf2D {
 }
 
 /**
+ * {@link ParticleSdf2D} with texture files instead of textures, cached per material
+ */
+type ParticleSdf2DDef = Omit<ParticleSdf2D, 'noise' | 'mask'> & { noiseFile: string; maskFile: string }
+
+/**
  * Maximum simulation step, longer frames (e.g. a hidden tab) are clamped
  */
 const MAX_STEP = 0.1
@@ -59,9 +64,9 @@ export class ParticleSystem extends GameSystem {
   private content: ContentService
   private libraries = new Map<string, Promise<ParticleLibraryDocument | null>>()
   private effects = new Map<string, Promise<ParticleEffect | null>>()
-  private textures = new Map<string, Promise<Texture | null>>()
+  private textureFiles = new Map<string, Promise<string | null>>()
   private mtls = new Map<string, Promise<MtlMaterial | null>>()
-  private sdfs = new Map<string, Promise<ParticleSdf2D | null>>()
+  private sdfDefs = new Map<string, Promise<ParticleSdf2DDef | null>>()
   private active = new Set<ParticleUpdatable>()
   private camera: ParticleCamera = { position: vec3() }
 
@@ -144,21 +149,29 @@ export class ParticleSystem extends GameSystem {
 
   /**
    * Loads the sprite texture of an effect: the diffuse map of its material, or its texture
+   *
+   * @param scope - owns the texture, see {@link ContentService.scopeOf}
    */
-  public loadSpriteTexture(texture: string, material: string): Promise<Texture | null> {
+  public async loadSpriteTexture(texture: string, material: string, scope: ResourceScope): Promise<Texture | null> {
     const key = `${texture}|${material}`.toLowerCase()
-    if (!this.textures.has(key)) {
-      this.textures.set(
+    if (!this.textureFiles.has(key)) {
+      this.textureFiles.set(
         key,
-        this.resolveSpriteTexture(texture, material)
-          .then((file) => (file ? this.content.loadTexture(`${file}?merge=true&size=${MATERIAL_TEXTURE_SIZE}`) : null))
-          .catch((err) => {
-            console.warn('particle texture failed', texture, material, err)
-            return null
-          }),
+        this.resolveSpriteTexture(texture, material).catch((err) => {
+          console.warn('particle texture failed', texture, material, err)
+          return null
+        }),
       )
     }
-    return this.textures.get(key)
+    const file = await this.textureFiles.get(key)
+    return file ? this.loadSpriteFile(file, scope) : null
+  }
+
+  private loadSpriteFile(file: string, scope: ResourceScope): Promise<Texture | null> {
+    return this.content.loadTexture(`${file}?merge=true&size=${MATERIAL_TEXTURE_SIZE}`, scope).catch((err) => {
+      console.warn('particle texture failed', file, err)
+      return null
+    })
   }
 
   private async resolveSpriteTexture(texture: string, material: string): Promise<string | null> {
@@ -180,7 +193,7 @@ export class ParticleSystem extends GameSystem {
       this.mtls.set(
         file,
         fetch(this.content.nwbtFileUrl + file)
-          .then(async (res) => (res.ok ? parseMtl(await res.text()).materials[0] ?? null : null))
+          .then(async (res) => (res.ok ? (parseMtl(await res.text()).materials[0] ?? null) : null))
           .catch(() => null),
       )
     }
@@ -197,11 +210,13 @@ export class ParticleSystem extends GameSystem {
 
   /**
    * Loads the inputs of the %SIGNED_DISTANCE_FIELD_2D feature of a sprite material, null if the material does not use it
+   *
+   * @param scope - owns the textures, see {@link ContentService.scopeOf}
    */
-  public loadSpriteSdf(material: string): Promise<ParticleSdf2D | null> {
+  public async loadSpriteSdf(material: string, scope: ResourceScope): Promise<ParticleSdf2D | null> {
     const key = (material || '').toLowerCase()
-    if (!this.sdfs.has(key)) {
-      this.sdfs.set(
+    if (!this.sdfDefs.has(key)) {
+      this.sdfDefs.set(
         key,
         this.resolveSpriteSdf(material).catch((err) => {
           console.warn('particle sdf failed', material, err)
@@ -209,10 +224,22 @@ export class ParticleSystem extends GameSystem {
         }),
       )
     }
-    return this.sdfs.get(key)
+    const def = await this.sdfDefs.get(key)
+    if (!def) {
+      return null
+    }
+    const [noise, mask] = await Promise.all([
+      this.loadSpriteFile(def.noiseFile, scope),
+      this.loadSpriteFile(def.maskFile, scope),
+    ])
+    if (!noise || !mask) {
+      return null
+    }
+    const { noiseFile, maskFile, ...params } = def
+    return { ...params, noise, mask }
   }
 
-  private async resolveSpriteSdf(material: string): Promise<ParticleSdf2D | null> {
+  private async resolveSpriteSdf(material: string): Promise<ParticleSdf2DDef | null> {
     const mtl = await this.loadSpriteMtl(material)
     if (!mtl || !/%SIGNED_DISTANCE_FIELD_2D\b/i.test(mtl.attrs.StringGenMask ?? '')) {
       return null
@@ -221,10 +248,9 @@ export class ParticleSystem extends GameSystem {
       const tex = mtl.textures.find((it) => it.Map === map)
       return tex ? mtlTextureFile(tex) : null
     }
-    const load = (file: string | null) =>
-      file ? this.content.loadTexture(`${file}?merge=true&size=${MATERIAL_TEXTURE_SIZE}`) : Promise.resolve(null)
-    const [noise, mask] = await Promise.all([load(textureFile('[2] Custom')), load(textureFile('Opacity'))])
-    if (!noise || !mask) {
+    const noiseFile = textureFile('[2] Custom')
+    const maskFile = textureFile('Opacity')
+    if (!noiseFile || !maskFile) {
       return null
     }
     const num = (name: string, fallback: number) => {
@@ -236,8 +262,8 @@ export class ParticleSystem extends GameSystem {
       num(`${prefix}_Y`, fallback),
     ]
     return {
-      noise,
-      mask,
+      noiseFile,
+      maskFile,
       strength: num('SDF_2D_STRENGTH', 1),
       tile: pair('SDF_2D_TILE', 1),
       speed: pair('SDF_2D_SPEED', 0),

@@ -98,7 +98,7 @@ export class GeometryBeamMaterial extends MaterialWithSchema(SCHEMA) {
     this.name = `${attrs.Shader} (${attrs.Name})`
     const shaderConst = getShaderConstants(shaderFlags)
 
-    this.effects[RenderVariant.Forward] = new Effect(this.device, geometryBeamEffectOptions(shaderConst))
+    this.setEffect(RenderVariant.Forward, new Effect(this.device, geometryBeamEffectOptions(shaderConst)))
     this.effect.depthState = DepthState.GreaterEqualNoWrite
     this.effect.cullState = CullState.None
     this.effect.blendState = BlendState.AdditiveAlpha
@@ -115,7 +115,7 @@ export class GeometryBeamMaterial extends MaterialWithSchema(SCHEMA) {
   }
 
   private setDefaults() {
-    this.Noise3DTex = this.device.acquireTexture({ key: Noise3DKey, throwIfMissing: true, transient: true })
+    this.Noise3DTex = this.device.acquireTexture({ key: Noise3DKey, throwIfMissing: true })
 
     this.SamplerLinear = SamplerState.LinearWrap
     this.SamplerPoint = SamplerState.PointWrap

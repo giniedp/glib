@@ -39,11 +39,11 @@ describe('ResourceTracker', () => {
   it('finalizes exclusive resources without owners', () => {
     const tracker = createResourceTracker<DummyResource>()
     const scope = new ResourceScope('a')
-    const res1 = scope.own(tracker.track(makeResource(1)))
-    const res2 = scope.own(tracker.track(makeResource(2)))
+    const res1 = scope.adopt(tracker.track(makeResource(1)))
+    const res2 = scope.adopt(tracker.track(makeResource(2)))
     expect(tracker.count).toBe(2)
 
-    scope.release(res1)
+    scope.drop(res1)
     expect(res1.ownership.isFinalized).toBe(true)
     expect(tracker.count).toBe(1)
 
@@ -64,7 +64,7 @@ describe('ResourceTracker', () => {
     const scheduler = fakeScheduler()
     const tracker = createResourceTracker<DummyResource>({ keepAliveFrames: 2, scheduler })
     const scope = new ResourceScope('a')
-    const res = scope.own(tracker.share('key', makeResource(1)))
+    const res = scope.adopt(tracker.share('key', makeResource(1)))
 
     scope.dispose()
     expect(tracker.staleCount).toBe(1)
@@ -86,11 +86,11 @@ describe('ResourceTracker', () => {
     const tracker = createResourceTracker<DummyResource>({ keepAliveFrames: 2, scheduler })
     const a = new ResourceScope('a')
     const b = new ResourceScope('b')
-    const res = a.own(tracker.share('key', makeResource(1)))
+    const res = a.adopt(tracker.share('key', makeResource(1)))
 
     a.dispose()
     expect(tracker.staleCount).toBe(1)
-    b.own(tracker.get('key'))
+    b.adopt(tracker.get('key'))
     expect(tracker.staleCount).toBe(0)
 
     scheduler.tick()
@@ -102,7 +102,7 @@ describe('ResourceTracker', () => {
   it('finalizes shared resources immediately without keep alive', () => {
     const tracker = createResourceTracker<DummyResource>({ keepAliveFrames: 0 })
     const scope = new ResourceScope('a')
-    const res = scope.own(tracker.share('key', makeResource(1)))
+    const res = scope.adopt(tracker.share('key', makeResource(1)))
     scope.dispose()
     expect(res.ownership.isFinalized).toBe(true)
     expect(tracker.get('key')).toBe(null)

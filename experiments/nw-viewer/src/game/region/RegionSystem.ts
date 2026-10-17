@@ -47,12 +47,10 @@ export class RegionSystem extends GameSystem {
     this.activeImpostor = world.query({ scope: 'active', required: [RegionImpostorComponent] })
 
     world.eventBus.on(GameEntity.onInitialized, addRegionTag)
-    world.eventBus.on(GameEntity.onDestroyed, removeRegionTag)
   }
 
   public destroy(): void {
     this.world.eventBus.off(GameEntity.onInitialized, addRegionTag)
-    this.world.eventBus.off(GameEntity.onDestroyed, removeRegionTag)
   }
 
   public update() {
@@ -84,9 +82,6 @@ function addRegionTag(entity: GameEntity) {
   }
 }
 
-function removeRegionTag(entity: GameEntity) {
-  entity.removeComponentByType(RegionComponent.Tag)
-}
 // #endregion
 
 const loadMin = vec3()
@@ -116,12 +111,15 @@ function activateRegions(camera: CameraData, frustum: BoundingFrustum, regions: 
     if (entity.isActive && distance >= deactivateAt) {
       entity.deactivate()
       deactivateRegionImpostor(region)
+      // frees everything the region spawned and loaded
+      region.unload()
     }
 
     if (!entity.isActive && distance <= activateAt) {
       if (entity.canInitialize) {
         entity.initialize()
       }
+      region.load()
       entity.activate()
     }
 
@@ -256,6 +254,9 @@ function updateActiveImpostor(query: GameQuery, deadline: number) {
 }
 
 function deactivateRegionImpostor(region: RegionComponent) {
+  if (!region.impostors) {
+    return
+  }
   for (const child of region.impostors.getTransform().children) {
     const impostor = child.entity.component(RegionImpostorComponent)
     if (impostor.hasContent && impostor.contentState !== 'far') {

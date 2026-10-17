@@ -65,6 +65,14 @@ describe('GameEntity', () => {
         expect(entity.isActive).toBe(false)
         expect(entity.isDestroyed).toBe(true)
       })
+      it('does not destroy components that were never initialized', () => {
+        const entity = world.createEntity()
+        const component = new TestComponent()
+        entity.addComponent(component)
+        entity.destroy()
+        expect(entity.isDestroyed).toBe(true)
+        expect(component.isDestroyed).toBe(false)
+      })
     })
 
     describe('initialize', () => {

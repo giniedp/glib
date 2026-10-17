@@ -64,7 +64,7 @@ describe('@gglib/content/ContentLoader scopes', () => {
     const t1 = await content.loadTexture('a.test', { scope: a })
     const t2 = await content.loadTexture('a.test', { scope: b })
     expect(t1).toBe(t2)
-    expect(t1.ownership.size).toBe(2)
+    expect(a.has(t1) && b.has(t1)).toBe(true)
     a.dispose()
     expect(t1.ownership.isFinalized).toBe(false)
     b.dispose()
@@ -87,9 +87,9 @@ describe('@gglib/content/ContentLoader scopes', () => {
     const material = mesh.materials[0]
     const geometry = mesh.geometries[0]
     expect(material).toBeInstanceOf(BasicMaterial)
-    expect(scope.has(mesh)).toBe(true)
-    expect(scope.has(material)).toBe(true)
-    expect(scope.has(geometry.vertexBuffer)).toBe(true)
+    expect(scope.has(model)).toBe(true)
+    expect(Array.from(scope.walk())).toEqual(expect.arrayContaining([mesh, material, geometry.vertexBuffer]))
+    expect(device.scope.has(mesh)).toBe(false)
 
     scope.dispose()
     expect(model.ownership.isFinalized).toBe(true)

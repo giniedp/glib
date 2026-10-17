@@ -1,8 +1,15 @@
+import { ResourceOwnership } from '@gglib/graphics'
 import { describe, expect, it } from 'vitest'
 import type { Model } from './Model'
 import { ModelLod } from './ModelLod'
 
-const base = { name: 'lod0' } as Model
+function fakeModel(name: string): Model {
+  const model = { name } as { name: string; ownership: ResourceOwnership }
+  model.ownership = new ResourceOwnership(model)
+  return model as unknown as Model
+}
+
+const base = fakeModel('lod0')
 
 function createLod(available: number[]) {
   const requests: number[] = []
@@ -11,7 +18,7 @@ function createLod(available: number[]) {
     maxLevel: 5,
     load: async (level) => {
       requests.push(level)
-      return available.includes(level) ? ({ name: `lod${level}` } as Model) : null
+      return available.includes(level) ? fakeModel(`lod${level}`) : null
     },
   })
   return { lod, requests }
@@ -65,5 +72,28 @@ describe('ModelLod', () => {
     // a failed level is not requested again
     lod.resolve(3)
     expect(requests).toEqual([3])
+  })
+
+  it('makes the base model own the loaded levels', async () => {
+    const owner = fakeModel('base')
+    const lod = new ModelLod(owner, { distance: 10, maxLevel: 1, load: async () => fakeModel('lod1') })
+    lod.resolve(1)
+    await new Promise((resolve) => setTimeout(resolve))
+    const level = lod.getModel(1)
+    expect(Array.from(owner.ownership.children)).toEqual([level])
+    owner.ownership.finalize()
+    expect(level.ownership.isFinalized).toBe(true)
+  })
+
+  it('disposes levels that finish loading after the base model is gone', async () => {
+    const owner = fakeModel('base')
+    const loaded = fakeModel('lod1')
+    ;(loaded as any).dispose = () => loaded.ownership.finalize()
+    const lod = new ModelLod(owner, { distance: 10, maxLevel: 1, load: async () => loaded })
+    lod.resolve(1)
+    owner.ownership.finalize()
+    await new Promise((resolve) => setTimeout(resolve))
+    expect(lod.getModel(1)).toBe(null)
+    expect(loaded.ownership.isFinalized).toBe(true)
   })
 })

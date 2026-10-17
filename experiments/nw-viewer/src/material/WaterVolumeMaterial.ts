@@ -107,7 +107,7 @@ export class WaterVolumeMaterial extends MaterialWithSchema(SCHEMA) {
     this.EnvCubeReflMul = 1.0
     this.WaterFlowSpeed = 0.0
 
-    this.FoamMap = this.device.acquireTexture({ key: FoamMapKey, throwIfMissing: true, transient: true })
+    this.FoamMap = this.device.acquireTexture({ key: FoamMapKey, throwIfMissing: true })
     this.SamplerLinear = SamplerState.LinearWrap
     this.SamplerClamp = SamplerState.LinearClamp
   }

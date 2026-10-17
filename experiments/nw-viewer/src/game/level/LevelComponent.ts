@@ -3,6 +3,7 @@ import { vec3, vec3$multiplyScalar } from '@gglib/math'
 
 import { TransformComponent } from '@gglib/components'
 import type { LevelInfo, RegionLocation } from '../../api'
+import { ResourceScopeComponent } from '../../content'
 import { RegionComponent, regionEntityOptions } from '../region/RegionComponent'
 import { TerrainComponent } from '../terrain/TerrainComponent'
 
@@ -16,7 +17,7 @@ export function levelEntityOptions(parent: GameEntity, options: LevelInfo): Crea
     parent,
     name: `Level ${options.name}`,
     transform: new TransformComponent({}),
-    components: [new LevelComponent(options)],
+    components: [new LevelComponent(options), new ResourceScopeComponent('level')],
   }
 }
 

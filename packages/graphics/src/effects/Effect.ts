@@ -142,6 +142,7 @@ export class Effect implements Disposable, Ownable {
 
   public constructor(device: Device, options: EffectOptions) {
     this.device = device
+    device.scope.adoptUntilClaimed(this)
     this.name = options.name
     this.meta = options.meta || {}
     this.cullState = options.cullState ? CullState.get(options.cullState) : null
@@ -156,11 +157,9 @@ export class Effect implements Disposable, Ownable {
     if (!shaderOptions) {
       throw new Error('Shader program is required to create an Effect')
     }
-    // a passed in shader module is borrowed, an acquired one is adopted
-    const shader =
-      shaderOptions instanceof ShaderModule
-        ? shaderOptions
-        : this.ownership.adopt(this.device.acquireShaderModule(shaderOptions))
+    const shader = this.ownership.adopt(
+      shaderOptions instanceof ShaderModule ? shaderOptions : this.device.acquireShaderModule(shaderOptions),
+    )
     return this.ownership.adopt(shader.program.clone(options))
   }
 
@@ -316,12 +315,12 @@ export class Effect implements Disposable, Ownable {
   }
 
   /**
-   * Immediately finalizes this effect and its program.
+   * Immediately finalizes this effect and its program and releases its shader module.
    * Called automatically when the last owner releases the effect.
    *
    * @remarks
-   * The acquired shader module is shared and is not disposed.
-   * It lives as long as a scope owns it, or until the device is disposed if it was acquired without a scope.
+   * The shader module is kept while another owner holds it.
+   * Acquired shader modules are pooled and owned by the global scope unless acquired with a scope.
    */
   public dispose(): void {
     this.ownership.finalize()

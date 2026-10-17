@@ -40,6 +40,7 @@ export class SpatialNodeComponent implements GameComponent {
   }
 
   public destroy?(): void {
+    this.isActive = false
     this.bounds.entity.events.off(BoundsComponent.onUpdated, this.emitDirtyEvent)
     if (this.entry.node) {
       removeSpatialEntry(this.entry.node, this.entry)
@@ -52,9 +53,12 @@ export class SpatialNodeComponent implements GameComponent {
   }
 
   public updateFitting() {
-    if (!this.isActive && this.entry.node) {
-      removeSpatialEntry(this.entry.node, this.entry)
-      this.entry.node = null
+    // inactive (or destroyed) nodes are not part of the index, the dirty event may arrive after destroy
+    if (!this.isActive) {
+      if (this.entry.node) {
+        removeSpatialEntry(this.entry.node, this.entry)
+        this.entry.node = null
+      }
       return
     }
     if (!this.root) {

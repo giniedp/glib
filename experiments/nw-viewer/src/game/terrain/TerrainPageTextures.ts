@@ -93,14 +93,21 @@ export class TerrainPageTextures {
 
     const macro = region.macroMaps
     const params = foregroundParams(region)
-    this.renderer.render(tile, this.textures, region.baseMaterial, this.whitePixel, this.layersFor(page, minX, minY), (material, splat) => {
-      // materials are shared between regions, bind the region inputs right before the draw
-      material.SplatMap = splat
-      material.MacroBaseMap = macro.color
-      material.MacroNormalMap = macro.normal
-      material.MacroGlossMap = macro.gloss
-      applyMacroParams(material, params)
-    })
+    this.renderer.render(
+      tile,
+      this.textures,
+      region.baseMaterial,
+      this.whitePixel,
+      this.layersFor(page, minX, minY),
+      (material, splat) => {
+        // materials are shared between regions, bind the region inputs right before the draw
+        material.SplatMap = splat
+        material.MacroBaseMap = macro.color
+        material.MacroNormalMap = macro.normal
+        material.MacroGlossMap = macro.gloss
+        applyMacroParams(material, params)
+      },
+    )
   }
 
   private layersFor(page: TerrainPage, minX: number, minY: number) {

@@ -6,6 +6,7 @@ import {
   Material,
   Mesh,
   type MeshPart,
+  ResourceScope,
   type WebGpuBuffer,
   type WebGpuDevice,
 } from '@gglib/graphics'
@@ -125,6 +126,11 @@ export class DistributionBatch {
   private drawArgs: number[] = []
   private drawCapacity = 0
 
+  /**
+   * Owns the indirect geometries, which are reused by every mesh, and the current mesh
+   */
+  private scope: ResourceScope
+  private mesh: Mesh | null = null
   private geometries: Geometry[] = []
   private materials: Material[] = []
   private parts: MeshPart[] = []
@@ -142,6 +148,7 @@ export class DistributionBatch {
 
   public constructor(device: Device, data: DistributionData, placement: DistributionPlacement) {
     this.device = device as WebGpuDevice
+    this.scope = device.createScope(`distribution batch r_${data.header.region[0]}_${data.header.region[1]}`)
     this.data = data
     this.placement = placement
 
@@ -307,7 +314,12 @@ export class DistributionBatch {
     u32[21] = group.recordStart
     this.groupBuffer.setSubData(group.index * BYTES_PER_GROUP, data)
 
-    this.onMeshChanged?.(this.createMesh())
+    const previous = this.mesh
+    this.mesh = this.scope.adopt(this.createMesh())
+    this.onMeshChanged?.(this.mesh)
+    if (previous) {
+      this.scope.drop(previous)
+    }
   }
 
   private addDraw(group: DistributionGroup, geometry: Geometry, material: Material) {
@@ -330,7 +342,7 @@ export class DistributionBatch {
       geometryIndex: this.geometries.length,
       materialIndex: this.materialIndex.get(proxy),
     })
-    this.geometries.push(new IndirectGeometry(this.device, geometry, this, drawIndex))
+    this.geometries.push(this.scope.adopt(new IndirectGeometry(this.device, geometry, this, drawIndex)))
     return true
   }
 
@@ -451,6 +463,8 @@ export class DistributionBatch {
   }
 
   public dispose() {
+    this.scope.dispose()
+    this.mesh = null
     this.indirectMaterials.dispose()
     this.recordBuffer.dispose()
     this.recordInfoBuffer.dispose()

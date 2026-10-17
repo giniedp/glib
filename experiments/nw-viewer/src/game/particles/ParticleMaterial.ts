@@ -63,7 +63,12 @@ export class ParticleMaterial extends MaterialWithSchema(SCHEMA) {
     sdf?: ParticleSdf2D | null,
     diffuseColor?: [number, number, number],
   ) {
-    super(device, { name: 'Particle Material', effect: null, properties: {}, meta: { params, texture, sdf, diffuseColor } })
+    super(device, {
+      name: 'Particle Material',
+      effect: null,
+      properties: {},
+      meta: { params, texture, sdf, diffuseColor },
+    })
   }
 
   protected override configure(options: Partial<MaterialOptions>): void {
@@ -73,7 +78,7 @@ export class ParticleMaterial extends MaterialWithSchema(SCHEMA) {
     const sdf = options.meta.sdf as ParticleSdf2D | null
     const diffuseColor = (options.meta.diffuseColor as [number, number, number]) ?? [1, 1, 1]
     const additive = params.blendType === 'Additive'
-    this.effects[RenderVariant.Forward] = createEffect(this.device, additive ? 'additive' : 'alpha')
+    this.setEffect(RenderVariant.Forward, createEffect(this.device, additive ? 'additive' : 'alpha'))
     this.isTransparent = true
     this.layer = MaterialLayerMasks.Particle
 
@@ -92,7 +97,12 @@ export class ParticleMaterial extends MaterialWithSchema(SCHEMA) {
     // xy = noise speed, zw = noise phase
     this.Sdf1 = vec4(sdf?.speed[0] ?? 0, sdf?.speed[1] ?? 0, sdf?.phase[0] ?? 0, sdf?.phase[1] ?? 0)
     // xy = source (diffuse) tile, zw = source speed
-    this.Sdf2 = vec4(sdf?.sourceTile[0] ?? 1, sdf?.sourceTile[1] ?? 1, sdf?.sourceSpeed[0] ?? 0, sdf?.sourceSpeed[1] ?? 0)
+    this.Sdf2 = vec4(
+      sdf?.sourceTile[0] ?? 1,
+      sdf?.sourceTile[1] ?? 1,
+      sdf?.sourceSpeed[0] ?? 0,
+      sdf?.sourceSpeed[1] ?? 0,
+    )
     // xy = source phase, zw = mask tile
     this.Sdf3 = vec4(sdf?.sourcePhase[0] ?? 0, sdf?.sourcePhase[1] ?? 0, sdf?.maskTile[0] ?? 1, sdf?.maskTile[1] ?? 1)
     this.SdfNoiseMap = sdf?.noise ?? getWhiteTexture(this.device)

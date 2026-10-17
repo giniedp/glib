@@ -28,13 +28,15 @@ describe('effects ownership', () => {
 
   it('is finalized with its scope', () => {
     const scope = device.createScope('test')
-    const effect = scope.own(new TonemapEffect(device))
+    const effect = scope.adopt(new TonemapEffect(device))
     const shader = effect.program.module
-    expect(scope.has(shader)).toBe(true)
+    expect(Array.from(scope.walk())).toContain(shader)
     scope.dispose()
     expect(effect.ownership.isFinalized).toBe(true)
     expect(effect.program.ownership.isFinalized).toBe(true)
-    expect(device.scope.has(shader)).toBe(false)
+    // shader modules acquired without a scope stay with the device
+    expect(device.scope.has(shader)).toBe(true)
+    expect(shader.ownership.isFinalized).toBe(false)
   })
 
   it('finalizes nested effects and render targets', () => {

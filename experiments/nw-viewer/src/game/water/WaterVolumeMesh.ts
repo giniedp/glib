@@ -192,7 +192,13 @@ function cross(o: { x: number; y: number }, a: { x: number; y: number }, b: { x:
   return (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x)
 }
 
-function isEar(points: ReadonlyArray<{ x: number; y: number }>, remaining: number[], ia: number, ib: number, ic: number) {
+function isEar(
+  points: ReadonlyArray<{ x: number; y: number }>,
+  remaining: number[],
+  ia: number,
+  ib: number,
+  ic: number,
+) {
   const a = points[ia]
   const b = points[ib]
   const c = points[ic]

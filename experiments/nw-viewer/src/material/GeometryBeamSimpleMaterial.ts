@@ -94,7 +94,7 @@ export class GeometryBeamSimpleMaterial extends MaterialWithSchema(SCHEMA) {
     this.name = `${attrs.Shader} (${attrs.Name})`
     const shaderConst = getShaderConstants(shaderFlags)
 
-    this.effects[RenderVariant.Forward] = new Effect(this.device, geometryBeamSimpleEffectOptions(shaderConst))
+    this.setEffect(RenderVariant.Forward, new Effect(this.device, geometryBeamSimpleEffectOptions(shaderConst)))
     this.effect.depthState = DepthState.GreaterEqualNoWrite
     this.effect.cullState = CullState.None
     this.effect.blendState = BlendState.AdditiveAlpha
@@ -109,7 +109,7 @@ export class GeometryBeamSimpleMaterial extends MaterialWithSchema(SCHEMA) {
   }
 
   private setDefaults() {
-    this.Noise3DTex = this.device.acquireTexture({ key: Noise3DKey, throwIfMissing: true, transient: true })
+    this.Noise3DTex = this.device.acquireTexture({ key: Noise3DKey, throwIfMissing: true })
     this.DiffuseColor = vec4(1, 1, 1, 1)
     this.SamplerLinear = SamplerState.LinearWrap
 

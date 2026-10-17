@@ -6,6 +6,7 @@ import {
   Material,
   Mesh,
   type MeshPart,
+  ResourceScope,
   type WebGpuBuffer,
   type WebGpuDevice,
 } from '@gglib/graphics'
@@ -119,6 +120,11 @@ export class VegetationBatch {
   private drawArgs: number[] = []
   private drawCapacity = 0
 
+  /**
+   * Owns the indirect geometries, which are reused by every mesh, and the current mesh
+   */
+  private scope: ResourceScope
+  private mesh: Mesh | null = null
   private geometries: Geometry[] = []
   private materials: Material[] = []
   private parts: MeshPart[] = []
@@ -150,6 +156,7 @@ export class VegetationBatch {
     name: string,
   ) {
     this.device = device as WebGpuDevice
+    this.scope = device.createScope(`vegetation batch ${name}`)
     this.file = file
     this.placement = placement
     this.slotCount = slotCount
@@ -302,7 +309,12 @@ export class VegetationBatch {
     this.groupData[o + 20] = 1
     this.layoutDirty = true
 
-    this.onMeshChanged?.(this.createMesh())
+    const previous = this.mesh
+    this.mesh = this.scope.adopt(this.createMesh())
+    this.onMeshChanged?.(this.mesh)
+    if (previous) {
+      this.scope.drop(previous)
+    }
   }
 
   private addDraw(group: VegetationGroup, geometry: Geometry, material: Material) {
@@ -324,7 +336,7 @@ export class VegetationBatch {
       geometryIndex: this.geometries.length,
       materialIndex: this.materialIndex.get(proxy),
     })
-    this.geometries.push(new IndirectGeometry(this.device, geometry, this, drawIndex))
+    this.geometries.push(this.scope.adopt(new IndirectGeometry(this.device, geometry, this, drawIndex)))
     this.layoutDirty = true
     return true
   }
@@ -494,6 +506,8 @@ export class VegetationBatch {
   }
 
   public dispose() {
+    this.scope.dispose()
+    this.mesh = null
     this.indirectMaterials.dispose()
     this.instanceBuffer.dispose()
     this.slotBuffer.dispose()

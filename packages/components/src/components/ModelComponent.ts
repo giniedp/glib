@@ -1,4 +1,5 @@
 import { type GameComponent, GameEntity, GetComponent, InitializableComponent } from '@gglib/ecs'
+import { ResourceOwnership, type Ownable } from '@gglib/graphics'
 import { Model, type ModelLod } from '@gglib/model'
 import { BoundsComponent } from './BoundsComponent'
 import { InstanceDataComponent } from './InstanceDataComponent'
@@ -9,12 +10,20 @@ export interface ModelComponentOptions {
 
 /**
  * @public
+ *
+ * @remarks
+ * The component owns the model it holds. A replaced model is released, the model is released when the component is destroyed.
  */
-export class ModelComponent implements GameComponent, InitializableComponent {
+export class ModelComponent implements GameComponent, InitializableComponent, Ownable {
   /**
    * The entity that owns this component
    */
   public readonly entity: GameEntity
+
+  /**
+   * The ownership state of this component, holds the model
+   */
+  public readonly ownership: ResourceOwnership = new ResourceOwnership(this)
 
   /**
    * Gets and sets the mesh to render
@@ -23,7 +32,14 @@ export class ModelComponent implements GameComponent, InitializableComponent {
     return this.value
   }
   public set model(value: Model) {
+    const previous = this.value
+    if (value) {
+      this.ownership.adopt(value)
+    }
     this.value = value
+    if (previous && previous !== value) {
+      this.ownership.drop(previous)
+    }
     this.handleMeshChanged()
   }
 
@@ -60,7 +76,7 @@ export class ModelComponent implements GameComponent, InitializableComponent {
   }
 
   public destroy(): void {
-    //
+    this.ownership.finalize()
   }
 
   private handleMeshChanged() {

@@ -1,6 +1,6 @@
 import { EcsGame, SchedulerSystem } from '@gglib/components'
 import { GameQuery, GameSystem, GameWorld } from '@gglib/ecs'
-import { Device } from '@gglib/graphics'
+import { Device, type ResourceScope } from '@gglib/graphics'
 import {
   BoundingFrustum,
   mat4$initScaleXYZ,
@@ -131,7 +131,10 @@ export class TerrainSystem extends GameSystem {
     this.macroArrays = null
   }
 
-  public async setLevelInfo(info: LevelInfo, ctx: { content: ContentService; signal: AbortSignal }) {
+  public async setLevelInfo(
+    info: LevelInfo,
+    ctx: { content: ContentService; scope: ResourceScope; signal: AbortSignal },
+  ) {
     this.mountainHeight = info.mountainHeight
     this.oceanLevel = info.oceanLevel
     this.oceanAnimation = info.mission?.environment?.oceanAnimation
@@ -145,6 +148,7 @@ export class TerrainSystem extends GameSystem {
 
     const material = await this.content.loader.loadMaterial(materialAssetPath(materialName), {
       baseUrl: this.content.nwbtFileUrl,
+      scope: ctx.scope,
       signal: ctx.signal,
     })
     ctx.signal.throwIfAborted()
@@ -188,6 +192,12 @@ export class TerrainSystem extends GameSystem {
       // TODO: dispose the old water material
     }
 
+    // regions are destroyed when the RegionComponent unloads its content, they leave the query without being seen inactive
+    for (let i = this.loadedRegions.length - 1; i >= 0; i--) {
+      if (this.loadedRegions[i].entity.isDestroyed) {
+        this.unloadRegion(this.loadedRegions[i])
+      }
+    }
     for (const entity of this.allRegions) {
       const region = entity.component(TerrainRegionComponent)
       if (!entity.isActive) {
@@ -283,7 +293,8 @@ export class TerrainSystem extends GameSystem {
       region.baseMaterialReady = true
       return
     }
-    region.baseMaterialTask = loadBaseMaterial(this.content, this.scheduler, material, (result) => {
+    const scope = this.content.scopeOf(region.entity)
+    region.baseMaterialTask = loadBaseMaterial(this.content, this.scheduler, scope, material, (result) => {
       region.baseMaterialReady = true
       region.baseMaterialTask = null
       region.baseMaterial = result?.material
@@ -301,7 +312,8 @@ export class TerrainSystem extends GameSystem {
       region.layerMaterialsReady = true
       return
     }
-    region.layerMaterialsTask = loadLayerMaterials(this.content, this.scheduler, material, (result) => {
+    const scope = this.content.scopeOf(region.entity)
+    region.layerMaterialsTask = loadLayerMaterials(this.content, this.scheduler, scope, material, (result) => {
       region.layerMaterialsReady = true
       region.layerMaterialsTask = null
       region.layers = result || []

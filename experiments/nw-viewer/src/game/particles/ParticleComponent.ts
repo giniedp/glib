@@ -1,11 +1,22 @@
 import { MeshComponent, TransformComponent } from '@gglib/components'
 import type { GameComponent, GameEntity, GameWorld } from '@gglib/ecs'
-import { Device, Geometry, Mesh, type Texture } from '@gglib/graphics'
+import { Device, Geometry, Mesh, type ResourceScope, type Texture } from '@gglib/graphics'
+import { ContentService } from '../../content'
 import { mat4Decompose, mat4Identity, quat$initIdentity, vec3, vec3DistanceSquared, vec4 } from '@gglib/math'
 import type { ViewerParticleComponent } from '../../api'
-import { forEachParticleEffect, isParticleEffectImmortal, type ParticleEffect, type ParticleParams } from '../../formats/particles'
+import {
+  forEachParticleEffect,
+  isParticleEffectImmortal,
+  type ParticleEffect,
+  type ParticleParams,
+} from '../../formats/particles'
 import { ViewerConfig } from '../../config'
-import { PARTICLE_INSTANCE_FLOATS, ParticleEmitter, type ParticleCamera, type ParticleLocation } from './ParticleEmitter'
+import {
+  PARTICLE_INSTANCE_FLOATS,
+  ParticleEmitter,
+  type ParticleCamera,
+  type ParticleLocation,
+} from './ParticleEmitter'
 import { ParticleMaterial } from './ParticleMaterial'
 import { ParticleSystem, type ParticleSdf2D, type ParticleUpdatable } from './ParticleSystem'
 
@@ -57,6 +68,11 @@ export class ParticleComponent implements GameComponent, ParticleUpdatable {
   public effect: ParticleEffect | null = null
 
   private system: ParticleSystem
+  /**
+   * Owns the textures and the mesh of this component, the scope of the region or level
+   */
+  private scope: ResourceScope
+  private mesh: Mesh | null = null
   private config: ViewerConfig
   private slots: EmitterSlot[] = []
   private child: GameEntity
@@ -88,6 +104,7 @@ export class ParticleComponent implements GameComponent, ParticleUpdatable {
 
   public initialize(): void {
     this.system = this.entity.world.getSystem(ParticleSystem)
+    this.scope = this.entity.service(ContentService).scopeOf(this.entity)
     this.config = this.entity.world.getSystem(ViewerConfig, { optional: true })
   }
 
@@ -122,9 +139,8 @@ export class ParticleComponent implements GameComponent, ParticleUpdatable {
     this.deactivate()
     this.child?.destroy()
     this.child = null
-    for (const slot of this.slots) {
-      slot.geometry.dispose()
-    }
+    this.mesh?.dispose()
+    this.mesh = null
     this.slots.length = 0
   }
 
@@ -147,15 +163,22 @@ export class ParticleComponent implements GameComponent, ParticleUpdatable {
       // phase 1: sprite emitters that spawn from the emitter itself
       // refraction materials distort the scene behind them, not supported yet (they would show as plain sprites)
       const isRefraction = /refraction/i.test(p?.material ?? '')
-      if (p && p.count.base > 0 && p.spawnIndirection === 'Direct' && !p.geometry && !isRefraction && (p.texture || p.material)) {
+      if (
+        p &&
+        p.count.base > 0 &&
+        p.spawnIndirection === 'Direct' &&
+        !p.geometry &&
+        !isRefraction &&
+        (p.texture || p.material)
+      ) {
         if (p.emitterShape !== 'TRAIL' && p.emitterShape !== 'BEAM') {
           sprites.push(p)
         }
       }
     })
     const [textures, sdfs, colors] = await Promise.all([
-      Promise.all(sprites.map((p) => this.system.loadSpriteTexture(p.texture, p.material))),
-      Promise.all(sprites.map((p) => this.system.loadSpriteSdf(p.material))),
+      Promise.all(sprites.map((p) => this.system.loadSpriteTexture(p.texture, p.material, this.scope))),
+      Promise.all(sprites.map((p) => this.system.loadSpriteSdf(p.material, this.scope))),
       Promise.all(sprites.map((p) => this.system.loadSpriteDiffuseColor(p.material))),
     ])
     if (!this.entity || this.entity.isDestroyed) {
@@ -182,7 +205,11 @@ export class ParticleComponent implements GameComponent, ParticleUpdatable {
       speedScale: this.data.speedScale ?? 1,
       timeScale: this.data.timeScale ?? 1,
       strength: this.data.strength ?? -1,
-      color: [this.data.color?.[0] ?? 1, this.data.color?.[1] ?? 1, this.data.color?.[2] ?? 1] as [number, number, number],
+      color: [this.data.color?.[0] ?? 1, this.data.color?.[1] ?? 1, this.data.color?.[2] ?? 1] as [
+        number,
+        number,
+        number,
+      ],
       alphaScale: (this.data.alphaScale ?? 1) * (this.data.color?.[3] ?? 1),
     }
 
@@ -236,6 +263,7 @@ export class ParticleComponent implements GameComponent, ParticleUpdatable {
       boundingBox: [-1, -1, -1, 1, 1, 1],
       boundingSphere: [0, 0, 0, 1],
     })
+    this.mesh = mesh
     // particles are written in world space, the entity transform is only used for sorting
     this.child = this.entity.world.createEntity({
       parent: this.entity,

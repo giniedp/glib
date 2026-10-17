@@ -77,7 +77,12 @@ export async function resolveParticleShowcase(
       .filter((it) => it.attrs || it.children.length)
       .map((it) => ({ library: spec, emitter: it.fullName }))
   } else {
-    const names = spec ? spec.split(',').map((it) => it.trim()).filter((it) => !!it) : PARTICLE_SHOWCASE_PRESET
+    const names = spec
+      ? spec
+          .split(',')
+          .map((it) => it.trim())
+          .filter((it) => !!it)
+      : PARTICLE_SHOWCASE_PRESET
     result = names.map((emitter) => ({ library: particleLibraryOf(emitter), emitter }))
   }
   if (filter) {

@@ -12,7 +12,14 @@ describe('particles/math', () => {
   it('matches CryEngine Quat::CreateRotationXYZ', () => {
     // reference values of the CryEngine formula
     const [x, y, z] = [0.3, -0.7, 1.1]
-    const [sx, cx, sy, cy, sz, cz] = [Math.sin(x / 2), Math.cos(x / 2), Math.sin(y / 2), Math.cos(y / 2), Math.sin(z / 2), Math.cos(z / 2)]
+    const [sx, cx, sy, cy, sz, cz] = [
+      Math.sin(x / 2),
+      Math.cos(x / 2),
+      Math.sin(y / 2),
+      Math.cos(y / 2),
+      Math.sin(z / 2),
+      Math.cos(z / 2),
+    ]
     const q = quat$initRotationXYZ(vec4(), x, y, z)
     expect(q.w).toBeCloseTo(cz * cy * cx + sz * sy * sx)
     expect(q.x).toBeCloseTo(cz * cy * sx - sz * sy * cx)

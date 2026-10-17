@@ -94,8 +94,8 @@ export interface GeometryOptions {
  * @public
  *
  * @remarks
- * Buffers that are passed in as instances are borrowed. Buffers that are created from options
- * are owned by the geometry and are owned by a scope together with the geometry.
+ * The geometry owns its buffers, whether they are created from options or passed in as instances.
+ * A buffer lives as long as any geometry (or scope) holds it.
  */
 export class Geometry implements Renderable, Disposable, Ownable {
   /**
@@ -185,6 +185,7 @@ export class Geometry implements Renderable, Disposable, Ownable {
 
   constructor(device: Device, options: GeometryOptions) {
     this.device = device
+    device.scope.adoptUntilClaimed(this)
 
     this.name = options.name
     this.meta = options.meta || {}
@@ -197,7 +198,7 @@ export class Geometry implements Renderable, Disposable, Ownable {
     }
 
     if (options.indexBuffer instanceof Buffer) {
-      this.indexBuffer = options.indexBuffer
+      this.indexBuffer = this.ownership.adopt(options.indexBuffer)
     } else if (options.indexBuffer) {
       this.indexBuffer = this.ownership.adopt(this.device.createIndexBuffer(options.indexBuffer))
     } else {
@@ -205,7 +206,7 @@ export class Geometry implements Renderable, Disposable, Ownable {
     }
 
     if (options.vertexBuffer instanceof VertexBuffer) {
-      this.vertexBuffer = options.vertexBuffer
+      this.vertexBuffer = this.ownership.adopt(options.vertexBuffer)
     } else if (options.vertexBuffer) {
       this.vertexBuffer = this.ownership.adopt(this.device.createVertexBuffer(options.vertexBuffer))
     } else {
@@ -248,12 +249,11 @@ export class Geometry implements Renderable, Disposable, Ownable {
   }
 
   /**
-   * Immediately finalizes this geometry and the buffers it created.
+   * Immediately finalizes this geometry and releases its buffers.
    * Called automatically when the last owner releases the geometry.
    *
    * @remarks
-   * Borrowed buffers (passed in as instances) are not touched.
-   * Created buffers are finalized unless a scope explicitly owns them.
+   * Buffers that are still held by another owner (e.g. another geometry or a scope) are kept.
    */
   public dispose() {
     this.ownership.finalize()

@@ -139,7 +139,7 @@ export class FxMeshAdvancedTranspMaterial extends MaterialWithSchema(SCHEMA) {
     this.name = `${attrs.Shader} (${attrs.Name})`
     const shaderConst = getShaderConstants(shaderFlags)
 
-    this.effects[RenderVariant.Forward] = new Effect(this.device, fxMeshAdvancedTranspEffectOptions(shaderConst))
+    this.setEffect(RenderVariant.Forward, new Effect(this.device, fxMeshAdvancedTranspEffectOptions(shaderConst)))
     this.effect.depthState = DepthState.GreaterEqualNoWrite
     this.effect.cullState = CullState.CullBack
     this.effect.blendState = BlendState.Additive

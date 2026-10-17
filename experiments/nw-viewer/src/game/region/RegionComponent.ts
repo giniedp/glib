@@ -41,7 +41,7 @@ import {
   type RegionInfo,
 } from '../../api'
 import { ENABLE_CAPITALS, ENABLE_CHUNKS, ENABLE_IMPOSTOR_POI, ENABLE_IMPOSTOR_VEG } from '../../constants'
-import { ContentService } from '../../content'
+import { ContentService, ResourceScopeComponent } from '../../content'
 import { DistributionComponent } from '../distribution/DistributionComponent'
 import {
   capitalSliceEntityOptions,
@@ -131,7 +131,17 @@ export class RegionComponent implements GameComponent {
   private impostor: Record<number, RegionImpostorComponent> = {}
 
   private scheduler: SchedulerSystem
-  private content: ContentService
+  private contentService: ContentService
+
+  /**
+   * Root of everything the region spawns while it is active, see {@link load} and {@link unload}.
+   * Holds the resource scope of the region, destroying it frees all region resources.
+   */
+  public content: GameEntity | null = null
+
+  public get isContentLoaded() {
+    return !!this.content
+  }
 
   public impostors: GameEntity | null
   public capitals: GameEntity | null
@@ -187,23 +197,40 @@ export class RegionComponent implements GameComponent {
 
   public initialize(): void {
     this.scheduler = this.entity.service(SchedulerSystem)
-    this.content = this.entity.service(ContentService)
+    this.contentService = this.entity.service(ContentService)
+  }
+
+  /**
+   * Creates the content of the region: impostor cells, capitals, terrain, distribution and vegetation.
+   * The region data is loaded afterwards by the RegionSystem.
+   */
+  public load(): void {
+    if (this.content) {
+      return
+    }
+    console.log(...this.logTag, 'Load content')
+    this.content = this.entity.world.createEntity({
+      name: 'Content',
+      parent: this.entity,
+      transform: new TransformComponent(),
+      components: [new ResourceScopeComponent(`region:${this.regionName}`)],
+    })
 
     this.impostors = this.entity.world.createEntity({
       name: 'Impostors',
-      parent: this.entity,
+      parent: this.content,
       transform: new TransformComponent(),
     })
 
     this.capitals = this.entity.world.createEntity({
       name: 'Capitals',
-      parent: this.entity,
+      parent: this.content,
       transform: new TransformComponent(),
     })
 
     this.terrain = this.entity.world.createEntity({
       name: 'Terrain',
-      parent: this.entity,
+      parent: this.content,
       transform: new TransformComponent(),
       components: [
         new TerrainRegionComponent({
@@ -220,7 +247,7 @@ export class RegionComponent implements GameComponent {
     if (this.enableDistribution) {
       this.distribution = this.entity.world.createEntity({
         name: 'Distribution',
-        parent: this.entity,
+        parent: this.content,
         transform: new TransformComponent(),
         components: [
           new MeshComponent(),
@@ -240,7 +267,7 @@ export class RegionComponent implements GameComponent {
     if (this.enableVegetation) {
       this.vegetation = this.entity.world.createEntity({
         name: 'Vegetation',
-        parent: this.entity,
+        parent: this.content,
         transform: new TransformComponent(),
         components: [
           new MeshComponent(),
@@ -256,8 +283,37 @@ export class RegionComponent implements GameComponent {
     }
   }
 
+  /**
+   * Destroys the content of the region and frees its resources. The region can be loaded again.
+   */
+  public unload(): void {
+    if (!this.content) {
+      return
+    }
+    console.log(...this.logTag, 'Unload content')
+    this.cancelTasks()
+    const content = this.content
+    this.content = null
+    this.impostors = null
+    this.capitals = null
+    this.terrain = null
+    this.distribution = null
+    this.vegetation = null
+    this.poiImpostor = {}
+    this.impostor = {}
+    this.capitalLayers = {}
+    this.slices = []
+    this.regionInfo = null
+    this.regionInfoLoaded = false
+    this.capitalData = null
+    this.capitalDataLoaded = false
+    // destroys the subtree and disposes the resource scope of the region
+    content.destroy()
+    content.setParent(null)
+  }
+
   public destroy(): void {
-    //
+    this.unload()
   }
 
   public activate(): void {
@@ -265,6 +321,10 @@ export class RegionComponent implements GameComponent {
   }
 
   public deactivate(): void {
+    this.cancelTasks()
+  }
+
+  private cancelTasks() {
     if (this.regionInfoTask) {
       this.regionInfoTask.cancelled = true
       this.regionInfoTask = null
@@ -293,7 +353,7 @@ export class RegionComponent implements GameComponent {
       entity: this.entity,
       context: null,
       load: async (task) => {
-        task.context = await this.content.fetchTypedRequest(getRegionInfoUrl(this.coatlicueName, this.regionName))
+        task.context = await this.contentService.fetchTypedRequest(getRegionInfoUrl(this.coatlicueName, this.regionName))
       },
       work: (task) => {
         const info = task.context
@@ -329,12 +389,12 @@ export class RegionComponent implements GameComponent {
       entity: this.entity,
       context: null,
       load: async (task) => {
-        task.context = await this.content.fetchTypedRequest(getRegionCapitalsUrl(this.coatlicueName, this.regionName))
+        task.context = await this.contentService.fetchTypedRequest(getRegionCapitalsUrl(this.coatlicueName, this.regionName))
       },
       work: (task) => {
         const data = task.context
         this.capitalData = data
-        this.content.updateSlices(data.slices)
+        this.contentService.updateSlices(data.slices)
         console.log(...this.logTag, 'Capital data loaded', data)
         if (ENABLE_CAPITALS) {
           this.createCapitals(data.capitals)
@@ -426,7 +486,7 @@ export class RegionComponent implements GameComponent {
    * @param world - world transform of the slice spawner
    */
   private collectImpostorCells(ref: AssetReference, world: Mat4, cells: Set<RegionImpostorComponent>, depth: number) {
-    const slice = this.content.slices.get(assetReferenceKey(ref))
+    const slice = this.contentService.slices.get(assetReferenceKey(ref))
     if (!slice?.entities || depth > 8) {
       return
     }

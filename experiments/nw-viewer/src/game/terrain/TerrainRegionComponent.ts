@@ -144,13 +144,8 @@ export class TerrainRegionComponent implements GameComponent {
     console.log(...lfmt.merge(this.logTag, lfmt.red('Deactivated')))
   }
   public destroy(): void {
-    for (const layer of this.layers || []) {
-      layer.splat?.dispose()
-    }
+    // splat and macro maps are owned by the region scope
     this.layers = null
-    this.macroMaps?.color?.dispose()
-    this.macroMaps?.normal?.dispose()
-    this.macroMaps?.gloss?.dispose()
     this.macroMaps = null
   }
   // #endregion

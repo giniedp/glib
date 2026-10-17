@@ -1,29 +1,4 @@
 /**
- * An owner of resources, e.g. a {@link ResourceScope}
- */
-export interface ResourceOwner {
-  /**
-   * Name for debugging purposes
-   */
-  readonly name: string
-  /**
-   * Takes ownership of the given resource
-   */
-  own<T extends Ownable>(resource: T): T
-  /**
-   * Releases the ownership of the given resource
-   */
-  release(resource: Ownable): void
-  /**
-   * Called by the ownership when this owner loses the resource without releasing it,
-   * e.g. when it is displaced as default owner or the resource is finalized.
-   *
-   * @internal
-   */
-  detach(resource: Ownable): void
-}
-
-/**
  * An object whose lifetime is controlled by its owners
  */
 export interface Ownable {
@@ -34,64 +9,53 @@ export interface Ownable {
 }
 
 /**
- * Holds the ownership state of a single resource: its owners, the resources it created (children)
- * and what happens when it ends.
+ * Holds the ownership state of a single resource: who owns it, what it holds (children) and when it ends.
  *
  * @remarks
- * Owners:
- * - A resource may have an implicit default owner (usually the global scope of the device).
- * - The first explicit owner displaces the default owner, i.e. ownership is moved.
- * - If the default owner claims the resource explicitly, it stays an owner and later owners are added.
- * - When the last owner is removed, the resource is finalized, unless it is shared.
- *   Shared resources are kept alive by the device pool, see {@link markShared}.
+ * Owners are scopes (see {@link ResourceScope}) and the resources that hold this one.
  *
- * Children:
- * - Resources created or acquired by the target are adopted with {@link adopt}.
- *   Owners of the target own the children as well.
- * - On {@link finalize}, children that are neither shared nor explicitly owned by a scope are finalized too.
+ * Holding:
+ * - {@link adopt} holds a child, whether it was created by the owning resource or passed in.
+ *   The child lives as long as anything holds it.
+ * - {@link drop} stops holding a child, e.g. when it is replaced.
+ * - {@link finalize} ends the resource immediately and drops all of its children.
+ *
+ * Claims:
+ * - {@link adoptUntilClaimed} holds a child provisionally, until the first other owner claims it.
+ *   The device uses this for its global scope: everything created without a scope is held there until claimed.
+ * - A resource is finalized when the last owner lets go of it, unless a release handler is set,
+ *   see {@link setReleaseHandler}.
  */
-export class ResourceOwnership implements Iterable<ResourceOwner> {
-  private explicit = new Set<ResourceOwner>()
-  private implicit: ResourceOwner | null = null
-  private childSet = new Set<Ownable>()
+export class ResourceOwnership {
+  private target: object
+  private owners = new Set<ResourceOwnership>()
+  private provisional: ResourceOwnership | null = null
+  // allocated on demand, most resources never hold children or have handlers
+  private childSet: Set<Ownable> | null = null
   private finalized = false
-  private shared = false
-  private wasEmptied = false
-  private onEmptyHandlers: Array<() => void> = []
-  private onReviveHandlers: Array<() => void> = []
-  private onFinalizeHandlers: Array<() => void> = []
+  private releaseHandler: (() => void) | null = null
+  private onFinalizeHandlers: Array<() => void> | null = null
 
   /**
-   * The resource this ownership belongs to
+   * Name of the resource for debugging purposes
    */
-  public readonly target: Ownable
-
-  /**
-   * The implicit owner. Is `null` once displaced or promoted to an explicit owner.
-   */
-  public get defaultOwner(): ResourceOwner | null {
-    return this.implicit
+  public get name(): string {
+    const name = (this.target as { name?: unknown }).name
+    return typeof name === 'string' && name ? name : this.target.constructor?.name || 'resource'
   }
 
   /**
-   * Number of owners, including the implicit default owner
-   */
-  public get size(): number {
-    return this.explicit.size + (this.implicit ? 1 : 0)
-  }
-
-  /**
-   * Whether the resource has at least one owner
+   * Whether anything owns the resource, including a provisional owner
    */
   public get isOwned(): boolean {
-    return this.size > 0
+    return this.owners.size > 0 || !!this.provisional
   }
 
   /**
-   * Whether the resource has at least one explicit owner, i.e. not only the implicit default owner
+   * Whether the resource is claimed, i.e. owned by a scope or a resource that holds it, not only provisionally
    */
-  public get isExplicitlyOwned(): boolean {
-    return this.explicit.size > 0
+  public get isClaimed(): boolean {
+    return this.owners.size > 0
   }
 
   /**
@@ -102,209 +66,95 @@ export class ResourceOwnership implements Iterable<ResourceOwner> {
   }
 
   /**
-   * Whether the resource is shared through a pool, see {@link markShared}
+   * The resources held by this resource
    */
-  public get isShared(): boolean {
-    return this.shared
+  public get children(): ReadonlySet<Ownable> {
+    return this.childSet || NO_CHILDREN
   }
 
   /**
-   * The resources adopted by the target
+   * @param target - the object this ownership belongs to, usually the resource itself
    */
-  public get children(): Iterable<Ownable> {
-    return this.childSet
-  }
-
-  public constructor(target: Ownable, defaultOwner?: ResourceOwner | null) {
+  public constructor(target: object) {
     this.target = target
-    this.implicit = defaultOwner || null
   }
 
   /**
-   * Whether the given owner owns the resource, explicitly or implicitly
-   */
-  public has(owner: ResourceOwner): boolean {
-    return this.implicit === owner || this.explicit.has(owner)
-  }
-
-  /**
-   * Whether the given owner owns the resource explicitly
-   */
-  public isExplicit(owner: ResourceOwner): boolean {
-    return this.explicit.has(owner)
-  }
-
-  /**
-   * Marks the resource as shared.
+   * Holds a child, whether it was created by this resource or passed in.
    *
    * @remarks
-   * A shared resource is not finalized when its last owner is removed, the pool that shares it decides when.
-   * It is also not finalized together with the objects that adopted it.
-   */
-  public markShared(): void {
-    this.shared = true
-  }
-
-  /**
-   * Adds an explicit owner.
-   *
-   * @remarks
-   * - If the owner is the default owner, it is promoted to an explicit owner.
-   * - If another default owner is set, it is displaced and detached.
-   *
-   * @returns true if the ownership has changed
-   */
-  public add(owner: ResourceOwner): boolean {
-    if (this.finalized) {
-      throw new Error(`Can not add owner '${owner.name}' to a finalized resource`)
-    }
-    if (this.explicit.has(owner)) {
-      return false
-    }
-    const wasEmpty = this.size === 0
-    const displaced = this.implicit
-    this.implicit = null
-    this.explicit.add(owner)
-    if (displaced && displaced !== owner) {
-      displaced.detach(this.target)
-    }
-    if (wasEmpty && this.wasEmptied) {
-      trigger(this.onReviveHandlers)
-    }
-    return true
-  }
-
-  /**
-   * Sets the implicit default owner of a resource that has no owners.
-   *
-   * @returns true if the default owner was set
-   */
-  public setDefault(owner: ResourceOwner): boolean {
-    if (this.finalized) {
-      throw new Error(`Can not set default owner '${owner.name}' of a finalized resource`)
-    }
-    if (this.size > 0) {
-      return false
-    }
-    this.implicit = owner
-    if (this.wasEmptied) {
-      trigger(this.onReviveHandlers)
-    }
-    return true
-  }
-
-  /**
-   * Removes an owner, explicit or implicit.
-   * Triggers {@link onEmpty} when the last owner is removed and finalizes the resource, unless it is shared.
-   *
-   * @returns true if the owner was removed
-   */
-  public delete(owner: ResourceOwner): boolean {
-    if (this.finalized) {
-      return false
-    }
-    if (this.implicit === owner) {
-      this.implicit = null
-    } else if (!this.explicit.delete(owner)) {
-      return false
-    }
-    owner.detach(this.target)
-    if (this.size === 0) {
-      this.wasEmptied = true
-      trigger(this.onEmptyHandlers)
-      if (!this.shared) {
-        this.finalize()
-      }
-    }
-    return true
-  }
-
-  /**
-   * Adopts a resource that was created or acquired by the target.
-   *
-   * @remarks
-   * Current and future explicit owners of the target own the child as well.
-   * The child is finalized together with the target, unless it is shared or explicitly owned by a scope.
+   * Claims the child: a provisional owner (e.g. the global scope) gives it up.
+   * The child lives as long as this or any other owner holds it.
+   * Holding a child twice has no effect, a child that is held provisionally is claimed.
    *
    * @returns the given child
    */
   public adopt<T extends Ownable>(child: T): T {
-    if (this.finalized) {
-      throw new Error(`Can not adopt a resource into a finalized resource`)
-    }
-    if (this.childSet.has(child)) {
-      return child
-    }
-    this.childSet.add(child)
-    // the implicit default owner is not passed on, children have their own default owner
-    for (const owner of Array.from(this.explicit)) {
-      owner.own(child)
+    this.assertCanAdopt(child)
+    const children = (this.childSet ||= new Set())
+    child.ownership.claim(this)
+    children.add(child)
+    return child
+  }
+
+  /**
+   * Holds a child provisionally, until another owner claims it.
+   *
+   * @remarks
+   * Has no effect if the child is already owned.
+   *
+   * @returns the given child
+   */
+  public adoptUntilClaimed<T extends Ownable>(child: T): T {
+    this.assertCanAdopt(child)
+    if (!child.ownership.isOwned) {
+      child.ownership.provisional = this
+      ;(this.childSet ||= new Set()).add(child)
     }
     return child
   }
 
   /**
-   * Drops an adopted child, e.g. when it is replaced.
+   * Stops holding a child, e.g. when it is replaced.
    *
    * @remarks
-   * Owners of the target release the child. The child is finalized, unless it is shared or explicitly owned by a scope.
+   * A child that has no other owner is finalized (or given to its release handler).
    */
   public drop(child: Ownable): void {
-    if (!this.childSet.delete(child)) {
-      return
+    if (this.childSet?.delete(child)) {
+      child.ownership.unclaim(this)
     }
-    for (const owner of Array.from(this.explicit)) {
-      owner.release(child)
-    }
-    finalizeUnclaimed(child)
   }
 
   /**
    * Immediately finalizes the resource, regardless of its owners.
    *
    * @remarks
-   * All owners are detached, the {@link onFinalize} handlers are called and
-   * adopted children are finalized, unless they are shared or explicitly owned by a scope.
-   * Does not trigger {@link onEmpty}. Calling this multiple times has no effect.
+   * Owners stop holding the resource, the {@link onFinalize} handlers are called and all children are dropped.
+   * Calling this multiple times has no effect.
    */
   public finalize(): void {
     if (this.finalized) {
       return
     }
     this.finalized = true
-    const owners = Array.from(this)
-    this.implicit = null
-    this.explicit.clear()
-    for (const owner of owners) {
-      owner.detach(this.target)
+    // the owners only update their child sets, the owner set can be iterated in place
+    this.provisional?.childSet?.delete(this.target as Ownable)
+    this.provisional = null
+    for (const owner of this.owners) {
+      owner.childSet?.delete(this.target as Ownable)
     }
+    this.owners.clear()
     trigger(this.onFinalizeHandlers)
-    const children = Array.from(this.childSet).reverse()
-    this.childSet.clear()
-    for (const child of children) {
-      finalizeUnclaimed(child)
+    if (this.childSet) {
+      const children = this.childSet
+      this.childSet = null
+      for (const child of children) {
+        child.ownership.unclaim(this)
+      }
     }
-    this.onEmptyHandlers.length = 0
-    this.onReviveHandlers.length = 0
-    this.onFinalizeHandlers.length = 0
-  }
-
-  /**
-   * Registers a handler to be called when the last owner is removed
-   *
-   * @returns a function that unregisters the handler
-   */
-  public onEmpty(handler: () => void): () => void {
-    return subscribe(this.onEmptyHandlers, handler)
-  }
-
-  /**
-   * Registers a handler to be called when an owner is added after the resource had no owners
-   *
-   * @returns a function that unregisters the handler
-   */
-  public onRevive(handler: () => void): () => void {
-    return subscribe(this.onReviveHandlers, handler)
+    this.releaseHandler = null
+    this.onFinalizeHandlers = null
   }
 
   /**
@@ -313,29 +163,68 @@ export class ResourceOwnership implements Iterable<ResourceOwner> {
    * @returns a function that unregisters the handler
    */
   public onFinalize(handler: () => void): () => void {
-    return subscribe(this.onFinalizeHandlers, handler)
+    return subscribe((this.onFinalizeHandlers ||= []), handler)
   }
 
-  public *[Symbol.iterator](): IterableIterator<ResourceOwner> {
-    if (this.implicit) {
-      yield this.implicit
+  /**
+   * Sets a handler that is called instead of finalizing the resource when its last owner lets go of it.
+   *
+   * @remarks
+   * Used by pools that keep resources alive for reuse. The handler decides when to call {@link finalize}.
+   * The handler is called again each time the resource loses its last owner.
+   */
+  public setReleaseHandler(handler: (() => void) | null): void {
+    this.releaseHandler = handler
+  }
+
+  private assertCanAdopt(child: Ownable) {
+    if (this.finalized) {
+      throw new Error(`'${this.name}' is finalized and can not hold '${child.ownership.name}'`)
     }
-    yield* this.explicit
+    if (child.ownership === this) {
+      throw new Error(`'${this.name}' can not hold itself`)
+    }
+    if (child.ownership.finalized) {
+      throw new Error(`'${this.name}' can not hold '${child.ownership.name}', it is finalized`)
+    }
+  }
+
+  private claim(owner: ResourceOwnership) {
+    const displaced = this.provisional
+    this.provisional = null
+    this.owners.add(owner)
+    if (displaced && displaced !== owner) {
+      displaced.childSet?.delete(this.target as Ownable)
+    }
+  }
+
+  private unclaim(owner: ResourceOwnership) {
+    if (this.finalized) {
+      return
+    }
+    if (this.provisional === owner) {
+      this.provisional = null
+    } else if (!this.owners.delete(owner)) {
+      return
+    }
+    if (this.isOwned) {
+      return
+    }
+    if (this.releaseHandler) {
+      call(this.releaseHandler)
+    } else {
+      this.finalize()
+    }
   }
 }
+
+const NO_CHILDREN: ReadonlySet<Ownable> = new Set<Ownable>()
 
 /**
  * Whether the given value is an {@link Ownable}
  */
 export function isOwnable(value: unknown): value is Ownable {
   return !!value && (value as Ownable).ownership instanceof ResourceOwnership
-}
-
-function finalizeUnclaimed(resource: Ownable) {
-  const ownership = resource.ownership
-  if (!ownership.isShared && !ownership.isExplicitlyOwned) {
-    ownership.finalize()
-  }
 }
 
 function subscribe(handlers: Array<() => void>, handler: () => void) {
@@ -348,12 +237,24 @@ function subscribe(handlers: Array<() => void>, handler: () => void) {
   }
 }
 
-function trigger(handlers: Array<() => void>) {
-  for (const handler of [...handlers]) {
-    try {
-      handler()
-    } catch (e) {
-      console.error(e)
-    }
+function trigger(handlers: Array<() => void> | null) {
+  if (!handlers?.length) {
+    return
+  }
+  if (handlers.length === 1) {
+    call(handlers[0])
+    return
+  }
+  // a handler may unsubscribe while triggered
+  for (const handler of handlers.slice()) {
+    call(handler)
+  }
+}
+
+function call(handler: () => void) {
+  try {
+    handler()
+  } catch (e) {
+    console.error(e)
   }
 }

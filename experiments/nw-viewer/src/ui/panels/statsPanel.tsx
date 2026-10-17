@@ -6,6 +6,7 @@ import { LightSystem } from '../../game/light/LightSystem'
 import { DebugOptions } from '../../material'
 import type { NwViewer } from '../../viewer'
 import { usePanel } from '../panel'
+import { ResourcesStats } from './resourcesStats'
 import { CameraComponentProps } from '../registry/uiCameraComponent'
 import { DebugShapeSystemProps } from '../registry/uiDebugShapeSystem'
 import { LightSystemProps } from '../registry/uiLightSystem'
@@ -39,6 +40,9 @@ export function StatsPanel(props: { viewer: NwViewer }) {
           },
         ]}
       />
+      <Group title="Resources" collapsible>
+        <ResourcesStats viewer={viewer} />
+      </Group>
       <Group title="Lights">
         <LightSystemProps data={viewer.world.getSystem(LightSystem)} />
       </Group>

@@ -156,8 +156,8 @@ export class WebglDevice extends Device<WebGL2RenderingContext> {
       format: 'rgba8unorm',
     })
     // explicitly owned, so other scopes may share but never take them over
-    this.scope.own(this.defaultTexture)
-    this.scope.own(this.defaultTextureCube)
+    this.scope.adopt(this.defaultTexture)
+    this.scope.adopt(this.defaultTextureCube)
     this.renderPass = new WebglRenderEncoder(this)
 
     this.resize()
@@ -287,7 +287,7 @@ export class WebglDevice extends Device<WebGL2RenderingContext> {
 
     const key = options.glsl.vertex + options.glsl.fragment
     const result = this.shaders.get(key) || this.shaders.share(key, this.allocShaderModule(options))
-    return this.claim(result, options.scope)
+    return (options.scope ?? this.scope).adopt(result)
   }
 
   private allocShaderModule(options: ShaderModuleOptions): WebglShaderModule {

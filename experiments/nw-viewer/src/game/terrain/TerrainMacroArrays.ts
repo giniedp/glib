@@ -58,7 +58,13 @@ export class TerrainMacroArrays {
       if (!src || src.width !== MACRO_SIZE || src.height !== MACRO_SIZE || src.gpuObject.format !== MAPS[i].format) {
         if (!this.warned.has(region.regionName)) {
           this.warned.add(region.regionName)
-          console.warn('TerrainMacroArrays: unexpected macro texture', region.regionName, MAPS[i].name, src?.width, src?.gpuObject?.format)
+          console.warn(
+            'TerrainMacroArrays: unexpected macro texture',
+            region.regionName,
+            MAPS[i].name,
+            src?.width,
+            src?.gpuObject?.format,
+          )
         }
         return
       }

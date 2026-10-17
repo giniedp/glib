@@ -11,6 +11,7 @@ export interface ModelLodOptions {
   maxLevel: number
   /**
    * Loads the model of a level (1 or higher). Resolves `null` if the level does not exist.
+   * The resolved model is owned by the base model.
    */
   load: (level: number) => Promise<Model | null>
   /**
@@ -58,8 +59,10 @@ export class ModelLod {
   private readonly levels: Array<Model | null> = []
   private readonly requested: boolean[] = []
   private readonly load: (level: number) => Promise<Model | null>
+  private readonly base: Model
 
   public constructor(base: Model, options: ModelLodOptions) {
+    this.base = base
     this.distance = options.distance
     this.maxLevel = options.maxLevel
     this.hysteresis = options.hysteresis ?? 0.1
@@ -123,8 +126,11 @@ export class ModelLod {
     this.requested[level] = true
     this.load(level).then(
       (model) => {
-        if (model) {
-          this.levels[level] = model
+        if (model && this.base.ownership.isFinalized) {
+          // the base model is gone, nobody would release the level
+          model.dispose()
+        } else if (model) {
+          this.levels[level] = this.base.ownership.adopt(model)
         } else {
           this.markMissing(level)
         }

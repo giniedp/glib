@@ -153,16 +153,16 @@ export class MtlUtil {
 }
 
 export function getWhiteTexture(device: Device): Texture {
-  return device.acquireTexture({ key: WhiteTextureKey, throwIfMissing: true, transient: true })
+  return device.acquireTexture({ key: WhiteTextureKey, throwIfMissing: true })
 }
 
 /**
  * Tangent space normal map with the flat normal (0, 0, 1), the engine "FlatBump" texture
  */
 export function getFlatNormalTexture(device: Device): Texture {
-  return device.acquireTexture({ key: FlatNormalTextureKey, throwIfMissing: true, transient: true })
+  return device.acquireTexture({ key: FlatNormalTextureKey, throwIfMissing: true })
 }
 
 export function getGrayTexture(device: Device): Texture {
-  return device.acquireTexture({ key: GrayTextureKey, throwIfMissing: true, transient: true })
+  return device.acquireTexture({ key: GrayTextureKey, throwIfMissing: true })
 }

@@ -124,7 +124,12 @@ export class TerrainPages {
   /**
    * @param focalPx - camera focal length in pixels, projection[5] * viewport height / 2
    */
-  public update(regions: ReadonlyArray<TerrainRegionComponent>, camera: IVec3, frustum: BoundingFrustum, focalPx: number) {
+  public update(
+    regions: ReadonlyArray<TerrainRegionComponent>,
+    camera: IVec3,
+    frustum: BoundingFrustum,
+    focalPx: number,
+  ) {
     this.frame++
     // a page at mip m holds VT_PAGE_SIZE texels over its size, the screen shows focalPx / distance pixels per meter
     this.lodFactor = Math.min(8, Math.max(1, (this.quality * focalPx) / VT_PAGE_SIZE))

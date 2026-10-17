@@ -79,7 +79,7 @@ export class DistanceCloudsMaterial extends MaterialWithSchema(Schema) {
     this.name = `${attrs.Shader} (${attrs.Name})`
     const shaderConst = getShaderConstants(shaderFlags)
 
-    this.effects[RenderVariant.Forward] = new Effect(this.device, distanceCloudsEffectOptions(shaderConst))
+    this.setEffect(RenderVariant.Forward, new Effect(this.device, distanceCloudsEffectOptions(shaderConst)))
     this.effect.depthState = DepthState.GreaterEqualNoWrite
     this.effect.cullState = CullState.None
     // SrcBlend = SrcAlpha, DestBlend = InvSrcAlpha
@@ -95,7 +95,7 @@ export class DistanceCloudsMaterial extends MaterialWithSchema(Schema) {
   }
 
   private setDefaults() {
-    this.Noise2DTex = this.device.acquireTexture({ key: Noise2DKey, throwIfMissing: true, transient: true })
+    this.Noise2DTex = this.device.acquireTexture({ key: Noise2DKey, throwIfMissing: true })
     this.SamplerLinear = SamplerState.LinearWrap
 
     // EngineAssets/Textures/perlinNoise2D.dds

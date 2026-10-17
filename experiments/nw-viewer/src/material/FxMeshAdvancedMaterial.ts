@@ -129,7 +129,7 @@ export class FxMeshAdvancedMaterial extends MaterialWithSchema(SCHEMA) {
     this.name = `${attrs.Shader} (${attrs.Name})`
     const shaderConst = getShaderConstants(shaderFlags)
 
-    this.effects[RenderVariant.Forward] = new Effect(this.device, fxMeshAdvancedEffectOptions(shaderConst))
+    this.setEffect(RenderVariant.Forward, new Effect(this.device, fxMeshAdvancedEffectOptions(shaderConst)))
     this.effect.depthState = DepthState.GreaterEqual
     this.effect.cullState = CullState.CullBack
     this.effect.blendState = BlendState.Opaque

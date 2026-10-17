@@ -216,12 +216,7 @@ describe('buildRiverMesh', () => {
   it('carries the fog in the vertex color and faces up', () => {
     const mesh = buildRiverMesh(river(), translate(0, 0, 0), options)!
     for (const { color, normal, tangent } of vertices(mesh)) {
-      expect(color).toEqual([
-        expect.closeTo(0.1),
-        expect.closeTo(0.2),
-        expect.closeTo(0.3),
-        expect.closeTo(0.5),
-      ])
+      expect(color).toEqual([expect.closeTo(0.1), expect.closeTo(0.2), expect.closeTo(0.3), expect.closeTo(0.5)])
       expect(normal[2]).toBeCloseTo(1)
       // bitangent = cross(n, t) * w points along +v, which is -y for a +x river
       const by = (normal[2] * tangent[0] - normal[0] * tangent[2]) * tangent[3]

@@ -277,7 +277,7 @@ export class IllumMaterial extends MaterialWithSchema(SCHEMA) {
       })
     }
 
-    this.effects[RenderVariant.Forward] = new Effect(this.device, illumEffectOptions(shaderConst))
+    this.setEffect(RenderVariant.Forward, new Effect(this.device, illumEffectOptions(shaderConst)))
     this.effect.cullState = CullState.CullBack
     this.effect.blendState = BlendState.Opaque
     if (attrs.MtlFlags & MtlFlag.MTL_FLAG_2SIDED) {

@@ -58,8 +58,8 @@ export interface MaterialOptions {
  * This allows a {@link Effect} instance to be reused across
  * multiple materials each with a different set of parameters.
  *
- * Textures that are passed in as instances are borrowed. Textures that are created or acquired
- * from options are owned by the material and are owned by a scope together with the material.
+ * The material owns its effects and textures, whether they are created, acquired or passed in as instances.
+ * A texture lives as long as any material (or scope) holds it. A replaced texture is released.
  */
 export class Material implements Ownable {
   /**
@@ -135,6 +135,7 @@ export class Material implements Ownable {
 
   public constructor(device: Device, options: MaterialOptions) {
     this.device = device
+    device.scope.adoptUntilClaimed(this)
     options ||= { properties: {} }
     options.name ||= ''
     options.meta ||= {}
@@ -178,16 +179,18 @@ export class Material implements Ownable {
     const old = this.inputs.get(input)
     if (value !== old) {
       if (isAquirableTextureOptions(value)) {
-        value = this.ownership.adopt(this.device.acquireTexture(value))
+        value = this.device.acquireTexture(value)
       } else if (isTextureSourceOption(value)) {
-        value = this.ownership.adopt(this.device.createTexture(value))
+        value = this.device.createTexture(value)
       } else if (value == null) {
         console.warn(
           `Setting material parameter ${input.key} to null or undefined is not recommended and may cause unintended consequences.`,
         )
       }
+      if (value instanceof Texture) {
+        this.ownership.adopt(value)
+      }
       if (old instanceof Texture && old !== value && !this.isInputValue(old, input)) {
-        // no-op for borrowed textures
         this.ownership.drop(old)
       }
     }
@@ -259,14 +262,12 @@ export class Material implements Ownable {
   public update?(time: number, delta: number, frame: number): void
 
   /**
-   * Immediately finalizes this material and what it created.
+   * Immediately finalizes this material and releases its effects and textures.
    * Called automatically when the last owner releases the material.
    *
    * @remarks
-   * - Borrowed textures (passed in as instances) are not touched.
-   * - Created textures and effects are finalized unless a scope explicitly owns them.
-   * - Acquired textures are shared. They live as long as a scope owns them,
-   *   or until the device is disposed if they were acquired without a scope.
+   * Effects and textures that are still held by another owner (e.g. another material or a scope) are kept.
+   * Acquired textures without owners are kept alive by the device pool for a few frames.
    */
   public dispose() {
     this.ownership.finalize()

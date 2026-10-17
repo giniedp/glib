@@ -100,7 +100,7 @@ export class VegetationMaterial extends MaterialWithSchema(SCHEMA) {
       })
     }
 
-    this.effects[RenderVariant.Forward] = new Effect(this.device, vegetationEffectOptions(shaderConst))
+    this.setEffect(RenderVariant.Forward, new Effect(this.device, vegetationEffectOptions(shaderConst)))
     this.effect.cullState = CullState.CullBack
     this.effect.blendState = BlendState.Opaque
     if (attrs.MtlFlags & MtlFlag.MTL_FLAG_2SIDED) {

@@ -1,4 +1,18 @@
-import type { Ownable, ResourceOwner } from './ResourceOwnership'
+import { type Ownable, ResourceOwnership } from './ResourceOwnership'
+
+// walking is synchronous and does not call out, one set serves all scopes
+const walkVisited = new Set<Ownable>()
+
+function walkResource(resource: Ownable, out: Ownable[]) {
+  if (walkVisited.has(resource)) {
+    return
+  }
+  walkVisited.add(resource)
+  out.push(resource)
+  for (const child of resource.ownership.children) {
+    walkResource(child, out)
+  }
+}
 
 /**
  * Option for device resource creation
@@ -6,7 +20,7 @@ import type { Ownable, ResourceOwner } from './ResourceOwnership'
 export interface ResourceScopeOption {
   /**
    * The scope that should own the created or acquired resource.
-   * If omitted, the resource is owned by the global scope of the device.
+   * If omitted, the global scope of the device holds the resource until it is claimed.
    */
   scope?: ResourceScope | null
 }
@@ -15,19 +29,16 @@ export interface ResourceScopeOption {
  * Owns resources and releases them all at once when disposed.
  *
  * @remarks
- * Resources are created on the device and are implicitly owned by the global scope of the device.
- * Calling {@link own} on any other scope moves the ownership to that scope.
- * When multiple scopes own the same resource, it lives until all of them released it.
- *
- * Owning an object also owns its {@link ResourceOwnership.children} recursively.
+ * - {@link adopt} claims a resource. A resource lives as long as any scope or resource holds it.
+ * - {@link adoptUntilClaimed} holds a resource provisionally, until the first other owner claims it.
+ *   The global scope of the device holds everything that is created without a scope this way.
+ * - A scope only owns the resources given to it. What those resources hold (e.g. the meshes of a model)
+ *   is owned by the resources themselves and lives as long as they do, see {@link walk}.
  */
-export class ResourceScope implements ResourceOwner, Disposable {
-  /**
-   * Number of paths (direct own calls and owned parents) by which this scope owns a resource.
-   * A count of 0 marks an implicitly owned (adopted) resource.
-   */
-  private resources = new Map<Ownable, number>()
-  private children = new Set<ResourceScope>()
+export class ResourceScope implements Disposable {
+  private holder = new ResourceOwnership(this)
+  private childScopes = new Set<ResourceScope>()
+  private parentScope: ResourceScope | null = null
   private disposed = false
 
   /**
@@ -36,9 +47,18 @@ export class ResourceScope implements ResourceOwner, Disposable {
   public readonly name: string
 
   /**
-   * The parent scope. The scope is disposed together with its parent.
+   * The parent scope, see {@link createChild}. The scope is disposed together with its parent.
    */
-  public readonly parent: ResourceScope | null
+  public get parent(): ResourceScope | null {
+    return this.parentScope
+  }
+
+  /**
+   * The child scopes of this scope
+   */
+  public get children(): Iterable<ResourceScope> {
+    return this.childScopes
+  }
 
   /**
    * Whether this scope has been disposed
@@ -48,97 +68,93 @@ export class ResourceScope implements ResourceOwner, Disposable {
   }
 
   /**
-   * Number of resources owned by this scope
+   * The resources owned by this scope, not including what they hold, see {@link walk}
    */
-  public get count(): number {
-    return this.resources.size
-  }
-
-  public constructor(name?: string, parent?: ResourceScope | null) {
-    this.name = name ?? 'scope'
-    this.parent = parent || null
+  public get resources(): Iterable<Ownable> {
+    return this.holder.children
   }
 
   /**
-   * Takes ownership of the given resource and its owned children.
+   * Number of resources owned by this scope, not including what they hold
+   */
+  public get resourceCount(): number {
+    return this.holder.children.size
+  }
+
+  public constructor(name?: string) {
+    this.name = name ?? 'scope'
+  }
+
+  /**
+   * Claims the given resource. Owning a resource twice has no effect.
+   *
+   * @remarks
+   * A resource that this scope holds provisionally is claimed.
    *
    * @returns the given resource
    */
-  public own<T extends Ownable>(resource: T): T {
-    this.assertNotDisposed()
-    if (!resource.ownership.isExplicit(this)) {
-      resource.ownership.add(this)
-    }
-    const count = this.resources.get(resource) ?? 0
-    this.resources.set(resource, count + 1)
-    for (const child of Array.from(resource.ownership.children)) {
-      this.own(child)
-    }
-    return resource
-  }
-
-  /**
-   * Releases the ownership of the given resource and its owned children.
-   *
-   * @remarks
-   * Resources that are owned by this scope by other means (owned directly or through another parent) are kept.
-   */
-  public release(resource: Ownable): void {
-    const count = this.resources.get(resource)
-    if (count == null) {
-      return
-    }
-    if (count === 0) {
-      // implicitly owned, children were adopted on their own
-      this.resources.delete(resource)
-      resource.ownership.delete(this)
-      return
-    }
-    // capture children first, losing the last owner may finalize the resource and clear its children
-    const children = Array.from(resource.ownership.children)
-    if (count === 1) {
-      this.resources.delete(resource)
-      resource.ownership.delete(this)
-    } else {
-      this.resources.set(resource, count - 1)
-    }
-    for (const child of children) {
-      this.release(child)
-    }
-  }
-
-  /**
-   * Whether this scope owns the given resource
-   */
-  public has(resource: Ownable): boolean {
-    return this.resources.has(resource)
-  }
-
-  /**
-   * Tracks a resource that has this scope as its implicit default owner.
-   *
-   * @internal
-   * @remarks
-   * Used by the device for freshly created resources. Does not affect owned children.
-   */
   public adopt<T extends Ownable>(resource: T): T {
     this.assertNotDisposed()
-    if (resource.ownership.defaultOwner !== this) {
-      throw new Error(`Scope '${this.name}' is not the default owner of the resource`)
+    return this.holder.adopt(resource)
+  }
+
+  /**
+   * Holds the given resource provisionally, until another scope or resource claims it.
+   *
+   * @remarks
+   * Has no effect if the resource is already owned.
+   *
+   * @returns the given resource
+   */
+  public adoptUntilClaimed<T extends Ownable>(resource: T): T {
+    this.assertNotDisposed()
+    return this.holder.adoptUntilClaimed(resource)
+  }
+
+  /**
+   * Releases the given resource.
+   *
+   * @remarks
+   * The resource is finalized if it has no other owner, e.g. another scope or a resource that holds it.
+   */
+  public drop(resource: Ownable): void {
+    this.holder.drop(resource)
+  }
+
+  /**
+   * Whether this scope owns the given resource directly
+   */
+  public has(resource: Ownable): boolean {
+    return this.holder.children.has(resource)
+  }
+
+  /**
+   * Collects the owned resources and everything they hold, each resource once, depth first
+   *
+   * @param out - the array to fill, pass the same array on every call to avoid allocations. It is cleared first.
+   * @returns the given or a new array
+   */
+  public walk(out: Ownable[] = []): Ownable[] {
+    out.length = 0
+    walkVisited.clear()
+    try {
+      for (const resource of this.holder.children) {
+        walkResource(resource, out)
+      }
+    } finally {
+      walkVisited.clear()
     }
-    if (!this.resources.has(resource)) {
-      this.resources.set(resource, 0)
-    }
-    return resource
+    return out
   }
 
   /**
    * Creates a child scope that is disposed together with this scope
    */
-  public createScope(name?: string): ResourceScope {
+  public createChild(name?: string): ResourceScope {
     this.assertNotDisposed()
-    const scope = new ResourceScope(name, this)
-    this.children.add(scope)
+    const scope = new ResourceScope(name)
+    scope.parentScope = this
+    this.childScopes.add(scope)
     return scope
   }
 
@@ -149,33 +165,16 @@ export class ResourceScope implements ResourceOwner, Disposable {
     if (this.disposed) {
       return
     }
-    for (const child of Array.from(this.children).reverse()) {
+    for (const child of Array.from(this.childScopes).reverse()) {
       child.dispose()
     }
-    // children of owned resources are tracked as entries themselves, so no recursion needed
-    const resources = Array.from(this.resources.keys()).reverse()
-    for (const resource of resources) {
-      if (this.resources.delete(resource)) {
-        resource.ownership.delete(this)
-      }
-    }
     this.disposed = true
-    this.parent?.children.delete(this)
+    this.holder.finalize()
+    this.parentScope?.childScopes.delete(this)
   }
 
   public [Symbol.dispose](): void {
     this.dispose()
-  }
-
-  public [Symbol.iterator](): IterableIterator<Ownable> {
-    return this.resources.keys()
-  }
-
-  /**
-   * @internal
-   */
-  public detach(resource: Ownable): void {
-    this.resources.delete(resource)
   }
 
   private assertNotDisposed() {

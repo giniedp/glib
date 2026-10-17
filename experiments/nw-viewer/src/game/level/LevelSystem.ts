@@ -63,14 +63,14 @@ import {
   createShaderBallGeometries,
   createStageGeometries,
   MATERIAL_SHOWCASE_SETS,
-  SHOWCASE_WATER_SHAPE,
   SHOWCASE_STAGE_DEPTH,
   SHOWCASE_STAGE_MATERIAL,
   SHOWCASE_STAGE_WIDTH,
+  SHOWCASE_WATER_SHAPE,
 } from '../showcase/MaterialShowcase'
 import { MeshLoaderComponent } from '../slice/MeshLoaderComponent'
-import { buildWaterVolumeMesh } from '../water/WaterVolumeMesh'
 import { TerrainSystem } from '../terrain/TerrainSystem'
+import { buildWaterVolumeMesh } from '../water/WaterVolumeMesh'
 import { levelEntityOptions } from './LevelComponent'
 import { SkyLightSystem } from './SkyLightSystem'
 import { TimeOfDayComponent } from './TimeOfDayComponent'
@@ -81,15 +81,16 @@ export class LevelSystem extends GameSystem {
   private terrain: TerrainSystem
 
   public game: EcsGame
-  public entity: GameEntity
-
   public camera: CameraComponent
+
   /**
    * Info of the loaded level, null while none is loaded
    */
   public levelInfo: LevelInfo | null = null
 
   private renderer: Renderer
+
+  private entity: GameEntity
   private skyEntity: GameEntity
   private cloudsEntity: GameEntity
   /**
@@ -198,6 +199,8 @@ export class LevelSystem extends GameSystem {
     this.levelInfo = levelInfo
 
     this.entity = this.game.createEntity(levelEntityOptions(this.game.scene.entity, levelInfo))
+    const scope = this.content.scopeOf(this.entity)
+
     this.skyEntity = this.game.createEntity(createSkySphere(this.entity, this.renderer.device))
     this.cloudsEntity = this.game.createEntity(createCloudsDome(this.entity))
     this.content.updateSlices(levelInfo.slices ?? {})
@@ -208,11 +211,13 @@ export class LevelSystem extends GameSystem {
     this.oceanLevel = levelInfo.oceanLevel
     this.timeOfDay.setLevelInfo(levelInfo, {
       content: this.content,
+      scope: this.content.scopeOf(this.entity),
       signal: loadSignal,
     })
 
     this.terrain.setLevelInfo(levelInfo, {
       content: this.content,
+      scope: this.content.scopeOf(this.entity),
       signal: loadSignal,
     })
   }
@@ -547,7 +552,11 @@ export class LevelSystem extends GameSystem {
     const todLevel = options?.timeOfDayLevel ?? 'newworld_vitaeeterna'
     const levelInfo = await fetchTypedRequest(this.content.nwbtUrl, getLevelInfoUrl(todLevel))
     signal.throwIfAborted()
-    await this.timeOfDay.setLevelInfo(levelInfo, { content: this.content, signal })
+    await this.timeOfDay.setLevelInfo(levelInfo, {
+      content: this.content,
+      scope: this.content.scopeOf(this.entity),
+      signal,
+    })
     if (options?.time != null) {
       this.timeOfDay.time = options.time
     }
@@ -575,6 +584,7 @@ export class LevelSystem extends GameSystem {
    */
   private async loadMaterialFile(url: string, signal: AbortSignal): Promise<Material[]> {
     const content = this.content
+    const scope = content.scopeOf(this.entity)
     const asset = await content.loadAsset(url)
     signal.throwIfAborted()
     const result: Material[] = []
@@ -584,7 +594,7 @@ export class LevelSystem extends GameSystem {
         baseUrl: content.nwbtFileUrl,
       })
       signal.throwIfAborted()
-      result.push(content.loader.createMaterial(options))
+      result.push(scope.adopt(content.loader.createMaterial(options)))
     }
     return result
   }

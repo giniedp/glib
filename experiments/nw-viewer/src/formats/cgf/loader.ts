@@ -1,5 +1,5 @@
 import { ContentLoader, type AssetContainer, type AssetLoader, type AssetType, type LoadContext } from '@gglib/content'
-import { Geometry } from '@gglib/graphics'
+import { Geometry, ResourceOwnership, type Ownable } from '@gglib/graphics'
 import { BoundingBox, BoundingSphere } from '@gglib/math'
 import type { NodeData } from '@gglib/model'
 import { buildCgfGeometryOptions, type CgfGeometryOptions } from './geometry'
@@ -12,9 +12,9 @@ import type { CgfFile } from './types'
  *
  * @remarks
  * Created once per file and shared by all models that use the file, with any material.
- * The buffers are shared by the geometries of a mesh, do not dispose them while the content loader caches this asset.
+ * Owns the buffers and geometries, the models that use it adopt it. Once finalized, the content loader drops it from its cache.
  */
-export interface CgfGeometry {
+export interface CgfGeometry extends Ownable {
   /**
    * Material reference of the file (asset id or path), the material used when the caller has no override
    */
@@ -136,10 +136,17 @@ export class CgfContainer implements AssetContainer {
 
 /**
  * Uploads the buffers of each mesh once and creates a geometry per subset
+ *
+ * @remarks
+ * The geometries of a mesh share its buffers. The result holds the geometries while it is cached,
+ * models that are assembled from it hold the result, see ContentService.
  */
 export function createCgfGeometry(content: ContentLoader, options: CgfGeometryOptions): CgfGeometry {
   const device = content.device
-  return {
+  const result = { ownership: null } as CgfGeometry & { ownership: ResourceOwnership }
+  const ownership = (result.ownership = new ResourceOwnership(result))
+  device.scope.adoptUntilClaimed(result)
+  return Object.assign(result, {
     mtlRef: options.mtlRef,
     nodes: options.nodes,
     roots: options.roots,
@@ -155,8 +162,8 @@ export function createCgfGeometry(content: ContentLoader, options: CgfGeometryOp
         name: mesh.name,
         boundingBox: box,
         materialIds: mesh.subsets.map((s) => s.materialId),
-        geometries: mesh.subsets.map(
-          (subset) =>
+        geometries: mesh.subsets.map((subset) =>
+          ownership.adopt(
             new Geometry(device, {
               name: mesh.name,
               vertexBuffer,
@@ -168,8 +175,9 @@ export function createCgfGeometry(content: ContentLoader, options: CgfGeometryOp
               boundingBox: box,
               boundingSphere: sphere,
             }),
+          ),
         ),
       }
     }),
-  }
+  })
 }

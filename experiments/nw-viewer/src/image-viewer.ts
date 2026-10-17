@@ -7,7 +7,7 @@ import {
   TransformComponent,
   type SceneStats,
 } from '@gglib/components'
-import { SpriteBatch, Texture, type DeviceStats } from '@gglib/graphics'
+import { SpriteBatch, Texture, type DeviceStats, type ResourceScope } from '@gglib/graphics'
 import { DDS, GLTF, HDR, KTX } from '@gglib/loaders'
 import { SpaceBasis } from '@gglib/math'
 import { Renderer, type RendererStats } from '@gglib/render'
@@ -123,9 +123,13 @@ export class NwImageViewer extends EcsGame {
     this.stop()
   }
 
+  private scope: ResourceScope | null = null
+
   public async load(image: string) {
     const content = this.world.getSystem(ContentService)
-    const texture = await content.loadTexture(image)
+    this.scope?.dispose()
+    this.scope = this.device.createScope('image')
+    const texture = await content.loadTexture(image, this.scope)
     this.texture = texture
     this.mipLevel = 0
     this.mipLevelCount = texture.mipLevelCount
