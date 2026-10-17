@@ -111,10 +111,10 @@ export class WebGpuRenderEncoder extends RenderEncoder {
       this.pipelineParams.vertexConstants = module?.vertexConstants
       this.pipelineParams.fragmentConstants = module?.fragmentConstants
     }
-    if (this.programParams !== program) {
-      this.programParams = program as WebGpuProgram
-      this.programParamsChanged = true
-    }
+    // the bind groups of the same program change when inputs change between draws (e.g. another texture),
+    // always check them. applyBindGroups() only sets groups that differ from the bound ones
+    this.programParams = program as WebGpuProgram
+    this.programParamsChanged = true
   }
 
   public setDepthState(state: DepthState) {

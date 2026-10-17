@@ -41,6 +41,10 @@ export class WebGpuShaderResource {
    * The buffer object the bound GPUBuffer was taken from, see {@link syncSource}
    */
   private sourceBuffer: { readonly resource: GPUBuffer | null } | null = null
+  /**
+   * The texture object the bound GPUTextureView was taken from, see {@link syncSource}
+   */
+  private sourceTexture: { readonly gpuView: GPUTextureView | null } | null = null
   private changeHandler: WebGpuShaderResourceHandler[] = []
 
   public constructor(device: WebGpuDevice, info: WgslResourceInfo, isCompute: boolean) {
@@ -79,10 +83,21 @@ export class WebGpuShaderResource {
     this.dirtyMax = Math.max(this.dirtyMax, byteOffset + byteLength)
   }
 
-  public setTexture(resource: GPUTexture | GPUTextureView | GPUExternalTexture) {
+  /**
+   * Binds a texture
+   *
+   * @param resource - the texture or view to bind
+   * @param source - the texture object that owns `resource`. Texture objects replace their GPUTexture when they are
+   * resized or their source data arrives, the binding follows the replacement, see {@link syncSource}
+   */
+  public setTexture(
+    resource: GPUTexture | GPUTextureView | GPUExternalTexture,
+    source?: { readonly gpuView: GPUTextureView | null },
+  ) {
     if (!this.isTexture) {
       throw new Error(`Cannot set texture on non-texture parameter '${this.nameInShader}'`)
     }
+    this.sourceTexture = (resource && source) || null
     this.setResource(resource)
   }
 
@@ -119,6 +134,10 @@ export class WebGpuShaderResource {
     const resource = this.sourceBuffer?.resource
     if (resource && resource !== this.bindingResource) {
       this.setResource(resource)
+    }
+    const view = this.sourceTexture?.gpuView
+    if (view && view !== this.bindingResource) {
+      this.setResource(view)
     }
   }
 

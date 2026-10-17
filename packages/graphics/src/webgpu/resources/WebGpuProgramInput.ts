@@ -233,7 +233,8 @@ export class WebGpuProgramInput extends ProgramInput {
         const view = value.subresource(value.residentMipLevel)
         this.resource.setTexture((value as WebGpuTexture).getGpuView(view))
       } else {
-        this.resource.setTexture((value as WebGpuTexture).gpuView)
+        // the full view follows the texture when it recreates its GPU texture, e.g. when the source data arrives
+        this.resource.setTexture((value as WebGpuTexture).gpuView, value as WebGpuTexture)
       }
     } else if (value instanceof TextureView) {
       this.resource.setTexture((value.texture as WebGpuTexture).getGpuView(value))
