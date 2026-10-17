@@ -126,15 +126,30 @@ describe('@gglib/model/AnimationPlayer', () => {
     expect(player.playing).toBe(false)
   })
 
-  it('wraps when looping, also for clips not starting at 0', () => {
+  it('wraps when looping', () => {
     const target = new Transform()
-    const player = new AnimationPlayer([linearX([1, 2, 3])], [target])
+    const player = new AnimationPlayer([linearX([0, 1, 2])], [target])
     player.play(0, { loop: true })
-    expect(player.time).toBe(1)
-    player.update(2.5) // 3.5 -> 1.5
-    expect(player.time).toBeCloseTo(1.5)
+    player.update(2.5) // 2.5 -> 0.5
+    expect(player.time).toBeCloseTo(0.5)
     expect(target.translation.x).toBeCloseTo(0.5)
     expect(player.playing).toBe(true)
+  })
+
+  it('starts the timeline at 0 and holds the first key frame until it is reached', () => {
+    const target = new Transform()
+    const player = new AnimationPlayer([linearX([1, 2, 3])], [target])
+    expect(player.clips[0].duration).toBe(3)
+    player.play(0, { loop: true })
+    expect(player.time).toBe(0)
+    expect(target.translation.x).toBe(0)
+    player.update(0.5)
+    expect(target.translation.x).toBe(0)
+    player.update(1) // 1.5
+    expect(target.translation.x).toBeCloseTo(0.5)
+    player.update(2) // 3.5 -> 0.5
+    expect(player.time).toBeCloseTo(0.5)
+    expect(target.translation.x).toBe(0)
   })
 
   it('plays backwards', () => {

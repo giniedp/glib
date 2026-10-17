@@ -235,8 +235,31 @@ export abstract class GLTFAccessorBase {
     return this.data
   }
 
+  /**
+   * Reads a component value, normalized integers are converted to float as defined by glTF
+   */
   public abstract readComponent(aIndex: number, cIndex: number): number
   // public abstract readAttribute(index: number, target: number[]): number[]
+
+  /**
+   * Converts a raw component value to its float value, if the accessor is normalized
+   */
+  protected decode(value: number): number {
+    if (!this.accessor.normalized) {
+      return value
+    }
+    switch (this.accessor.componentType) {
+      case AccessorComponentType.BYTE:
+        return Math.max(value / 127, -1)
+      case AccessorComponentType.UNSIGNED_BYTE:
+        return value / 255
+      case AccessorComponentType.SHORT:
+        return Math.max(value / 32767, -1)
+      case AccessorComponentType.UNSIGNED_SHORT:
+        return value / 65535
+    }
+    return value
+  }
 
   public readV3(aIndex: number) {
     return {
@@ -280,7 +303,7 @@ export class GLTFBufferViewAccessor extends GLTFAccessorBase {
   }
 
   public readComponent(aIndex: number, cIndex: number): number {
-    return this.data[this.offset + aIndex * this.stride + cIndex]
+    return this.decode(this.data[this.offset + aIndex * this.stride + cIndex])
   }
 }
 

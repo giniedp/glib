@@ -19,8 +19,11 @@ export function loadAnimation(asset: GltfAssetContainer, index: number): Resourc
     channels: [],
   })
 
+  // channels without a node are meant for extensions, morph target weights are not supported
+  const channels = gltf.channels.filter((it) => it.target.node != null && it.target.path !== 'weights')
+
   const samplerRefs: Record<number, ResourceRef<GLTFAccessorBase>> = {}
-  for (const channel of gltf.channels) {
+  for (const channel of channels) {
     const sampler = gltf.samplers[channel.sampler]
     if (!samplerRefs[sampler.input]) {
       samplerRefs[sampler.input] = asset.graph.dependency(node, asset.accessorNode(sampler.input))
@@ -31,7 +34,7 @@ export function loadAnimation(asset: GltfAssetContainer, index: number): Resourc
   }
 
   node.build = (_, node, get) => {
-    for (const gltfChannel of gltf.channels) {
+    for (const gltfChannel of channels) {
       const gltfSampler = gltf.samplers[gltfChannel.sampler]
       const accIn = get(samplerRefs[gltfSampler.input])
       const accOut = get(samplerRefs[gltfSampler.output])
@@ -105,9 +108,6 @@ export function loadAnimation(asset: GltfAssetContainer, index: number): Resourc
                 value: accOut.readV3(i),
               })
             }
-            break
-          case 'weights':
-            // TODO:
             break
         }
       }

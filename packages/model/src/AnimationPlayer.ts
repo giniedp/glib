@@ -30,7 +30,7 @@ export interface AnimationPlayOptions {
    */
   speed?: number
   /**
-   * Time in seconds to start at. Default is the start time of the clip, or its end time when playing backwards
+   * Time in seconds to start at. Default is `0`, or the clip duration when playing backwards
    */
   time?: number
 }
@@ -152,7 +152,7 @@ export class AnimationPlayer {
     this.clip = clip
     this.loop = options?.loop ?? false
     this.speed = options?.speed ?? 1
-    this.time = options?.time ?? (this.speed < 0 ? clip.endTime : clip.startTime)
+    this.time = options?.time ?? (this.speed < 0 ? clip.duration : 0)
     this.playing = true
     this.apply()
     return clip
@@ -197,11 +197,11 @@ export class AnimationPlayer {
       return
     }
     let time = this.time + dt * this.speed
-    if (time > clip.endTime || time < clip.startTime) {
+    if (time > clip.duration || time < 0) {
       if (this.loop && clip.duration > 0) {
-        time = clip.startTime + mod(time - clip.startTime, clip.duration)
+        time = mod(time, clip.duration)
       } else {
-        time = time > clip.endTime ? clip.endTime : clip.startTime
+        time = time > clip.duration ? clip.duration : 0
         this.playing = false
       }
     }
@@ -237,17 +237,11 @@ export class AnimationClip {
   public readonly channels: ReadonlyArray<AnimationClipTarget>
 
   /**
-   * Time of the first key frame in seconds
-   */
-  public readonly startTime: number
-
-  /**
-   * Time of the last key frame in seconds
-   */
-  public readonly endTime: number
-
-  /**
-   * Duration of the clip in seconds
+   * Duration of the clip in seconds, the time of the last key frame
+   *
+   * @remarks
+   * As defined by glTF, the timeline of a clip starts at `0`, key frame times are relative to that.
+   * Before its first key frame, a channel holds the value of the first key frame.
    */
   public readonly duration: number
 
@@ -264,9 +258,7 @@ export class AnimationClip {
     }
     this.name = data.name
     this.channels = data.channels.map((it) => new AnimationClipTarget(it))
-    this.startTime = Math.min(...this.channels.map((it) => it.startTime))
-    this.endTime = Math.max(...this.channels.map((it) => it.endTime))
-    this.duration = this.endTime - this.startTime
+    this.duration = Math.max(0, ...this.channels.map((it) => it.endTime))
   }
 
   /**
