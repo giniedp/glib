@@ -286,7 +286,7 @@ function createCanvas() {
 }
 
 async function loadExample(platform: PlatformId) {
-  unloadExample()
+  await unloadExample()
   const id = ++loadId
   loadedSearch = location.search
   message.value = null
@@ -332,7 +332,7 @@ async function loadExample(platform: PlatformId) {
 // keep in sync with the canvas opacity transition
 const FADE_DURATION = 300
 
-function unloadExample() {
+async function unloadExample() {
   const oldCanvas = canvas
   const dispose = toDispose
   canvas = null
@@ -340,7 +340,7 @@ function unloadExample() {
   oldCanvas?.classList.add('leaving')
   // let the canvas fade out before tearing down the example
   const fadeOut = new Promise((resolve) => setTimeout(resolve, oldCanvas ? FADE_DURATION : 0))
-  fadeOut
+  await fadeOut
     .then(() => dispose)
     .then((fn) => fn?.())
     .catch(() => {}) // already reported by loadExample

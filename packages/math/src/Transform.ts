@@ -91,6 +91,13 @@ export class Transform<T = unknown> implements ITransform {
   }
 
   /**
+   * Whether this transform or any of its descendants has changed since the last {@link propagateUpdates} down the hierarchy
+   */
+  public get hasSubtreeChanged(): boolean {
+    return this.subtreeChanged
+  }
+
+  /**
    * The scale vector in local space
    *
    * @remarks

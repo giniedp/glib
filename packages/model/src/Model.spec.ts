@@ -108,4 +108,51 @@ describe('@gglib/model/Model', () => {
       expect(material.ownership.isFinalized).toBe(true)
     })
   })
+
+  describe('animation', () => {
+    function animatedModel() {
+      return new Model(device, {
+        meshes: [meshOptions()],
+        nodes: [{ mesh: 0 }],
+        scenes: [{ nodes: [0] }],
+        animations: [
+          {
+            name: 'move',
+            channels: [
+              {
+                target: 0,
+                translation: {
+                  interpolation: 'LINEAR',
+                  samples: [
+                    { time: 0, value: { x: 0, y: 0, z: 0 } },
+                    { time: 1, value: { x: 2, y: 0, z: 0 } },
+                  ],
+                },
+              },
+            ],
+          },
+        ],
+      })
+    }
+
+    it('builds clips once and shares them with instances', () => {
+      const model = animatedModel()
+      const clips = model.clips
+      expect(model.clips).toBe(clips)
+      expect(model.instantiate().clips[0]).toBe(clips[0])
+      expect(model.createAnimationPlayer().clips[0]).toBe(clips[0])
+    })
+
+    it('needs an update when a node is animated', () => {
+      const model = animatedModel()
+      const player = model.createAnimationPlayer()
+      expect(model.needsUpdate).toBe(false)
+      player.play('move')
+      player.update(0.5)
+      expect(model.needsUpdate).toBe(true)
+      model.update()
+      expect(model.needsUpdate).toBe(false)
+      expect(model.transformNodes[0].world[12]).toBe(1)
+    })
+  })
 })

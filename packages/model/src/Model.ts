@@ -10,7 +10,7 @@ import {
 } from '@gglib/math'
 import { uuid } from '@gglib/utils'
 import type { AnimationData } from './AnimationData'
-import { AnimationPlayer } from './AnimationPlayer'
+import { AnimationClip, AnimationPlayer } from './AnimationPlayer'
 import type { ModelOptions, NodeData, SceneData, SkinData } from './Data'
 import type { ModelLod } from './ModelLod'
 import { Skeleton } from './Skeleton'
@@ -83,9 +83,21 @@ export class Model implements Ownable {
   public nodes: NodeData[] = []
 
   /**
-   * Animation clips that can be played back via {@link createAnimationPlayer}
+   * Animation data of the clips that can be played back via {@link createAnimationPlayer}
+   *
+   * @remarks
+   * The data is treated as immutable, it is shared with instances (see {@link instantiate}) and converted to {@link clips} once.
    */
-  public animations?: AnimationData[]
+  public readonly animations: ReadonlyArray<AnimationData>
+
+  /**
+   * The animation clips, built once from {@link animations} on first access and shared with instances
+   */
+  public get clips(): ReadonlyArray<AnimationClip> {
+    this._clips ||= this.animations.map((it) => new AnimationClip(it))
+    return this._clips
+  }
+  private _clips: ReadonlyArray<AnimationClip> | null = null
 
   /**
    * Index of the currently selected scene within {@link scenes}
@@ -238,16 +250,26 @@ export class Model implements Ownable {
   }
 
   /**
-   * Creates an animation player for this model's clips.
+   * Whether a node of the current scene has changed since the last {@link update}, e.g. by an {@link AnimationPlayer}
+   */
+  public get needsUpdate(): boolean {
+    return this._sceneRoot.hasSubtreeChanged
+  }
+
+  /**
+   * Creates an animation player that animates the {@link transformNodes} of this model.
+   *
+   * @remarks
+   * Animated nodes are marked as changed, see {@link needsUpdate}. The pose is applied on the next {@link update}.
    *
    * @returns A new {@link AnimationPlayer}, or `null` if the model has no
    * animations.
    */
-  public createAnimationPlayer() {
+  public createAnimationPlayer(): AnimationPlayer | null {
     if (!this.animations?.length) {
       return null
     }
-    return new AnimationPlayer(this.animations)
+    return new AnimationPlayer(this.clips, this.transformNodes)
   }
 
   /**
@@ -286,6 +308,8 @@ export class Model implements Ownable {
       vec3$initFill(root.translation, 0)
     }
 
+    // TODO: marking the root as changed recomputes the world matrices of all nodes, also when only animated nodes changed.
+    // Mark the root only when the world matrix changed, so that animation updates recompute only the animated subtrees.
     root.markAsChanged()
     root.propagateUpdates(true, true)
   }
@@ -368,15 +392,17 @@ export class Model implements Ownable {
     const meshes = this.meshes.map((mesh) => {
       return options?.meshes ? mesh.instantiate(options) : mesh
     })
-    return new Model(this.device, {
+    const instance = new Model(this.device, {
       name: this.name || undefined,
       meta: { ...this.meta }, // flat list
       meshes: meshes,
       skins: this.skins ? JSON.parse(JSON.stringify(this.skins)) : undefined,
       nodes: this.nodes ? JSON.parse(JSON.stringify(this.nodes)) : undefined,
-      animations: this.animations ? JSON.parse(JSON.stringify(this.animations)) : undefined,
+      animations: [...this.animations], // the data is immutable and shared
       scenes: this.scenes ? JSON.parse(JSON.stringify(this.scenes)) : undefined,
       scene: this.scene,
     })
+    instance._clips = this._clips
+    return instance
   }
 }

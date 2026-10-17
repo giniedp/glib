@@ -421,10 +421,12 @@ export class SceneComponent implements GameComponent, InitializableComponent, Re
 }
 
 /**
- * Updates the node transforms and bounds of a model, if the entity transform changed since the last update
+ * Updates the node transforms and bounds of a model, if the entity transform or a node (e.g. by animation) changed since the last update
  */
 function updateModelTransform(model: Model, transform: TransformComponent) {
-  if (model[modelTransformVersion] !== transform.version) {
+  // TODO: the bounds of an animated model change with its pose, but the BoundsComponent receives
+  // the model bounds only when the model is assigned (see ModelComponent), culling uses the bind pose bounds
+  if (model[modelTransformVersion] !== transform.version || model.needsUpdate) {
     model[modelTransformVersion] = transform.version
     model.update(transform.world)
   }

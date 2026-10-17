@@ -1,5 +1,8 @@
-import type { ITransformBase, IVec3, IVec4 } from '@gglib/math'
+import type { IVec3, IVec4 } from '@gglib/math'
 
+/**
+ * @public
+ */
 export interface AnimationData {
   /**
    * The name of this animation clip
@@ -7,26 +10,14 @@ export interface AnimationData {
   name: string
 
   /**
-   * Duration of an animation clip in seconds
+   * Collection of animation channels, at most one entry per target
    */
-  duration: number
-
-  /**
-   * Type of this animation data
-   */
-  type: 'channels' | 'keyframes'
-
-  /**
-   * Collection of animation channels
-   */
-  channels?: AnimationDataChannels[]
-
-  /**
-   * Collection of animation keyframes
-   */
-  keyframes?: AnimationDataFrame
+  channels: AnimationDataChannels[]
 }
 
+/**
+ * @public
+ */
 export interface AnimationDataChannels {
   /**
    * Object id to animate with this track (node or bone id)
@@ -46,20 +37,38 @@ export interface AnimationDataChannels {
   scale?: AnimationDataChannel<IVec3>
 }
 
+/**
+ * Interpolation between key frames, as defined by glTF
+ *
+ * @public
+ *
+ * @remarks
+ * - `STEP` keeps the value of a key frame until the next one
+ * - `LINEAR` interpolates linearly, rotations are interpolated spherically
+ * - `CUBICSPLINE` cubic hermite spline, key frames have in and out tangents
+ */
+export type AnimationInterpolation = 'STEP' | 'LINEAR' | 'CUBICSPLINE'
+
+/**
+ * @public
+ */
 export interface AnimationDataChannel<T extends IVec3 | IVec4> {
   /**
    * Interpolation method to use to blend frames
    */
-  interpolation: 'step' | 'linear' | 'cubic'
+  interpolation: AnimationInterpolation
   /**
-   * Animation samples
+   * Animation samples, ordered by time
    */
   samples: AnimationDataChannelSample<T>[]
 }
 
+/**
+ * @public
+ */
 export interface AnimationDataChannelSample<T extends IVec3 | IVec4> {
   /**
-   * Time at which to apply the transforms
+   * Time in seconds at which to apply the transforms
    */
   time: number
   /**
@@ -67,29 +76,11 @@ export interface AnimationDataChannelSample<T extends IVec3 | IVec4> {
    */
   value: T
   /**
-   * Input tangent value for cubic spline interpolation
+   * In tangent for `CUBICSPLINE` interpolation
    */
-  tangent0?: T
+  inTangent?: T
   /**
-   * Output tangent value for cubic spline interpolation
+   * Out tangent for `CUBICSPLINE` interpolation
    */
-  tangent1?: T
-}
-
-export interface AnimationDataFrame {
-  /**
-   * Time at which to apply the transforms
-   */
-  time?: number
-  /**
-   * The animation frames
-   */
-  samples: AnimationDataSample[]
-}
-
-export interface AnimationDataSample extends ITransformBase {
-  /**
-   * The object id to animate with this track (node or bone id)
-   */
-  target: number
+  outTangent?: T
 }

@@ -150,7 +150,11 @@ export class ModelViewer extends EcsGame {
   }
 
   private abort: AbortController
-  private player: AnimationPlayer
+
+  /**
+   * Animation player of the loaded model, `null` if the model has no animations
+   */
+  public animation: AnimationPlayer | null = null
   public async loadModel(options: LoadModelOptions) {
     await this.ready
 
@@ -176,7 +180,11 @@ export class ModelViewer extends EcsGame {
       component.model = null
     }
     component.model = model
-    console.log(component)
+
+    this.animation = model.createAnimationPlayer()
+    if (options.autoplay !== false) {
+      this.animation?.play(0, { loop: true })
+    }
 
     const radius = model.boundingSphere.radius
     let scale = 1
@@ -202,6 +210,8 @@ export class ModelViewer extends EcsGame {
   }
 
   protected override onBeginUpdate(time: number, dt: number) {
+    this.animation?.update(dt)
+
     const camera = this.cam.component(CameraComponent)
     camera.aspect = this.device.output.aspectRatio
 

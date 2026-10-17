@@ -4,7 +4,7 @@ import { GltfAssetContainer } from './asset'
 import { GLTFAccessorBase } from './load-buffer'
 
 export function loadAnimation(asset: GltfAssetContainer, index: number): ResourceNode<AnimationData> {
-  const key = `skin:${index}`
+  const key = `animation:${index}`
   if (asset.graph.has(key)) {
     return asset.graph.get(key)!
   }
@@ -16,8 +16,6 @@ export function loadAnimation(asset: GltfAssetContainer, index: number): Resourc
 
   const node = asset.graph.node<AnimationData>(key, {
     name: gltf.name || null,
-    type: 'channels',
-    duration: null,
     channels: [],
   })
 
@@ -51,8 +49,8 @@ export function loadAnimation(asset: GltfAssetContainer, index: number): Resourc
         continue
       }
 
-      const interpolation = (gltfSampler.interpolation?.toLocaleLowerCase() as any) || 'linear'
-      const isCubic = interpolation === 'cubicspline'
+      const interpolation = gltfSampler.interpolation ?? 'LINEAR'
+      const isCubic = interpolation === 'CUBICSPLINE'
 
       channel[path] = {
         interpolation: interpolation,
@@ -67,9 +65,9 @@ export function loadAnimation(asset: GltfAssetContainer, index: number): Resourc
             if (isCubic) {
               channel.rotation.samples.push({
                 time: time,
-                tangent0: accOut.readV4(i3 + 0),
+                inTangent: accOut.readV4(i3 + 0),
                 value: accOut.readV4(i3 + 1),
-                tangent1: accOut.readV4(i3 + 2),
+                outTangent: accOut.readV4(i3 + 2),
               })
             } else {
               channel.rotation.samples.push({
@@ -82,9 +80,9 @@ export function loadAnimation(asset: GltfAssetContainer, index: number): Resourc
             if (isCubic) {
               channel.scale.samples.push({
                 time: time,
-                tangent0: accOut.readV3(i3 + 0),
+                inTangent: accOut.readV3(i3 + 0),
                 value: accOut.readV3(i3 + 1),
-                tangent1: accOut.readV3(i3 + 2),
+                outTangent: accOut.readV3(i3 + 2),
               })
             } else {
               channel.scale.samples.push({
@@ -97,9 +95,9 @@ export function loadAnimation(asset: GltfAssetContainer, index: number): Resourc
             if (isCubic) {
               channel.translation.samples.push({
                 time: time,
-                tangent0: accOut.readV3(i3 + 0),
+                inTangent: accOut.readV3(i3 + 0),
                 value: accOut.readV3(i3 + 1),
-                tangent1: accOut.readV3(i3 + 2),
+                outTangent: accOut.readV3(i3 + 2),
               })
             } else {
               channel.translation.samples.push({
