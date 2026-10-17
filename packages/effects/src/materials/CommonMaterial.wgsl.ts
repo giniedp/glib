@@ -117,6 +117,9 @@ struct LightResult {
 @group(0) @binding(1) var<uniform> ibl: IblBlock;
 @group(1) @binding(0) var<uniform> view: ViewBlock;
 @group(2) @binding(0) var<uniform> object: ObjectBlock;
+// joint matrices in model space, see Skeleton in @gglib/model
+// @block skin
+@group(2) @binding(1) var<storage, read> joints: array<mat4x4f>;
 @group(3) @binding(0) var<uniform> material: MaterialBlock;
 @group(3) @binding(1) var<uniform> settings: SettingsBlock;
 
@@ -441,7 +444,20 @@ struct VertexInput {
   @location(2) normal: vec3f,
   @location(3) tangent: vec4f,
   @location(4) color: vec4f,
+  @location(5) joints: vec4<u32>,
+  @location(6) weights: vec4f,
 };
+
+// Model matrix of the vertex, skinned by the weighted joint matrices.
+// Vertices without weights (not skinned) use the object model matrix as is.
+fn getModelMatrix(vert: VertexInput) -> mat4x4f {
+  let w = vert.weights;
+  if (w.x + w.y + w.z + w.w == 0.0) {
+    return object.modelMatrix;
+  }
+  let j = vert.joints;
+  return object.modelMatrix * (w.x * joints[j.x] + w.y * joints[j.y] + w.z * joints[j.z] + w.w * joints[j.w]);
+}
 
 struct VertexOutput {
   @builtin(position) clipPosition: vec4f,
@@ -458,7 +474,7 @@ struct VertexOutput {
 fn vs_main(vert: VertexInput) -> VertexOutput {
   var out: VertexOutput;
 
-  let modelMatrix = object.modelMatrix;
+  let modelMatrix = getModelMatrix(vert);
   let worldPos = modelMatrix * vec4f(vert.position.xyz, 1.0);
   let viewPos = view.viewMatrix * worldPos;
   let clipPos = view.projectionMatrix * viewPos;

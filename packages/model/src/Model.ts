@@ -193,7 +193,10 @@ export class Model implements Ownable {
     }
 
     this.transformNodes = createTransformNodes(this.nodes)
-    this.skeletons = createSkeletons(this.skins, this.transformNodes)
+    this.skeletons = createSkeletons(this.device, this.skins, this.transformNodes)
+    for (const skeleton of this.skeletons) {
+      this.ownership.adopt(skeleton.buffer)
+    }
     this.selectScene(this.scene)
     this.update()
   }
@@ -284,7 +287,7 @@ export class Model implements Ownable {
    */
   public update(world?: Mat4 | null) {
     this.updateScene(world)
-    this.updateSkeletons(world)
+    this.updateSkeletons()
     this.updateBounds()
   }
 
@@ -315,17 +318,35 @@ export class Model implements Ownable {
   }
 
   /**
-   * Updates all skeletons for the current pose.
+   * Updates the joint matrices of all skeletons for the current pose, relative to the scene root.
    *
-   * @param world - Absolute transform applied to each skeleton, matching the
-   * value passed to {@link updateScene}.
+   * @remarks
+   * Call after {@link updateScene}.
    */
-  public updateSkeletons(world?: Mat4 | null) {
-    if (this.skeletons) {
-      for (const skeleton of this.skeletons) {
-        skeleton.update(world)
-      }
+  public updateSkeletons() {
+    // TODO: joint matrices are relative to the root and change only with the pose,
+    // skip the update and upload when only the root (model transform) changed
+    const rootInverse = this._sceneRoot.worldInverse
+    for (const skeleton of this.skeletons) {
+      skeleton.update(rootInverse)
     }
+  }
+
+  /**
+   * World matrix of the scene root, the transform passed to {@link update}
+   *
+   * @remarks
+   * Skinned meshes are rendered with this transform, their joint matrices are relative to it (see {@link Skeleton}).
+   */
+  public get rootWorld(): Mat4 {
+    return this._sceneRoot.world
+  }
+
+  /**
+   * The skeleton of a node with a skin, `null` if the node has no skin
+   */
+  public getSkeleton(node: NodeData): Skeleton | null {
+    return node.skin != null ? (this.skeletons[node.skin] ?? null) : null
   }
 
   private tmpBox = new BoundingBox()
@@ -396,7 +417,7 @@ export class Model implements Ownable {
       name: this.name || undefined,
       meta: { ...this.meta }, // flat list
       meshes: meshes,
-      skins: this.skins ? JSON.parse(JSON.stringify(this.skins)) : undefined,
+      skins: [...this.skins], // immutable, shared. A JSON copy would turn the Float32Array matrices into objects
       nodes: this.nodes ? JSON.parse(JSON.stringify(this.nodes)) : undefined,
       animations: [...this.animations], // the data is immutable and shared
       scenes: this.scenes ? JSON.parse(JSON.stringify(this.scenes)) : undefined,

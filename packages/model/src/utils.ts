@@ -1,6 +1,8 @@
+import type { Device } from '@gglib/graphics'
 import {
   mat4$initFromArray,
   mat4Copy,
+  mat4Identity,
   mat4Decompose,
   Transform,
   vec3$initFromArray,
@@ -64,15 +66,19 @@ export function flattenNodes<T>(nodes: Transform<T>[], output: Transform<T>[] = 
   }
 }
 
-export function createSkeletons(skins: SkinData[], transforms: Transform<NodeData>[]) {
+export function createSkeletons(device: Device, skins: SkinData[], transforms: Transform<NodeData>[]) {
   const skeletons: Skeleton[] = []
   if (!skins || !skins.length) {
     return skeletons
   }
   for (const skin of skins) {
     const bones = skin.joints.map((index) => transforms[index])
-    const inverse = skin.inverseBindMatrices.map((it) => mat4Copy(it))
-    skeletons.push(new Skeleton(bones, inverse))
+    // missing inverse bind matrices are identity, see SkinData
+    const inverse = skin.joints.map((_, i) => {
+      const matrix = skin.inverseBindMatrices?.[i]
+      return matrix ? mat4Copy(matrix) : mat4Identity()
+    })
+    skeletons.push(new Skeleton(device, bones, inverse))
   }
   return skeletons
 }

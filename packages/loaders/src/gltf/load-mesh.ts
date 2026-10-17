@@ -64,6 +64,10 @@ export function loadMesh(asset: GltfAssetContainer, index: number) {
     const partNode = graph.node<MeshPartImport>(partKey, null)
     const partRef = graph.dependency(node, partNode)
 
+    if ('JOINTS_1' in part.attributes || 'WEIGHTS_1' in part.attributes) {
+      console.warn(`[glTF] mesh ${index}: more than 4 joint influences per vertex are not supported, JOINTS_1 is ignored`)
+    }
+
     const vAccKeys: Record<string, ResourceRef<BufferViewAccessor>> = {}
     for (const [semantic, index] of Object.entries(part.attributes)) {
       vAccKeys[semantic] = graph.dependency(partNode, loadBufferViewAccessor(asset, index))

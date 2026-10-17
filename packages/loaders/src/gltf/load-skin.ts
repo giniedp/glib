@@ -17,7 +17,7 @@ export function loadSkin(asset: GltfAssetContainer, index: number): ResourceNode
   const node = asset.graph.node<SkinData>(key, {
     name: gltf.name || null,
     joints: [...gltf.joints],
-    skeleton: gltf.skeleton || null,
+    skeleton: gltf.skeleton ?? null,
     inverseBindMatrices: [],
   })
 

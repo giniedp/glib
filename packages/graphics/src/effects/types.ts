@@ -2,6 +2,7 @@ import { Mat4, mat4$multiply, mat4CreateRotationZ, mat4CreateScale, mat4CreateTr
 import { brand, Brand } from '@gglib/utils'
 import {
   AcquireTextureOptions,
+  inputSlotBuffer,
   inputSlotMat3,
   inputSlotMat4,
   inputSlotScalar,
@@ -32,6 +33,7 @@ const Global = 'global'
 const Frame = 'frame'
 const View = 'view'
 const Object = 'object'
+const Skin = 'skin'
 const Material = 'material'
 
 export const CommonBlocks = {
@@ -40,6 +42,7 @@ export const CommonBlocks = {
   View,
 
   Object,
+  Skin,
   Material,
 } as const
 
@@ -110,6 +113,18 @@ export const CommonInputs = {
     PreviousModelMatrix: inputSlotMat4(Object, 'previousModelMatrix'),
     ObjectId: inputSlotScalar(Object, 'objectId'),
     ReceivesShadows: inputSlotScalar(Object, 'receivesShadows'),
+  },
+
+  /**
+   * Inputs for skinned meshes, set per object
+   */
+  Skin: {
+    /**
+     * Buffer of joint matrices (mat4, column major) in model space, see `Skeleton` in `@gglib/model`
+     *
+     * @binding `skin.joints`
+     */
+    Joints: inputSlotBuffer(Skin, 'joints'),
   },
 }
 

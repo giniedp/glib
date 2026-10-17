@@ -237,7 +237,8 @@ export class WebglPendingInput extends ProgramInput {
     this.method = 'setSampler'
   }
   public setBuffer(value: Buffer): void {
-    throw new Error('Method not implemented.')
+    this.value = value
+    this.method = 'setBuffer'
   }
 
   public markAsChanged(): void {

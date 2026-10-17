@@ -152,9 +152,13 @@ export class ModelViewer extends EcsGame {
   private abort: AbortController
 
   /**
-   * Animation player of the loaded model, `null` if the model has no animations
+   * Animation players of the loaded model, one per clip, so that all clips can play at the same time
+   *
+   * @remarks
+   * Clips that animate the same nodes overwrite each other, the last updated player wins.
+   * TODO: replace with the animation blending api once it exists
    */
-  public animation: AnimationPlayer | null = null
+  public animations: AnimationPlayer[] = []
   public async loadModel(options: LoadModelOptions) {
     await this.ready
 
@@ -181,9 +185,10 @@ export class ModelViewer extends EcsGame {
     }
     component.model = model
 
-    this.animation = model.createAnimationPlayer()
+    // create all players before playing, so each captures the untouched rest pose
+    this.animations = model.clips.map(() => model.createAnimationPlayer())
     if (options.autoplay !== false) {
-      this.animation?.play(0, { loop: true })
+      this.animations.forEach((player, i) => player.play(i, { loop: true }))
     }
 
     const radius = model.boundingSphere.radius
@@ -210,7 +215,9 @@ export class ModelViewer extends EcsGame {
   }
 
   protected override onBeginUpdate(time: number, dt: number) {
-    this.animation?.update(dt)
+    for (const player of this.animations) {
+      player.update(dt)
+    }
 
     const camera = this.cam.component(CameraComponent)
     camera.aspect = this.device.output.aspectRatio

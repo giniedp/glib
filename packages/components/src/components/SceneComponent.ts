@@ -283,9 +283,20 @@ export class SceneComponent implements GameComponent, InitializableComponent, Re
 
       for (const node of model.sceneNodes) {
         const mesh = model.meshes[node.data.mesh]
-        if (mesh) {
-          this.pushMesh(entity, mesh, node.world, comp['cacheItems'], comp.instanceData)
+        if (!mesh) {
+          continue
         }
+        const skeleton = model.getSkeleton(node.data)
+        if (!skeleton) {
+          this.pushMesh(entity, mesh, node.world, comp['cacheItems'], comp.instanceData)
+          continue
+        }
+        // the node transform does not apply to skinned meshes, the joint matrices are relative to the model root.
+        // Joints are per object inputs on the material, like the model matrix: each skinned mesh needs its own materials
+        for (const material of mesh.materials) {
+          material.setInput(CommonInputs.Skin.Joints, skeleton.buffer)
+        }
+        this.pushMesh(entity, mesh, model.rootWorld, comp['cacheItems'], comp.instanceData)
       }
     }
 

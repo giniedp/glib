@@ -340,8 +340,36 @@ layout(location = 2) in vec3 aNormal;
 layout(location = 3) in vec4 aTangent;
 // @alias color
 layout(location = 4) in vec4 aColor;
+// float, integer attributes are not supported, the indices are converted by the vertex fetch
+// @alias joints
+layout(location = 5) in vec4 aJoints;
+// @alias weights
+layout(location = 6) in vec4 aWeights;
 
 ${BLOCKS}
+
+// TODO: adjust by preprocessor, 256 joints fit into the minimum uniform block size of 16KB
+#define MAX_JOINTS 256
+
+// joint matrices in model space, see Skeleton in @gglib/model
+// @block skin
+layout(std140) uniform SkinBlock {
+  mat4 joints[MAX_JOINTS];
+} skin;
+
+// Model matrix of the vertex, skinned by the weighted joint matrices.
+// Vertices without weights (not skinned) use the object model matrix as is.
+mat4 getModelMatrix() {
+  if (aWeights.x + aWeights.y + aWeights.z + aWeights.w == 0.0) {
+    return object.modelMatrix;
+  }
+  ivec4 j = min(ivec4(aJoints), ivec4(MAX_JOINTS - 1));
+  return object.modelMatrix * (
+      aWeights.x * skin.joints[j.x]
+    + aWeights.y * skin.joints[j.y]
+    + aWeights.z * skin.joints[j.z]
+    + aWeights.w * skin.joints[j.w]);
+}
 
 out vec3 vWorldPosition;
 out vec3 vWorldNormal;
@@ -352,7 +380,7 @@ out vec2 vUvBase;
 out float vFogFactor;
 
 void main() {
-  mat4 modelMatrix = object.modelMatrix;
+  mat4 modelMatrix = getModelMatrix();
   vec4 worldPos = modelMatrix * vec4(aPosition.xyz, 1.0);
   vec4 viewPos = view.viewMatrix * worldPos;
   vec4 clipPos = view.projectionMatrix * viewPos;

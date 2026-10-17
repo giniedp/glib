@@ -56,6 +56,7 @@ export const CommonMaterialSchema = {
 
   // per object
   World: CommonInputs.Object.ModelMatrix,
+  Joints: CommonInputs.Skin.Joints,
 
   // material
   BaseColor: inputSlot('material', 'baseColor', 'vec3'),
