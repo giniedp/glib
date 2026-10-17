@@ -102,20 +102,36 @@ fn encodeAlphaBlock(minAlpha: f32, maxAlpha: f32) -> vec2u {
 }
 
 // ---------------------------------------------------------------------------
-// RGB → RGB565
-//
-// Matches reference: clamp to [0,255], divide by channel quantisation step.
-// R: /8 (5 bits), G: /4 (6 bits), B: /8 (5 bits)
+// RGB565: R and B 5 bits, G 6 bits
 // ---------------------------------------------------------------------------
-
-fn toRGB565(color: vec3f) -> u32 {
-    // round, truncation biases r/b (5 bit) more than g (6 bit) and tints the result
-    let c = vec3u(round(saturate(color) * vec3f(31.0, 63.0, 31.0)));
-    return (c.r << 11u) | (c.g << 5u) | c.b;
-}
 
 fn fromRGB565(c: u32) -> vec3f {
     return vec3f(f32((c >> 11u) & 31u), f32((c >> 5u) & 63u), f32(c & 31u)) / vec3f(31.0, 63.0, 31.0);
+}
+
+const RGB565_MAX = vec3i(31, 63, 31);
+
+// round, truncation biases r/b (5 bit) more than g (6 bit) and tints the result
+fn quantize565(color: vec3f) -> vec3i {
+    return vec3i(round(saturate(color) * vec3f(RGB565_MAX)));
+}
+
+fn pack565(q: vec3i) -> u32 {
+    return (u32(q.r) << 11u) | (u32(q.g) << 5u) | u32(q.b);
+}
+
+// squared error of the block when every sample takes its nearest palette entry of the quantized endpoints
+fn paletteError(a: vec3i, b: vec3i) -> f32 {
+    let e0 = vec3f(a) / vec3f(RGB565_MAX);
+    let e1 = vec3f(b) / vec3f(RGB565_MAX);
+    let p2 = (2.0 * e0 + e1) / 3.0;
+    let p3 = (e0 + 2.0 * e1) / 3.0;
+    var total = 0.0;
+    for (var i = 0u; i < 16u; i++) {
+        let c = samples[i].rgb;
+        total += min(min(dot(c - e0, c - e0), dot(c - e1, c - e1)), min(dot(c - p2, c - p2), dot(c - p3, c - p3)));
+    }
+    return total;
 }
 
 // ---------------------------------------------------------------------------
@@ -123,6 +139,9 @@ fn fromRGB565(c: u32) -> vec3f {
 //
 // Endpoints: bounding box, diagonal selected by the covariance signs relative to R
 // (min/max corners alone leave the color line and shift the hue), inset by 1/16.
+// Refinement: greedy search, per channel the 3x3 offsets of the quantized endpoints that lower the palette error.
+// Flat dark blocks (e.g. sand stored as sqrt) otherwise round each channel independently and get tinted,
+// the search brackets the color so that the 1/3 and 2/3 palette entries hit it.
 // Indices: nearest palette entry of the quantized endpoints, as the decoder sees them.
 // ---------------------------------------------------------------------------
 
@@ -155,8 +174,41 @@ fn encodeColorBlock(minIn: vec3f, maxIn: vec3f) -> vec2u {
     minColor += inset;
     maxColor -= inset;
 
-    var c0 = toRGB565(maxColor);
-    var c1 = toRGB565(minColor);
+    var qa = quantize565(maxColor);
+    var qb = quantize565(minColor);
+    var bestError = paletteError(qa, qb);
+    for (var iteration = 0u; iteration < 2u; iteration++) {
+        for (var ch = 0u; ch < 3u; ch++) {
+            var bestA = qa;
+            var bestB = qb;
+            for (var d0 = -1; d0 <= 1; d0++) {
+                for (var d1 = -1; d1 <= 1; d1++) {
+                    if d0 == 0 && d1 == 0 {
+                        continue;
+                    }
+                    var na = qa;
+                    var nb = qb;
+                    na[ch] += d0;
+                    nb[ch] += d1;
+                    let limit = select(31, 63, ch == 1u);
+                    if na[ch] < 0 || na[ch] > limit || nb[ch] < 0 || nb[ch] > limit {
+                        continue;
+                    }
+                    let e = paletteError(na, nb);
+                    if e < bestError {
+                        bestError = e;
+                        bestA = na;
+                        bestB = nb;
+                    }
+                }
+            }
+            qa = bestA;
+            qb = bestB;
+        }
+    }
+
+    var c0 = pack565(qa);
+    var c1 = pack565(qb);
     // color0 > color1 selects 4-color mode on decode
     if c0 < c1 {
         let t = c0;
