@@ -145,7 +145,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     pass.submit()
   }
 
-  mount(tools, (ui) => {
+  const panel = mount(tools, (ui) => {
     loadModel(models.Bottle)
     ui.select({ model: models.Bottle }, 'model', {
       options: models,
@@ -156,5 +156,6 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   device.schedule(frame)
   return () => {
     device.dispose()
+    panel.dispose()
   }
 }

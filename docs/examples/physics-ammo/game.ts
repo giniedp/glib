@@ -21,21 +21,20 @@ import { GameComponent } from './game-object'
 import { PhysicsProxy, PhysicsShape } from './physics-proxy'
 import { PhysicsWorld } from './physics-world'
 
-export default (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
-  let game: Game
-  Ammo.call({}, Ammo).then(() => {
-    game = new Game({ canvas, platform, autosize: true })
-    game.run()
+export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
+  await Ammo.call({}, Ammo)
+  const game = new Game({ canvas, platform, autosize: true })
+  await game.run()
 
-    mount(tools, (ui) => {
-      ui.button('Reset Cubes', {
-        onClick: () => game?.resetCubes(),
-      })
+  const panel = mount(tools, (ui) => {
+    ui.button('Reset', {
+      onClick: () => game?.resetCubes(),
     })
   })
 
   return () => {
-    game?.stop()
+    game.destroy()
+    panel.dispose
   }
 }
 

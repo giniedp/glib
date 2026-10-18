@@ -13,27 +13,28 @@ import { Color, PlatformId, Texture } from '@gglib/graphics'
 import { IVec4, mat4$initOrthographicOffCenter, mat4Identity, vec4 } from '@gglib/math'
 import { BloomPass, LayerMask, opaquePassMSAA, PixelatePass, Renderer, transparentPassMSAA } from '@gglib/render'
 import { mount } from 'tweak-ui'
-export default (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
+export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
   const game = new PongGame({ canvas, platform, autosize: true })
-  game.run().then(() => {
-    mount(tools, (ui) => {
-      ui.group('bloom', () => {
-        ui.bool(game.bloom, 'enabled')
-        ui.scalar(game.bloom, 'threshold', { range: true, min: 0, max: 2 })
-        ui.scalar(game.bloom, 'knee', { range: true, min: 0, max: 2 })
-        ui.scalar(game.bloom, 'intensity', { range: true, min: 0, max: 10 })
-        ui.scalar(game.bloom, 'steps', { range: true, min: 0, max: 10 })
-      })
-      ui.group('pixelate', () => {
-        ui.bool(game.pixelate, 'enabled')
-        ui.scalar(game.pixelate, 'size', { range: true, min: 1, max: 50 })
-        ui.scalar(game.pixelate, 'gap', { range: true, min: 0, max: 1, step: 0.001 })
-        ui.scalar(game.pixelate, 'corner', { range: true, min: 0, max: 1, step: 0.001 })
-      })
+  await game.run()
+
+  const panel = mount(tools, (ui) => {
+    ui.group('bloom', () => {
+      ui.bool(game.bloom, 'enabled')
+      ui.scalar(game.bloom, 'threshold', { range: true, min: 0, max: 2 })
+      ui.scalar(game.bloom, 'knee', { range: true, min: 0, max: 2 })
+      ui.scalar(game.bloom, 'intensity', { range: true, min: 0, max: 10 })
+      ui.scalar(game.bloom, 'steps', { range: true, min: 0, max: 10 })
+    })
+    ui.group('pixelate', () => {
+      ui.bool(game.pixelate, 'enabled')
+      ui.scalar(game.pixelate, 'size', { range: true, min: 1, max: 50 })
+      ui.scalar(game.pixelate, 'gap', { range: true, min: 0, max: 1, step: 0.001 })
+      ui.scalar(game.pixelate, 'corner', { range: true, min: 0, max: 1, step: 0.001 })
     })
   })
   return () => {
-    game.stop()
+    game.destroy()
+    panel.dispose()
   }
 }
 

@@ -9,13 +9,14 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement, platform: Platfor
   const game = new BreakoutGame({ canvas, platform, autosize: true })
   game.run()
 
-  mount(tools, (ui) => {
+  const panel = mount(tools, (ui) => {
     ui.bool(game.loop, 'useFixedTimeStep', {
       label: 'Fixed time step',
     })
   })
   return () => {
-    game.stop()
+    game.destroy()
+    panel.dispose()
   }
 }
 

@@ -44,7 +44,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
 
   // load initial asset and mount the ui options
   loadModel(assets[0])
-  mount(tools, (ui) => {
+  const panel = mount(tools, (ui) => {
     ui.select({ model: assets[0] }, 'model', {
       options: assets,
       onChange: (value) => loadModel(value),
@@ -114,5 +114,6 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   device.schedule(frame)
   return () => {
     device.dispose()
+    panel.dispose()
   }
 }
