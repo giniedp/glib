@@ -62,6 +62,7 @@
     "typescript": "^7.0.2",
     "vite": "^8.2.1",
     "vitepress": "^1.6.4",
+    "vitepress-plugin-llms": "^1.14.0",
     "vitepress-plugin-tabs": "^0.9.1",
     "vitepress-sidebar": "^1.38.0",
     "vitest": "^5.0.0",

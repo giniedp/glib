@@ -9,52 +9,24 @@ pre {
 }
 </style>
 <script setup lang="ts">
-import { mergeUri } from '@gglib/utils'
 import hljs from 'highlight.js'
 import ts from 'highlight.js/lib/languages/typescript'
 import 'highlight.js/styles/github-dark.css'
-import { onMounted, ref } from 'vue'
+import { computed } from 'vue'
 hljs.registerLanguage('typescript', ts)
 
-const files = import.meta.glob('/**/*.ts', { query: '?raw' })
-
+// `code` is injected at build time by the example-code vite plugin (see .vitepress/example-code-plugin.ts)
 const props = defineProps({
   src: String,
+  code: String,
 })
-type Example = {
-  path: string
-  load: () => Promise<string>
-}
-function getExample(): Example {
-  let pathname = location.pathname
-  if (pathname.endsWith('.html')) {
-    pathname = pathname.replace('.html', '')
+
+const highlightedCode = computed(() => {
+  if (!props.code) {
+    return ''
   }
-
-  const paths: string[] = []
-  if (!props.src) {
-    paths.push(pathname + 'example.ts')
-    paths.push(pathname + '.example.ts')
-    paths.push(mergeUri('', 'example.ts', pathname))
-  } else {
-    paths.push(mergeUri(pathname, props.src))
-    paths.push(mergeUri('', props.src, pathname))
-  }
-
-  for (const path of paths) {
-    if (!files[path]) {
-      continue
-    }
-    return {
-      path,
-      load: files[path],
-    }
-  }
-
-  throw new Error(`example does not exist: ${paths}`)
-}
-
-const highlightedCode = ref('')
+  return classifyComments(hljs.highlight(props.code, { language: 'typescript' }).value)
+})
 
 function classifyComments(html: string) {
   // 1) pragmas — unchanged
@@ -106,15 +78,4 @@ function classifyComments(html: string) {
 
   return html
 }
-
-onMounted(async () => {
-  try {
-    const example = getExample()
-    const module: any = await example.load()
-    const code = module.default
-    highlightedCode.value = classifyComments(hljs.highlight(code, { language: 'typescript' }).value)
-  } catch (e) {
-    console.error(e)
-  }
-})
 </script>

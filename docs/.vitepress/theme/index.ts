@@ -1,7 +1,7 @@
 // https://vitepress.dev/guide/custom-theme
 import 'tweak-ui/style.css'
 import { useData, type Theme } from 'vitepress'
-import { enhanceAppWithTabs } from 'vitepress-plugin-tabs/client'
+import { enhanceAppWithTabs } from './components/tabs/tabs'
 import DefaultTheme from 'vitepress/theme'
 import { h } from 'vue'
 import ExampleCode from './components/example-code.vue'

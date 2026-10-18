@@ -2,7 +2,9 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { tabsMarkdownPlugin } from 'vitepress-plugin-tabs'
+import llmstxt from 'vitepress-plugin-llms'
 import { withSidebar } from 'vitepress-sidebar'
+import { exampleCodePlugin } from './example-code-plugin'
 
 // https://vitepress.dev/reference/site-config
 export default withSidebar(
@@ -39,6 +41,22 @@ export default withSidebar(
         },
       },
       plugins: [
+        // must run before llmstxt, which collects the markdown as transformed by exampleCodePlugin
+        exampleCodePlugin(),
+        llmstxt({
+          title: 'GGlib',
+          description: 'Modular WebGPU-first libraries for game and graphics development.',
+          details: [
+            'GGlib is a collection of TypeScript packages for real-time 3D web applications.',
+            'Each package solves a specific problem domain and can be used on its own:',
+            '',
+            '- Essentials: `@gglib/utils` (game loop, events), `@gglib/math` (algebra), `@gglib/graphics` (WebGPU and WebGL2 abstraction)',
+            '- Mid level: `@gglib/game` (game loop, input), `@gglib/content` + `@gglib/loaders` (content pipeline, .gltf/.dds/.ktx/...), `@gglib/effects` (shaders, post-processing), `@gglib/model` (models, animation)',
+            '- High level: `@gglib/render` (renderer, frame graph), `@gglib/ecs` + `@gglib/components` (entity component system)',
+            '',
+            'Most pages are runnable examples, their full source code is included as `ts` code blocks.',
+          ].join('\n'),
+        }),
         {
           name: 'thumbnail-capture',
           configureServer(server) {
