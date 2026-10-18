@@ -338,6 +338,7 @@ async function unloadExample() {
   canvas = null
   toDispose = null
   oldCanvas?.classList.add('leaving')
+  oldCanvas?.classList.add('loading')
   // let the canvas fade out before tearing down the example
   const fadeOut = new Promise((resolve) => setTimeout(resolve, oldCanvas ? FADE_DURATION : 0))
   await fadeOut

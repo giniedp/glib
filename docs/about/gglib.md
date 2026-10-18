@@ -40,11 +40,13 @@ The project is primarily meant for personal reasearch and education in 3D progra
 Ever since the early days of [XNA](<https://de.wikipedia.org/wiki/XNA_(Microsoft)>), I have been avidly reading literature about
 graphics and game engine programming, and spending my free time exploring graphics APIs.
 
-::: warning
-It's a spare time project. Frequently changed, occasionally maintained.
-:::
-
 ## Should i use it?
 
-If you're curious and want to try something new for your toy project, then maybe. However, if you need something solid and production ready with strong community support,
+::: warning
+It's a personal pet project. Frequently changed, occasionally maintained.
+:::
+
+If your project requires you to "own the frame", then gglib is a good way to start.
+
+Probably not if you need something solid and production ready with strong community support. In this case
 I suggest reaching for something like [Three.js](https://threejs.org/), [Babylon.js](https://www.babylonjs.com/), [PlayCanvas](https://playcanvas.com/)

@@ -75,8 +75,8 @@
   --vp-c-danger-soft: var(--vp-c-red-soft);
 
   --font-head: 'Departure Mono', monospace;
-  /* --vp-font-family-base: 'Pixelify Sans', sans-serif; */
-  /* --vp-font-family-mono: 'Departure Mono', monospace; */
+  --vp-font-family-base: 'Mulish', sans-serif;
+  --vp-font-family-mono: 'JetBrainsMono', monospace;
 }
 .dark {
   --vp-c-brand-1: #22d98a;
@@ -221,6 +221,10 @@ h1 + .example-frame {
   }
 }
 
+.container .main .heading .name,
+.container .main .heading .text {
+  font-weight: 900;
+}
 .container .main .heading .name {
   margin-top: 2rem;
 }
