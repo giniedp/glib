@@ -130,7 +130,7 @@ export class BoundingBox {
    * @param min - the min point
    * @param max - the max point
    */
-  public static createFromV(min: IVec3, max: IVec3): BoundingBox {
+  public static createFromMinMax(min: IVec3, max: IVec3): BoundingBox {
     return new BoundingBox(min.x, min.y, min.z, max.x, max.y, max.z)
   }
 

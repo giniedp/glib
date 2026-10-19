@@ -598,6 +598,22 @@ export class BoundingSphere {
   }
 
   /**
+   * Calculates the point of the sphere that is furthest along given direction
+   *
+   * @remarks
+   * This is the support function used by {@link gjkIntersects}
+   */
+  public support(direction: IVec3, out?: IVec3): IVec3 {
+    out ||= vec3()
+    const length = Math.sqrt(direction.x * direction.x + direction.y * direction.y + direction.z * direction.z)
+    const s = length > 0 ? this.radius / length : 0
+    out.x = this.center.x + direction.x * s
+    out.y = this.center.y + direction.y * s
+    out.z = this.center.z + direction.z * s
+    return out
+  }
+
+  /**
    * Checks whether the given point intersects this volume
    */
   public intersectsPoint(point: IVec3): boolean {

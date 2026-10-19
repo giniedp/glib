@@ -75,8 +75,8 @@ describe('BoundingBox', () => {
 
   describe('#createFromV', () => {
     it('initializes components', () => {
-      expectVec3Components(BoundingBox.createFromV(vec3(1, 2, 3), vec3(4, 5, 6)).min, 1, 2, 3)
-      expectVec3Components(BoundingBox.createFromV(vec3(1, 2, 3), vec3(4, 5, 6)).max, 4, 5, 6)
+      expectVec3Components(BoundingBox.createFromMinMax(vec3(1, 2, 3), vec3(4, 5, 6)).min, 1, 2, 3)
+      expectVec3Components(BoundingBox.createFromMinMax(vec3(1, 2, 3), vec3(4, 5, 6)).max, 4, 5, 6)
     })
   })
 

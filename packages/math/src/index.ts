@@ -48,9 +48,12 @@
 
 export * from './BoundingBox'
 export * from './BoundingCapsule'
+export * from './BoundingCylinder'
 export * from './BoundingFrustum'
+export * from './BoundingOrientedBox'
 export * from './BoundingSphere'
 export * from './Collision'
+export * from './Gjk'
 export * from './SpaceBasis'
 export * from './Mat2'
 export * from './Mat3'
