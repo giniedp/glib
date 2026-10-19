@@ -81,7 +81,7 @@ export class BlendState implements BlendStateOptions {
    *  alphaBlendFunction: 'add',
    *
    *  colorSrcBlend: 'src-alpha',
-   *  alphaSrcBlend: 'src-alpha',
+   *  alphaSrcBlend: 'one',
    *
    *  colorDstBlend: 'one-minus-src-alpha',
    *  alphaDstBlend: 'one-minus-src-alpha',
@@ -93,7 +93,7 @@ export class BlendState implements BlendStateOptions {
     alphaBlendFunction: 'add',
 
     colorSrcBlend: 'src-alpha',
-    alphaSrcBlend: 'src-alpha',
+    alphaSrcBlend: 'one',
 
     colorDstBlend: 'one-minus-src-alpha',
     alphaDstBlend: 'one-minus-src-alpha',

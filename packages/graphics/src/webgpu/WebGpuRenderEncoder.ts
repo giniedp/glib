@@ -580,6 +580,10 @@ export class WebGpuRenderEncoder extends RenderEncoder {
   }
 
   public draw(vertexCount: number, instanceCount?: number, vertexOffset?: number, instanceOffset?: number) {
+    if (vertexCount === 0 || instanceCount === 0) {
+      // empty draws are valid but WebGPU warns about them
+      return
+    }
     this.getPass()?.draw(vertexCount, instanceCount ?? 1, vertexOffset ?? 0, instanceOffset ?? 0)
   }
 
@@ -592,6 +596,10 @@ export class WebGpuRenderEncoder extends RenderEncoder {
   ) {
     if (!this.indexBuffer) {
       throw new Error('indexBuffer not set but required for drawIndexed')
+    }
+    if (indexCount === 0 || instanceCount === 0) {
+      // empty draws are valid but WebGPU warns about them
+      return
     }
     this.getPass()?.drawIndexed(indexCount, instanceCount ?? 1, indexOffset ?? 0, baseVertex ?? 0, instanceOffset ?? 0)
   }

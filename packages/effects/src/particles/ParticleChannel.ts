@@ -4,13 +4,18 @@ import {
   bufferLayout,
   bufferRecorder,
   BufferRecorder,
+  DepthState,
   Device,
+  Geometry,
+  Mesh,
   type Ownable,
   ResourceOwnership,
   Texture,
   VertexBuffer,
 } from '@gglib/graphics'
 import {
+  BoundingBox,
+  BoundingSphere,
   IVec4,
   lerp,
   vec2,
@@ -103,8 +108,18 @@ export interface ParticleChannelOptions {
   minEndSize?: number
   maxEndSize?: number
 
+  // Fractions of the lifetime over which the alpha fades in at the start and out at the end of a
+  // particle, the particle is solid in between. If both are 0, a built-in curve is used that fades in
+  // quickly and out slowly, which suits smoke.
+  fadeIn?: number
+  fadeOut?: number
+
   // Alpha blending settings.
   blendState?: BlendState
+
+  // Depth test of the particles. Particles test against the scene depth, but should not write it.
+  // Use DepthState.GreaterEqualNoWrite with a reversed depth range.
+  depthState?: DepthState
 }
 
 const defaultOptions = Object.freeze<Required<ParticleChannelOptions>>({
@@ -125,7 +140,10 @@ const defaultOptions = Object.freeze<Required<ParticleChannelOptions>>({
   maxStartSize: 1,
   minEndSize: 1,
   maxEndSize: 1,
+  fadeIn: 0,
+  fadeOut: 0,
   blendState: BlendState.Alpha,
+  depthState: DepthState.LessEqualNoWrite,
   gravity: vec3(),
   texture: null,
 })
@@ -142,12 +160,24 @@ export class ParticleChannel implements Ownable {
   public readonly settings: ParticleChannelOptions
 
   /**
-   * The vertex buffer
+   * The instanced vertex buffer holding the particles. It is a ring buffer, shared by both {@link geometries}
    */
   public readonly vertexBuffer: VertexBuffer
 
   /**
-   * The effect
+   * Two geometries drawing the active particles from the {@link vertexBuffer}.
+   * The second one is needed when the active range wraps around the end of the ring buffer.
+   * The draw parameters are updated by {@link draw}
+   */
+  public readonly geometries: readonly [Geometry, Geometry]
+
+  /**
+   * A mesh with the {@link geometries} and the {@link material}, to be rendered by a scene
+   */
+  public readonly mesh: Mesh
+
+  /**
+   * The particle material
    */
   public readonly material: ParticleMaterial
 
@@ -194,6 +224,35 @@ export class ParticleChannel implements Ownable {
     )
 
     this.material = this.ownership.adopt(new ParticleMaterial(this.device, { properties: {} }))
+    this.material.effect.blendState = this.settings.blendState
+    this.material.effect.depthState = this.settings.depthState
+
+    // both geometries share the vertex buffer, each one draws a range of the ring buffer
+    const geometry = (name: string) => {
+      return new Geometry(this.device, {
+        name,
+        primitiveType: 'triangle-strip',
+        vertexBuffer: this.vertexBuffer,
+        vertexCount: 4,
+        instanceCount: 0,
+      })
+    }
+    this.geometries = [geometry('Particles'), geometry('Particles Wrapped')]
+
+    // particles move freely in world space, the bounds must not cull them
+    this.mesh = this.ownership.adopt(
+      new Mesh(this.device, {
+        name: 'Particles',
+        geometries: [...this.geometries],
+        materials: [this.material],
+        parts: [
+          { geometryIndex: 0, materialIndex: 0 },
+          { geometryIndex: 1, materialIndex: 0 },
+        ],
+        boundingBox: new BoundingBox(-1e6, -1e6, -1e6, 1e6, 1e6, 1e6),
+        boundingSphere: new BoundingSphere(0, 0, 0, 1e6),
+      }),
+    )
   }
 
   private updateParameters() {
@@ -208,6 +267,7 @@ export class ParticleChannel implements Ownable {
     vec2$init((mtl.RotateSpeed ||= vec2()), settings.minRotateSpeed, settings.maxRotateSpeed)
     vec2$init((mtl.StartSize ||= vec2()), settings.minStartSize, settings.maxStartSize)
     vec2$init((mtl.EndSize ||= vec2()), settings.minEndSize, settings.maxEndSize)
+    vec2$init((mtl.Fade ||= vec2()), settings.fadeIn, settings.fadeOut)
     vec2$init((mtl.Scale ||= vec2()), 0.5 / this.device.output.aspectRatio, 0.5)
     mtl.Time = this.time
     mtl.ColorMap = settings.texture || this.device.defaultTexture
@@ -226,60 +286,37 @@ export class ParticleChannel implements Ownable {
     }
   }
 
+  /**
+   * Uploads the particles emitted since the last call and updates the draw parameters of the {@link geometries}.
+   * Call once per frame, after all particles of the frame were emitted and before the {@link mesh} is rendered.
+   */
   public draw() {
     this.frame++
-
     this.startNew = this.startFree
-    if (this.startActive === this.startFree) {
-      // no active particles
-      return
-    }
 
-    const pass = this.device.renderPass
-    const program = this.material.effect.program
-    program.applyBlocks(this.material.inputBlocks)
-    program.commit()
-
-    pass.setProgram(program)
-    pass.setRenderBlend(0, this.settings.blendState)
-    pass.setVertexBuffer(this.vertexBuffer)
-    pass.setPrimitiveType('triangle-strip')
+    const [a, b] = this.geometries
+    const wrapped = this.startFree < this.startActive
+    const first = wrapped ? this.capacity - this.startActive : this.startFree - this.startActive
+    const second = wrapped ? this.startFree : 0
 
     if (this.device.isWebGL2) {
-      // webGL does not support instance offset
-      this.drawWebGL()
+      // webGL does not support instance offset, the active range is copied to the start of the buffer
+      const source = this.writer.buffer
+      const target = this.vertexBuffer.buffers[0]
+      const stride = this.writer.strideInBytes
+      if (first > 0) {
+        target.setSubData(0, source, this.startActive * stride, first * stride)
+      }
+      if (second > 0) {
+        target.setSubData(first * stride, source, 0, second * stride)
+      }
+      this.writer.resetDirty()
+      setDrawRange(a, 0, first + second)
+      setDrawRange(b, 0, 0)
     } else {
       this.writer.upload(this.vertexBuffer.buffers[0])
-      if (this.startActive < this.startFree) {
-        pass.draw(4, this.startFree - this.startActive, 0, this.startActive)
-      } else {
-        pass.draw(4, this.capacity - this.startActive, 0, this.startActive)
-        if (this.startFree > 0) {
-          pass.draw(4, this.startFree, 0, 0)
-        }
-      }
-    }
-  }
-
-  private drawWebGL() {
-    const pass = this.device.renderPass
-    const source = this.writer.buffer
-    const target = this.vertexBuffer.buffers[0]
-    const stride = this.writer.strideInBytes
-    let count = 0
-    if (this.startActive < this.startFree) {
-      count = this.startFree - this.startActive
-      target.setSubData(0, source, this.startActive * stride, count * stride)
-      pass.draw(4, count, 0, 0)
-    } else {
-      count = this.capacity - this.startActive
-      target.setSubData(0, source, this.startActive * stride, count * stride)
-      pass.draw(4, count, 0, 0)
-      if (this.startFree > 0) {
-        count = this.startFree
-        target.setSubData(0, source, 0, count * stride)
-        pass.draw(4, count, 0, 0)
-      }
+      setDrawRange(a, this.startActive, first)
+      setDrawRange(b, 0, second)
     }
   }
 
@@ -354,4 +391,12 @@ export class ParticleChannel implements Ownable {
   public dispose() {
     this.ownership.finalize()
   }
+}
+
+/**
+ * Sets the instance range of a particle geometry
+ */
+function setDrawRange(geometry: Geometry, offset: number, count: number) {
+  geometry.instanceOffset = offset
+  geometry.instanceCount = count
 }

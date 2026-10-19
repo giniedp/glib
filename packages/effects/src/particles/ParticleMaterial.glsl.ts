@@ -22,6 +22,7 @@ const BASE = /* glsl */ `
     float endVelocity;
     float time;
     vec2 scale;
+    vec2 fade;         // .x=in .y=out, as fractions of the lifetime
   } settings;
 
   // @alias colorMap
@@ -67,7 +68,7 @@ const BASE = /* glsl */ `
     float size = mix(startSize, endSize, normalizedAge);
 
     // Project the size into screen coordinates.
-    return size * view.projectionMatrix[0][0];
+    return size * view.projectionMatrix[1][1];
   }
 
   // Vertex shader helper for computing the color of a particle.
@@ -75,13 +76,18 @@ const BASE = /* glsl */ `
     // Apply a random factor to make each particle a slightly different color.
     vec4 color = mix(settings.minColor, settings.maxColor, randomValue);
 
-    // Fade the alpha based on the age of the particle. This curve is hard coded
-    // to make the particle fade in fairly quickly, then fade out more slowly:
-    // plot x*(1-x)*(1-x) for x=0:1 in a graphing program if you want to see what
-    // this looks like. The 6.7 scaling factor normalizes the curve so the alpha
-    // will reach all the way up to fully solid.
-
-    color.a *= normalizedAge * (1.0-normalizedAge) * (1.0-normalizedAge) * 6.7;
+    vec2 fade = settings.fade;
+    if (fade.x + fade.y <= 0.0) {
+      // Fade the alpha based on the age of the particle. This default curve
+      // makes the particle fade in fairly quickly, then fade out more slowly:
+      // plot x*(1-x)*(1-x) for x=0:1 in a graphing program if you want to see what
+      // this looks like. The 6.7 scaling factor normalizes the curve so the alpha
+      // will reach all the way up to fully solid.
+      color.a *= normalizedAge * (1.0-normalizedAge) * (1.0-normalizedAge) * 6.7;
+    } else {
+      // Linear fade in over the first and fade out over the last fraction of the lifetime, solid in between
+      color.a *= min(normalizedAge / max(fade.x, 1e-5), 1.0) * min((1.0 - normalizedAge) / max(fade.y, 1e-5), 1.0);
+    }
 
     return color;
   }

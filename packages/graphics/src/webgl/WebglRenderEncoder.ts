@@ -364,6 +364,10 @@ export class WebglRenderEncoder extends RenderEncoder {
   }
 
   public draw(vertexCount: number, instanceCount?: number, vertexOffset?: number, instanceOffset?: number) {
+    if (vertexCount === 0 || instanceCount === 0) {
+      // nothing to draw, without instancing below the draw would still render once
+      return
+    }
     this.commitChanges()
 
     if (instanceOffset > 0) {
@@ -385,6 +389,10 @@ export class WebglRenderEncoder extends RenderEncoder {
     baseVertex?: number,
     instanceOffset?: number,
   ): void {
+    if (indexCount === 0 || instanceCount === 0) {
+      // nothing to draw, without instancing below the draw would still render once
+      return
+    }
     this.commitChanges()
 
     if (!this.indexBuffer) {
@@ -515,15 +523,20 @@ export class WebglRenderEncoder extends RenderEncoder {
 
     this.commitChanges()
     this.activateFrameBuffer()
+    const gl = this.gl
+    // clearing respects the depth mask, which a previous state without depth writes may have left disabled
+    gl.depthMask(true)
     if (this.activeFrameBuffer) {
       this.activeFrameBuffer.clear()
     } else {
-      const gl = this.gl
       const color = this.clearColor
       gl.clearColor(color[0], color[1], color[2], color[3])
       gl.clearDepth(this.clearDepth)
       gl.clearStencil(this.clearStencil)
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT)
+    }
+    if (this.depthState?.enabled) {
+      gl.depthMask(this.depthState.depthWriteEnabled)
     }
 
     if (!enableScissor && oldScissor?.enabled) {

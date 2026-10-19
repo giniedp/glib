@@ -1,7 +1,10 @@
 import type { EffectOptions } from '@gglib/graphics'
 import {
+  BlendState,
   CommonBlocks,
   CommonInputs,
+  CullState,
+  DepthState,
   inputSlot,
   MaterialOptions,
   MaterialWithSchema,
@@ -29,6 +32,11 @@ export function particleEffectOptions(): EffectOptions {
   return {
     name: 'Particle Effect',
     meta: {},
+    // particles are tested against the scene depth, but don't write it
+    blendState: BlendState.Alpha,
+    depthState: DepthState.LessEqualNoWrite,
+    // the quads are built in clip space, their winding is irrelevant
+    cullState: CullState.None,
     program: {
       shader: particleShaderOptions(),
       sharedBlocks: [CommonBlocks.Global, CommonBlocks.View, CommonBlocks.Frame],
@@ -55,6 +63,7 @@ export const ParticleMaterialSchema = {
   EndVelocity: inputSlot('settings', 'endVelocity', 'scalar'),
   Time: inputSlot('settings', 'time', 'scalar'),
   Scale: inputSlot('settings', 'scale', 'vec2'),
+  Fade: inputSlot('settings', 'fade', 'vec2'),
 
   // texture
   ColorMap: inputSlot('', 'colorMap', 'texture'),
@@ -68,6 +77,7 @@ export class ParticleMaterial extends MaterialWithSchema(ParticleMaterialSchema)
       effect: particleEffectOptions(),
       meta: options?.meta ?? {},
     })
+    this.isTransparent = true
     this.setDefaults()
   }
 
@@ -83,6 +93,7 @@ export class ParticleMaterial extends MaterialWithSchema(ParticleMaterialSchema)
     this.EndVelocity = 0
     this.Time = 0
     this.Scale = vec2(1)
+    this.Fade = vec2(0)
 
     this.ColorMapSampler = SamplerState.LinearWrap
   }

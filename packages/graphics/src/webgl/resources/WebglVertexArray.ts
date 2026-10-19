@@ -17,6 +17,7 @@ export class WebglVertexArray implements WebglResource<WebGLVertexArrayObject> {
   public readonly onDisposed = eventSource<this>()
 
   private disposed = false
+  private unsubscribe: Array<() => void> = []
   public constructor(
     device: WebglDevice,
     program: WebglShaderModule,
@@ -28,10 +29,14 @@ export class WebglVertexArray implements WebglResource<WebGLVertexArrayObject> {
     this.vertexBuffer = vertexBuffer
     this.indexBuffer = indexbuffer
 
-    program.onDisposed.once(() => this.dispose())
-    vertexBuffer.onDisposed.once(() => this.dispose())
+    const dispose = () => this.dispose()
+    this.unsubscribe.push(program.onDisposed.once(dispose), vertexBuffer.onDisposed.once(dispose))
+    // a buffer is recreated with a new handle when its size changes, the vertex array must be rebuilt then
+    for (const buffer of vertexBuffer.buffers) {
+      this.unsubscribe.push(buffer.onDisposed.once(dispose))
+    }
     if (indexbuffer) {
-      indexbuffer.onDisposed.once(() => this.dispose())
+      this.unsubscribe.push(indexbuffer.onDisposed.once(dispose))
     }
 
     this.device.onContextRestored.add(this.handleContextRestored)
@@ -52,6 +57,10 @@ export class WebglVertexArray implements WebglResource<WebGLVertexArrayObject> {
       return
     }
     this.disposed = true
+    for (const unsubscribe of this.unsubscribe) {
+      unsubscribe()
+    }
+    this.unsubscribe.length = 0
     this.device.onContextRestored.remove(this.handleContextRestored)
     this.device.context.deleteVertexArray(this.glHandle)
     const self = this as Mutable<this>
