@@ -1,4 +1,6 @@
 export * from './BehaviorSystem'
+export * from './CollisionSystem'
+export * from './DebugDrawSystem'
 export * from './EcsGame'
 export * from './GamePadInput'
 export * from './KeyboardInputSystem'

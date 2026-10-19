@@ -155,6 +155,10 @@ export class GameEntity {
     return this.getTransform()?.parent?.entity || null
   }
 
+  public get children() {
+    return this.getTransform()?.children || null
+  }
+
   public constructor(world: GameWorld) {
     this.world = world
     world.attachEntity(this)
