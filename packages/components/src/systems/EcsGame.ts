@@ -70,6 +70,9 @@ export class EcsGame {
 
   /**
    * The main scene entity
+   *
+   * @remarks
+   * A convenience property for applications to access the main scene.
    */
   public scene: SceneComponent
 
@@ -308,7 +311,7 @@ export class EcsGame {
       const start = performance.now()
       this.onUpdate(time, dt)
       this.onEndUpdate(time, dt)
-      this.stats.draw.sample(performance.now() - start)
+      this.stats.update.sample(performance.now() - start)
     }
   }
 

@@ -8,9 +8,11 @@ import {
   cylinderCollider,
   sphereCollider,
 } from '../components/ColliderComponent'
+import { SceneComponent } from '../components/SceneComponent'
 import { TransformComponent } from '../components/TransformComponent'
 import { CollisionSystem } from './CollisionSystem'
 import { DebugDrawSystem } from './DebugDrawSystem'
+import { SceneSystem } from './SceneSystem'
 
 describe('CollisionSystem', () => {
   let world: GameWorld
@@ -160,16 +162,22 @@ describe('CollisionSystem', () => {
       world = new GameWorld()
       system = new CollisionSystem()
       const debug = new DebugDrawSystem()
+      world.addSystem(new SceneSystem(world))
       world.addSystem(debug)
       world.addSystem(system)
+      const scene = world.createEntity({ transform: new TransformComponent(), components: [new SceneComponent()] })
       world.initialize()
-      create(vec3(0), sphereCollider(1))
-      create(vec3(5, 0, 0), boxCollider(vec3(1)))
+      scene.activate()
+      create(vec3(0), sphereCollider(1), scene)
+      create(vec3(5, 0, 0), boxCollider(vec3(1)), scene)
+      // colliders outside of a scene are not drawn
+      create(vec3(10, 0, 0), sphereCollider(1))
+      const draw = debug.in(scene.$(SceneComponent))
       update()
-      expect(debug.vertexCount).toBe(0)
+      expect(draw.vertexCount).toBe(0)
       system.debugDraw = true
       update()
-      expect(debug.vertexCount).toBe(3 * debug.segments * 2 + 24)
+      expect(draw.vertexCount).toBe(3 * debug.segments * 2 + 24)
     })
   })
 

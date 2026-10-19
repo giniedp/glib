@@ -9,7 +9,7 @@ import {
 
 import { GameComponent, GameEntity, InitializableComponent } from '@gglib/ecs'
 import { GamepadAxes, KeyboardKeys } from '@gglib/game'
-import { Color, PlatformId, Texture } from '@gglib/graphics'
+import { Color, PlatformId } from '@gglib/graphics'
 import { IVec4, mat4$initOrthographicOffCenter, mat4Identity, vec4 } from '@gglib/math'
 import { BloomPass, LayerMask, opaquePassMSAA, PixelatePass, Renderer, transparentPassMSAA } from '@gglib/render'
 import { mount } from 'tweak-ui'
@@ -43,7 +43,6 @@ class PongGame extends EcsGame {
   public height = 27
 
   public state: 'started' | 'reset' | 'running' | 'scored' = 'started'
-  public whitePixel!: Texture
   public scoreLeft = 0
   public scoreRight = 0
 
@@ -74,11 +73,6 @@ class PongGame extends EcsGame {
   }
 
   override onInitialize(): void {
-    this.whitePixel = this.device.createTexture({
-      source: [0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff],
-      width: 1,
-      height: 1,
-    })
     this.scene.getView(0).camera = {
       visibilityMask: LayerMask.All,
       projection: mat4Identity(),
@@ -225,11 +219,8 @@ class PaddleComponent implements GameComponent, InitializableComponent, Behavior
     this.keyboard = this.entity.service(KeyboardInputSystem)
     this.pads = this.entity.service(GamePadInput)
     this.sprite = this.entity.component(SpriteComponent)
-    this.sprite.setTexture(this.game.whitePixel)
-    this.sprite.setSource(0, 0, this.game.whitePixel.width, this.game.whitePixel.height)
-    this.sprite.setPivot(0, 0)
-    this.sprite.setSize(this.w, this.h)
-    this.sprite.setColor(this.color)
+    // no texture draws a white quad, tinted by the color
+    this.sprite.setPivot(0, 0).setSize(this.w, this.h).setColor(this.color)
   }
 
   public updateBehavior(time: number, dt: number): void {
@@ -308,10 +299,7 @@ class BallComponent implements GameComponent, InitializableComponent, BehaviorCo
     this.game = this.entity.service(PongGame)
     this.transform = this.entity.component(TransformComponent)
     this.sprite = this.entity.component(SpriteComponent)
-    this.sprite.setTexture(this.game.whitePixel)
-    this.sprite.setSource(0, 0, this.game.whitePixel.width, this.game.whitePixel.height)
-    this.sprite.setSize(1, 1)
-    this.sprite.setColor(Color.White)
+    this.sprite.setPivot(0, 0).setSize(1, 1).setColor(Color.White)
   }
 
   public updateBehavior(t: number, dt: number) {

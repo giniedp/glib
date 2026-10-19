@@ -1,11 +1,11 @@
 import { eventSource } from '@gglib/utils'
-import { BufferUsage, bufferUsageToWebGL, type TypedArray } from '../../enums'
+import { bufferUsageToWebGL, type TypedArray } from '../../enums'
 import { Buffer, isPlainBufferData, materializePlainBuffer, PlainBufferData, type BufferOptions } from '../../resources'
 import { SamplerState } from '../../states'
 import { STORAGE_TEXEL_SIZE, STORAGE_TEXTURE_WIDTH } from '../glsl/glsl-storage'
+import type { WebglResource } from '../types'
 import { WebglDevice } from '../WebglDevice'
 import type { WebglTexture } from './WebglTexture'
-import type { WebglResource } from '../types'
 
 /**
  * @public
@@ -20,13 +20,6 @@ export class WebglBuffer extends Buffer implements WebglResource<WebGLBuffer> {
   public readonly glHandle: WebGLBuffer
   public readonly glType: GLenum
   public readonly glUsage: GLenum
-
-  /**
-   * Whether this is a storage buffer, which is mirrored into a float texture, see {@link syncStorageTexture}
-   */
-  public get isStorageBuffer(): boolean {
-    return !!(this.usage & BufferUsage.STORAGE)
-  }
 
   private storageTexture: WebglTexture | null = null
   private storageDirtyStart = Infinity
@@ -189,7 +182,17 @@ export class WebglBuffer extends Buffer implements WebglResource<WebGLBuffer> {
     gl.bindBuffer(gl.PIXEL_UNPACK_BUFFER, this.glHandle)
     const rows = Math.min(lastRow, fullRows) - firstRow
     if (rows > 0) {
-      gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, firstRow, STORAGE_TEXTURE_WIDTH, rows, gl.RGBA, gl.FLOAT, firstRow * rowSize)
+      gl.texSubImage2D(
+        gl.TEXTURE_2D,
+        0,
+        0,
+        firstRow,
+        STORAGE_TEXTURE_WIDTH,
+        rows,
+        gl.RGBA,
+        gl.FLOAT,
+        firstRow * rowSize,
+      )
     }
     if (lastRow > fullRows) {
       // the last row is not complete, the buffer ends before
@@ -252,26 +255,3 @@ export class WebglBuffer extends Buffer implements WebglResource<WebGLBuffer> {
 type Mutable<T> = {
   -readonly [K in keyof T]: T[K]
 }
-
-// https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_best_practices#use_non-blocking_async_data_readback
-// async function getBufferSubDataAsync(
-//   gl,
-//   target,
-//   buffer,
-//   srcByteOffset,
-//   dstBuffer,
-//   /* optional */ dstOffset,
-//   /* optional */ length,
-// ) {
-//   const sync = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0)
-//   gl.flush()
-
-//   await clientWaitAsync(gl, sync, 0, 10)
-//   gl.deleteSync(sync)
-
-//   gl.bindBuffer(target, buffer)
-//   gl.getBufferSubData(target, srcByteOffset, dstBuffer, dstOffset, length)
-//   gl.bindBuffer(target, null)
-
-//   return dstBuffer
-// }

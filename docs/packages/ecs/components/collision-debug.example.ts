@@ -116,7 +116,7 @@ class Game extends EcsGame {
     const ray = this.camera.createRay(this.mouse.xNormalized, this.mouse.yNormalized)
     this.hit = this.collisions.raycast(ray, undefined, this.hitResult)
 
-    const debug = this.debug
+    const debug = this.debug.in(this.scene)
     if (this.showGrid) {
       const size = 8
       for (let i = -size; i <= size; i++) {

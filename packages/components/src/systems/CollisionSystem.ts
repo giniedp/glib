@@ -218,7 +218,10 @@ export class CollisionSystem extends GameSystem {
     }
     for (let i = 0; i < colliders.length; i++) {
       const collider = colliders[i]
-      this.debug.volume(collider.volume, collider.colliding ? this.debugColorColliding : this.debugColor)
+      // drawn into the scene of the collider
+      this.debug
+        .in(collider.entity)
+        ?.volume(collider.volume, collider.colliding ? this.debugColorColliding : this.debugColor)
     }
   }
 

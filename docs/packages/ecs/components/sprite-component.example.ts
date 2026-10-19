@@ -1,24 +1,32 @@
-import { CameraComponent, EcsGame, SpriteComponent } from '@gglib/components'
+import { CameraComponent, EcsGame, SpriteComponent, TransformComponent } from '@gglib/components'
+import { GameEntity } from '@gglib/ecs'
 import { PlatformId } from '@gglib/graphics'
+import { type IVec3, vec3 } from '@gglib/math'
 import { mount } from 'tweak-ui'
 
 export default (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
   const game = new Game({ canvas, platform })
 
   const panel = mount(tools, (ui) => {
-    ui.scalar(game, 'sizeX', { range: true, min: 0.1, max: 20, step: 0.01 })
-    ui.scalar(game, 'sizeY', { range: true, min: 0.1, max: 20, step: 0.01 })
-    ui.scalar(game, 'angle', { range: true, min: 0, max: Math.PI * 2, step: 0.01 })
-    ui.scalar(game, 'pivotX', { range: true, min: 0, max: 1, step: 0.01 })
-    ui.scalar(game, 'pivotY', { range: true, min: 0, max: 1, step: 0.01 })
-    ui.scalar(game, 'tilesX', { range: true, min: 1, max: 10, step: 1 })
-    ui.scalar(game, 'tilesY', { range: true, min: 1, max: 10, step: 1 })
-    ui.bool(game, 'flipX')
-    ui.bool(game, 'flipY')
-    ui.bool(game, 'enableSlicing')
+    const sprite = game.panel
+    ui.group('Sprite', (ui) => {
+      ui.scalar(sprite, 'width', { range: true, min: 0.5, max: 20, step: 0.01 })
+      ui.scalar(sprite, 'height', { range: true, min: 0.5, max: 20, step: 0.01 })
+      ui.scalar(sprite, 'pivotX', { range: true, min: 0, max: 1, step: 0.01 })
+      ui.scalar(sprite, 'pivotY', { range: true, min: 0, max: 1, step: 0.01 })
+      ui.scalar(sprite, 'tilesX', { range: true, min: 1, max: 10, step: 1 })
+      ui.scalar(sprite, 'tilesY', { range: true, min: 1, max: 10, step: 1 })
+      ui.bool(sprite, 'flipX')
+      ui.bool(sprite, 'flipY')
+      ui.scalar(game, 'slice', { range: true, min: 0, max: 48, step: 1 })
+      ui.scalar(sprite, 'pixelsPerUnit', { range: true, min: 4, max: 100, step: 1 })
+    })
     ui.group('Transform', (ui) => {
-      ui.scalar(game, 'scale', { range: true, min: 0, max: 10, step: 0.01 })
+      ui.scalar(game, 'scale', { range: true, min: 0, max: 4, step: 0.01 })
       ui.scalar(game, 'rotate', { range: true, min: 0, max: Math.PI * 2, step: 0.01 })
+    })
+    ui.group('Depth', (ui) => {
+      ui.scalar(game, 'depth', { label: 'Blue circle z', range: true, min: -2, max: 2, step: 0.01 })
     })
   })
 
@@ -30,39 +38,36 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement, platform: Platfor
 }
 
 class Game extends EcsGame {
-  public sprite!: SpriteComponent
-
-  public sizeX = 8
-  public sizeY = 8
-  public angle = 0
-  public pivotX = 0.5
-  public pivotY = 0.5
-  public tilesX = 1
-  public tilesY = 1
-  public flipX = false
-  public flipY = false
-  public enableSlicing = false
-
+  public panel = new SpriteComponent({ width: 8, height: 8, pixelsPerUnit: 16 })
+  public slice = 24
   public scale = 1
   public rotate = 0
+  public depth = 1
+
+  private blue!: GameEntity
 
   public override onInitialize(): void {
-    this.createObject()
     this.createCamera()
-  }
 
-  private createObject() {
-    const entity = this.createEntity({
-      parent: this.scene.entity,
-      components: [new SpriteComponent()],
-    })
-    this.sprite = entity.component(SpriteComponent)
-    this.sprite.setSize(500, 500)
+    this.createSprite(vec3(-9, 0, 0), this.panel)
+    this.blue = this.createSprite(vec3(-1, 1, 1), new SpriteComponent({ width: 5, height: 5 }))
+    const brown = this.createSprite(vec3(-2.5, -1.5, 0), new SpriteComponent({ width: 5, height: 5 }))
+    const cream = this.createSprite(vec3(0.5, -1.5, 0.5), new SpriteComponent({ width: 5, height: 5 }))
 
     this.content.loadTexture('/sprites/interface.png').then((texture) => {
-      this.sprite.setTexture(texture)
-      this.sprite.setSource(528, 374, 128, 128)
-      this.sprite.setSlice(24, 24, 24, 24)
+      // a 9-slice panel and three circles from the same sprite sheet
+      this.panel.setTexture(texture, 528, 374, 128, 128)
+      this.blue.component(SpriteComponent).setTexture(texture, 785, 1, 126, 126)
+      brown.component(SpriteComponent).setTexture(texture, 657, 257, 126, 126)
+      cream.component(SpriteComponent).setTexture(texture, 657, 513, 126, 126)
+    })
+  }
+
+  private createSprite(position: IVec3, sprite: SpriteComponent) {
+    return this.createEntity({
+      parent: this.scene.entity,
+      transform: new TransformComponent({ position }),
+      components: [sprite],
     })
   }
 
@@ -70,28 +75,27 @@ class Game extends EcsGame {
     const entity = this.createEntity({
       name: 'camera',
       parent: this.scene.entity,
+      transform: new TransformComponent({ position: vec3(0, 0, 10) }),
       components: [
         new CameraComponent({
           type: 'orthographic',
-          orthographicScale: 20,
-          aspect: this.device.output.aspectRatio,
-          near: 0,
-          far: 1,
+          orthographicScale: 30,
+          near: 0.1,
+          far: 100,
         }),
       ],
     })
-
     this.scene.setCamera(0, entity.component(CameraComponent))
   }
 
-  override onUpdate(time: number, deltaTime: number): void {
-    this.sprite.setSize(this.sizeX, this.sizeY)
-    this.sprite.setAngle(this.angle)
-    this.sprite.setPivot(this.pivotX, this.pivotY)
-    this.sprite.setFlip(this.flipX, this.flipY)
-    this.sprite.setSlicing(this.enableSlicing)
-    this.sprite.setTiles(this.tilesX, this.tilesY)
-    this.sprite.transform.setScaleXYZ(this.scale, this.scale, 1)
-    this.sprite.transform.setRotationYawPitchRoll(0, 0, this.rotate)
+  override onUpdate(): void {
+    this.scene.getCamera<CameraComponent>(0).aspect = this.device.output.aspectRatio
+    // the sprite system reads the component every frame, setting the fields is enough
+    this.panel.setSlice(this.slice)
+    const transform = this.panel.entity.getTransform<TransformComponent>()!
+    transform.setScaleXYZ(this.scale, this.scale, 1)
+    transform.setRotationYawPitchRoll(0, 0, this.rotate)
+    const blue = this.blue.getTransform<TransformComponent>()!
+    blue.setPosition(-1, 1, this.depth)
   }
 }

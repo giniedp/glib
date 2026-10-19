@@ -1,7 +1,7 @@
-import { GameEntity, GameSystem, GameWorld } from '@gglib/ecs'
+import { GameEntity, GameSystem, GameWorld, GetComponent } from '@gglib/ecs'
 import { DebugLineMaterial } from '@gglib/effects'
 import { GameLoop } from '@gglib/game'
-import { Color, Device, FALSE, Geometry, Mesh, TRUE, vertexLayout } from '@gglib/graphics'
+import { Color, Device, Geometry, Mesh, vertexLayout } from '@gglib/graphics'
 import {
   BoundingBox,
   BoundingCylinder,
@@ -13,13 +13,13 @@ import {
   Mat4,
   vec3,
 } from '@gglib/math'
+import { removeItemUnordered } from '@gglib/utils'
 import { MeshComponent } from '../components/MeshComponent'
-import type { SceneComponent } from '../components/SceneComponent'
+import { SceneComponent } from '../components/SceneComponent'
 import { TransformComponent } from '../components/TransformComponent'
-import { EcsGame } from './EcsGame'
 
 /**
- * Volumes that can be drawn with {@link DebugDrawSystem.volume}
+ * Volumes that can be drawn with {@link DebugDraw.volume}
  *
  * @public
  */
@@ -35,11 +35,12 @@ export interface DebugDrawSystemOptions {
    * If `false`, the lines are drawn on top of everything. Defaults to `true`
    */
   depthTest?: boolean
-  /**
-   * The scene to render into. Defaults to the scene of the {@link EcsGame}
-   */
-  scene?: SceneComponent
 }
+
+/**
+ * Attaches the {@link DebugDraw} of a scene to the scene
+ */
+const dataKey = Symbol('SceneDebugDrawKey')
 
 // position (3 x float32) + color (packed rgba8)
 const FLOATS_PER_VERTEX = 4
@@ -60,14 +61,15 @@ const corners: IVec3[] = Array.from({ length: 8 }, () => vec3())
  * Shapes are given in world space and drawn as lines. Call the draw methods every update, the lines are
  * cleared at the start of each update tick of the {@link GameLoop}. Without a game loop, call {@link clear} manually.
  *
- * All lines are collected into a single vertex buffer and rendered with one draw call.
- * Drawing does not allocate memory, except when the buffer needs to grow.
+ * Lines are drawn into a scene, get the drawer of a scene with {@link in}. All lines of a scene are collected into a
+ * single vertex buffer and rendered with one draw call by an entity with a {@link MeshComponent}, which is a child
+ * of the scene entity. Drawing does not allocate memory, except when the buffer needs to grow.
  *
  * @example
  * ```ts
  * const debug = world.getSystem(DebugDrawSystem)
- * debug.line(a, b, Color.Red)
- * debug.volume(collider.volume, Color.Lime)
+ * debug.in(scene).line(a, b, Color.Red)
+ * debug.in(collider.entity)?.volume(collider.volume, Color.Lime)
  * ```
  */
 export class DebugDrawSystem extends GameSystem {
@@ -81,24 +83,10 @@ export class DebugDrawSystem extends GameSystem {
    */
   public segments = 24
 
-  /**
-   * Number of vertices drawn in the current frame
-   */
-  public get vertexCount() {
-    return this.count
-  }
-
   private world: GameWorld
   private loop: GameLoop | null = null
   private options: DebugDrawSystemOptions
-  private capacity = 1024
-  private data = new ArrayBuffer(this.capacity * FLOATS_PER_VERTEX * 4)
-  private f32 = new Float32Array(this.data)
-  private u32 = new Uint32Array(this.data)
-  private count = 0
-  private grown = false
-  private entity: GameEntity | null = null
-  private geometry: Geometry | null = null
+  private scenes: DebugDraw[] = []
 
   public constructor(options?: DebugDrawSystemOptions) {
     super()
@@ -114,26 +102,114 @@ export class DebugDrawSystem extends GameSystem {
 
   public override destroy(): void {
     this.loop?.onUpdate.remove(this.clear)
-    this.entity?.destroy()
-    this.entity = null
-    this.geometry = null
+    while (this.scenes.length) {
+      this.removeSceneData(this.scenes[this.scenes.length - 1])
+    }
+  }
+
+  /**
+   * Gets the drawer of a scene
+   */
+  public in(scene: SceneComponent): DebugDraw
+  /**
+   * Gets the drawer of the scene of an active entity
+   *
+   * @returns the drawer, or `null` if the entity is not in a scene
+   */
+  public in(entity: GameEntity): DebugDraw | null
+  public in(target: SceneComponent | GameEntity): DebugDraw | null {
+    const scene = target instanceof SceneComponent ? target : target.$(SceneComponent.Member, GetComponent.Optional)?.scene
+    if (!scene) {
+      return null
+    }
+    let data = scene[dataKey] as DebugDraw | undefined
+    if (!data) {
+      data = new DebugDraw(this, scene)
+      scene[dataKey] = data
+      this.scenes.push(data)
+    }
+    return data
+  }
+
+  /**
+   * Removes all lines of all scenes
+   */
+  public clear = () => {
+    for (const data of this.scenes) {
+      data.clear()
+    }
+  }
+
+  public override render(): void {
+    const scenes = this.scenes
+    for (let i = scenes.length - 1; i >= 0; i--) {
+      // the line entity was destroyed with the scene
+      if (scenes[i].scene.entity.isDestroyed) {
+        this.removeSceneData(scenes[i])
+        continue
+      }
+      scenes[i].upload(this.world, this.options.depthTest ?? true)
+    }
+  }
+
+  private removeSceneData(data: DebugDraw) {
+    data.dispose()
+    delete data.scene[dataKey]
+    removeItemUnordered(this.scenes, data)
+  }
+}
+
+/**
+ * Draws debug lines into a scene, see {@link DebugDrawSystem.in}
+ *
+ * @public
+ */
+export class DebugDraw {
+  /**
+   * The scene the lines are drawn into
+   */
+  public readonly scene: SceneComponent
+
+  /**
+   * Number of vertices drawn in the current frame
+   */
+  public get vertexCount() {
+    return this.count
+  }
+
+  private system: DebugDrawSystem
+  private capacity = 1024
+  private data = new ArrayBuffer(this.capacity * FLOATS_PER_VERTEX * 4)
+  private f32 = new Float32Array(this.data)
+  private u32 = new Uint32Array(this.data)
+  private count = 0
+  private grown = false
+  private entity: GameEntity | null = null
+  private mesh: Mesh | null = null
+  private geometry: Geometry | null = null
+
+  public constructor(system: DebugDrawSystem, scene: SceneComponent) {
+    this.system = system
+    this.scene = scene
   }
 
   /**
    * Removes all lines
    */
-  public clear = () => {
+  public clear() {
     this.count = 0
   }
 
-  public override render(): void {
+  /**
+   * Uploads the lines, creates the line entity on first call
+   *
+   * @internal
+   */
+  public upload(world: GameWorld, depthTest: boolean) {
     if (!this.geometry) {
-      this.createEntity()
-      if (!this.geometry) {
-        return
-      }
+      this.createEntity(world, depthTest)
     }
-    const count = this.enabled ? this.count : 0
+    const count = this.system.enabled ? this.count : 0
     const buffer = this.geometry.vertexBuffer.buffers[0]
     if (this.grown) {
       this.grown = false
@@ -145,10 +221,23 @@ export class DebugDrawSystem extends GameSystem {
   }
 
   /**
+   * Destroys the line entity and its mesh
+   *
+   * @internal
+   */
+  public dispose() {
+    this.entity?.destroy()
+    this.mesh?.dispose()
+    this.entity = null
+    this.mesh = null
+    this.geometry = null
+  }
+
+  /**
    * Draws a line
    */
   public line(a: IVec3, b: IVec3, color: IVec4 = Color.White) {
-    if (!this.enabled) {
+    if (!this.system.enabled) {
       return
     }
     const packed = Color.packToRGBA(color)
@@ -202,11 +291,11 @@ export class DebugDrawSystem extends GameSystem {
    * Draws a circle in the plane spanned by the unit vectors `axisU` and `axisV`
    */
   public circle(center: IVec3, axisU: IVec3, axisV: IVec3, radius: number, color: IVec4 = Color.White) {
-    if (!this.enabled) {
+    if (!this.system.enabled) {
       return
     }
     const packed = Color.packToRGBA(color)
-    const segments = this.segments
+    const segments = this.system.segments
     let prevX = center.x + axisU.x * radius
     let prevY = center.y + axisU.y * radius
     let prevZ = center.z + axisU.z * radius
@@ -345,12 +434,8 @@ export class DebugDrawSystem extends GameSystem {
     this.grown = true
   }
 
-  private createEntity() {
-    const scene = this.options.scene ?? this.world.getSystem(EcsGame, { optional: true })?.scene
-    if (!scene) {
-      return
-    }
-    const device = this.world.getSystem(Device)
+  private createEntity(world: GameWorld, depthTest: boolean) {
+    const device = world.getSystem(Device)
     const geometry = new Geometry(device, {
       name: 'Debug Lines',
       primitiveType: 'line-list',
@@ -359,10 +444,10 @@ export class DebugDrawSystem extends GameSystem {
     })
     const material = new DebugLineMaterial(device, {
       properties: {
-        depthTest: (this.options.depthTest ?? true) as any, // TODO: typesystem
+        depthTest: depthTest as any, // TODO: typesystem
       },
     })
-    const mesh = new Mesh(device, {
+    this.mesh = new Mesh(device, {
       name: 'Debug Lines',
       geometries: [geometry],
       materials: [material],
@@ -372,11 +457,11 @@ export class DebugDrawSystem extends GameSystem {
     })
     this.geometry = geometry
     this.grown = false
-    this.entity = this.world.createEntity({
+    this.entity = world.createEntity({
       name: 'Debug Lines',
-      parent: scene.entity,
+      parent: this.scene.entity,
       transform: new TransformComponent(),
-      components: [new MeshComponent({ mesh })],
+      components: [new MeshComponent({ mesh: this.mesh })],
     })
   }
 }
