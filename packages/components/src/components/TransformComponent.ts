@@ -234,17 +234,19 @@ export class TransformComponent
   }
 
   /**
-   * Destroys all child entities, regardless of their life cycle flags
+   * Destroys all child entities, regardless of their life cycle flags, and detaches from the parent
    *
    * @remarks
    * The flags only control initialization, activation and deactivation. A child never outlives its parent.
    */
   public destroy(): void {
+    // each child detaches itself while being destroyed
     for (const child of Array.from(this.children)) {
       if (child.entity && !child.entity.isDestroyed) {
         child.entity.destroy()
       }
     }
+    this.setParentInLocal(null)
   }
 
   protected override handleParentChange(parent: this, oldParent: this): void {

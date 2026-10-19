@@ -81,6 +81,36 @@ describe('@gglib/ecs/TransformComponent', () => {
       expect(child.state).toBe(GameEntityState.Destroyed)
     })
 
+    it('should detach destroyed entities from their parent', () => {
+      const root = world.createEntity({
+        name: 'root',
+        transform: new TransformComponent(),
+      })
+      const parent = world.createEntity({
+        name: 'parent',
+        parent: root,
+        transform: new TransformComponent(),
+      })
+      const child = world.createEntity({
+        name: 'child',
+        parent: parent,
+        transform: new TransformComponent(),
+      })
+      const sibling = world.createEntity({
+        name: 'sibling',
+        parent: root,
+        transform: new TransformComponent(),
+      })
+      root.initialize()
+
+      parent.destroy()
+
+      expect(parent.parent).toBe(null)
+      expect(child.parent).toBe(null)
+      expect(parent.children.length).toBe(0)
+      expect(root.children.map((it) => it.entity)).toEqual([sibling])
+    })
+
     describe('when parent changes', () => {
       let root1: GameEntity
       let root2: GameEntity

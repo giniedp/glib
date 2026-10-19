@@ -75,7 +75,7 @@ describe('ParticleEmitterComponent', () => {
   }
 
   function channelEntities(scene: GameEntity) {
-    return (scene.children ?? []).map((it) => it.entity).filter((it) => !it.isDestroyed && it.has(MeshComponent))
+    return (scene.children ?? []).map((it) => it.entity).filter((it) => it.has(MeshComponent))
   }
 
   it('emits frequency * time particles and carries the remainder over', () => {
