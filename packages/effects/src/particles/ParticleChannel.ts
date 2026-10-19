@@ -167,7 +167,7 @@ export class ParticleChannel implements Ownable {
   /**
    * Two geometries drawing the active particles from the {@link vertexBuffer}.
    * The second one is needed when the active range wraps around the end of the ring buffer.
-   * The draw parameters are updated by {@link draw}
+   * The draw parameters are updated by {@link commit}
    */
   public readonly geometries: readonly [Geometry, Geometry]
 
@@ -290,7 +290,7 @@ export class ParticleChannel implements Ownable {
    * Uploads the particles emitted since the last call and updates the draw parameters of the {@link geometries}.
    * Call once per frame, after all particles of the frame were emitted and before the {@link mesh} is rendered.
    */
-  public draw() {
+  public commit() {
     this.frame++
     this.startNew = this.startFree
 

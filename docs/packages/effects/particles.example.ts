@@ -114,6 +114,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
       channel.emit(pos, vec3(0, 0, 0))
     }
     channel.update(ctx.time, ctx.delta)
+    channel.commit()
 
     msaaColor.resizeToMatch(device.output)
     msaaDepth.resizeToMatch(device.output)
@@ -126,11 +127,9 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     pass.setClearColor(0, Color.Black)
     pass.clear()
 
-    if (channel.material.effect.isReady) {
-      channel.material.View = camera.view
-      channel.material.Projection = camera.projection
-      channel.draw()
-    }
+    channel.material.View = camera.view
+    channel.material.Projection = camera.projection
+    channel.mesh.render(pass)
 
     pass.submit()
     pass.resolve()

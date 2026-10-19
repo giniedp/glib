@@ -359,7 +359,7 @@ export class DebugDrawSystem extends GameSystem {
     })
     const material = new DebugLineMaterial(device, {
       properties: {
-        depthTest: this.options.depthTest ?? true,
+        depthTest: (this.options.depthTest ?? true) as any, // TODO: typesystem
       },
     })
     const mesh = new Mesh(device, {

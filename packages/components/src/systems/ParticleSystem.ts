@@ -129,7 +129,7 @@ export class ParticleSystem extends GameSystem {
   public override render(): void {
     for (const entry of this.channels.values()) {
       entry.entity ??= this.createEntity(entry.channel)
-      entry.channel.draw()
+      entry.channel.commit()
     }
   }
 
