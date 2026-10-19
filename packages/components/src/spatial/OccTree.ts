@@ -81,7 +81,7 @@ export class OccTreeNode<T extends object = {}> implements SpatialIndex<T>, Spat
     this.parent = parent
     this.level = level
 
-    this.bounds = BoundingBox.createFromV(min, max)
+    this.bounds = BoundingBox.createFromMinMax(min, max)
     this.size = this.bounds.max.x - this.bounds.min.x
 
     this.looseBounds = this.bounds.copy()

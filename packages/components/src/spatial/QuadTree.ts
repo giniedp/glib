@@ -100,7 +100,7 @@ export class QuadTreeNode<T extends object = {}> implements SpatialIndex<T>, Spa
     this.root = root
     this.parent = parent
     this.level = level
-    this.bounds = BoundingBox.createFromV(min, max)
+    this.bounds = BoundingBox.createFromMinMax(min, max)
     this.size = this.bounds.max.x - this.bounds.min.x
 
     const rootBounds = root.bounds
