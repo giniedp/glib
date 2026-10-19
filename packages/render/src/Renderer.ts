@@ -36,7 +36,6 @@ import {
   MeshRenderCollector,
   ModelRenderCollector,
   RenderCollectorRegistry,
-  SpriteRenderCollector,
 } from './RenderCollector'
 import { RenderInstanceWriter } from './RenderInstanceWriter'
 import { RenderList, RenderListCache } from './RenderList'
@@ -159,7 +158,6 @@ export class Renderer implements Ownable {
     this.collectors.register(RenderItemType.Mesh, new MeshRenderCollector())
     this.collectors.register(RenderItemType.MeshPart, new MeshPartRenderCollector())
     this.collectors.register(RenderItemType.Model, new ModelRenderCollector())
-    this.collectors.register(RenderItemType.Sprite, this.ownership.adopt(new SpriteRenderCollector()))
     this.collectors.register(RenderItemType.InstanceBatch, new InstanceBatchRenderCollector())
     this.resources = new RenderTargetManager(device)
     this.channelDescriptors = createRenderChannelSchema(device)

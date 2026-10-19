@@ -5,10 +5,7 @@ import {
   type Ownable,
   RenderVariant,
   ResourceOwnership,
-  SpriteBatch,
-  SpriteMode,
 } from '@gglib/graphics'
-import { mat4$premultiply } from '@gglib/math'
 import { idMap } from '@gglib/utils'
 import { RenderList } from './RenderList'
 import {
@@ -20,7 +17,6 @@ import {
   RenderContext,
   RenderItem,
   RenderItemType,
-  SpriteRenderItem,
 } from './Types'
 
 export class RenderCollectorRegistry {
@@ -195,50 +191,6 @@ export class MeshPartRenderCollector implements RenderCollector<MeshPartRenderIt
 
   public end(): void {
     //
-  }
-}
-
-export class SpriteRenderCollector implements RenderCollector<SpriteRenderItem>, Ownable {
-  /**
-   * The ownership state of this collector
-   */
-  public readonly ownership: ResourceOwnership = new ResourceOwnership(this)
-
-  private list: RenderList
-  private spriteBatch: SpriteBatch
-  public begin(context: RenderContext, list: RenderList): void {
-    this.list = list
-    this.spriteBatch ||= this.ownership.adopt(new SpriteBatch(context.device))
-    this.spriteBatch.begin(SpriteMode.Deferred, context.view.camera.projection)
-  }
-
-  public add(item: SpriteRenderItem): void {
-    const data = item.data
-    const sprite = this.spriteBatch.next(
-      data.texture,
-      data.source,
-      data.destination,
-      data.depth,
-      data.angle,
-      data.pivotX,
-      data.pivotY,
-    )
-    if (data.color) {
-      sprite.tint(data.color)
-    }
-    if (data.flipX) {
-      sprite.flipX()
-    }
-    if (data.flipY) {
-      sprite.flipY()
-    }
-    if (data.transform) {
-      mat4$premultiply(sprite.transform, data.transform)
-    }
-  }
-
-  public end(): void {
-    this.list.add(this.list.getKey(0, 0, 0, 0, 0), this.spriteBatch, null, null, null, null)
   }
 }
 

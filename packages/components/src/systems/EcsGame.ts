@@ -9,6 +9,7 @@ import { SceneComponent, TransformComponent } from '../components'
 import { BehaviorSystem } from './BehaviorSystem'
 import { BoundsUpdateSystem } from './BoundsUpdateSystem'
 import { SceneSystem } from './SceneSystem'
+import { SpriteSystem } from './SpriteSystem'
 import { TimeSystem } from './TimeSystem'
 import { TweenSystem } from './TweenSystem'
 
@@ -132,6 +133,10 @@ export class EcsGame {
 
     if (!this.world.hasSystem(BoundsUpdateSystem)) {
       this.world.addSystem(new BoundsUpdateSystem())
+    }
+
+    if (!this.world.hasSystem(SpriteSystem)) {
+      this.world.addSystem(new SpriteSystem(this.device))
     }
 
     if (!this.world.hasSystem(Renderer)) {

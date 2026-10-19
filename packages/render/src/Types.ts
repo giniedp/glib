@@ -7,7 +7,6 @@ import type {
   ProgramInputBlockCollection,
   RenderVariant,
   ResolvedMeshPart,
-  Sprite,
   Texture,
   TextureDescriptor,
 } from '@gglib/graphics'
@@ -84,7 +83,6 @@ export const RenderItemType = {
   Model: brand<'model', Model>('model'),
   Mesh: brand<'mesh', Mesh>('mesh'),
   MeshPart: brand<'meshPart', ResolvedMeshPart>('meshPart'),
-  Sprite: brand<'sprite', Sprite>('sprite'),
   InstanceBatch: brand<'instanceBatch', InstanceBatch>('instanceBatch'),
 }
 
@@ -104,7 +102,6 @@ export type InstanceBatchRenderItem = RenderItem<InstanceBatch>
 export type MeshRenderItem = RenderItem<Mesh>
 export type ModelRenderItem = RenderItem<Model>
 export type MeshPartRenderItem = RenderItem<ResolvedMeshPart>
-export type SpriteRenderItem = RenderItem<Sprite>
 
 export type RenderItem<T = unknown> = {
   type: RenderItemType<string, T>

@@ -25,7 +25,6 @@ import {
   CameraData,
   FrameInfo,
   LayerMask,
-  mergeLayerMask,
   MeshPartRenderItem,
   PooledList,
   RenderItem,
@@ -33,7 +32,6 @@ import {
   RenderItemType,
   RenderScene,
   RenderView,
-  SpriteRenderItem,
 } from '@gglib/render'
 import { getSpatialEntries, SpatialNode } from '../spatial'
 import { SpatialSystem } from '../systems/SpatialSystem'
@@ -41,7 +39,6 @@ import { MeshComponent } from './MeshComponent'
 import { ModelComponent } from './ModelComponent'
 import { SpatialComponent } from './SpatialComponent'
 import { SpatialNodeComponent } from './SpatialNodeComponent'
-import { SpriteComponent } from './SpriteComponent'
 import { TransformComponent } from './TransformComponent'
 
 export class SceneMemberComponent implements GameComponent {
@@ -88,7 +85,6 @@ export class SceneComponent implements GameComponent, InitializableComponent, Re
   protected qMeshes: GameQuery
   protected qMeshParts: GameQuery
   protected qModels: GameQuery
-  protected qSprites: GameQuery
 
   protected world: GameWorld
 
@@ -96,17 +92,6 @@ export class SceneComponent implements GameComponent, InitializableComponent, Re
     const item: MeshPartRenderItem = {
       type: RenderItemType.MeshPart,
       data: { geometry: null, material: null },
-      flags: RenderItemFlags.Opaque,
-      layer: LayerMask.All,
-      transform: null,
-    }
-    return item
-  })
-
-  protected sprites = new PooledList<SpriteRenderItem>(() => {
-    const item: SpriteRenderItem = {
-      type: RenderItemType.Sprite,
-      data: null,
       flags: RenderItemFlags.Opaque,
       layer: LayerMask.All,
       transform: null,
@@ -140,12 +125,6 @@ export class SceneComponent implements GameComponent, InitializableComponent, Re
       required: [this.Member, ModelComponent],
       rejected: [...rejected],
     })
-    this.qSprites = this.world.query({
-      scope: 'active',
-      required: [this.Member, SpriteComponent],
-      rejected: [...rejected],
-    })
-
     this.initialized = true
   }
 
@@ -195,13 +174,11 @@ export class SceneComponent implements GameComponent, InitializableComponent, Re
     this.projectionScaleY = camera.projection[5]
 
     // clear pools
-    this.sprites.clear()
     this.meshParts.clear()
 
     // traverse all entities that are not baked into the spatial index
     this.qModels.forEach(this.collectModel)
     this.qMeshes.forEach(this.collectMesh)
-    this.qSprites.forEach(this.collectSprite)
 
     // traverse spatial index for entities
     this.qSpatial.forEach(this.collectSpatial)
@@ -232,7 +209,6 @@ export class SceneComponent implements GameComponent, InitializableComponent, Re
 
       this.collectMesh(item.entity)
       this.collectModel(item.entity)
-      this.collectSprite(item.entity)
     }
   }
 
@@ -406,27 +382,6 @@ export class SceneComponent implements GameComponent, InitializableComponent, Re
     if (material.update && material[materialUpdateFrame] !== this.frame.id) {
       material[materialUpdateFrame] = this.frame.id
       material.update(this.frame.time, this.frame.delta, this.frame.id)
-    }
-  }
-
-  private collectSprite = (entity: GameEntity) => {
-    const sprites = entity.component(SpriteComponent, GetComponent.Optional)?.data
-    if (!sprites?.length) {
-      return
-    }
-
-    const layer = mergeLayerMask(entity.layer) ?? LayerMask.All
-    if (!(layer & this.visibilityMask)) {
-      return
-    }
-
-    for (const sprite of sprites) {
-      const item = this.sprites.next()
-      item.data = sprite
-      item.transform = entity.getTransform().world
-      item.layer = layer
-      item.flags = RenderItemFlags.Opaque
-      this.collectResult.push(item)
     }
   }
 }
