@@ -32,7 +32,8 @@ export function basicEffectOptions(): EffectOptions {
       shader: basicShaderOptions(),
       sharedBlocks: [CommonBlocks.Global, CommonBlocks.View, CommonBlocks.Frame],
       perInstanceDataBlock: null,
-      perInstanceTransformBlock: null,
+      // the model matrix is read per instance, the renderer batches instances of the same geometry and material
+      perInstanceTransformBlock: 'object',
     },
   }
 }
@@ -48,6 +49,13 @@ export const BasicMaterialSchema = {
   Projection: CommonInputs.View.ProjectionMatrix,
 
   // per object
+  /**
+   * Model matrix for drawing the material directly. It is written to the single instance buffer the material owns.
+   *
+   * @remarks
+   * The renderer binds its own instance buffer once it draws the material, the model matrix is then taken from the
+   * instances. To draw directly again, create a new material.
+   */
   World: CommonInputs.Object.ModelMatrix,
 
   // material

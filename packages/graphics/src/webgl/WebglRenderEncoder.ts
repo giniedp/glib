@@ -369,10 +369,7 @@ export class WebglRenderEncoder extends RenderEncoder {
       return
     }
     this.commitChanges()
-
-    if (instanceOffset > 0) {
-      throw new Error('instanceOffset is not supported in WebGL')
-    }
+    this.applyBaseInstance(instanceOffset ?? 0)
 
     const gl = this.gl
     if (instanceCount > 1) {
@@ -401,9 +398,7 @@ export class WebglRenderEncoder extends RenderEncoder {
     if (baseVertex) {
       throw new Error('baseVertex is not supported in WebGL')
     }
-    if (instanceOffset > 0) {
-      throw new Error('instanceOffset is not supported in WebGL')
-    }
+    this.applyBaseInstance(instanceOffset ?? 0)
 
     const gl = this.gl
     const indexType = this.indexBuffer.indexType === 'uint16' ? gl.UNSIGNED_SHORT : gl.UNSIGNED_INT
@@ -434,14 +429,11 @@ export class WebglRenderEncoder extends RenderEncoder {
   ): void {
     this.commitChanges()
 
-    if (instanceOffsets) {
-      throw new Error('instanceOffset is not supported in WebGL')
-    }
-
     const gl = this.gl
     const mode = primitiveTypeToWebGL(this.primitiveType)
 
     for (let i = 0; i < drawCount; i++) {
+      this.applyBaseInstance(instanceOffsets ? instanceOffsets[i] : 0)
       const first = vertexOffsets ? vertexOffsets[i] : 0
       const instances = instanceCounts ? instanceCounts[i] : 1
       if (instances > 1) {
@@ -468,15 +460,12 @@ export class WebglRenderEncoder extends RenderEncoder {
     if (baseVertices) {
       throw new Error('baseVertex is not supported in WebGL')
     }
-    if (instanceOffsets) {
-      throw new Error('instanceOffset is not supported in WebGL')
-    }
-
     const gl = this.gl
     const mode = primitiveTypeToWebGL(this.primitiveType)
     const indexType = this.indexBuffer.indexType === 'uint16' ? gl.UNSIGNED_SHORT : gl.UNSIGNED_INT
 
     for (let i = 0; i < drawCount; i++) {
+      this.applyBaseInstance(instanceOffsets ? instanceOffsets[i] : 0)
       const indexOffset = (indexOffsets ? indexOffsets[i] : 0) + this.indexBufferOffset
       const instanceCount = instanceCounts ? instanceCounts[i] : 1
       if (instanceCount > 1) {
@@ -633,6 +622,24 @@ export class WebglRenderEncoder extends RenderEncoder {
       this.setRenderTarget(i, null, 0, 0, null)
       this.setRenderBlend(i, BlendState.Disabled)
       this.setRenderMask(i, 1 | 2 | 4 | 8)
+    }
+  }
+
+  /**
+   * Emulates the first instance of a draw, which WebGL has no native support for
+   *
+   * @remarks
+   * The shader receives it through the `gg_BaseInstance` uniform, per instance vertex attributes are offset.
+   */
+  private applyBaseInstance(value: number) {
+    const shader = this.shader
+    const hasUniform = shader ? shader.setBaseInstance(value) : !value
+    const hasAttributes = !!this.vao?.hasInstancedAttributes
+    this.vao?.setBaseInstance(value)
+    if (!hasUniform && !hasAttributes) {
+      throw new Error(
+        `instanceOffset ${value} requires a shader with 'uniform int gg_BaseInstance' or per instance attributes`,
+      )
     }
   }
 

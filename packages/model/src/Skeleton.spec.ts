@@ -1,7 +1,7 @@
 import { WebglDevice, type Device } from '@gglib/graphics'
 import { mat4CreateTranslationXYZ, mat4Invert, mat4Multiply, Transform } from '@gglib/math'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { Skeleton, SKELETON_MAX_JOINTS_WEBGL } from './Skeleton'
+import { Skeleton } from './Skeleton'
 
 describe('@gglib/model/Skeleton', () => {
   let device: Device
@@ -59,10 +59,10 @@ describe('@gglib/model/Skeleton', () => {
     expect(skeleton.buffer).toBe(buffer)
   })
 
-  it('sizes the WebGL buffer to the uniform block', () => {
-    const { bone0 } = bones()
-    const skeleton = new Skeleton(device, [bone0], [mat4Invert(bone0.world)])
-    expect(skeleton.buffer.size).toBe(SKELETON_MAX_JOINTS_WEBGL * 64)
+  it('sizes the buffer to the joints', () => {
+    const { bone0, bone1 } = bones()
+    const skeleton = new Skeleton(device, [bone0, bone1], [mat4Invert(bone0.world), mat4Invert(bone1.world)])
+    expect(skeleton.buffer.size).toBe(2 * 64)
   })
 
   it('throws if bones and inverse bind matrices do not match', () => {

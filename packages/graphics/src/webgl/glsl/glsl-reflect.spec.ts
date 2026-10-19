@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import { parseGlsl } from './glsl-parse'
-import { reflectGlslShader, type GlslShaderInfo } from './glsl-reflect'
+import { reflectGlslShader, reflectGlslStorageLayout, type GlslShaderInfo } from './glsl-reflect'
 
 describe('glslReflect', () => {
   describe('scalar', () => {
@@ -398,6 +398,62 @@ describe('glslReflect', () => {
     test.each(tests)('$input', ({ input, expected }) => {
       const result = reflectGlslShader(parseGlsl(input))
       expect(result).toEqual(expected)
+    })
+  })
+
+  describe('storage', () => {
+    test('attaches the element layout to an annotated sampler', () => {
+      const result = reflectGlslShader(
+        parseGlsl(/*glsl*/ `
+          struct ObjectBlock { mat4 modelMatrix; };
+          // @storage ObjectBlock
+          uniform highp sampler2D object;
+        `),
+      )
+      expect(result.uniforms[0].storage).toEqual({
+        type: 'ObjectBlock',
+        stride: 64,
+        members: [
+          {
+            name: 'modelMatrix',
+            type: expect.objectContaining({ container: 'mat4x4' }),
+            offset: 0,
+            arraySize: 1,
+            arrayStride: 64,
+            matrixStride: 16,
+          },
+        ],
+      })
+    })
+
+    test('uses WGSL alignment', () => {
+      const program = parseGlsl(/*glsl*/ `
+        struct Item { float a; vec3 b; vec2 c; float d; mat3 e; vec4 f[2]; };
+      `)
+      const layout = reflectGlslStorageLayout(program, 'Item')
+      expect(layout.members.map((it) => [it.name, it.offset])).toEqual([
+        ['a', 0],
+        ['b', 16],
+        ['c', 32],
+        ['d', 40],
+        ['e', 48],
+        ['f', 96],
+      ])
+      expect(layout.members[4].matrixStride).toBe(16)
+      expect(layout.members[5]).toMatchObject({ arraySize: 2, arrayStride: 16 })
+      expect(layout.stride).toBe(128)
+    })
+
+    test('supports plain element types', () => {
+      const layout = reflectGlslStorageLayout(parseGlsl(''), 'mat4')
+      expect(layout.stride).toBe(64)
+      expect(layout.members).toEqual([expect.objectContaining({ name: '', offset: 0 })])
+    })
+
+    test('pads the stride to the struct alignment', () => {
+      const layout = reflectGlslStorageLayout(parseGlsl('struct S { vec3 a; float b; float c; };'), 'S')
+      expect(layout.members.map((it) => it.offset)).toEqual([0, 12, 16])
+      expect(layout.stride).toBe(32)
     })
   })
 })

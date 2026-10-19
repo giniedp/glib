@@ -10,8 +10,9 @@ import {
 import { Mutable } from '../types'
 import type { WebglDevice } from '../WebglDevice'
 import { WebglPendingInput, WebglProgramInput } from './WebglProgramInput'
-import { hasUniformBlock } from './WebglReflection'
+import { BASE_INSTANCE_UNIFORM, hasUniformBlock } from './WebglReflection'
 import type { WebglShaderModule } from './WebglShaderModule'
+import { WebglStorageBinding } from './WebglStorageBinding'
 import type { WebglUniform } from './WebglUniform'
 import { WebglUniformBlock } from './WebglUniformBlock'
 import { WebglUniformBlockMember } from './WebglUniformBlockMember'
@@ -29,7 +30,8 @@ export class WebglProgram extends Program {
   // resources
   public readonly blocks: ReadonlyArray<WebglUniformBlock> = []
   public readonly locations: ReadonlyArray<WebglUniformLocation> = []
-  public readonly sampler: ReadonlyArray<WebglUniformSamplerBinding> = []
+  public readonly sampler: ReadonlyArray<WebglUniformSamplerBinding | WebglStorageBinding> = []
+  public readonly storage: ReadonlyArray<WebglStorageBinding> = []
   public readonly uniforms: Readonly<Record<string, WebglUniform>> = {}
 
   // input lookup table, created on the fly
@@ -106,6 +108,9 @@ export class WebglProgram extends Program {
   }
 
   public activate(): void {
+    for (const binding of this.storage) {
+      binding.sync()
+    }
     let hasView = false
     for (const binding of this.sampler) {
       const unit = this.device.textureUnits[binding.unit]
@@ -156,7 +161,11 @@ export class WebglProgram extends Program {
         block.dispose()
       }
     }
+    for (const binding of this.storage) {
+      binding.dispose()
+    }
     const self = this as Mutable<this>
+    self.storage = []
     self.locations = []
     self.uniforms = {}
     self.blocks = []
@@ -174,7 +183,11 @@ export class WebglProgram extends Program {
       blocks: this.blocks,
       locations: this.locations,
     })
-    self.sampler = Object.values(self.uniforms).filter((it) => it.type === 'sampler') as WebglUniformSamplerBinding[]
+    // samplers are registered under their alias and their name, keep each binding once
+    self.sampler = Array.from(new Set(Object.values(self.uniforms).filter((it) => it.type === 'sampler'))) as Array<
+      WebglUniformSamplerBinding | WebglStorageBinding
+    >
+    self.storage = this.sampler.filter((it) => it instanceof WebglStorageBinding)
     this.inputs = convertPendingInputs(this.inputs, this.uniforms)
   }
 
@@ -215,7 +228,8 @@ function createLocations(module: WebglShaderModule): WebglUniformLocation[] {
   const root = module.program
   const result: WebglUniformLocation[] = []
   for (const info of module.reflection.uniforms) {
-    if (hasUniformBlock(info)) {
+    if (hasUniformBlock(info) || info.name === BASE_INSTANCE_UNIFORM) {
+      // the base instance is set by the render encoder, see WebglShaderModule.setBaseInstance
       continue
     }
     const instance = root?.locations?.find((loc) => loc.name === info.name)
@@ -246,6 +260,12 @@ function createUniforms({
     if (hasUniformBlock(info)) {
       const block = blocks.find((b) => b.index === info.blockIndex)
       uniform = new WebglUniformBlockMember(block, info)
+    } else if (info.storage) {
+      const binding = new WebglStorageBinding(module, info)
+      for (const member of binding.createMembers()) {
+        addUniform(result, member)
+      }
+      uniform = binding
     } else if (info.type.container === 'sampler') {
       const isShared = shared.includes(info.name)
       const instance = root?.sampler?.find((s) => s.name === info.name)
@@ -255,7 +275,7 @@ function createUniforms({
         uniform = new WebglUniformSamplerBinding(module, info)
       }
     } else {
-      uniform = locations.find((loc) => loc.name === info.name)
+      uniform = locations.find((loc) => loc.name === info.name) ?? null
     }
 
     if (uniform) {

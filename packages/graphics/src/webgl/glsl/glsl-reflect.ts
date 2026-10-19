@@ -1,6 +1,6 @@
 import type { DataType } from '../../enums'
 import { GLConst as gl } from '../../enums'
-import { parseAnnotations, type Token } from '../../shader'
+import { parseAnnotations, ShaderAnnotations, type Token } from '../../shader'
 
 import type {
   GlslInterfaceDeclaration,
@@ -10,6 +10,7 @@ import type {
   GlslTypeSpecifier,
   GlslVariableDeclaration,
 } from './glsl-ast'
+import { glslTypeRefence } from './glsl-ast'
 import { isGlslInt, parseGlslInt } from './glsl-parse'
 
 export interface GlslShaderInfo {
@@ -21,6 +22,52 @@ export interface GlslShaderInfo {
 export type GlslMember = GlslType & {
   name: string
   annotations: Record<string, string>
+  /**
+   * Element layout of a sampler that emulates a storage buffer, see {@link reflectGlslStorageLayout}
+   */
+  storage?: GlslStorageLayout
+}
+
+/**
+ * Element layout of a storage buffer that is emulated by a float texture
+ *
+ * @remarks
+ * Offsets follow the WGSL storage layout rules, so the same buffer data works with the WGSL storage buffer.
+ */
+export interface GlslStorageLayout {
+  /**
+   * Name of the element type
+   */
+  type: string
+  /**
+   * Byte stride of one element
+   */
+  stride: number
+  /**
+   * Members of a struct element, or a single unnamed member for a plain element type
+   */
+  members: GlslStorageMember[]
+}
+
+export interface GlslStorageMember {
+  name: string
+  type: GlslValueType
+  /**
+   * Byte offset in the element
+   */
+  offset: number
+  /**
+   * Number of array elements, 1 for non array members
+   */
+  arraySize: number
+  /**
+   * Byte stride of array elements
+   */
+  arrayStride: number
+  /**
+   * Byte stride of matrix columns
+   */
+  matrixStride: number
 }
 
 export type GlslType =
@@ -84,6 +131,10 @@ export function reflectGlslShader(tokens: GlslProgram): GlslShaderInfo {
     switch (token.kind) {
       case 'variable': {
         const member = resolveMember(tokens, token)
+        const storageType = member?.annotations[ShaderAnnotations.Storage]
+        if (storageType && member.container === 'sampler') {
+          member.storage = reflectGlslStorageLayout(tokens, storageType)
+        }
         const isUniform = token.qualifier?.includes('uniform')
         const isInput = token.qualifier?.includes('in') || token.qualifier?.includes('attribute')
         const isOutput = token.qualifier?.includes('out') || token.qualifier?.includes('varying')
@@ -531,4 +582,72 @@ export function glslUploadFunction(
   return (_location: WebGLUniformLocation, _value: number[]) => {
     throw new Error('not supported')
   }
+}
+
+/**
+ * Computes the element layout of a storage buffer with the WGSL storage layout rules
+ *
+ * @param program - the parsed program that declares the element struct
+ * @param typeName - a struct name or a value type, e.g. 'mat4'
+ */
+export function reflectGlslStorageLayout(program: GlslProgram, typeName: string): GlslStorageLayout {
+  const members: GlslStorageMember[] = []
+  let align = 4
+  let size = 0
+  const add = (name: string, type: GlslType) => {
+    let arraySize = 1
+    let element = type
+    if (type.container === 'array') {
+      arraySize = type.elementCount
+      element = type.element
+    }
+    if (!isValueType(element)) {
+      throw new Error(`Storage element '${typeName}': member '${name}' must be a scalar, vector or matrix`)
+    }
+    const layout = valueLayout(element)
+    const arrayStride = roundUp(layout.align, layout.size)
+    const offset = roundUp(layout.align, size)
+    members.push({ name, type: element, offset, arraySize, arrayStride, matrixStride: layout.matrixStride })
+    size = offset + (arraySize > 1 ? arraySize * arrayStride : layout.size)
+    align = Math.max(align, layout.align)
+  }
+
+  if (typeName in TYPES) {
+    add('', resolveComponent(program, glslTypeRefence(typeName, [])))
+  } else {
+    const struct = lookupStruct(program, typeName)
+    if (!struct) {
+      throw new Error(`Storage element type '${typeName}' not found`)
+    }
+    for (const member of struct.member) {
+      add(member.name, resolveComponent(program, member.type))
+    }
+  }
+  return { type: typeName, stride: roundUp(align, size), members }
+}
+
+function isValueType(type: GlslType): type is GlslValueType {
+  return type.container === 'scalar' || type.container.startsWith('vec') || type.container.startsWith('mat')
+}
+
+/**
+ * WGSL alignment and size of a value type in a storage buffer
+ */
+function valueLayout(type: GlslValueType): { align: number; size: number; matrixStride: number } {
+  if (type.container === 'scalar') {
+    return { align: 4, size: 4, matrixStride: 0 }
+  }
+  const vector = (n: number) => ({ align: n === 2 ? 8 : 16, size: n * 4 })
+  if (type.container.startsWith('vec')) {
+    return { ...vector(type.componentCount), matrixStride: 0 }
+  }
+  // matCxR has C columns of vecR
+  const [columns, rows] = type.container.slice(3).split('x').map(Number)
+  const column = vector(rows)
+  const matrixStride = roundUp(column.align, column.size)
+  return { align: column.align, size: columns * matrixStride, matrixStride }
+}
+
+function roundUp(align: number, value: number) {
+  return Math.ceil(value / align) * align
 }

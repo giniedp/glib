@@ -1,6 +1,10 @@
 export const ShaderAnnotations = {
   Block: 'block',
   Alias: 'alias',
+  /**
+   * Marks a sampler uniform as a storage buffer emulated by a float texture, the value names the element type
+   */
+  Storage: 'storage',
 }
 
 export function parseAnnotations(source: string | string[], out: Record<string, any> = {}): Record<string, any> {

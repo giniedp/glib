@@ -4,7 +4,7 @@ import { ResourceOwnership, ShaderModule, type ProgramOptions } from '../../reso
 import { WebglDevice } from '../WebglDevice'
 import type { WebglResource } from '../types'
 import { WebglProgram } from './WebglProgram'
-import { reflectProgram, type WebglReflection } from './WebglReflection'
+import { BASE_INSTANCE_UNIFORM, reflectProgram, type WebglReflection } from './WebglReflection'
 import { WebglShader } from './WebglShader'
 
 export interface WebglShaderModuleOptions {
@@ -90,6 +90,8 @@ export class WebglShaderModule extends ShaderModule implements WebglResource<Web
 
   private info: string
   private attached: WebglShader[] = []
+  private baseInstanceLocation: WebGLUniformLocation | null = null
+  private baseInstance = 0
   private compileTask: FrameTask<void>
 
   public constructor(device: WebglDevice, options: WebglShaderModuleOptions) {
@@ -227,8 +229,30 @@ export class WebglShaderModule extends ShaderModule implements WebglResource<Web
       }
     } else {
       self.reflection = reflectProgram(this)
+      this.baseInstanceLocation = gl.getUniformLocation(this.glHandle, BASE_INSTANCE_UNIFORM)
+      this.baseInstance = 0
     }
     this.onCompiled.emit(this)
+  }
+
+  /**
+   * Sets the first instance of the next draw, which WebGL has no native support for
+   *
+   * @remarks
+   * Shaders that support it declare `uniform int gg_BaseInstance;` and use `gl_InstanceID + gg_BaseInstance` as the
+   * instance index. Must be called while this program is in use.
+   *
+   * @returns false if the program has no base instance uniform and `value` is not 0
+   */
+  public setBaseInstance(value: number): boolean {
+    if (!this.baseInstanceLocation) {
+      return !value
+    }
+    if (this.baseInstance !== value) {
+      this.device.context.uniform1i(this.baseInstanceLocation, value)
+      this.baseInstance = value
+    }
+    return true
   }
 
   public createBindings(options?: ProgramOptions): WebglProgram {

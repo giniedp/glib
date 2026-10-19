@@ -299,25 +299,10 @@ export class ParticleChannel implements Ownable {
     const first = wrapped ? this.capacity - this.startActive : this.startFree - this.startActive
     const second = wrapped ? this.startFree : 0
 
-    if (this.device.isWebGL2) {
-      // webGL does not support instance offset, the active range is copied to the start of the buffer
-      const source = this.writer.buffer
-      const target = this.vertexBuffer.buffers[0]
-      const stride = this.writer.strideInBytes
-      if (first > 0) {
-        target.setSubData(0, source, this.startActive * stride, first * stride)
-      }
-      if (second > 0) {
-        target.setSubData(first * stride, source, 0, second * stride)
-      }
-      this.writer.resetDirty()
-      setDrawRange(a, 0, first + second)
-      setDrawRange(b, 0, 0)
-    } else {
-      this.writer.upload(this.vertexBuffer.buffers[0])
-      setDrawRange(a, this.startActive, first)
-      setDrawRange(b, 0, second)
-    }
+    // on WebGL the instance offset is emulated by offsetting the per instance attributes
+    this.writer.upload(this.vertexBuffer.buffers[0])
+    setDrawRange(a, this.startActive, first)
+    setDrawRange(b, 0, second)
   }
 
   public emit(position: IVec3, velocity: IVec3) {

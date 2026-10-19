@@ -35,7 +35,8 @@ const FALSE : u32 = 0u;
 
 @group(0) @binding(0) var<uniform> global   : GlobalBlock;
 @group(1) @binding(0) var<uniform> view     : ViewBlock;
-@group(2) @binding(0) var<uniform> object   : ObjectBlock;
+// one element per instance, see perInstanceTransformBlock
+@group(2) @binding(0) var<storage, read> object : array<ObjectBlock>;
 @group(3) @binding(0) var<uniform> material : MaterialBlock;
 @group(3) @binding(1) var<uniform> settings : SettingsBlock;
 
@@ -49,6 +50,7 @@ struct VertexInput {
   @location(1) texture  : vec2f,
   @location(2) normal   : vec3f,
   @location(3) color    : vec4f,
+  @builtin(instance_index) instance : u32,
 };
 
 struct VertexOutput {
@@ -62,7 +64,7 @@ struct VertexOutput {
 fn vs_main(input: VertexInput) -> VertexOutput {
   var out: VertexOutput;
 
-  let modelMatrix = object.modelMatrix;
+  let modelMatrix = object[input.instance].modelMatrix;
   let worldPos = modelMatrix * vec4f(input.position.xyz, 1.0);
   let viewPos = view.viewMatrix * worldPos;
   let clipPos = view.projectionMatrix * viewPos;

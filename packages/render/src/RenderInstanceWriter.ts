@@ -1,4 +1,4 @@
-import { BufferRecorder, BufferUsage, Device, Program, WebglDevice } from '@gglib/graphics'
+import { BufferRecorder, BufferUsage, Device, Program } from '@gglib/graphics'
 import { Mat4 } from '@gglib/math'
 
 // TODO: use options, allow to to have transforms+data in one buffer
@@ -37,60 +37,28 @@ export class RenderInstanceWriter {
     this.device = device
   }
 
+  /**
+   * Creates the storage buffers for transforms and instance data. They grow as needed.
+   *
+   * @remarks
+   * WebGL has no storage buffers, it reads them through float textures and emulates the first instance of a draw.
+   */
   protected createBuffers() {
-    if (this.device.isWebGPU) {
-      this.createBuffersWebGpu()
-    } else {
-      this.createBuffersWebGL()
-    }
-  }
-
-  protected createBuffersWebGpu() {
     const device = this.device
     const capacity = 512 // arbitrary initial capacity, will be automatically resized if needed
     const strideInBytes = 16 * Float32Array.BYTES_PER_ELEMENT // Mat4 or 4 vec4s for unknown data
-    this.transforms = new BufferRecorder({
-      capacity,
-      autosize: true,
-      recordByteSize: strideInBytes,
-      gpuBuffer: device.createBuffer({
-        size: capacity * strideInBytes,
-        usage: BufferUsage.STORAGE,
-      }),
-    })
-    this.instances = new BufferRecorder({
-      capacity,
-      autosize: true,
-      recordByteSize: strideInBytes, // unknown data, using 4 vec4s just in case
-      gpuBuffer: device.createBuffer({
-        size: capacity * strideInBytes,
-        usage: BufferUsage.STORAGE,
-      }),
-    })
-  }
-
-  protected createBuffersWebGL() {
-    const device = this.device as WebglDevice
-    const strideInBytes = 16 * Float32Array.BYTES_PER_ELEMENT // Mat4
-    const instanceCount = device.capabilities.maxUniformBlockSize / strideInBytes
-    this.transforms = new BufferRecorder({
-      autosize: false,
-      capacity: instanceCount,
-      recordByteSize: strideInBytes,
-      gpuBuffer: device.createBuffer({
-        size: instanceCount * strideInBytes,
-        usage: BufferUsage.UNIFORM,
-      }),
-    })
-    this.instances = new BufferRecorder({
-      autosize: false,
-      capacity: instanceCount,
-      recordByteSize: strideInBytes,
-      gpuBuffer: device.createBuffer({
-        size: instanceCount * strideInBytes,
-        usage: BufferUsage.UNIFORM,
-      }),
-    })
+    const create = () =>
+      new BufferRecorder({
+        capacity,
+        autosize: true,
+        recordByteSize: strideInBytes,
+        gpuBuffer: device.createBuffer({
+          size: capacity * strideInBytes,
+          usage: BufferUsage.STORAGE,
+        }),
+      })
+    this.transforms = create()
+    this.instances = create()
   }
 
   /**

@@ -23,5 +23,9 @@ export function bufferUsageToWebGL(usage: number): number {
   if (usage & BufferUsage.UNIFORM) {
     return gl.UNIFORM_BUFFER
   }
+  if (usage & BufferUsage.STORAGE) {
+    // WebGL has no storage buffers, the data is mirrored into a float texture. A generic target holds the data
+    return gl.COPY_WRITE_BUFFER
+  }
   throw new Error(`Buffer usage not supported: ${usage}`)
 }

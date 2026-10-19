@@ -3,7 +3,10 @@ import { Color } from './Color'
 import type { Device } from './Device'
 import type { RenderEncoder } from './RenderEncoder'
 import type { DeviceOutput, ShaderModule, ShaderModuleOptions, Texture } from './resources'
+import { BufferUsage } from './enums'
+import { vertexLayout } from './resources'
 import { DepthState } from './states'
+import { GLSL_INSTANCE_INDEX, GLSL_STORAGE } from './webgl/glsl'
 import { WebglDevice } from './webgl/WebglDevice'
 import { WebGpuDevice } from './webgpu'
 
@@ -530,4 +533,187 @@ export function runContract(createDevice: () => Device) {
       await expectPixelColor(rt, Color.White, 1, 1)
     })
   })
+
+  describe('instancing', () => {
+    const colors = new Float32Array([1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1])
+
+    async function drawInstance(program: ShaderModule, firstInstance: number, setup?: () => void) {
+      const rt = device.createRenderTarget({ width: 1, height: 1, format: 'rgba8unorm', name: 'rt' })
+      pass.setRenderTarget(0, rt)
+      pass.setClearColor(0, Color.Black)
+      pass.clear()
+      pass.setProgram(program.program)
+      setup?.()
+      program.program.commit()
+      pass.draw(3, 1, 0, firstInstance)
+      pass.submit()
+      return rt
+    }
+
+    describe('storage buffer', () => {
+      let storage: ShaderModule
+      beforeEach(async () => {
+        storage = device.createShaderModule(STORAGE_SHADER)
+        await storage.compiled
+      })
+
+      it('reads the managed element', async () => {
+        storage.program.set('items.color', [0, 1, 0, 1])
+        await expectPixelColor(await drawInstance(storage, 0), Color.Lime)
+      })
+
+      it('reads the instance at the first instance', async () => {
+        const buffer = device.createBuffer({ usage: BufferUsage.STORAGE | BufferUsage.COPY_DST, size: colors.byteLength })
+        buffer.setData(colors)
+        storage.program.set('items', buffer)
+        await expectPixelColor(await drawInstance(storage, 2), Color.Blue)
+        await expectPixelColor(await drawInstance(storage, 0), Color.Red)
+        await expectPixelColor(await drawInstance(storage, 3), Color.White)
+      })
+
+      it('follows buffer updates', async () => {
+        const buffer = device.createBuffer({ usage: BufferUsage.STORAGE | BufferUsage.COPY_DST, size: colors.byteLength })
+        buffer.setData(colors)
+        storage.program.set('items', buffer)
+        await expectPixelColor(await drawInstance(storage, 1), Color.Lime)
+        buffer.setSubData(16, new Float32Array([1, 1, 1, 1]))
+        await expectPixelColor(await drawInstance(storage, 1), Color.White)
+      })
+    })
+
+    it('offsets per instance attributes', async () => {
+      const attributes = device.createShaderModule(ATTRIBUTE_SHADER)
+      await attributes.compiled
+      const vertices = device.createVertexBuffer([
+        { layout: vertexLayout({ color: 'float32x4' }), instanced: true, data: colors },
+      ])
+      const draw = (first: number) =>
+        drawInstance(attributes, first, () => {
+          pass.setVertexBuffer(vertices)
+        })
+      await expectPixelColor(await draw(1), Color.Lime)
+      await expectPixelColor(await draw(0), Color.Red)
+      await expectPixelColor(await draw(3), Color.White)
+    })
+  })
+}
+
+const FULLSCREEN_WGSL = /* wgsl */ `
+  fn fullscreen(vertexIndex: u32) -> vec4<f32> {
+    var pos = vec2<f32>(-1.0, -1.0);
+    if (vertexIndex == 1u) {
+      pos = vec2<f32>(3.0, -1.0);
+    } else if (vertexIndex == 2u) {
+      pos = vec2<f32>(-1.0, 3.0);
+    }
+    return vec4<f32>(pos, 0.5, 1.0);
+  }
+
+  struct VSOutput {
+    @builtin(position) position: vec4<f32>,
+    @location(0) @interpolate(flat) color: vec4<f32>,
+  };
+
+  @fragment
+  fn fs(@location(0) @interpolate(flat) color: vec4<f32>) -> @location(0) vec4<f32> {
+    return color;
+  }
+`
+
+const FULLSCREEN_GLSL = /* glsl */ `
+  vec4 fullscreen() {
+    vec2 pos = vec2(-1.0, -1.0);
+    if (gl_VertexID == 1) {
+      pos = vec2(3.0, -1.0);
+    } else if (gl_VertexID == 2) {
+      pos = vec2(-1.0, 3.0);
+    }
+    return vec4(pos, 0.0, 1.0);
+  }
+`
+
+const COLOR_FS_GLSL = /* glsl */ `
+  #version 300 es
+  precision highp float;
+  flat in vec4 vColor;
+  out vec4 outColor;
+  void main() {
+    outColor = vColor;
+  }
+`
+
+const STORAGE_SHADER: ShaderModuleOptions = {
+  wgsl: {
+    source: /* wgsl */ `
+      ${FULLSCREEN_WGSL}
+
+      struct Item {
+        color: vec4<f32>,
+      };
+      @group(0) @binding(0) var<storage, read> items: array<Item>;
+
+      @vertex
+      fn vs(@builtin(vertex_index) vertexIndex: u32, @builtin(instance_index) instance: u32) -> VSOutput {
+        var out: VSOutput;
+        out.position = fullscreen(vertexIndex);
+        out.color = items[instance].color;
+        return out;
+      }
+    `,
+  },
+  glsl: {
+    vertex: /* glsl */ `
+      #version 300 es
+      precision highp float;
+
+      struct Item {
+        vec4 color;
+      };
+      // @storage Item
+      uniform highp sampler2D items;
+
+      ${GLSL_STORAGE}
+      ${GLSL_INSTANCE_INDEX}
+      ${FULLSCREEN_GLSL}
+
+      flat out vec4 vColor;
+      void main() {
+        gl_Position = fullscreen();
+        vColor = gg_storageTexel(items, gg_instanceIndex());
+      }
+    `,
+    fragment: COLOR_FS_GLSL,
+  },
+}
+
+const ATTRIBUTE_SHADER: ShaderModuleOptions = {
+  wgsl: {
+    source: /* wgsl */ `
+      ${FULLSCREEN_WGSL}
+
+      @vertex
+      fn vs(@builtin(vertex_index) vertexIndex: u32, @location(0) color: vec4<f32>) -> VSOutput {
+        var out: VSOutput;
+        out.position = fullscreen(vertexIndex);
+        out.color = color;
+        return out;
+      }
+    `,
+  },
+  glsl: {
+    vertex: /* glsl */ `
+      #version 300 es
+      precision highp float;
+
+      ${FULLSCREEN_GLSL}
+
+      layout(location = 0) in vec4 color;
+      flat out vec4 vColor;
+      void main() {
+        gl_Position = fullscreen();
+        vColor = color;
+      }
+    `,
+    fragment: COLOR_FS_GLSL,
+  },
 }

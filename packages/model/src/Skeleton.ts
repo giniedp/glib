@@ -1,14 +1,6 @@
 import { type Buffer, BufferUsage, type Device } from '@gglib/graphics'
 import { type Mat4, mat4Multiply, Transform } from '@gglib/math'
 
-/**
- * Maximum number of joints per skeleton when rendering with WebGL
- *
- * @remarks
- * Matches the joint array size of the uniform block in the shaders, 256 joints fit into the minimum uniform block size of 16KB.
- */
-export const SKELETON_MAX_JOINTS_WEBGL = 256
-
 const _tmp: Mat4 = new Float32Array(16)
 
 /**
@@ -44,7 +36,7 @@ export class Skeleton {
    * GPU buffer with the {@link jointMatrices}, bind it to `CommonInputs.Skin.Joints`
    *
    * @remarks
-   * A storage buffer on WebGPU. On WebGL a uniform buffer with room for {@link SKELETON_MAX_JOINTS_WEBGL} joints.
+   * A storage buffer, on WebGL it is read through a float texture.
    * The buffer is not owned by the skeleton, the owner of the skeleton (the model) owns it.
    */
   public readonly buffer: Buffer
@@ -71,17 +63,11 @@ export class Skeleton {
       this.joints[i] = this.jointMatrices.subarray(i * 16, i * 16 + 16)
     }
 
-    let size = this.jointMatrices.byteLength
-    if (!device.isWebGPU) {
-      if (bones.length > SKELETON_MAX_JOINTS_WEBGL) {
-        console.warn(`Skeleton has ${bones.length} joints, WebGL supports ${SKELETON_MAX_JOINTS_WEBGL}`)
-      }
-      size = SKELETON_MAX_JOINTS_WEBGL * 64
-    }
+    // a storage buffer on both platforms, WebGL emulates it with a float texture
     this.buffer = device.createBuffer({
       name: 'skeleton joints',
-      usage: device.isWebGPU ? BufferUsage.STORAGE : BufferUsage.UNIFORM,
-      size: size,
+      usage: BufferUsage.STORAGE,
+      size: Math.max(64, this.jointMatrices.byteLength),
     })
   }
 
@@ -91,12 +77,11 @@ export class Skeleton {
    * @param rootInverse - inverse world matrix of the model root, the joint matrices are relative to it
    */
   public update(rootInverse: Mat4) {
-    const count = Math.min(this.boneCount, this.buffer.size / 64)
+    const count = this.boneCount
     for (let i = 0; i < count; i++) {
       mat4Multiply(rootInverse, this.bones[i].world, _tmp)
       mat4Multiply(_tmp, this.inverseBindMatrices[i], this.joints[i])
     }
-    // sub data keeps the buffer size, the WebGL uniform block expects the full size
     this.buffer.setSubData(0, this.jointMatrices, 0, count * 16)
   }
 }

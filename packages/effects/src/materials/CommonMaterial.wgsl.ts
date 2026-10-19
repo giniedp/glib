@@ -116,7 +116,8 @@ struct LightResult {
 @group(0) @binding(0) var<uniform> global: EnvBlock;
 @group(0) @binding(1) var<uniform> ibl: IblBlock;
 @group(1) @binding(0) var<uniform> view: ViewBlock;
-@group(2) @binding(0) var<uniform> object: ObjectBlock;
+// one element per instance, see perInstanceTransformBlock
+@group(2) @binding(0) var<storage, read> object: array<ObjectBlock>;
 // joint matrices in model space, see Skeleton in @gglib/model
 // @block skin
 @group(2) @binding(1) var<storage, read> joints: array<mat4x4f>;
@@ -446,17 +447,19 @@ struct VertexInput {
   @location(4) color: vec4f,
   @location(5) joints: vec4<u32>,
   @location(6) weights: vec4f,
+  @builtin(instance_index) instance: u32,
 };
 
 // Model matrix of the vertex, skinned by the weighted joint matrices.
 // Vertices without weights (not skinned) use the object model matrix as is.
 fn getModelMatrix(vert: VertexInput) -> mat4x4f {
+  let model = object[vert.instance].modelMatrix;
   let w = vert.weights;
   if (w.x + w.y + w.z + w.w == 0.0) {
-    return object.modelMatrix;
+    return model;
   }
   let j = vert.joints;
-  return object.modelMatrix * (w.x * joints[j.x] + w.y * joints[j.y] + w.z * joints[j.z] + w.w * joints[j.w]);
+  return model * (w.x * joints[j.x] + w.y * joints[j.y] + w.z * joints[j.z] + w.w * joints[j.w]);
 }
 
 struct VertexOutput {

@@ -1,3 +1,5 @@
+import { GLSL_INSTANCE_INDEX, GLSL_STORAGE } from '../webgl/glsl/glsl-storage'
+
 const BASE = /* glsl */ `
 #define TRUE 1u
 #define FALSE 0u
@@ -16,10 +18,13 @@ layout(std140) uniform ViewBlock {
   mat4 projectionMatrix;
 } view;
 
-// @block object
-layout(std140) uniform ObjectBlock {
+struct ObjectBlock {
   mat4 modelMatrix;
-} object;
+};
+// one element per instance, see perInstanceTransformBlock
+// @storage ObjectBlock
+uniform highp sampler2D object;
+${GLSL_STORAGE}
 
 // @block material
 layout(std140) uniform MaterialBlock {
@@ -39,6 +44,8 @@ layout(std140) uniform SettingsBlock {
 } settings;
 
 #if defined(VERTEX_SHADER)
+  ${GLSL_INSTANCE_INDEX}
+
   // @alias position
   layout(location = 0) in vec3 aPosition;
   // @alias texture
@@ -74,7 +81,7 @@ precision highp int;
 ${BASE}
 
 void main() {
-  mat4 modelMatrix = object.modelMatrix;
+  mat4 modelMatrix = gg_storageMat4(object, gg_instanceIndex() * 4);
   vec4 worldPos = modelMatrix * vec4(aPosition.xyz, 1.0);
   vec4 viewPos = view.viewMatrix * worldPos;
   vec4 clipPos = view.projectionMatrix * viewPos;

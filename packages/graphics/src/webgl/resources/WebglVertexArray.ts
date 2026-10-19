@@ -17,6 +17,8 @@ export class WebglVertexArray implements WebglResource<WebGLVertexArrayObject> {
   public readonly onDisposed = eventSource<this>()
 
   private disposed = false
+  private instanced: InstancedAttribute[] = []
+  private baseInstance = 0
   private unsubscribe: Array<() => void> = []
   public constructor(
     device: WebglDevice,
@@ -49,7 +51,31 @@ export class WebglVertexArray implements WebglResource<WebGLVertexArrayObject> {
 
   private restore() {
     const self = this as Mutable<this>
-    self.glHandle = createVao(this.device.context, this.program, this.vertexBuffer.buffers, this.indexBuffer)
+    self.glHandle = createVao(this.device.context, this.program, this.vertexBuffer.buffers, this.indexBuffer, this.instanced)
+    this.baseInstance = 0
+  }
+
+  /**
+   * Whether the vertex array has per instance attributes
+   */
+  public get hasInstancedAttributes(): boolean {
+    return this.instanced.length > 0
+  }
+
+  /**
+   * Offsets the per instance attributes so that the next draw starts at the given instance, which WebGL has no native
+   * support for. The vertex array must be bound.
+   */
+  public setBaseInstance(value: number) {
+    if (this.baseInstance === value || !this.instanced.length) {
+      return
+    }
+    this.baseInstance = value
+    const gl = this.device.context
+    for (const { buffer, location, size, type, normalized, byteOffset } of this.instanced) {
+      gl.bindBuffer(buffer.glType, buffer.glHandle)
+      gl.vertexAttribPointer(location, size, type, normalized, buffer.stride, byteOffset + value * buffer.stride)
+    }
   }
 
   public dispose() {
@@ -78,7 +104,9 @@ function createVao(
   program: WebglShaderModule,
   vertexBuffer: WebglBuffer[],
   indexBuffer: WebglBuffer | null,
+  instanced: InstancedAttribute[],
 ) {
+  instanced.length = 0
   const toBind: Array<{
     buffer: WebglBuffer
     layout: VertexAttribute
@@ -127,6 +155,16 @@ function createVao(
     )
     gl.vertexAttribDivisor(location, buffer.instanced ? 1 : 0)
     gl.enableVertexAttribArray(location)
+    if (buffer.instanced) {
+      instanced.push({
+        buffer,
+        location,
+        size: elementCount,
+        type: dataTypeToWebGL(elementType),
+        normalized: !!normalized,
+        byteOffset: layout.byteOffset,
+      })
+    }
   }
 
   for (const { location, name, alias, type } of missing) {
@@ -158,6 +196,15 @@ function createVao(
   }
   gl.bindVertexArray(null)
   return vao
+}
+
+interface InstancedAttribute {
+  buffer: WebglBuffer
+  location: number
+  size: number
+  type: GLenum
+  normalized: boolean
+  byteOffset: number
 }
 
 type Mutable<T> = {

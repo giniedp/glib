@@ -13,7 +13,7 @@ import {
   uvInfoToMat4,
   type ShaderModuleOptions,
 } from '@gglib/graphics'
-import { mat3CreateIdentity, Mat4, mat4Identity, vec3 } from '@gglib/math'
+import { mat3CreateIdentity, mat4Identity, vec3 } from '@gglib/math'
 import { COMMON_EFFECT_GLSL_FS, COMMON_EFFECT_GLSL_VS } from './CommonMaterial.glsl'
 import { COMMON_EFFECT_WGSL } from './CommonMaterial.wgsl'
 
@@ -38,7 +38,8 @@ export function commonEffectOptions(): EffectOptions {
       shader: commonShaderOptions(),
       sharedBlocks: [CommonBlocks.Global, CommonBlocks.View, CommonBlocks.Frame],
       perInstanceDataBlock: null,
-      perInstanceTransformBlock: null,
+      // the model matrix is read per instance, the renderer batches instances of the same geometry and material
+      perInstanceTransformBlock: CommonBlocks.Object,
     },
   }
 }
@@ -55,6 +56,13 @@ export const CommonMaterialSchema = {
   CameraPosition: CommonInputs.View.CameraPosition,
 
   // per object
+  /**
+   * Model matrix for drawing the material directly. It is written to the single instance buffer the material owns.
+   *
+   * @remarks
+   * The renderer binds its own instance buffer once it draws the material, the model matrix is then taken from the
+   * instances. To draw directly again, create a new material.
+   */
   World: CommonInputs.Object.ModelMatrix,
   Joints: CommonInputs.Skin.Joints,
 

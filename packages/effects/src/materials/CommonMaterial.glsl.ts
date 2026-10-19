@@ -1,3 +1,5 @@
+import { GLSL_INSTANCE_INDEX, GLSL_STORAGE } from '@gglib/graphics'
+
 const BLOCKS = /* glsl */ `
 
 #define LIGHT_COUNT 8
@@ -53,10 +55,13 @@ layout(std140) uniform ViewBlock {
   vec3 cameraPosition;
 } view;
 
-// @block object
-layout(std140) uniform ObjectBlock {
+struct ObjectBlock {
   mat4 modelMatrix;
-} object;
+};
+// one element per instance, see perInstanceTransformBlock
+// @storage ObjectBlock
+uniform highp sampler2D object;
+${GLSL_STORAGE}
 
 // @block material
 layout(std140) uniform MaterialBlock {
@@ -348,27 +353,26 @@ layout(location = 6) in vec4 aWeights;
 
 ${BLOCKS}
 
-// TODO: adjust by preprocessor, 256 joints fit into the minimum uniform block size of 16KB
-#define MAX_JOINTS 256
+${GLSL_INSTANCE_INDEX}
 
 // joint matrices in model space, see Skeleton in @gglib/model
 // @block skin
-layout(std140) uniform SkinBlock {
-  mat4 joints[MAX_JOINTS];
-} skin;
+// @storage mat4
+uniform highp sampler2D joints;
 
 // Model matrix of the vertex, skinned by the weighted joint matrices.
 // Vertices without weights (not skinned) use the object model matrix as is.
 mat4 getModelMatrix() {
+  mat4 model = gg_storageMat4(object, gg_instanceIndex() * 4);
   if (aWeights.x + aWeights.y + aWeights.z + aWeights.w == 0.0) {
-    return object.modelMatrix;
+    return model;
   }
-  ivec4 j = min(ivec4(aJoints), ivec4(MAX_JOINTS - 1));
-  return object.modelMatrix * (
-      aWeights.x * skin.joints[j.x]
-    + aWeights.y * skin.joints[j.y]
-    + aWeights.z * skin.joints[j.z]
-    + aWeights.w * skin.joints[j.w]);
+  ivec4 j = ivec4(aJoints) * 4;
+  return model * (
+      aWeights.x * gg_storageMat4(joints, j.x)
+    + aWeights.y * gg_storageMat4(joints, j.y)
+    + aWeights.z * gg_storageMat4(joints, j.z)
+    + aWeights.w * gg_storageMat4(joints, j.w));
 }
 
 out vec3 vWorldPosition;

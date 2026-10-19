@@ -4,10 +4,16 @@ import {
   reflectGlslComponent,
   reflectGlslValueComponent,
   type GlslShaderInfo,
+  type GlslStorageLayout,
   type GlslTypeSampler,
   type GlslValueType,
 } from '../glsl'
 import type { WebglShaderModule } from './WebglShaderModule'
+
+/**
+ * Name of the uniform that emulates the first instance of a draw, see `WebglShaderModule.setBaseInstance`
+ */
+export const BASE_INSTANCE_UNIFORM = 'gg_BaseInstance'
 
 export interface WebglReflection {
   readonly inputs: ReadonlyArray<WebglReflectInput>
@@ -38,6 +44,10 @@ export interface WebglReflectUniform<T = GlslValueType | GlslTypeSampler> {
   readonly arrayStride: number
   readonly matrixStride: number
   readonly textureIndex: number
+  /**
+   * Element layout, if the uniform is a sampler that emulates a storage buffer (`@storage` annotation)
+   */
+  readonly storage?: GlslStorageLayout
 }
 
 export interface WebglReflectBlock {
@@ -148,6 +158,7 @@ function reflectUniforms(
       arrayStride: arrayStrides[i],
       matrixStride: matrixStrides[i],
       textureIndex: isSampler ? textureUnitIndex++ : -1,
+      storage: isSampler ? uniforms.find((it) => it.name === info.name)?.storage : undefined,
     })
   }
   return result
