@@ -4,7 +4,7 @@ import {
   LightComponent,
   ModelComponent,
   TransformComponent,
-  TweenOptions,
+  Tween,
   TweenSystem,
 } from '@gglib/components'
 import { ContentLoader } from '@gglib/content'
@@ -17,7 +17,9 @@ import { mount } from 'tweak-ui'
 
 class Game extends EcsGame {
   public cube!: GameEntity
-  public tween!: TweenSystem
+  public move!: Tween
+  public scale!: Tween
+  public spin!: Tween
 
   public constructor(canvas: HTMLCanvasElement, platform: PlatformId) {
     super({ canvas, platform })
@@ -25,12 +27,61 @@ class Game extends EcsGame {
     this.content.registerLoader(OBJ.Loader)
     this.content.registerLoader(MTL.Loader)
     this.content.registerLoader(GLTF.Loader)
-    this.tween = this.world.getSystem(TweenSystem)
     this.world.getSystem(Renderer).linearToSrgb = true
 
     this.createCamera()
     this.createLight()
     this.createCube()
+    this.createTweens()
+  }
+
+  private createTweens() {
+    const tweens = this.world.getSystem(TweenSystem)
+    const transform = this.cube.getTransform<TransformComponent>()!
+
+    // tweens are reusable: create once, then change from/to and play again
+    this.move = tweens.create({
+      duration: 0.5,
+      ease: easeInOutCubic,
+      onUpdate: (t) => transform.setPositionV(t),
+    })
+    this.scale = tweens.create({
+      duration: 0.5,
+      ease: easeOutCubic,
+      onUpdate: (t) => transform.setScaleUniform(t.value),
+    })
+    // a scalar tween that loops forever
+    this.spin = tweens.play({
+      from: 0,
+      to: Math.PI * 2,
+      duration: 4,
+      repeat: Infinity,
+      onUpdate: (t) => transform.setRotationAxisAngle(0, 1, 0, t.value),
+    })
+  }
+
+  public tweenPosition() {
+    const position = this.cube.getTransform<TransformComponent>()!.translation
+    this.move
+      .setFrom(position)
+      .setToXYZW(position.x > 0 ? -5 : 5, 0, -10)
+      .play()
+  }
+
+  public tweenScale() {
+    const scale = this.cube.getTransform<TransformComponent>()!.scale.x
+    this.scale
+      .setFrom(scale)
+      .setTo(scale > 1 ? 0.5 : 2)
+      .play()
+  }
+
+  public toggleSpin() {
+    if (this.spin.isPaused) {
+      this.spin.resume()
+    } else {
+      this.spin.pause()
+    }
   }
 
   private createCamera() {
@@ -71,34 +122,6 @@ class Game extends EcsGame {
     entity.getTransform<TransformComponent>()!.setRotationAxisAngle(1, 0, 0, -1)
   }
 
-  public tweenPosition(options: TweenOptions<any>) {
-    console.log('tweenPosition', options)
-    const transform = this.cube.getTransform<TransformComponent>()!
-    this.tween.cancelAll()
-    this.tween
-      .startV3({
-        ...options,
-        from: transform.translation,
-        to: vec3(transform.translation.x > 0 ? -5 : 5, 0, -5),
-      })
-      .bind((tween) => {
-        console.log(tween)
-        transform.setPositionV(tween)
-      })
-  }
-
-  public tweenScale(options: TweenOptions<any>) {
-    const transform = this.cube.getTransform<TransformComponent>()!
-    this.tween.cancelAll()
-    this.tween
-      .start({
-        ...options,
-        from: [transform.scale.x],
-        to: [transform.scale.x > 1 ? 0.5 : 2],
-      })
-      .bind((tween) => transform.setScaleUniform(tween.value))
-  }
-
   protected override onUpdate(time: number, dt: number): void {
     this.scene.getCamera<CameraComponent>(0).aspect = this.device.output.aspectRatio
   }
@@ -108,17 +131,12 @@ class CubeComponent implements GameComponent, InitializableComponent {
   public content!: ContentLoader
   public renderable!: ModelComponent
 
-  public get transform(): TransformComponent {
-    return this.entity.getTransform<TransformComponent>()!
-  }
-
   public readonly entity!: GameEntity
   public initialize(): void {
     this.renderable = this.entity.component(ModelComponent)
     this.content = this.entity.service(ContentLoader)
     this.content.loadModel('/models/obj/ship-pirate-large.obj').then((model) => {
       this.renderable.model = model
-      console.log('Model loaded', model)
     })
   }
 
@@ -130,43 +148,25 @@ class CubeComponent implements GameComponent, InitializableComponent {
 export default (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
   const game = new Game(canvas, platform)
 
+  const eases = [
+    { label: 'Linear', value: easeLinear },
+    { label: 'InCubic', value: easeInCubic },
+    { label: 'OutCubic', value: easeOutCubic },
+    { label: 'InOutCubic', value: easeInOutCubic },
+  ]
   const panel = mount(tools, (ui) => {
-    const positionOptions: TweenOptions<any> = {
-      from: null,
-      to: null,
-      duration: 0.5,
-      delay: 0,
-      ease: easeInOutCubic,
-    }
-    ui.scalar(positionOptions, 'duration', { min: 0.1, step: 0.1 })
-    ui.scalar(positionOptions, 'delay', { min: 0, step: 1 })
-    ui.select(positionOptions, 'ease', {
-      options: [
-        { label: 'Linear', value: easeLinear },
-        { label: 'InCubic', value: easeInCubic },
-        { label: 'OutCubic', value: easeOutCubic },
-        { label: 'InOutCubic', value: easeInOutCubic },
-      ],
-    })
-    ui.button('Move', { onClick: () => game.tweenPosition(positionOptions) })
-    const scaleOptions: TweenOptions<any> = {
-      from: null,
-      to: null,
-      duration: 0.5,
-      delay: 0,
-      ease: easeInOutCubic,
-    }
-    ui.scalar(scaleOptions, 'duration', { min: 100, step: 1 })
-    ui.scalar(scaleOptions, 'delay', { min: 0, step: 1 })
-    ui.select(scaleOptions, 'ease', {
-      options: [
-        { label: 'Linear', value: easeLinear },
-        { label: 'InCubic', value: easeInCubic },
-        { label: 'OutCubic', value: easeOutCubic },
-        { label: 'InOutCubic', value: easeInOutCubic },
-      ],
-    })
-    ui.button('Scale', { onClick: () => game.tweenScale(scaleOptions) })
+    ui.scalar(game.move, 'duration', { label: 'Move duration', min: 0.1, step: 0.1 })
+    ui.scalar(game.move, 'delay', { label: 'Move delay', min: 0, step: 0.1 })
+    ui.scalar(game.move, 'repeat', { label: 'Move repeat', min: 0, step: 1 })
+    ui.bool(game.move, 'yoyo', { label: 'Move yoyo' })
+    ui.select(game.move, 'ease', { label: 'Move ease', options: eases })
+    ui.button('Move', { onClick: () => game.tweenPosition() })
+
+    ui.scalar(game.scale, 'duration', { label: 'Scale duration', min: 0.1, step: 0.1 })
+    ui.select(game.scale, 'ease', { label: 'Scale ease', options: eases })
+    ui.button('Scale', { onClick: () => game.tweenScale() })
+
+    ui.button('Pause / resume spin', { onClick: () => game.toggleSpin() })
   })
 
   game.run()
