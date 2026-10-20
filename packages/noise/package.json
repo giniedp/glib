@@ -24,8 +24,12 @@
       "types": "./dist/noise/src/index.d.ts"
     }
   },
-  "devDependencies": {},
-  "peerDependencies": {},
+  "devDependencies": {
+    "@gglib/graphics": "workspace:^0.7.0"
+  },
+  "peerDependencies": {
+    "@gglib/graphics": "0.7.0"
+  },
   "files": [
     "package.json",
     "dist",

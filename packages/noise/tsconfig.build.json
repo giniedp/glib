@@ -20,5 +20,9 @@
     "./**/*.bench.ts",
     "./**/*.bench.js"
   ],
-  "references": []
+  "references": [
+    {
+      "path": "../graphics/tsconfig.build.json"
+    }
+  ]
 }

@@ -359,7 +359,7 @@ export class WebglDevice extends Device<WebGL2RenderingContext> {
     y: number = 0,
     width: number = texture.width,
     height: number = texture.height,
-  ): Uint8ClampedArray<ArrayBuffer> {
+  ): Uint8ClampedArray<ArrayBuffer> | Float32Array<ArrayBuffer> {
     if (texture.sampleCount > 1) {
       throw new Error('Reading pixels from multisampled textures is not supported in WebGL')
     }
@@ -374,8 +374,15 @@ export class WebglDevice extends Device<WebGL2RenderingContext> {
     this.readBackBuffer.setRenderTarget(0, texture, 0, 0)
     this.readBackBuffer.activate()
 
-    const data = new Uint8ClampedArray(width * height * 4)
-    gl.readPixels(x, y, width, height, this.context.RGBA, this.context.UNSIGNED_BYTE, data)
+    // float color buffers can only be read as RGBA floats, always 4 components per pixel
+    let data: Uint8ClampedArray<ArrayBuffer> | Float32Array<ArrayBuffer>
+    if (texture.format.endsWith('float')) {
+      data = new Float32Array(width * height * 4)
+      gl.readPixels(x, y, width, height, gl.RGBA, gl.FLOAT, data)
+    } else {
+      data = new Uint8ClampedArray(width * height * 4)
+      gl.readPixels(x, y, width, height, gl.RGBA, gl.UNSIGNED_BYTE, data)
+    }
 
     this.framebuffer.restore(restoreRead, restoreDraw)
     return data

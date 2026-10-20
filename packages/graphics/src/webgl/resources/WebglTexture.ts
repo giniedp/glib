@@ -139,7 +139,12 @@ export class WebglTexture extends Texture implements WebglResource<WebGLTexture 
     width: number = this.width,
     height: number = this.height,
   ): Promise<Uint8ClampedArray<ArrayBuffer>> {
-    return this.device.readPixels(this, x, y, width, height)
+    const data = this.device.readPixels(this, x, y, width, height)
+    if (data instanceof Uint8ClampedArray) {
+      return data
+    }
+    // float textures, clamped to [0, 1]
+    return Uint8ClampedArray.from(data, (it) => it * 255)
   }
 
   private finalize(): void {
