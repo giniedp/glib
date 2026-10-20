@@ -1,4 +1,4 @@
-import { Mat4, mat4$initFrom, mat4$initOrthographicOffCenter, mat4Identity, type IRect } from '@gglib/math'
+import { Mat4, mat4$initFrom, mat4$initOrthographicOffCenter, mat4Identity, type IRect, type IVec4 } from '@gglib/math'
 import { PooledList } from '@gglib/utils'
 import { Device } from './Device'
 import type { RenderEncoder } from './RenderEncoder'
@@ -9,6 +9,7 @@ import { Texture, TextureView } from './resources/Texture'
 import { VertexBuffer } from './resources/VertexBuffer'
 import { SpriteBuilder } from './Sprite'
 import { spriteBatchShader } from './SpriteBatch.shader'
+import { type SpriteFont, SpriteFontCursor } from './SpriteFont'
 import { CullState, SamplerState } from './states'
 import { Renderable } from './types'
 
@@ -43,6 +44,34 @@ function compareTexture(a: SpriteBuilder, b: SpriteBuilder): number {
 
 function mipRangeKey(texture: Texture | TextureView): number {
   return texture instanceof TextureView ? texture.baseMipLevel * 32 + texture.mipLevelCount : -1
+}
+
+/**
+ * Options for {@link SpriteBatch.drawString}
+ *
+ * @public
+ */
+export interface DrawStringOptions {
+  /**
+   * Rotation in radians around the origin
+   */
+  rotation?: number
+  /**
+   * Horizontal origin of the text in unscaled pixels, relative to the left edge. Placed at the given position
+   */
+  originX?: number
+  /**
+   * Vertical origin of the text in unscaled pixels, relative to the top edge. Placed at the given position
+   */
+  originY?: number
+  /**
+   * Scale of the text. Defaults to `1`
+   */
+  scale?: number
+  /**
+   * The sprite depth
+   */
+  depth?: number
 }
 
 /**
@@ -109,6 +138,9 @@ export class SpriteBatch implements Renderable, Ownable {
    * The sampler used to sample the sprite textures
    */
   public sampler: SamplerState = SamplerState.Default
+
+  // reused by drawString
+  private cursor = new SpriteFontCursor()
 
   public constructor(device: Device, options: SpriteBatchOptions = {}) {
     this.device = device
@@ -214,6 +246,51 @@ export class SpriteBatch implements Renderable, Ownable {
       sprite.destination(dst.x, dst.y, dst.width, dst.height, depth, angle, pivotX, pivotY)
     }
     return sprite
+  }
+
+  /**
+   * Adds a sprite for each character of the text
+   *
+   * @param font - the font to draw with
+   * @param text - the text, `\n` starts a new line
+   * @param x - x position of the text origin
+   * @param y - y position of the text origin
+   * @param color - the tint color, defaults to white
+   */
+  public drawString(
+    font: SpriteFont,
+    text: string,
+    x: number,
+    y: number,
+    color?: IVec4,
+    options?: DrawStringOptions,
+  ): this {
+    const scale = options?.scale ?? 1
+    const originX = options?.originX ?? 0
+    const originY = options?.originY ?? 0
+    const rotation = options?.rotation ?? 0
+    const depth = options?.depth
+    const cursor = font.layout(text, this.cursor)
+    while (cursor.next()) {
+      const glyph = cursor.glyph
+      const source = glyph.source
+      if (!source.width) {
+        continue
+      }
+      const width = source.width * scale
+      const height = source.height * scale
+      const dx = x + (cursor.x + glyph.offsetX - originX) * scale
+      const dy = y + (cursor.y + glyph.offsetY - originY) * scale
+      const sprite = this.pool.next()
+      sprite.reset(font.texture)
+      sprite.source(source.x, source.y, source.width, source.height)
+      // all glyphs rotate around the text origin, the pivot is relative to the glyph
+      sprite.destination(dx, dy, width, height, depth, rotation, (x - dx) / width, (y - dy) / height)
+      if (color) {
+        sprite.tint(color)
+      }
+    }
+    return this
   }
 
   public draw() {

@@ -7,7 +7,6 @@ import {
   mat4$premultiply,
   mat4$rotateX,
   mat4$rotateY,
-  mat4$rotateZ,
   mat4$setTranslationXYZ,
   mat4$translateXYZ,
   mat4Identity,
@@ -43,8 +42,14 @@ export class SpriteBuilder {
   public readonly transform = mat4Identity()
   public readonly uv: IVec4 = vec4(0, 0, 1, 1)
 
+  // size of the destination in pixels, the pivot of rotate is relative to it
+  private width = 1
+  private height = 1
+
   public reset(texture: Texture | TextureView): this {
     this.texture = texture
+    this.width = 1
+    this.height = 1
     vec4$init(this.color, 1, 1, 1, 1)
     vec4$init(this.uv, 0, 0, 1, 1)
     mat4$initIdentity(this.transform)
@@ -183,6 +188,8 @@ export class SpriteBuilder {
       depth = 0
     }
 
+    this.width = width
+    this.height = height
     mat4$initScaleXYZ(this.transform, width, height, 1)
     mat4$setTranslationXYZ(this.transform, x + width * 0.5, y + height * 0.5, -depth)
 
@@ -192,12 +199,39 @@ export class SpriteBuilder {
     return this
   }
 
+  /**
+   * Rotates the sprite around a pivot
+   *
+   * @param angle - the angle in radians
+   * @param pivotX - horizontal pivot as fraction of the sprite width, `0` is the left edge. Defaults to `0.5`
+   * @param pivotY - vertical pivot as fraction of the sprite height, `0` is the top edge. Defaults to `0.5`
+   *
+   * @remarks
+   * The rotation happens in destination pixels, so non square sprites keep their shape.
+   * Call after {@link SpriteBuilder.destination}.
+   */
   public rotate(angle: number, pivotX?: number, pivotY?: number): this {
-    pivotX = (pivotX ?? 0.5) - 0.5
-    pivotY = (pivotY ?? 0.5) - 0.5
-    mat4$translateXYZ(this.transform, pivotX || 0, pivotY || 0, 0)
-    mat4$rotateZ(this.transform, angle || 0)
-    mat4$translateXYZ(this.transform, -pivotX || 0, -pivotY || 0, 0)
+    if (!angle) {
+      return this
+    }
+    const m = this.transform
+    // pivot relative to the center, in destination pixels
+    const ox = ((pivotX ?? 0.5) - 0.5) * this.width
+    const oy = ((pivotY ?? 0.5) - 0.5) * this.height
+    // the current axes, may already be rotated
+    const ax = m[0]
+    const ay = m[1]
+    const bx = m[4]
+    const by = m[5]
+    const cos = Math.cos(angle)
+    const sin = Math.sin(angle)
+    m[0] = cos * ax - sin * ay
+    m[1] = sin * ax + cos * ay
+    m[4] = cos * bx - sin * by
+    m[5] = sin * bx + cos * by
+    // keep the pivot in place: center' = pivot - R * (pivot - center)
+    m[12] += ox - (cos * ox - sin * oy)
+    m[13] += oy - (sin * ox + cos * oy)
     return this
   }
 
