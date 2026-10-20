@@ -1,5 +1,5 @@
 ---
-aside: false
+order: 10
 ---
 
 # Brand Types

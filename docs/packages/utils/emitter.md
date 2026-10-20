@@ -1,6 +1,5 @@
 ---
-order: 0
-aside: false
+order: 10
 ---
 
 # Event emitter

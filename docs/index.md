@@ -40,7 +40,7 @@ features:
     details: Content loaders for various texture and model formats like .gltf, .ktx, .dds
   - title: ECS
     icon: '🧩'
-    details: Extensible entity component system for scene management
+    details: Small general purpose ECS for quick prototype projects
   - title: More
     icon: '…'
     details: can't fit everything into the frontpage. Check the examples and source code.
