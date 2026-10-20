@@ -1,3 +1,4 @@
+export * from './AudioSystem'
 export * from './BehaviorSystem'
 export * from './buildSpriteQuads'
 export * from './CollisionSystem'

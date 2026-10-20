@@ -1,3 +1,5 @@
+export * from './AudioListenerComponent'
+export * from './AudioSourceComponent'
 export * from './BoundsComponent'
 export * from './CameraComponent'
 export * from './ColliderComponent'

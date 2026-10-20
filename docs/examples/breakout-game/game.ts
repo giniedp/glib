@@ -1,3 +1,4 @@
+import { AudioAssetType, AudioDevice } from '@gglib/components'
 import { ContentLoader } from '@gglib/content'
 import { Game, MouseInput, MouseListener } from '@gglib/game'
 import { BlendState, Color, PlatformId, SpriteBatch, SpriteMode, Texture } from '@gglib/graphics'
@@ -38,7 +39,7 @@ class BreakoutGame extends Game {
   public ball!: GameBlock
   public paddle!: GameBlock
   public blocks!: GameBlock[]
-  public audio!: AudioContext
+  public audio!: AudioDevice
   public sounds: AudioBuffer[] = []
   public score: number = 0
   public streak: number = 0
@@ -52,7 +53,12 @@ class BreakoutGame extends Game {
         preventDefault: true,
       }),
     })
-    this.audio = new AudioContext()
+    this.audio = new AudioDevice()
+  }
+
+  public override destroy(): void {
+    super.destroy()
+    this.audio.destroy()
   }
 
   public override onInitialize() {
@@ -135,13 +141,7 @@ class BreakoutGame extends Game {
         '/audio/impact/impactGlass_medium_002.ogg',
         '/audio/impact/impactGlass_medium_003.ogg',
         '/audio/impact/impactGlass_medium_004.ogg',
-      ].map(async (url) => {
-        return fetch(url)
-          .then((res) => res.arrayBuffer())
-          .then((res) => {
-            return this.audio.decodeAudioData(res)
-          })
-      }),
+      ].map((url) => this.content.load(AudioAssetType, url)),
     )
   }
 
@@ -302,11 +302,8 @@ class BreakoutGame extends Game {
   }
 
   private playCollisionSound() {
-    const buffer = this.sounds[Math.floor(Math.random() * (this.sounds.length - 1))]
-    const node = this.audio.createBufferSource()
-    node.buffer = buffer
-    node.connect(this.audio.destination)
-    node.start()
+    const buffer = this.sounds[Math.floor(Math.random() * this.sounds.length)]
+    this.audio.playOneShot(buffer)
   }
 
   public override onDraw(time: number, dt: number): void {

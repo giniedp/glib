@@ -165,6 +165,18 @@ export class ContentLoader {
   }
 
   /**
+   * Registry for asset creators
+   */
+  public static creators = new Map<string, AssetCreator<any, any>>()
+
+  /**
+   * Registers a creator function for all content loaders
+   */
+  public static registerCreator<O, T>(type: AssetType<O, T>, factory: AssetCreator<O, T>): void {
+    this.creators.set(type, factory)
+  }
+
+  /**
    * The graphics device instance
    */
   public device: Device
@@ -208,7 +220,7 @@ export class ContentLoader {
   }
 
   /**
-   * Asset creator registry
+   * Asset creator registry that takes precedence over the static {@link ContentLoader.creators}
    */
   public creators = new Map<string, AssetCreator<any, any>>()
 
@@ -458,6 +470,9 @@ export class ContentLoader {
   protected findCreator(type: AssetType): AssetCreator {
     if (this.creators.has(type)) {
       return this.creators.get(type)
+    }
+    if (ContentLoader.creators.has(type)) {
+      return ContentLoader.creators.get(type)
     }
     switch (type) {
       case AssetType.Material: {
