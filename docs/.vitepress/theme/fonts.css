@@ -15,6 +15,8 @@
   font-weight: 100 800;
   font-style: normal;
   font-display: swap;
+  /* no code ligatures like => or != (Firefox, other browsers use the rule below) */
+  font-feature-settings: 'liga' 0, 'calt' 0;
 }
 
 @font-face {
@@ -23,6 +25,15 @@
   font-weight: 100 800;
   font-style: italic;
   font-display: swap;
+  font-feature-settings: 'liga' 0, 'calt' 0;
+}
+
+/* JetBrains Mono draws operators like => or != as ligatures, show the plain characters */
+pre,
+code,
+kbd,
+samp {
+  font-variant-ligatures: none;
 }
 
 @font-face {

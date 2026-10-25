@@ -48,6 +48,7 @@ Each package solves a specific problem domain while staying as independent as po
   text-align: center;
 }
 .base {
+  border: 1px solid var(--vp-button-brand-border);
   background: var(--vp-button-brand-bg);
   color: var(--vp-button-brand-text);
 }

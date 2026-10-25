@@ -78,12 +78,57 @@
   --vp-font-family-base: 'Mulish', sans-serif;
   --vp-font-family-mono: 'JetBrainsMono', monospace;
 }
-.dark {
-  --vp-c-brand-1: #22d98a;
-  --vp-c-brand-2: #00b86b;
-  --vp-c-brand-3: #00a25e;
-  --vp-c-brand-soft: rgba(34, 217, 138, 0.16);
+:root.dark {
+  /* neon green */
+  --vp-c-brand-1: #00ff9c;
+  --vp-c-brand-2: #00e68c;
+  --vp-c-brand-3: #00cc7d;
+  --vp-c-brand-soft: rgba(0, 255, 156, 0.14);
+  --brand-glow: 0 0 8px rgba(0, 255, 156, 0.45);
+
+  /* neon as line and text only, large neon fills are too harsh */
+  --vp-button-brand-border: var(--vp-c-brand-soft);
+  --vp-button-brand-text: var(--vp-c-brand-1);
+  --vp-button-brand-bg: rgba(0, 255, 156, 0.08);
+  --vp-button-brand-hover-border: var(--vp-c-brand-1);
+  --vp-button-brand-hover-text: var(--vp-c-brand-1);
+  --vp-button-brand-hover-bg: rgba(0, 255, 156, 0.16);
+  --vp-button-brand-active-border: var(--vp-c-brand-1);
+  --vp-button-brand-active-text: var(--vp-c-brand-1);
+  --vp-button-brand-active-bg: rgba(0, 255, 156, 0.24);
+
+  --vp-home-hero-name-background: -webkit-linear-gradient(120deg, #ffd500 30%, #00ff9c);
+
+  /* neutral, darker grays instead of the default blue tinted ones (same levels as nw-buddy.de) */
+  --vp-c-bg: #191919;
+  --vp-c-bg-alt: #111111;
+  --vp-c-bg-elv: #222222;
+  --vp-c-bg-soft: #222222;
+
+  --vp-c-gray-1: #555555;
+  --vp-c-gray-2: #444444;
+  --vp-c-gray-3: #333333;
+  --vp-c-gray-soft: rgba(128, 128, 128, 0.16);
+
+  --vp-c-border: #3a3a3a;
+  --vp-c-divider: #2a2a2a;
+  --vp-c-gutter: #000000;
 }
+/* links and the active navigation glow in dark mode */
+.dark .vp-doc a,
+.dark .VPSidebarItem.is-active > .item .text,
+.dark .VPNavBarMenuLink.active {
+  text-shadow: var(--brand-glow);
+}
+.dark .VPButton.brand {
+  transition:
+    box-shadow 0.25s,
+    background-color 0.25s;
+}
+.dark .VPButton.brand:hover {
+  box-shadow: 0 0 12px rgba(0, 255, 156, 0.5);
+}
+
 /**
  * Component: Button
  * -------------------------------------------------------------------------- */
