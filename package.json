@@ -72,6 +72,7 @@
     "wrangler": "^4.135.0"
   },
   "keywords": [
+    "webgpu",
     "webgl",
     "2d",
     "3d",

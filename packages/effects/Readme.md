@@ -1,7 +1,7 @@
 [G]Glib - @gglib/effects
 =======
 ![Latest NPM release][version-shield]
-[![License][license-shield]][license-url]
+![License][license-shield]
 
 Collection of packages for real-time 3D web applications with WebGPU or WebGL
 

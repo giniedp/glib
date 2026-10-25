@@ -7,6 +7,7 @@
     "url": "github.com/giniedp/glib.git"
   },
   "keywords": [
+    "webgpu",
     "webgl",
     "2d",
     "3d",

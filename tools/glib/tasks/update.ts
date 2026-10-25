@@ -159,7 +159,7 @@ function updateSrcReadme(pkg: GlibPackageContext) {
 [G]Glib - ${pkg.packageName}
 =======
 ![Latest NPM release][version-shield]
-[![License][license-shield]][license-url]
+![License][license-shield]
 
 ${pj.description}
 
