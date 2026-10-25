@@ -93,7 +93,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   }
 
   const panel = mount(tools, (ui) => {
-    ui.group('Settings', { collapsible: true, collapsed: true }, () => {
+    ui.group('Settings', { collapsible: true, defaultCollapsed: true }, () => {
       ui.tabs(() => {
         ui.group('Pixelate', {}, (ui) => {
           ui.bool(pixelate, 'enabled')

@@ -72,7 +72,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   const panel = mount(tools, (ui) => {
     loadTexture(params.texture)
 
-    ui.group('Settings', { collapsible: true, collapsed: true }, () => {
+    ui.group('Settings', { collapsible: true, defaultCollapsed: true }, () => {
       ui.select(params, 'texture', {
         options: files,
         onChange: () => loadTexture(params.texture),

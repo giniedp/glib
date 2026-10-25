@@ -1,3 +1,4 @@
+// #region imports
 import {
   BasicMaterial,
   BlendState,
@@ -27,6 +28,7 @@ import {
   vec3$normalize,
 } from '@gglib/math'
 import { mount } from 'tweak-ui'
+// #endregion
 
 const settings = {
   fov: 60,

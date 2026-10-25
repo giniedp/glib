@@ -28,7 +28,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   content.registerLoader(HDR.Loader)
 
   const panel = mount(tools, (ui) => {
-    ui.group('Settings', { collapsible: true, collapsed: true }, () => {
+    ui.group('Settings', { collapsible: true, defaultCollapsed: true }, () => {
       ui.scalar(params, 'sunLatitude', { range: true, min: 0, max: Math.PI })
       ui.scalar(params, 'sunLongitude', { range: true, min: 0, max: Math.PI * 2 })
       ui.scalar(params, 'sunIntensity', { range: true, min: 0, max: 100 })

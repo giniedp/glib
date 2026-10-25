@@ -1,25 +1,32 @@
 <template>
   <div class="khronos-tests">
-    <details v-for="folder in manifest" :key="folder.id">
-      <summary style="cursor: pointer">
-        <span>{{ humanize(folder.folder) }}</span>
+    <details v-for="folder in manifest" :key="folder.id" :open="isActiveFolder(folder)">
+      <summary :title="folder.folder">
+        <span class="label">{{ humanize(folder.folder) }}</span>
+        <span class="count">{{ folder.models.length }}</span>
       </summary>
-      <div
-        v-for="(model, modelId) in folder.models"
-        :key="model.fileName"
-        style="display: flex; flex-direction: row; align-items: start; margin: 0.5rem 0"
-      >
-        <img
-          v-if="model.sampleImageName"
-          :src="imageUrl(folder, model)"
-          :alt="model.fileName"
-          width="70"
-          height="70"
-          loading="lazy"
-        />
-        <div style="display: flex; flex-direction: column">
-          <a v-if="model.loadable" :href="modelUrl(folder, modelId)">open test</a>
-          <a :href="githubUrl(folder)" target="_blank" rel="noreferrer">open on github</a>
+      <div class="entries">
+        <div
+          v-for="(model, modelId) in folder.models"
+          :key="model.fileName"
+          class="entry"
+          :class="{ active: isActive(folder, modelId), disabled: !model.loadable }"
+          :title="model.fileName"
+        >
+          <img
+            v-if="model.sampleImageName"
+            :src="imageUrl(folder, model)"
+            :alt="model.fileName"
+            width="56"
+            height="56"
+            loading="lazy"
+          />
+          <div class="info">
+            <a v-if="model.loadable" class="name" :href="modelUrl(folder, modelId)">{{ modelLabel(model) }}</a>
+            <span v-else class="name">{{ modelLabel(model) }}</span>
+            <span v-if="!model.loadable" class="note">not loadable</span>
+            <a class="link" :href="githubUrl(folder)" target="_blank" rel="noreferrer">github</a>
+          </div>
         </div>
       </div>
     </details>
@@ -28,42 +35,141 @@
 
 <style>
 .khronos-tests {
-  summary {
-    font-weight: bold;
+  margin-top: 1rem;
+  border-top: 1px solid var(--vp-c-divider);
+  padding-top: 0.5rem;
+
+  details {
+    border-bottom: 1px solid var(--vp-c-divider);
   }
-  h3,
-  a {
-    color: var(--vp-c-text-2);
-    flex-grow: 1;
-    padding: 4px 0;
-    line-height: 24px;
+
+  summary {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 6px 0;
+    cursor: pointer;
+    list-style: none;
     font-size: 14px;
+    font-weight: 600;
+    line-height: 24px;
+    color: var(--vp-c-text-1);
     transition: color 0.25s;
   }
-  img {
-    width: 70px;
-    height: 70px;
-    object-fit: cover;
-    margin-right: 0.5rem;
-    border-radius: 0.25rem;
-    color: var(--vp-c-text-1);
+  summary::-webkit-details-marker {
+    display: none;
   }
-  a {
+  summary::before {
+    content: '';
+    flex: none;
+    width: 6px;
+    height: 6px;
+    border-right: 1.5px solid currentColor;
+    border-bottom: 1.5px solid currentColor;
+    transform: rotate(-45deg);
+    transition: transform 0.25s;
+    opacity: 0.6;
+  }
+  details[open] > summary::before {
+    transform: rotate(45deg);
+  }
+  summary:hover {
+    color: var(--vp-c-brand-1);
+  }
+  summary .label {
+    flex: 1;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    font-size: 12px;
-    line-height: 1;
   }
-  h3:hover,
-  a:hover {
+  summary .count {
+    flex: none;
+    padding: 0 6px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 18px;
+    color: var(--vp-c-text-2);
+    background: var(--vp-c-default-soft);
+  }
+
+  .entries {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 0 0 0.5rem 0;
+  }
+
+  .entry {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 4px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    transition:
+      background-color 0.25s,
+      border-color 0.25s;
+  }
+  .entry:hover {
+    background: var(--vp-c-default-soft);
+  }
+  .entry.active {
+    border-color: var(--vp-c-brand-1);
+    background: var(--vp-c-brand-soft);
+  }
+  .entry.disabled {
+    opacity: 0.5;
+  }
+
+  img {
+    flex: none;
+    width: 56px;
+    height: 56px;
+    object-fit: cover;
+    border-radius: 4px;
+    background: var(--vp-c-bg-soft);
+  }
+
+  .info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+  .name,
+  .link,
+  .note {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .name {
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 20px;
+    color: var(--vp-c-text-1);
+  }
+  .link,
+  .note {
+    font-size: 12px;
+    line-height: 16px;
+    color: var(--vp-c-text-2);
+  }
+  a {
+    text-decoration: none;
+    transition: color 0.25s;
+  }
+  a:hover,
+  .entry.active .name {
     color: var(--vp-c-brand-1);
   }
 }
 </style>
 <script setup lang="ts">
 /// <reference types="vite/client" />
-import { onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { locationSearch } from '../location-search'
 type Manifest = ManifestFolder[]
 type ManifestFolder = {
   folder: string
@@ -91,6 +197,22 @@ function humanize(name: string) {
     .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
     .replace(/\s+/g, ' ')
     .trim()
+}
+
+const activeKey = computed(() => new URLSearchParams(locationSearch.value).get('model'))
+
+function isActive(folder: ManifestFolder, modelId: number) {
+  return activeKey.value === `${folder.id}-${modelId}`
+}
+
+function isActiveFolder(folder: ManifestFolder) {
+  return !!activeKey.value?.startsWith(`${folder.id}-`)
+}
+
+function modelLabel(model: ManifestModel) {
+  const name = model.fileName.replace(/\.(gltf|glb)$/i, '')
+  const index = name.match(/_(\d+)$/)?.[1]
+  return index ? `Model ${index}` : humanize(name)
 }
 
 function imageUrl(folder: ManifestFolder, model: ManifestModel) {

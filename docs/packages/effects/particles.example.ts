@@ -60,7 +60,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   }
 
   const panel = mount(tools, (ui) => {
-    ui.group('Settings', { collapsible: true, collapsed: true }, () => {
+    ui.group('Settings', { collapsible: true, defaultCollapsed: true }, () => {
       ui.color(channel.settings, 'minColor', { format: colorObject('xyz') })
       ui.color(channel.settings, 'maxColor', { format: colorObject('xyz') })
       ui.scalar(channel.settings, 'minStartSize', { range: true, min: 0, max: 2, step: 0.1 })

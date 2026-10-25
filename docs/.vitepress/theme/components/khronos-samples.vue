@@ -1,17 +1,27 @@
 <template>
   <div class="khronos-samples">
-    <div v-for="mdl in index" :key="mdl.name" style="margin: 1rem 0">
-      <h3 :title="mdl.name">
-        <b>{{ humanize(mdl.name) }}</b>
-      </h3>
-      <div style="display: flex; flex-direction: row; align-items: start">
-        <img v-if="mdl.screenshot" :src="imageUrl(mdl)" :alt="mdl.name" loading="lazy" width="70" height="70" />
-        <div style="display: flex; flex-direction: column">
-          <a v-for="(_, variant) in mdl.variants" :key="variant" :href="variantUrl(mdl, variant)">
+    <div
+      v-for="mdl in index"
+      :key="mdl.name"
+      class="entry"
+      :class="{ active: isActiveModel(mdl) }"
+      :title="mdl.name"
+    >
+      <img v-if="mdl.screenshot" :src="imageUrl(mdl)" :alt="mdl.name" loading="lazy" width="56" height="56" />
+      <div class="info">
+        <span class="name">{{ humanize(mdl.name) }}</span>
+        <div class="variants">
+          <a
+            v-for="(_, variant) in mdl.variants"
+            :key="variant"
+            class="variant"
+            :class="{ active: isActive(mdl, variant) }"
+            :href="variantUrl(mdl, variant)"
+          >
             {{ variant }}
           </a>
-          <a :href="githubUrl(mdl)" target="_blank" rel="noreferrer"> open on github </a>
         </div>
+        <a class="link" :href="githubUrl(mdl)" target="_blank" rel="noreferrer">github</a>
       </div>
     </div>
   </div>
@@ -19,39 +29,106 @@
 
 <style>
 .khronos-samples {
-  h3,
-  a {
-    color: var(--vp-c-text-2);
-    flex-grow: 1;
-    padding: 4px 0;
-    line-height: 24px;
-    font-size: 14px;
-    transition: color 0.25s;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 1rem;
+  border-top: 1px solid var(--vp-c-divider);
+  padding-top: 0.5rem;
+
+  .entry {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 4px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    transition:
+      background-color 0.25s,
+      border-color 0.25s;
   }
+  .entry:hover {
+    background: var(--vp-c-default-soft);
+  }
+  .entry.active {
+    border-color: var(--vp-c-brand-1);
+    background: var(--vp-c-brand-soft);
+  }
+
   img {
-    width: 70px;
-    height: 70px;
+    flex: none;
+    width: 56px;
+    height: 56px;
     object-fit: cover;
-    margin-right: 0.5rem;
-    border-radius: 0.25rem;
-    color: var(--vp-c-text-1);
+    border-radius: 4px;
+    background: var(--vp-c-bg-soft);
   }
-  a {
+
+  .info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+  .name,
+  .link {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    font-size: 12px;
-    line-height: 1;
   }
-  h3:hover,
+  .name {
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 20px;
+    color: var(--vp-c-text-1);
+  }
+  .entry.active .name {
+    color: var(--vp-c-brand-1);
+  }
+
+  .variants {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .variant {
+    padding: 0 6px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 18px;
+    color: var(--vp-c-text-2);
+    background: var(--vp-c-default-soft);
+  }
+  .variant.active {
+    color: var(--vp-c-white);
+    background: var(--vp-c-brand-1);
+  }
+
+  .link {
+    font-size: 12px;
+    line-height: 16px;
+    color: var(--vp-c-text-2);
+  }
+  a {
+    text-decoration: none;
+    transition:
+      color 0.25s,
+      background-color 0.25s;
+  }
   a:hover {
     color: var(--vp-c-brand-1);
+  }
+  .variant.active:hover {
+    color: var(--vp-c-white);
+    background: var(--vp-c-brand-2);
   }
 }
 </style>
 <script setup lang="ts">
 /// <reference types="vite/client" />
-import { onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { locationSearch } from '../location-search'
 type GltfIndex = GltfIndexModel[]
 type GltfIndexModel = {
   name: string
@@ -66,6 +143,16 @@ const GITHUB_URL = 'https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main
 const INDEX_FILE = `${BASE_URL}/model-index.json`
 
 const index = ref<GltfIndex>([])
+
+const activeKey = computed(() => new URLSearchParams(locationSearch.value).get('model'))
+
+function isActive(model: GltfIndexModel, variant: string) {
+  return activeKey.value === `${model.name}_${variant}`
+}
+
+function isActiveModel(model: GltfIndexModel) {
+  return Object.keys(model.variants).some((variant) => isActive(model, variant))
+}
 
 function humanize(name: string) {
   return name

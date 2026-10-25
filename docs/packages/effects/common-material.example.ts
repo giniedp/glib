@@ -66,7 +66,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   const iblSampler = await new IblSampler(device, {}).compiled
 
   const panel = mount(tools, (ui) => {
-    ui.group('Settings', { collapsible: true, collapsed: true }, () => {
+    ui.group('Settings', { collapsible: true, defaultCollapsed: true }, () => {
       ui.color(SETTINGS, 'baseColor', { format: colorObject('xyz') })
       ui.scalar(SETTINGS, 'alpha', { range: true, min: 0, max: 1, decimals: 2 })
       ui.color(SETTINGS, 'specularColor', { format: colorObject('xyz') })

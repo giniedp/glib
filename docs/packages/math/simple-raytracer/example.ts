@@ -18,27 +18,29 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   client.update()
 
   const panel = mount(tools, (ui) => {
-    ui.group('Stats', { collapsed: true, collapsible: true }, () => {
-      ui.widget('Workers', () => String(client.workerCount))
-      ui.scalar(client, 'progress', { range: true, min: 0, max: 100, readonly: true, decimals: 0, unit: '%' })
-      ui.widget('Jobs', () => `${client.jobsDone} / ${client.jobsTotal}`)
-      ui.widget('Passes', () => `${client.passesDone} / ${client.samples}`)
-      ui.widget('Time', () => `${(client.elapsed / 1000).toFixed(1)} s`)
-      ui.widget('Speed', () => `${(client.samplesPerSecond / 1e6).toFixed(2)} M samples/s`)
-    })
-    ui.group('Settings', { collapsible: true, collapsed: true }, () => {
-      ui.select(client, 'scene', {
-        options: sceneNames,
-        onChange: () => client.update(),
+    ui.tabs((tabs) => {
+      tabs.tab('Stats', () => {
+        ui.widget('Workers', () => String(client.workerCount))
+        ui.scalar(client, 'progress', { range: true, min: 0, max: 100, readonly: true, decimals: 0, unit: '%' })
+        ui.widget('Jobs', () => `${client.jobsDone} / ${client.jobsTotal}`)
+        ui.widget('Passes', () => `${client.passesDone} / ${client.samples}`)
+        ui.widget('Time', () => `${(client.elapsed / 1000).toFixed(1)} s`)
+        ui.widget('Speed', () => `${(client.samplesPerSecond / 1e6).toFixed(2)} M samples/s`)
       })
-      ui.scalar(client, 'samples', { range: true, min: 1, max: 1000, step: 1, label: 'Num Samples' })
-      ui.scalar(client, 'depth', { range: true, min: 0, max: 1000, step: 1, label: 'Max Depth' })
-      ui.scalar(client, 'width', { range: true, min: 300, max: 2400, step: 1, label: 'Width' })
-      ui.button('Render', {
-        onClick: () => {
-          client.height = client.width
-          client.update()
-        },
+      tabs.tab('Settings', () => {
+        ui.select(client, 'scene', {
+          options: sceneNames,
+          onChange: () => client.update(),
+        })
+        ui.scalar(client, 'samples', { range: true, min: 1, max: 1000, step: 1, label: 'Num Samples' })
+        ui.scalar(client, 'depth', { range: true, min: 0, max: 1000, step: 1, label: 'Max Depth' })
+        ui.scalar(client, 'width', { range: true, min: 300, max: 2400, step: 1, label: 'Width' })
+        ui.button('Render', {
+          onClick: () => {
+            client.height = client.width
+            client.update()
+          },
+        })
       })
     })
   })

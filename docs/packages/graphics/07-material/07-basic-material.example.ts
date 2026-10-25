@@ -38,7 +38,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   const device: Device = await createDevice({ canvas, platform, autosize: true }).ready
 
   const panel = mount(tools, (ui) => {
-    ui.group('Material', { collapsed: true, collapsible: true }, () => {
+    ui.group('Material', { collapsible: true, defaultCollapsed: true }, () => {
       ui.color(params, 'baseColor', { format: colorObject('xyz') })
       ui.color(params, 'ambientColorTop', { format: colorObject('xyz') })
       ui.color(params, 'ambientColor', { format: colorObject('xyz') })
