@@ -6,7 +6,6 @@ import {
   DepthState,
   Device,
   DeviceOutput,
-  type Ownable,
   ProgramInputBlockCollection,
   ProgramInputBlockOptions,
   RenderVariant,
@@ -15,6 +14,7 @@ import {
   surfaceFormatIsSrgb,
   Texture,
   TextureDescriptor,
+  type Ownable,
 } from '@gglib/graphics'
 
 import {
@@ -29,7 +29,7 @@ import {
 } from '@gglib/math'
 import { eventSource } from '@gglib/utils'
 import { opaquePassMSAA, transparentPassMSAA } from './passes'
-import { createRenderChannelSchema, RenderChannel } from './RenderChannel'
+import { createRenderChannelSchema, RenderChannel, RenderChannelOptions, renderChannelSchema } from './RenderChannel'
 import {
   InstanceBatchRenderCollector,
   MeshPartRenderCollector,
@@ -65,6 +65,7 @@ export interface RendererOptions {
   linearToSrgb?: boolean
   pipeline?: RenderPipeline | RenderPipelineOptions
   inputs?: ProgramInputBlockCollection | ProgramInputBlockOptions
+  channels?: Partial<Record<RenderChannel, RenderChannelOptions>>
 }
 
 export class Renderer implements Ownable {
@@ -161,6 +162,9 @@ export class Renderer implements Ownable {
     this.collectors.register(RenderItemType.InstanceBatch, new InstanceBatchRenderCollector())
     this.resources = new RenderTargetManager(device)
     this.channelDescriptors = createRenderChannelSchema(device)
+    for (const channel in options?.channels) {
+      this.channelDescriptors[channel] = renderChannelSchema(options.channels[channel as RenderChannel])
+    }
     this.instances = new RenderInstanceWriter(device)
     this.ownership.onFinalize(() => {
       this.instances.dispose()

@@ -63,6 +63,7 @@ export class WebglFrameBuffer implements WebglResource<WebGLFramebuffer> {
   private restore() {
     const self = this as Mutable<this>
     self.glHandle = this.device.context.createFramebuffer()
+    this.validated.length = 0
     for (const attachment of this.attachments) {
       attachment.changed = true
     }
@@ -83,6 +84,10 @@ export class WebglFrameBuffer implements WebglResource<WebGLFramebuffer> {
 
   public getAttachment(index: number): Readonly<RenderTargetAttachment> {
     return this.attachments[index]
+  }
+
+  public getDepthTarget(): WebglTexture | null {
+    return this.depthTarget
   }
 
   public setRenderTarget(index: number, texture: WebglTexture, mipLevel: number = 0, arrayLayer: number = 0) {
@@ -223,9 +228,60 @@ export class WebglFrameBuffer implements WebglResource<WebGLFramebuffer> {
     }
     this.commitDepthAttachment(force)
     this.commitDrawBuffers()
-    if (this.hasAttachments()) {
+    if (this.hasAttachments() && (force || !this.isValidated())) {
       this.device.checkFramebufferStatus(this)
+      this.markValidated()
     }
+  }
+
+  /**
+   * Attachment combinations that passed the status check, as flat lists of handle, mip level and array layer
+   *
+   * @remarks
+   * `checkFramebufferStatus` blocks until the GPU process answers. The encoder reuses one framebuffer and swaps its
+   * attachments for every pass, so each combination is checked once instead of on every switch.
+   * A recreated texture has a new handle and is checked again.
+   */
+  private validated: unknown[][] = []
+
+  private isValidated() {
+    for (const entry of this.validated) {
+      if (this.matchesSnapshot(entry)) {
+        return true
+      }
+    }
+    return false
+  }
+
+  private matchesSnapshot(entry: unknown[]) {
+    let i = 0
+    for (const attachment of this.attachments) {
+      if (
+        entry[i++] !== (attachment.texture?.glHandle ?? null) ||
+        entry[i++] !== attachment.mipLevel ||
+        entry[i++] !== attachment.arrayLayer
+      ) {
+        return false
+      }
+    }
+    return (
+      entry[i++] === (this.depthTarget?.glHandle ?? null) &&
+      entry[i++] === this.depthMipLevel &&
+      entry[i++] === this.depthArrayLayer
+    )
+  }
+
+  private markValidated() {
+    const entry: unknown[] = []
+    for (const attachment of this.attachments) {
+      entry.push(attachment.texture?.glHandle ?? null, attachment.mipLevel, attachment.arrayLayer)
+    }
+    entry.push(this.depthTarget?.glHandle ?? null, this.depthMipLevel, this.depthArrayLayer)
+    // keeps the list short, render targets are pooled and the same few combinations repeat every frame
+    if (this.validated.length >= 32) {
+      this.validated.shift()
+    }
+    this.validated.push(entry)
   }
 
   private commitColorAttachment(attachment: RenderTargetAttachment, force?: boolean) {

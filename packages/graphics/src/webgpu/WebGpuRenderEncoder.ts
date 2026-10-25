@@ -191,6 +191,11 @@ export class WebGpuRenderEncoder extends RenderEncoder {
   private colorTargetStates: GPUColorTargetState[] = []
   private colorPassAttachments: GPURenderPassColorAttachment[] = []
   private clearPassAttachments: GPURenderPassColorAttachment[] = []
+  // targets whose content is not stored at the end of a pass, see setDiscard
+  private discardColor: boolean[] = []
+  private discardDepth = false
+  // a clear that waits for the next pass on the same targets, see clear
+  private pendingClear = false
 
   private colorPassAttachment(index: number) {
     if (!this.colorPassAttachments[index]) {
@@ -396,6 +401,23 @@ export class WebGpuRenderEncoder extends RenderEncoder {
         this.pipelineParamsChanged = true
       }
     }
+  }
+
+  public setDiscard(index: number, discard: boolean) {
+    if (!!this.discardColor[index] === discard) {
+      return
+    }
+    // the store op is part of the pass descriptor
+    this.endPass()
+    this.discardColor[index] = discard
+  }
+
+  public setDepthDiscard(discard: boolean) {
+    if (this.discardDepth === discard) {
+      return
+    }
+    this.endPass()
+    this.discardDepth = discard
   }
 
   public setClearColor(index: number, color: GPUColor | IVec4) {
@@ -746,6 +768,9 @@ export class WebGpuRenderEncoder extends RenderEncoder {
       const clear = this.clearPassAttachment(i)
       const color = this.colorPassAttachment(i)
       if (color.view) {
+        const storeOp = this.discardColor[i] ? 'discard' : 'store'
+        clear.storeOp = storeOp
+        color.storeOp = storeOp
         clearAttachments.push(clear)
         colorAttachments.push(color)
       }
@@ -757,6 +782,9 @@ export class WebGpuRenderEncoder extends RenderEncoder {
       const target = this.device.output.gpuObject
       clear.view = target
       color.view = target
+      // the output is always presented
+      clear.storeOp = 'store'
+      color.storeOp = 'store'
       this.updateColorTargetFormat(0, target.format)
 
       clearAttachments.push(clear)
@@ -766,6 +794,9 @@ export class WebGpuRenderEncoder extends RenderEncoder {
     }
 
     if (this.depthBufferAttachment.view) {
+      const storeOp = this.discardDepth ? 'discard' : 'store'
+      setDepthStoreOp(this.depthBufferAttachment, storeOp)
+      setDepthStoreOp(this.depthClearAttachment, storeOp)
       this.colorPassDescriptor.depthStencilAttachment = this.depthBufferAttachment
       this.clearPassDescriptor.depthStencilAttachment = this.depthClearAttachment
     } else {
@@ -800,6 +831,19 @@ export class WebGpuRenderEncoder extends RenderEncoder {
 
   public clear() {
     this.endPass()
+    // the next pass on these targets clears on load, a separate clear pass would store the cleared targets
+    // just to load them again
+    this.pendingClear = true
+  }
+
+  /**
+   * Runs a clear that no pass picked up, before the targets change or the commands are submitted
+   */
+  private flushPendingClear() {
+    if (!this.pendingClear) {
+      return
+    }
+    this.pendingClear = false
     const descriptor = this.getClearPassDescriptor()
     this.applyTimer(descriptor)
 
@@ -812,7 +856,11 @@ export class WebGpuRenderEncoder extends RenderEncoder {
   }
 
   public resolve() {
-    this.endPass()
+    if (this.pass || this.pendingClear) {
+      // the pass on the current targets resolves when it ends
+      this.endPass()
+      return
+    }
     const descriptor = this.getColorPassDescriptor()
     this.applyTimer(descriptor)
 
@@ -854,7 +902,8 @@ export class WebGpuRenderEncoder extends RenderEncoder {
 
   private getPass(): GPURenderPassEncoder | null {
     if (!this.pass) {
-      const descriptor = this.getColorPassDescriptor()
+      const descriptor = this.pendingClear ? this.getClearPassDescriptor() : this.getColorPassDescriptor()
+      this.pendingClear = false
       this.applyTimer(descriptor)
       this.pass = this.getEncoder().beginRenderPass(descriptor)
       this.resetBoundState()
@@ -913,6 +962,7 @@ export class WebGpuRenderEncoder extends RenderEncoder {
 
   private endPass() {
     if (!this.pass) {
+      this.flushPendingClear()
       return
     }
     this.pass.end()
@@ -924,10 +974,10 @@ export class WebGpuRenderEncoder extends RenderEncoder {
    * Ends the current render pass and submits the command buffer to the GPU
    */
   public submit() {
+    this.endPass()
     if (!this.encoder) {
       return
     }
-    this.endPass()
     const buffer = this.encoder.finish()
     this.encoder = null
     this.device.queue.submit([buffer])
@@ -974,9 +1024,19 @@ export class WebGpuRenderEncoder extends RenderEncoder {
     for (let i = 0; i < this.device.capabilities.maxRenderTargets; i++) {
       this.setClearColor(i, Color.TransparentBlack)
       this.setRenderTarget(i, null)
+      this.setDiscard(i, false)
     }
+    this.setDepthDiscard(false)
 
     this.depthBufferAttachment.view = null
     this.depthClearAttachment.view = null
+  }
+}
+
+function setDepthStoreOp(attachment: GPURenderPassDepthStencilAttachment, storeOp: GPUStoreOp) {
+  attachment.depthStoreOp = storeOp
+  // only present for stencil formats, see setDepthTarget
+  if ('stencilStoreOp' in attachment) {
+    attachment.stencilStoreOp = storeOp
   }
 }

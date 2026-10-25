@@ -34,73 +34,49 @@ export const RenderChannel = {
   LinearDepth: renderChannel('linear_depth'),
 }
 
+export type RenderChannelOptions = Partial<TextureDescriptor> & { format: TextureDescriptor['format'] }
+
+export function renderChannelSchema(options: RenderChannelOptions): Readonly<TextureDescriptor> {
+  return {
+    type: '2d',
+    width: 1,
+    height: 1,
+    depth: 1,
+    sampleCount: 1,
+    mipLevelCount: 1,
+    usage: TextureUsage.RenderTarget | TextureUsage.TextureBinding,
+    ...options,
+  }
+}
+
 export function createRenderChannelSchema(device: Device): Record<RenderChannel, Readonly<TextureDescriptor>> {
   return {
-    [RenderChannel.Color]: {
+    [RenderChannel.Color]: renderChannelSchema({
       name: 'RenderChannel.Color',
-      type: '2d',
       format: 'rgba16float',
-      width: 1,
-      height: 1,
-      depth: 1,
-      sampleCount: 1,
-      mipLevelCount: 1,
-      usage: TextureUsage.RenderTarget | TextureUsage.TextureBinding,
-    },
-    [RenderChannel.ColorMsaa]: {
+    }),
+    [RenderChannel.ColorMsaa]: renderChannelSchema({
       name: 'RenderChannel.ColorMsaa',
-      type: '2d',
       format: 'rgba16float',
-      width: 1,
-      height: 1,
-      depth: 1,
       sampleCount: 4,
-      mipLevelCount: 1,
-      usage: TextureUsage.RenderTarget | TextureUsage.TextureBinding,
-    },
-    [RenderChannel.Depth]: {
+    }),
+    [RenderChannel.Depth]: renderChannelSchema({
       name: 'RenderChannel.Depth',
-      type: '2d',
       format: 'depth24plus-stencil8',
-      width: 1,
-      height: 1,
-      depth: 1,
-      sampleCount: 1,
-      mipLevelCount: 1,
-      usage: TextureUsage.RenderTarget | TextureUsage.TextureBinding,
-    },
-    [RenderChannel.DepthMsaa]: {
+    }),
+    [RenderChannel.DepthMsaa]: renderChannelSchema({
       name: 'RenderChannel.DepthMsaa',
-      type: '2d',
       format: 'depth24plus-stencil8',
-      width: 1,
-      height: 1,
-      depth: 1,
       sampleCount: 4,
-      mipLevelCount: 1,
-      usage: TextureUsage.RenderTarget | TextureUsage.TextureBinding,
-    },
-    [RenderChannel.LinearDepth]: {
+    }),
+    [RenderChannel.LinearDepth]: renderChannelSchema({
       name: 'RenderChannel.LinearDepthRes',
-      type: '2d',
       format: 'r32float',
-      width: 1,
-      height: 1,
-      depth: 1,
-      sampleCount: 1,
-      mipLevelCount: 1,
-      usage: TextureUsage.RenderTarget | TextureUsage.TextureBinding,
-    },
-    [RenderChannel.LinearDepthMsaa]: {
+    }),
+    [RenderChannel.LinearDepthMsaa]: renderChannelSchema({
       name: 'RenderChannel.LinearDepthMsaa',
-      type: '2d',
       format: 'r32float',
-      width: 1,
-      height: 1,
-      depth: 1,
       sampleCount: 4,
-      mipLevelCount: 1,
-      usage: TextureUsage.RenderTarget | TextureUsage.TextureBinding,
-    },
+    }),
   }
 }

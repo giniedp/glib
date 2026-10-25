@@ -301,6 +301,65 @@ export function runContract(createDevice: () => Device) {
 
       await expectPixelColor(device.output, Color.Red)
     })
+
+    it('clears, draws and resolves discarded msaa targets', async () => {
+      const msaa = device.createRenderTarget({ width: 4, height: 4, format: 'rgba8unorm', name: 'msaa', sampleCount: 4 })
+      const depth = device.createDepthTarget({ width: 4, height: 4, format: 'depth24plus', name: 'depth', sampleCount: 4 })
+      const resolved = device.createRenderTarget({ width: 4, height: 4, format: 'rgba8unorm', name: 'resolved' })
+
+      // resolve target and discard are set before the pass, as the geometry pass does
+      pass.setRenderTarget(0, msaa, 0, 0, resolved)
+      pass.setDepthTarget(depth)
+      pass.setDiscard(0, true)
+      pass.setDepthDiscard(true)
+      pass.setClearColor(0, Color.Red)
+      pass.setClearDepth(1)
+      pass.clear()
+
+      pass.setDepthState(DepthState.Less)
+      pass.setProgram(shader.program)
+      shader.program.set('uColor', Color.Green)
+      shader.program.set('uDepth', 0.5)
+      shader.program.commit()
+      pass.draw(3)
+      pass.resolve()
+      pass.submit()
+
+      await expectPixelColor(resolved, Color.Green)
+      pass.flush()
+    })
+
+    it('resolves a clear without draws', async () => {
+      const msaa = device.createRenderTarget({ width: 4, height: 4, format: 'rgba8unorm', name: 'msaa', sampleCount: 4 })
+      const resolved = device.createRenderTarget({ width: 4, height: 4, format: 'rgba8unorm', name: 'resolved' })
+
+      pass.setRenderTarget(0, msaa, 0, 0, resolved)
+      pass.setDiscard(0, true)
+      pass.setClearColor(0, Color.Blue)
+      pass.clear()
+      pass.resolve()
+      pass.submit()
+
+      await expectPixelColor(resolved, Color.Blue)
+      pass.flush()
+    })
+
+    it('runs a pending clear before the render targets change', async () => {
+      const rt1 = device.createRenderTarget({ width: 4, height: 4, format: 'rgba8unorm', name: 'rt1' })
+      const rt2 = device.createRenderTarget({ width: 4, height: 4, format: 'rgba8unorm', name: 'rt2' })
+
+      pass.setRenderTarget(0, rt1)
+      pass.setClearColor(0, Color.Red)
+      pass.clear()
+      // no draw picks up the clear, switching the target must not drop it
+      pass.setRenderTarget(0, rt2)
+      pass.setClearColor(0, Color.Green)
+      pass.clear()
+      pass.submit()
+
+      await expectPixelColor(rt1, Color.Red)
+      await expectPixelColor(rt2, Color.Green)
+    })
   })
 
   it('handles depth state change', async () => {

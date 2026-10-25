@@ -42,6 +42,23 @@ export abstract class RenderEncoder {
     resolve?: Texture | DeviceOutput,
   ): void
   public abstract setDepthTarget(target: Texture): void
+
+  /**
+   * Marks the content of a render target as not needed after the current pass, e.g. a multisampled target that is
+   * resolved and not read again. Stays set until changed or until {@link flush}.
+   *
+   * @remarks
+   * A hint that saves memory bandwidth, which matters on tile based (mobile) GPUs.
+   * WebGPU uses the store op `discard` for passes that begin while the hint is set, a resolve still happens.
+   * WebGL invalidates the attachment after {@link resolve}.
+   */
+  public abstract setDiscard(index: number, discard: boolean): void
+
+  /**
+   * Marks the content of the depth/stencil target as not needed after the current pass. See {@link setDiscard}
+   */
+  public abstract setDepthDiscard(discard: boolean): void
+
   public abstract setClearColor(index: number, color: GPUColor | IVec4): void
   public abstract setClearDepth(depth: number): void
   public abstract setClearStencil(stencil: number): void
@@ -219,6 +236,10 @@ export abstract class RenderEncoder {
 
   /**
    * Clears the render targets and depth/stencil buffers according to the current clear values.
+   *
+   * @remarks
+   * WebGPU defers the clear into the next pass on the same targets (load op `clear`), so clearing, drawing and
+   * resolving are one render pass. Without draws, the clear runs when the targets change or on {@link submit}.
    */
   public abstract clear(): void
 
@@ -228,7 +249,8 @@ export abstract class RenderEncoder {
    * @remarks
    * Meant to resolve multisampled render targets to non-multisampled textures.
    * For webgl this may work for arbitrary combinations of render and resolve targets.
-   * For webgpu the source must be a multisampled texture.
+   * For webgpu the source must be a multisampled texture. If the resolve targets were set before drawing, the open
+   * pass resolves when it ends, so no extra pass is needed.
    */
   public abstract resolve(): void
 

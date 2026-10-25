@@ -148,6 +148,9 @@ export class GeometryPass implements RenderPass {
   private renderResources: FrameResource[] = []
   private resolveResources: Array<FrameResource | null> = []
   private resolver: Array<MsaaResolver | null> = []
+  private frame: FrameGraph
+  // whether clearing and drawing can share one render pass: all targets are cleared, or none
+  private singlePass: boolean
 
   public constructor(options: GeometryPassOptions) {
     this.name = options?.name ?? this.name
@@ -167,6 +170,7 @@ export class GeometryPass implements RenderPass {
     this.clearDepth = options?.clearDepth ?? false
     this.inputs = options?.inputs ?? []
     this.hasClear = this.clearDepth || this.channels.some((it) => !!it.clear)
+    this.singlePass = !this.hasClear || (this.clearDepth && this.channels.every((it) => !!it.clear))
     this.resolver = this.channels.map((it) => it.resolver ?? null)
 
     if (!this.channels.length) {
@@ -175,6 +179,7 @@ export class GeometryPass implements RenderPass {
   }
 
   public setup(frame: FrameGraph<RenderPass>, ctx: RenderContext): void {
+    this.frame = frame
     frame.addPass(this)
 
     // reads first, so that a subsequent write of the same channel creates a new version
@@ -195,6 +200,21 @@ export class GeometryPass implements RenderPass {
     }
   }
 
+  /**
+   * Whether no later pass needs the content of the resource
+   */
+  private isLastUse(resource: FrameResource) {
+    return !resource.exported && this.frame.nodes[resource.lastUse]?.pass === this
+  }
+
+  /**
+   * Whether a later pass overwrites the resolved channel without reading it, so resolving here is wasted work
+   */
+  private isOverwritten(resource: FrameResource) {
+    const producer = resource.producer
+    return !!producer && producer.pass !== this && !producer.culled
+  }
+
   public render(ctx: RenderContext): void {
     const pass = ctx.device.renderPass
     const targets = this.renderResources
@@ -204,6 +224,73 @@ export class GeometryPass implements RenderPass {
     pass.setCullState(CullState.CullBack)
     pass.setStencilState(StencilState.Default)
     pass.setViewportState(0, 0, targets[0].texture.width, targets[0].texture.height)
+
+    if (this.singlePass) {
+      this.renderSinglePass(ctx)
+    } else {
+      this.renderSeparateClear(ctx)
+    }
+    pass.flush()
+  }
+
+  /**
+   * Clears, draws and resolves in one render pass. Multisampled targets that no later pass uses are discarded,
+   * so tile based GPUs never write their samples to memory
+   */
+  private renderSinglePass(ctx: RenderContext) {
+    const pass = ctx.device.renderPass
+    const targets = this.renderResources
+    const resolves = this.resolveResources
+    const resolvers = this.resolver
+
+    pass.setDepthTarget(this.depthResource.texture)
+    pass.setDepthDiscard(this.isLastUse(this.depthResource))
+    let hasHardwareResolve = false
+    for (let i = 0; i < this.channels.length; i++) {
+      const resolve = resolves[i] && !this.isOverwritten(resolves[i]) ? resolves[i] : null
+      const hardware = !!resolve && !resolvers[i]
+      hasHardwareResolve ||= hardware
+      pass.setRenderTarget(i, targets[i].texture, 0, 0, hardware ? resolve.texture : null)
+      // a custom resolver reads the samples after the pass
+      pass.setDiscard(i, this.isLastUse(targets[i]) && !(resolve && resolvers[i]))
+      pass.setRenderBlend(i, this.channels[i].blend ?? BlendState.Opaque)
+      if (this.channels[i].clear) {
+        pass.setClearColor(i, this.channels[i].clear)
+      }
+    }
+    if (this.hasClear) {
+      pass.setClearDepth(ctx.view.camera.reversedZ ? 0 : 1)
+      pass.clear()
+    }
+    pass.setDepthState(ctx.view.camera.reversedZ ? DepthState.GreaterEqual : DepthState.LessEqual)
+    pass.render(ctx.renderer.getList(this.list, ctx))
+    if (hasHardwareResolve) {
+      pass.resolve()
+    }
+    pass.submit()
+
+    pass.setDepthTarget(null)
+    pass.setDepthState(DepthState.Disabled)
+    for (let i = 0; i < targets.length; i++) {
+      pass.setRenderTarget(i, null)
+    }
+
+    // custom resolve
+    for (let i = 0; i < targets.length; i++) {
+      if (resolves[i] && resolvers[i] && !this.isOverwritten(resolves[i])) {
+        resolvers[i].resolve(pass, targets[i].texture, resolves[i].texture)
+        pass.setRenderTarget(0, null)
+      }
+    }
+    pass.submit()
+  }
+
+  /**
+   * Clears some targets and loads others, so clearing needs its own pass
+   */
+  private renderSeparateClear(ctx: RenderContext) {
+    const pass = ctx.device.renderPass
+    const targets = this.renderResources
 
     // #region Clear
     if (this.hasClear) {
@@ -266,8 +353,6 @@ export class GeometryPass implements RenderPass {
       pass.submit()
     }
     // #endregion
-
-    pass.flush()
   }
 
   public cleanup(ctx: RenderContext): void {

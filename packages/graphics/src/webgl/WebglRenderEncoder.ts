@@ -7,6 +7,7 @@ import {
   frontFaceToWebGL,
   primitiveTypeToWebGL,
   stencilOperationToWebGL,
+  surfaceIsStencilFormat,
   type PrimitiveType,
 } from '../enums'
 import type { GpuTimer } from '../GpuTimer'
@@ -243,6 +244,43 @@ export class WebglRenderEncoder extends RenderEncoder {
 
   public setDepthTarget(buffer: Texture): void {
     this.frameBuffer.setDepthTarget(buffer as WebglTexture)
+  }
+
+  // targets that are invalidated after resolve, see setDiscard
+  private discardColor: boolean[] = []
+  private discardDepth = false
+  private invalidateList: number[] = []
+
+  public setDiscard(index: number, discard: boolean): void {
+    this.discardColor[index] = discard
+  }
+
+  public setDepthDiscard(discard: boolean): void {
+    this.discardDepth = discard
+  }
+
+  /**
+   * Tells the driver that the discarded attachments of the frame buffer are not needed anymore,
+   * so tile based GPUs do not write them back to memory
+   */
+  private invalidateDiscarded() {
+    const gl = this.gl
+    const list = this.invalidateList
+    list.length = 0
+    for (let i = 0; i < this.discardColor.length; i++) {
+      if (this.discardColor[i] && this.frameBuffer.getAttachment(i)?.texture) {
+        list.push(gl.COLOR_ATTACHMENT0 + i)
+      }
+    }
+    const depth = this.frameBuffer.getDepthTarget()
+    if (this.discardDepth && depth) {
+      list.push(surfaceIsStencilFormat(depth.format) ? gl.DEPTH_STENCIL_ATTACHMENT : gl.DEPTH_ATTACHMENT)
+    }
+    if (!list.length) {
+      return
+    }
+    this.device.framebuffer.activate(this.frameBuffer.glHandle)
+    gl.invalidateFramebuffer(gl.FRAMEBUFFER, list)
   }
 
   public setClearColor(index: number, color: GPUColor | IVec4): void {
@@ -578,6 +616,7 @@ export class WebglRenderEncoder extends RenderEncoder {
         gl.NEAREST,
       )
     }
+    this.invalidateDiscarded()
 
     // reset read/write framebuffer to default
     this.switchToFrameBuffer(null)
@@ -622,7 +661,9 @@ export class WebglRenderEncoder extends RenderEncoder {
       this.setRenderTarget(i, null, 0, 0, null)
       this.setRenderBlend(i, BlendState.Disabled)
       this.setRenderMask(i, 1 | 2 | 4 | 8)
+      this.setDiscard(i, false)
     }
+    this.setDepthDiscard(false)
   }
 
   /**
