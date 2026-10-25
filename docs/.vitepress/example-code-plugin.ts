@@ -1,9 +1,11 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import type { Plugin } from 'vite'
+import type { PluginOption } from 'vite'
 
-const docsRoot = fileURLToPath(new URL('..', import.meta.url)).replace(/\\/g, '/').replace(/\/$/, '')
+const docsRoot = fileURLToPath(new URL('..', import.meta.url))
+  .replace(/\\/g, '/')
+  .replace(/\/$/, '')
 const exampleCodeTag = /<ExampleCode\b([^>]*?)\s*\/>/g
 const exampleTag = /<Example\b[^>]*\/>/
 const srcAttr = /\bsrc\s*=\s*(["'])(.*?)\1/
@@ -25,7 +27,7 @@ const demoNote = '_Interactive demo, runs in the browser on this page._'
  *
  * Must be registered before `vitepress-plugin-llms`, which collects the content as transformed by this plugin.
  */
-export function exampleCodePlugin(): Plugin {
+export function exampleCodePlugin(): PluginOption {
   return {
     name: 'example-code',
     enforce: 'pre',
@@ -42,7 +44,7 @@ export function exampleCodePlugin(): Plugin {
       const imports: string[] = []
       const resolve = (attrs: string) => {
         const src = attrs.match(srcAttr)?.[2]
-        const resolved = resolveExample(file, src)
+        const resolved = resolveExample(file, src)!
         if (!resolved) {
           this.error(`example-code: no example source found for ${file} (src: ${src ?? '<default>'})`)
         }

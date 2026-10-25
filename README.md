@@ -1,11 +1,15 @@
 ![Latest NPM release][version-shield]
 [![License][license-shield]][license-url]
 
-# [G]glib
+# [G]Glib
 
-A collection of packages for creating real-time 3D web applications, such as games or anything else that requires 3D rendering in the browser.
+GGlib is a collection of packages for real-time 3D web applications, such as games or anything else that requires 3D rendering in the browser.
 
-> This is a spare time project. Frequently changed. Occasionally maintained.
+Links:
+
+- [Github repository](https://github.com/giniedp/glib)
+- [Project page](https://gglib.ginie.eu)
+- [For AI assistants](https://gglib.ginie.eu/llms.txt)
 
 # Project structure
 
@@ -48,5 +52,5 @@ $ pnpm dev
 ```
 
 [license-url]: ./LICENSE
-[license-shield]: https://img.shields.io/npm/l/@gglib/gglib.svg
-[version-shield]: https://img.shields.io/npm/v/@gglib/gglib.svg
+[license-shield]: https://img.shields.io/npm/l/@gglib/graphics.svg
+[version-shield]: https://img.shields.io/npm/v/@gglib/graphics.svg

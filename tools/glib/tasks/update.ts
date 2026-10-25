@@ -156,16 +156,20 @@ function updateSrcReadme(pkg: GlibPackageContext) {
   return writeFile(
     pkg.subPath('Readme.md'),
     `
-[![Coverage Status](https://coveralls.io/repos/github/giniedp/glib/badge.svg?branch=master)](https://coveralls.io/github/giniedp/glib?branch=master)
-[![Build Status](https://travis-ci.org/giniedp/glib.svg?branch=master)](https://travis-ci.org/giniedp/glib)
-
-[G]glib - ${pkg.packageName}
+[G]Glib - ${pkg.packageName}
 =======
+![Latest NPM release][version-shield]
+[![License][license-shield]][license-url]
+
 ${pj.description}
 
-To find out more about this project visit [the repository](https://github.com/giniedp/glib) or the [project page](https://glib.ginie.eu)
+Links:
+- [Github repository](https://github.com/giniedp/glib)
+- [Project page](https://gglib.ginie.eu)
+- [For AI assistants](https://gglib.ginie.eu/llms.txt)
 
-Licence: ${pj.license}
+[license-shield]: https://img.shields.io/npm/l/${pkg.packageName}.svg
+[version-shield]: https://img.shields.io/npm/v/${pkg.packageName}.svg
     `.trim(),
   )
 }
