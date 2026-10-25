@@ -39,9 +39,14 @@ export const FOV = 50 * DEGREE_TO_RAD
 export const PITCH_SLOW = 90 * DEGREE_TO_RAD
 export const PITCH_FAST = 45 * DEGREE_TO_RAD
 /**
- * Share of the screen width that the river covers
+ * Share of the screen width that the river covers, up to {@link MAX_FIT_ASPECT}
  */
 export const RIVER_SCREEN_WIDTH = 1 / 2.2
+/**
+ * Up to this aspect ratio the camera keeps the river at its share of the screen width. Wider screens use the camera
+ * distance of this aspect and show more scenery on the sides, instead of moving closer and showing less ahead
+ */
+export const MAX_FIT_ASPECT = 16 / 9
 /**
  * Seconds the points of a jump are shown
  */
@@ -75,9 +80,10 @@ export const RIVER_HALF = 4
  */
 export const RIVER_WIDTH = RIVER_HALF * BLOCK
 /**
- * Columns of a row: grass, sand, the river, sand, grass. They move with the river when it curves
+ * Columns of a row: grass, sand, the river, sand, grass. They move with the river when it curves.
+ * Wide enough for ultra wide screens, only the columns on the screen are placed
  */
-export const SHORE_COLUMNS = 8
+export const SHORE_COLUMNS = 20
 export const COLUMNS = 2 * (RIVER_HALF + SHORE_COLUMNS)
 /**
  * Highest level of the hills, in blocks. The land never goes below level 0

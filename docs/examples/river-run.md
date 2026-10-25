@@ -9,7 +9,7 @@ Race a speed boat down an endless river. The river is generated section by secti
 Steer with `A` `D` or the arrow keys, accelerate with `W` / `Up` and brake with `S` / `Down`. On touch devices drag
 a finger like a joystick.
 
-Assets by <a href="https://kenney.nl/" target="blank">Kenney</a>
+Assets from various <a href="https://kenney.nl/" target="_blank">Kenney</a> and <a href="https://www.kaylousberg.com/" target="_blank">kaylousberg</a> asset packs.
 
 <Example src="game.ts" />
 

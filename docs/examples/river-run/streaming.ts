@@ -57,6 +57,10 @@ export class RiverStreamingSystem extends GameSystem {
    */
   public viewBottom = 0
   public viewTop = 0
+  /**
+   * Half width of the scenery on the screen, from the center of the river. Columns further out are not placed
+   */
+  public viewHalfWidth = Infinity
 
   private world!: GameWorld
   private content!: ContentLoader
@@ -132,6 +136,9 @@ export class RiverStreamingSystem extends GameSystem {
     const z = rowZ(row.index)
     const river = this.river
     for (let i = 0; i < COLUMNS; i++) {
+      if (Math.abs(i - COLUMNS / 2 + 0.5) * BLOCK > this.viewHalfWidth) {
+        continue
+      }
       const { ground, level } = row.cells[i]
       const column = i - COLUMNS / 2 + row.offset
       const x = (column + 0.5) * BLOCK
@@ -149,7 +156,8 @@ export class RiverStreamingSystem extends GameSystem {
         this.place(spawned, groundModel(ground, level, k), x, k * BLOCK - BLOCK / 2, z)
       }
     }
-    this.placeParts(spawned, row, 0, z)
+    // the decoration outside of the screen as well
+    this.placeParts(spawned, row, 0, z, row.offset * BLOCK)
     this.rows.push(spawned)
   }
 
@@ -198,11 +206,15 @@ export class RiverStreamingSystem extends GameSystem {
   }
 
   /**
-   * Places the parts of a row or an obstacle, relative to a position
+   * Places the parts of a row or an obstacle, relative to a position. With a `centerX`, parts further than the view
+   * half width from it are skipped
    */
-  private placeParts(placement: Placement, list: PartList, x: number, z: number) {
+  private placeParts(placement: Placement, list: PartList, x: number, z: number, centerX?: number) {
     for (let i = 0; i < list.partCount; i++) {
       const part = list.parts[i]
+      if (centerX != null && Math.abs(part.x - centerX) > this.viewHalfWidth) {
+        continue
+      }
       this.place(placement, part.model, x + part.x, part.y, z + part.z, part.yaw, part.scale)
     }
   }

@@ -12,15 +12,17 @@ import {
   TransformComponent,
 } from '@gglib/components'
 import { GameComponent, GameEntity, GameSystem, GameWorld, SystemOrder } from '@gglib/ecs'
-import { BlendState, Color, CommonInputs, Device, PlatformId, Texture } from '@gglib/graphics'
+import { Color, CommonInputs, Device, PlatformId, Texture } from '@gglib/graphics'
 import { GLTF } from '@gglib/loaders'
 import { clamp, lerp, vec3, vec3Normalize, vec4 } from '@gglib/math'
-import { GeometryPass, RenderChannel, Renderer, RenderListMode, transparentPassMSAA } from '@gglib/render'
+import { opaquePass, RenderChannel, Renderer, transparentPass } from '@gglib/render'
 import { mount } from 'tweak-ui'
 import { BoatComponent, BoatSystem } from './boat'
 import {
+  BLOCK,
   FOV,
   LIVES,
+  MAX_FIT_ASPECT,
   MAX_SPEED,
   MIN_SPEED,
   MODELS,
@@ -37,15 +39,17 @@ import { rowZ } from './river'
 import { RiverStreamingSystem } from './streaming'
 
 export default (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
-  const game = new RiverRunGame({ canvas, platform, autosize: true })
+  const game = new RiverRunGame({
+    canvas,
+    platform,
+    autosize: true,
+  })
+
   game.run()
   const panel = mount(tools, (ui) => {
-    ui.poll(game.hud, 'status', { label: 'Status' })
-    ui.poll(game.hud, 'score', { label: 'Score' })
-    ui.poll(game.hud, 'speed', { label: 'Speed' })
-    ui.poll(game.hud, 'lives', { label: 'Lives' })
     ui.button('Restart', { onClick: () => game.restart() })
   })
+
   return () => {
     game.destroy()
     panel.dispose()
@@ -73,10 +77,12 @@ interface SheetSprite {
  * jump are created once. New objects are only created while the pools grow at the start of a race
  */
 class RiverRunGame extends EcsGame {
-  /**
-   * Values for the panel
-   */
-  public readonly hud = { status: STATUS.ready, score: 0, speed: MIN_SPEED, lives: LIVES }
+  public readonly hud = {
+    status: STATUS.ready,
+    score: 0,
+    speed: MIN_SPEED,
+    lives: LIVES,
+  }
 
   private state: State = 'ready'
   private overTime = 0
@@ -103,7 +109,6 @@ class RiverRunGame extends EcsGame {
   private popup!: PopupComponent
 
   protected override onCreate(): void {
-    // the order of the systems is set by their `order`, not by the order they are added in
     this.world.addSystem(new KeyboardInputSystem({}))
     this.world.addSystem(new TouchInput({ eventTarget: this.device.canvas }))
     this.world.getSystem(TouchInput).touch.preventDefault = true
@@ -115,24 +120,12 @@ class RiverRunGame extends EcsGame {
     this.world.addSystem(
       new Renderer(this.device, {
         pipeline: {
-          passes: [
-            new GeometryPass({
-              name: 'Opaque',
-              list: RenderListMode.Opaque,
-              depth: RenderChannel.DepthMsaa,
-              clearDepth: true,
-              channels: [
-                {
-                  // grass green, in case the field ends before the screen edges
-                  clear: Color.create(0.36, 0.62, 0.27, 1),
-                  render: RenderChannel.ColorMsaa,
-                  resolve: RenderChannel.Color,
-                  blend: BlendState.Opaque,
-                },
-              ],
-            }),
-            transparentPassMSAA(),
-          ],
+          passes: [opaquePass(), transparentPass()],
+        },
+        // no HDR post processing, so 8 bit color is enough and needs half the memory bandwidth
+        channels: {
+          [RenderChannel.Color]: { format: 'rgba8unorm' },
+          [RenderChannel.ColorMsaa]: { format: 'rgba8unorm', sampleCount: 4 },
         },
       }),
     )
@@ -177,12 +170,11 @@ class RiverRunGame extends EcsGame {
     this.restart()
   }
 
-  /**
-   * The player boat: the boat entity moves, the model is a child that tilts and blinks, the particle emitters are
-   * children that trail the boat
-   */
   private createBoat(): BoatComponent {
-    const entity = this.createEntity({ name: 'Player', parent: this.scene.entity })
+    const entity = this.createEntity({
+      name: 'Player',
+      parent: this.scene.entity,
+    })
     const model = this.createEntity({
       parent: entity,
       transform: new TransformComponent({ position: vec3(0, -0.1, 0) }),
@@ -191,18 +183,31 @@ class RiverRunGame extends EcsGame {
     this.content.loadModel(MODELS.boat).then((loaded) => {
       model.$(ModelComponent).model = loaded.instantiate()
     })
-    const wake = new ParticleEmitterComponent({ channel: 'wake', frequency: 0, inheritVelocity: 0 })
+
+    const wake = new ParticleEmitterComponent({
+      channel: 'wake',
+      frequency: 0,
+      inheritVelocity: 0,
+    })
     this.createEntity({
+      name: 'wake',
       parent: entity,
       transform: new TransformComponent({ position: vec3(0, 0.1, -1.6) }),
       components: [wake],
     })
-    const splash = new ParticleEmitterComponent({ channel: 'splash', frequency: 0, inheritVelocity: 0.2 })
+
+    const splash = new ParticleEmitterComponent({
+      channel: 'splash',
+      frequency: 0,
+      inheritVelocity: 0.2,
+    })
     this.createEntity({
+      name: 'splash',
       parent: entity,
       transform: new TransformComponent({ position: vec3(0, 0.2, 0.5) }),
       components: [splash],
     })
+
     const boat = new BoatComponent(model.$(TransformComponent), wake, splash)
     entity.addComponent(boat)
     return boat
@@ -341,8 +346,9 @@ class RiverRunGame extends EcsGame {
    */
   private updateJoystick(halfWidth: number, halfHeight: number, hidden: boolean) {
     const boat = this.boat
-    const pad = halfHeight * 0.36
-    const margin = halfHeight * 0.08
+    // at most a quarter of the screen width, the HUD plane is 2 * halfWidth wide
+    const pad = Math.min(halfHeight * 0.36, halfWidth * 0.5)
+    const margin = Math.min(halfHeight, halfWidth) * 0.08
     const x = boat.controlSide * (halfWidth - margin - pad / 2)
     const y = -halfHeight + margin + pad / 2
     this.joystickPad.setSize(hidden ? 0 : pad)
@@ -422,7 +428,7 @@ const SCREEN_UP = vec3(0, 0, 1)
 
 /**
  * A top down view that follows the boat. The river keeps its share of the screen width, the camera moves further
- * away on narrow screens. A slow boat is near the bottom edge of the screen and the camera looks straight down,
+ * away on narrow screens. Screens wider than {@link MAX_FIT_ASPECT} show more scenery on the sides instead. A slow boat is near the bottom edge of the screen and the camera looks straight down,
  * at full speed the boat moves up to the center and the camera tilts forward.
  *
  * Runs after the boat moved and before the camera computes its view. Tells the streaming system which part of the
@@ -460,7 +466,11 @@ class RaceCameraSystem extends GameSystem {
   public override update(time: number, dt: number): void {
     const aspect = this.device.output.aspectRatio
     this.camera.aspect = aspect
-    const distance = RIVER_WIDTH / RIVER_SCREEN_WIDTH / (Math.tan(FOV / 2) * aspect)
+    const distance = RIVER_WIDTH / RIVER_SCREEN_WIDTH / (Math.tan(FOV / 2) * Math.min(aspect, MAX_FIT_ASPECT))
+    // the widest part of the screen on the water: its top edge, when the camera is tilted the most. Rows are placed
+    // at the top edge, so they are wide enough for any tilt
+    const topDistance = (distance * Math.sin(PITCH_FAST)) / Math.sin(PITCH_FAST - FOV / 2)
+    this.streaming.viewHalfWidth = topDistance * Math.sin(FOV / 2) * aspect + 2 * BLOCK
 
     const t = clamp((this.boat.speed - MIN_SPEED) / (MAX_SPEED - MIN_SPEED), 0, 1)
     this.screenPosition += (t - this.screenPosition) * Math.min(1, dt * 2)
