@@ -13,14 +13,18 @@ export * from './lib/perlin'
 export * from './lib/simplex'
 export * from './lib/value'
 export * from './lib/cell'
+export * from './lib/tiles'
 
 export * from './sources/noise'
 export * from './sources/cell'
 export * from './sources/constant'
+export * from './sources/tiles'
 
 export * from './modifiers/scale'
 export * from './modifiers/shift'
 export * from './modifiers/warp'
+export * from './modifiers/seamless'
+export * from './modifiers/normals'
 
 export * from './fractals/FractalField'
 export * from './fractals/fbm'

@@ -35,6 +35,11 @@ export interface ProceduralTextureOptions {
    * The z coordinate of the baked slice, e.g. a time. Defaults to `0`
    */
   z?: number
+  /**
+   * Allocates the full mip chain and generates it on every {@link ProceduralTexture.update}, e.g. for tiled
+   * material maps. Defaults to `false`
+   */
+  mipmaps?: boolean
 }
 
 /**
@@ -77,6 +82,11 @@ export class ProceduralTexture implements Ownable {
    */
   public z: number
 
+  /**
+   * Whether the mip chain is generated on update
+   */
+  public readonly mipmaps: boolean
+
   private currentField: Field<any>
   private shader: ShaderModule | null = null
   private code: ShaderCode
@@ -88,6 +98,7 @@ export class ProceduralTexture implements Ownable {
   ) {
     this.region = options.region ? [...options.region] : [0, 0, 1, 1]
     this.z = options.z ?? 0
+    this.mipmaps = !!options.mipmaps
     this.texture = this.ownership.adopt(
       device.createRenderTarget({
         name: 'ProceduralTexture',
@@ -95,6 +106,8 @@ export class ProceduralTexture implements Ownable {
         height: options.height,
         format: options.format ?? 'r32float',
         usage: TextureUsage.RenderTarget | TextureUsage.TextureBinding,
+        // render targets have a single level by default
+        mipLevelCount: this.mipmaps ? Math.floor(Math.log2(Math.max(options.width, options.height))) + 1 : 1,
       }),
     )
     this.field = field
@@ -162,6 +175,9 @@ export class ProceduralTexture implements Ownable {
     pass.draw(3)
     // ends the pass and resets the state, so the next draw does not render into this texture
     pass.flush()
+    if (this.mipmaps) {
+      this.texture.updateMipmaps()
+    }
     return true
   }
 

@@ -1,3 +1,4 @@
+// #region imports
 import {
   BlendState,
   Color,
@@ -11,7 +12,14 @@ import {
   SamplerState,
   Texture,
 } from '@gglib/graphics'
-import { DEGREE_TO_RAD, mat4$initLookAt, mat4$initPerspectiveFieldOfView, mat4$invert, mat4Identity, vec3 } from '@gglib/math'
+import {
+  DEGREE_TO_RAD,
+  mat4$initLookAt,
+  mat4$initPerspectiveFieldOfView,
+  mat4$invert,
+  mat4Identity,
+  vec3,
+} from '@gglib/math'
 import {
   cell,
   clamp,
@@ -32,6 +40,7 @@ import {
   warp,
 } from '@gglib/noise'
 import { mount } from 'tweak-ui'
+// #endregion
 
 // heightmap texels and grid vertices per side
 const RESOLUTION = 256

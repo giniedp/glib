@@ -12,16 +12,23 @@ import {
   Field,
   hash,
   hash3,
+  inverseSqrt,
   mix,
   mul,
+  normals,
   type Params,
   perlin,
   pipe,
   remap,
+  rgba,
   ridged,
+  round,
+  saturate,
   scale,
+  seamless,
   shift,
   simplex,
+  tiles,
   toGlsl,
   toWgsl,
   uniform,
@@ -89,6 +96,110 @@ describe('noise', () => {
     it('blends with mix', () => {
       const field = constant(1).pipe(mix(3, 0.25))
       expect(field.sample(0, 0)).toBe(1.5)
+    })
+  })
+
+  describe('seamless', () => {
+    const points = Array.from({ length: 20 }, (_, i) => [Math.sin(i * 12.9898) * 7, Math.cos(i * 78.233) * 7, i * 0.1])
+
+    it('repeats with the period', () => {
+      const graphs: Array<[Field<any>, number, number]> = [
+        [perlin().pipe(fbm({ octaves: 4 }), seamless([3, 2])), 3, 2],
+        [perlin().pipe(fbm({ octaves: 4 }), seamless(uniform('size', 2.5), { mean: 0 })), 2.5, 2.5],
+        [rgba(perlin(), simplex(), cell()).pipe(seamless(2)), 2, 2],
+      ]
+      for (const [field, pw, ph] of graphs) {
+        for (const [x, y, z] of points) {
+          const a = field.sampleColor(x, y, z)
+          const b = field.sampleColor(x + pw, y, z)
+          const c = field.sampleColor(x, y - 2 * ph, z)
+          for (let l = 0; l < 4; l++) {
+            expect(b[l]).toBeCloseTo(a[l], 6)
+            expect(c[l]).toBeCloseTo(a[l], 6)
+          }
+        }
+      }
+    })
+
+    it('blends the source with its copy shifted by the period', () => {
+      const source = perlin().pipe(fbm({ octaves: 3 }))
+      const field = source.pipe(seamless(4))
+      expect(field.sample(0, 0, 0.3)).toBeCloseTo(source.sample(0, 0, 0.3), 12)
+      // on the left edge only the y copies are blended, by smoothstep(1.5 / 4)
+      const expected = source.sample(0, 1.5, 0.3) * 0.68359375 + source.sample(0, -2.5, 0.3) * 0.31640625
+      expect(field.sample(0, 1.5, 0.3)).toBeCloseTo(expected, 12)
+    })
+
+    it('keeps the slope where the period repeats', () => {
+      const field = perlin().pipe(fbm({ octaves: 3 }), seamless(4, { mean: 0 }))
+      const e = 1e-4
+      for (const y of [0.3, 1.7, 2.9]) {
+        const right = (field.sample(e, y) - field.sample(0, y)) / e
+        const left = (field.sample(4, y) - field.sample(4 - e, y)) / e
+        expect(left).toBeCloseTo(right, 2)
+      }
+    })
+
+    it('does not change patterns with the same period', () => {
+      const pattern = tiles().pipe(scale(4))
+      const field = pattern.pipe(seamless(1))
+      for (const [x, y] of points) {
+        expect(field.sample(x, y)).toBeCloseTo(pattern.sample(x, y), 9)
+      }
+    })
+  })
+
+  describe('unary', () => {
+    it('rounds halves up and saturates', () => {
+      expect([-1.5, -0.5, 0.5, 2.5].map((it) => constant(it).pipe(round()).sample(0, 0))).toEqual([-1, 0, 1, 3])
+      expect([-0.5, 0.25, 1.5].map((it) => constant(it).pipe(saturate()).sample(0, 0))).toEqual([0, 0.25, 1])
+    })
+
+    it('emits the same expressions in both languages', () => {
+      const field = perlin().pipe(saturate(), inverseSqrt(), round())
+      expect(toWgsl(field).code).toContain('clamp(')
+      expect(toGlsl(field).code).toContain('clamp(')
+      // builtin calls only, the generated functions are named after the field kind, e.g. noise_saturate_0
+      expect(toGlsl(field).code).not.toMatch(/\b(inversesqrt|inverseSqrt|saturate|roundEven)\(/)
+    })
+  })
+
+  describe('tiles', () => {
+    it('computes a checker pattern', () => {
+      const field = tiles()
+      expect(field.sample(0.5, 0.5)).toBe(0)
+      expect(field.sample(1.5, 0.5)).toBe(1)
+      expect(field.sample(-0.5, 0.5)).toBe(1)
+      expect(field.sample(1.5, 1.5)).toBe(0)
+    })
+
+    it('computes the distance to the tile edges', () => {
+      const field = tiles({ output: 'edge' })
+      expect(field.sample(0.5, 0.5)).toBe(0.5)
+      expect(field.sample(1.25, 0.5)).toBe(0.25)
+      expect(field.sample(-0.1, 0.5)).toBeCloseTo(0.1, 12)
+    })
+
+    it('has one random value per tile', () => {
+      const field = tiles({ output: 'random' })
+      expect(field.sample(2.1, 3.1)).toBe(field.sample(2.9, 3.9))
+      expect(field.sample(2.1, 3.1)).toBe(unit(hash3(2, 3, 0)))
+      expect(field.sample(2.1, 3.1)).not.toBe(field.sample(3.1, 3.1))
+    })
+  })
+
+  describe('normals', () => {
+    it('points up on a flat field', () => {
+      expect(constant(0.5).pipe(normals()).sampleColor(0.3, 0.4)).toEqual([0.5, 0.5, 1, 1])
+    })
+
+    it('tilts against the slope', () => {
+      const ramp = tiles({ output: 'edge' }).pipe(scale(0.1))
+      // the distance to the edge rises with x near x = 0
+      const [x, y, z] = ramp.pipe(normals({ strength: 10 })).sampleColor(0.5, 4)
+      expect(x).toBeLessThan(0.5)
+      expect(y).toBeCloseTo(0.5, 9)
+      expect(z).toBeGreaterThan(0.5)
     })
   })
 
