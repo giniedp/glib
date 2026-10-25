@@ -21,9 +21,7 @@ class Game extends EcsGame {
   public scale!: Tween
   public spin!: Tween
 
-  public constructor(canvas: HTMLCanvasElement, platform: PlatformId) {
-    super({ canvas, platform })
-
+  protected override onInitialize(): void {
     this.content.registerLoader(OBJ.Loader)
     this.content.registerLoader(MTL.Loader)
     this.content.registerLoader(GLTF.Loader)
@@ -139,14 +137,12 @@ class CubeComponent implements GameComponent, InitializableComponent {
       this.renderable.model = model
     })
   }
-
-  public destroy(): void {
-    //
-  }
 }
 
-export default (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
-  const game = new Game(canvas, platform)
+export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
+  const game = new Game({ canvas, platform })
+  // the panel binds to the tweens, they are created when the game initializes
+  await game.run()
 
   const eases = [
     { label: 'Linear', value: easeLinear },
@@ -169,7 +165,6 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement, platform: Platfor
     ui.button('Pause / resume spin', { onClick: () => game.toggleSpin() })
   })
 
-  game.run()
   return () => {
     game.destroy()
     panel.dispose()

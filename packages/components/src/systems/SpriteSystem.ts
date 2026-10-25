@@ -1,4 +1,4 @@
-import { GameEntity, GameQuery, GameSystem, GameWorld, GetComponent } from '@gglib/ecs'
+import { GameEntity, GameQuery, GameSystem, GameWorld, GetComponent, SystemOrder } from '@gglib/ecs'
 import { SpriteMesh } from '@gglib/effects'
 import { Color, Device, type Ownable, ResourceOwnership, SamplerState, Texture } from '@gglib/graphics'
 import { IVec4, Mat4 } from '@gglib/math'
@@ -67,10 +67,12 @@ const MAX_IDLE_FRAMES = 60
  * draw call. The meshes are rendered by entities with a {@link MeshComponent}, which are children of the scene entity.
  * A sprite is rendered in the scene of its entity, sprites outside of a scene are not rendered.
  *
- * The sprites are written in the render step, after all systems have moved the entities. Add the system
- * before the `Renderer`. The `EcsGame` adds it by default.
+ * The sprites are written in the render step of the `SystemOrder.Render` phase, after all systems have moved the
+ * entities. The `EcsGame` adds the system by default.
  */
 export class SpriteSystem extends GameSystem implements Ownable {
+  public override order: number = SystemOrder.Render
+
   /**
    * Holds the white texture of untextured sprites. The materials of the batches hold it too, a removed batch
    * would otherwise finalize it while the system still hands it out

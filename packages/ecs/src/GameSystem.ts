@@ -24,6 +24,47 @@ const SystemIds = idProvider<GameSystemId<any>, Type<any> | AbstractType<any>>(S
  */
 export const IsGameSystem = Symbol('IsGameSystem')
 
+/**
+ * The phases of a frame. Systems update and render in the order of their {@link GameSystem.order}, systems with the
+ * same order run in the order they were added. Values in between are fine, e.g. `SystemOrder.Default + 1`
+ *
+ * @public
+ */
+export const SystemOrder = {
+  /**
+   * Keyboard, mouse, touch and gamepad state for this frame
+   */
+  Input: -300,
+  /**
+   * Clocks and tweens
+   */
+  Time: -200,
+  /**
+   * Game logic. The default for custom systems
+   */
+  Default: 0,
+  /**
+   * Component behaviors, e.g. cameras compute their view matrices
+   */
+  Behavior: 100,
+  /**
+   * Collision detection, after everything moved
+   */
+  Physics: 200,
+  /**
+   * Transforms and bounds of the scene
+   */
+  Scene: 300,
+  /**
+   * Particles and audio, they read the final positions
+   */
+  Effects: 400,
+  /**
+   * Systems that write render data, e.g. sprites and debug lines
+   */
+  Render: 500,
+} as const
+
 export abstract class GameSystem {
   static [Symbol.hasInstance](instance: any): boolean {
     return instance != null && !!instance[IsGameSystem]
@@ -32,6 +73,11 @@ export abstract class GameSystem {
   public get [IsGameSystem]() {
     return true
   }
+
+  /**
+   * When this system updates and renders, relative to the other systems. See {@link SystemOrder}
+   */
+  public order: number = SystemOrder.Default
 
   /**
    * Initializes the game system
@@ -131,8 +177,7 @@ export class GameSystemCollection {
       if (!this.isInitialized) {
         this.toInitialize.push(value)
       } else if (initializeSystem(value, this.world)) {
-        this.toUpdate.push(value)
-        this.toRender.push(value)
+        this.schedule(value)
       }
     }
   }
@@ -142,17 +187,25 @@ export class GameSystemCollection {
       throw new Error('Container is already initialized')
     }
     this.isInitialized = true
+    // systems initialize in the order they were added, they look up each other by type
     while (this.toInitialize.length > 0) {
       const system = this.toInitialize.shift()
       if (initializeSystem(system, this.world)) {
-        this.toUpdate.push(system)
-        this.toRender.push(system)
-        this.stats.set(system, {
-          render: new MetricSampler(),
-          update: new MetricSampler(),
-        })
+        this.schedule(system)
       }
     }
+  }
+
+  /**
+   * Adds an initialized system to the update and render lists, by its order
+   */
+  private schedule(system: GameSystem) {
+    insertByOrder(this.toUpdate, system)
+    insertByOrder(this.toRender, system)
+    this.stats.set(system, {
+      render: new MetricSampler(),
+      update: new MetricSampler(),
+    })
   }
 
   public update(time: number, dt: number): void {
@@ -196,6 +249,22 @@ export class GameSystemCollection {
     this.toInitialize = []
     this.isInitialized = false
   }
+}
+
+function orderOf(system: GameSystem): number {
+  return system.order ?? SystemOrder.Default
+}
+
+/**
+ * Inserts a system after all systems with the same or a lower order
+ */
+function insertByOrder(list: GameSystem[], system: GameSystem) {
+  const order = orderOf(system)
+  let index = list.length
+  while (index > 0 && orderOf(list[index - 1]) > order) {
+    index--
+  }
+  list.splice(index, 0, system)
 }
 
 function destroySystem(system: GameSystem) {

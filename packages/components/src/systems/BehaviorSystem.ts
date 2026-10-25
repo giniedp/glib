@@ -1,4 +1,4 @@
-import { ComponentIds, GameComponentId, GameEntity, GameSystem, GameWorld } from '@gglib/ecs'
+import { ComponentIds, GameComponentId, GameEntity, GameSystem, GameWorld, SystemOrder } from '@gglib/ecs'
 import { idMap } from '@gglib/utils'
 
 /**
@@ -22,6 +22,8 @@ function isBehaviorComponent(component: any): component is BehaviorComponent {
  * A system that automatically updates all components that implement the {@link BehaviorComponent} interface
  */
 export class BehaviorSystem extends GameSystem {
+  public override order: number = SystemOrder.Behavior
+
   private world: GameWorld
   private components = idMap<GameComponentId, BehaviorComponent>()
   override initialize(world: GameWorld): void {

@@ -1,7 +1,9 @@
-import { GameSystem, GameWorld, IsGameSystem } from '@gglib/ecs'
+import { GameSystem, GameWorld, IsGameSystem, SystemOrder } from '@gglib/ecs'
 import { Gamepad } from '@gglib/game'
 
 export class GamePadInput extends Gamepad implements GameSystem {
+  public order: number = SystemOrder.Input
+
   public get [IsGameSystem]() {
     return true
   }

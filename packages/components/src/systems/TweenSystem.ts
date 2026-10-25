@@ -1,4 +1,4 @@
-import { GameSystem, GameWorld } from '@gglib/ecs'
+import { GameSystem, GameWorld, SystemOrder } from '@gglib/ecs'
 import { type IVec2, type IVec3, type IVec4, easeLinear } from '@gglib/math'
 import { type Clock, TimeSystem } from './TimeSystem'
 
@@ -375,6 +375,8 @@ export class Tween implements IVec4 {
  * ```
  */
 export class TweenSystem extends GameSystem {
+  public override order: number = SystemOrder.Time + 1
+
   protected tweens: Tween[] = []
   protected time: TimeSystem | null = null
 

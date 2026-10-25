@@ -1,4 +1,4 @@
-import { GameSystem, GameWorld } from '@gglib/ecs'
+import { GameSystem, GameWorld, SystemOrder } from '@gglib/ecs'
 import { type ITouchPaneOptions, TouchPane } from '@gglib/game'
 
 /**
@@ -12,6 +12,8 @@ export type TouchComponentOptions = ITouchPaneOptions
  * @public
  */
 export class TouchInput extends GameSystem {
+  public override order: number = SystemOrder.Input
+
   public readonly touch: TouchPane
   public readonly touchIds: ReadonlyArray<number>
 

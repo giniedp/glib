@@ -1,4 +1,4 @@
-import { GameEntity, GameSystem, GameWorld, GetComponent } from '@gglib/ecs'
+import { GameEntity, GameSystem, GameWorld, GetComponent, SystemOrder } from '@gglib/ecs'
 import { DebugLineMaterial } from '@gglib/effects'
 import { GameLoop } from '@gglib/game'
 import { Color, Device, Geometry, Mesh, vertexLayout } from '@gglib/graphics'
@@ -73,6 +73,8 @@ const corners: IVec3[] = Array.from({ length: 8 }, () => vec3())
  * ```
  */
 export class DebugDrawSystem extends GameSystem {
+  public override order: number = SystemOrder.Render
+
   /**
    * Draw calls are ignored and nothing is rendered while disabled
    */
@@ -118,7 +120,8 @@ export class DebugDrawSystem extends GameSystem {
    */
   public in(entity: GameEntity): DebugDraw | null
   public in(target: SceneComponent | GameEntity): DebugDraw | null {
-    const scene = target instanceof SceneComponent ? target : target.$(SceneComponent.Member, GetComponent.Optional)?.scene
+    const scene =
+      target instanceof SceneComponent ? target : target.$(SceneComponent.Member, GetComponent.Optional)?.scene
     if (!scene) {
       return null
     }

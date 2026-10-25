@@ -84,25 +84,40 @@ export class EcsGame {
   }
 
   private booted: Promise<void> | null = null
+  private created = false
   private destroyed = false
 
+  /**
+   * Creates the device and the world. The systems, the content loader and the main scene are created by
+   * {@link EcsGame.run}, after the constructors of subclasses have run
+   */
   public constructor(options: CreateDeviceOptions) {
     this.device = createDevice(options)
 
     this.world = new GameWorld()
     this.world.addSystem(this, EcsGame)
     this.world.addSystem(this.device, Device)
-
-    this.onCreate()
-    this.createEssentialSystems()
   }
 
   /**
-   * Called first during {@link EcsGame.run}. Override to register custom
-   * systems before the defaults are installed.
+   * Called first during {@link EcsGame.run}, after the constructor. Override to add custom systems, the game adds
+   * the default systems that are still missing afterwards. The order in which systems update does not depend on
+   * when they are added, see `GameSystem.order`
    */
   protected onCreate(): void {
     //
+  }
+
+  /**
+   * Adds the systems of the subclass and the missing default systems, once
+   */
+  private create() {
+    if (this.created) {
+      return
+    }
+    this.created = true
+    this.onCreate()
+    this.createEssentialSystems()
   }
 
   protected createEssentialSystems() {
@@ -256,18 +271,24 @@ export class EcsGame {
     }
   }
 
+  /**
+   * Creates the systems and the main scene, waits for the device, initializes and loads the content, then starts
+   * the game loop
+   */
   public async run() {
     if (this.booted) {
       return this.booted
     }
 
+    // synchronous, so the systems and the scene exist once run() returns its promise
+    this.create()
     this.booted = this.boot()
     return this.booted
   }
 
   public stop() {
-    const loop = this.world.getSystem(GameLoop)
-    if (!loop.isRunning) {
+    const loop = this.world.getSystem(GameLoop, { optional: true })
+    if (!loop?.isRunning) {
       return
     }
     loop.stop()

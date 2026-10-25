@@ -1,4 +1,4 @@
-import { GameEntity, GameQuery, GameSystem, GameWorld, GetComponent } from '@gglib/ecs'
+import { GameEntity, GameQuery, GameSystem, GameWorld, GetComponent, SystemOrder } from '@gglib/ecs'
 import { ParticleChannel, ParticleChannelOptions } from '@gglib/effects'
 import { Device } from '@gglib/graphics'
 import { IVec3, vec3, vec3$initFrom } from '@gglib/math'
@@ -44,8 +44,8 @@ const emitVelocity = vec3()
  *
  * Particles are emitted by entities with a {@link ParticleEmitterComponent}, which the system processes in its update.
  * Emitters outside of a scene or with an unknown channel emit nothing. The particles of an update are uploaded in the
- * render step. Add the system after the systems that move the emitters (e.g. the `BehaviorSystem`), so particles are
- * emitted at the current positions, and before the `Renderer`, so they are uploaded before the scene is drawn.
+ * render step. The system runs in the `SystemOrder.Effects` phase, after the systems that move the emitters, so
+ * particles are emitted at the current positions. The renderer draws the scene after all systems rendered.
  *
  * @example
  * ```ts
@@ -56,6 +56,8 @@ const emitVelocity = vec3()
  * ```
  */
 export class ParticleSystem extends GameSystem {
+  public override order: number = SystemOrder.Effects
+
   private world: GameWorld
   private device: Device
   private definitions = new Map<string, ParticleChannelOptions | undefined>()

@@ -1,4 +1,4 @@
-import { GameSystem, IsGameSystem, GameWorld } from '@gglib/ecs'
+import { GameSystem, IsGameSystem, GameWorld, SystemOrder } from '@gglib/ecs'
 import { copyKeyboardState, Keyboard, type KeyboardOptions } from '@gglib/game'
 
 /**
@@ -7,6 +7,8 @@ import { copyKeyboardState, Keyboard, type KeyboardOptions } from '@gglib/game'
  * @public
  */
 export class KeyboardInputSystem extends Keyboard implements GameSystem {
+  public order: number = SystemOrder.Input
+
   public get [IsGameSystem](): boolean {
     return true
   }

@@ -1,5 +1,5 @@
 import { ContentLoader } from '@gglib/content'
-import { GameEntity, GameQuery, GameSystem, GameWorld } from '@gglib/ecs'
+import { GameEntity, GameQuery, GameSystem, GameWorld, SystemOrder } from '@gglib/ecs'
 import { SpaceBasis, vec3, vec3$normalize, vec3ApplyMat4Rotation } from '@gglib/math'
 import { AudioDevice, setPannerPosition } from '../audio/AudioDevice'
 import { AudioListenerComponent } from '../components/AudioListenerComponent'
@@ -47,6 +47,8 @@ export interface AudioSystemOptions {
  * ```
  */
 export class AudioSystem extends GameSystem {
+  public override order: number = SystemOrder.Effects
+
   /**
    * The audio device
    */

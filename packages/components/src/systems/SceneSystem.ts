@@ -1,8 +1,10 @@
-import { GameEntity, GameQuery, GameSystem, GameWorld, GetComponent } from '@gglib/ecs'
+import { GameEntity, GameQuery, GameSystem, GameWorld, GetComponent, SystemOrder } from '@gglib/ecs'
 import { SceneComponent } from '../components/SceneComponent'
 import { TransformComponent } from '../components/TransformComponent'
 
 export class SceneSystem extends GameSystem {
+  public override order: number = SystemOrder.Scene
+
   protected world: GameWorld
   protected qSceneRoots: GameQuery
 

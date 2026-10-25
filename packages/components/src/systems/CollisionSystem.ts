@@ -1,4 +1,4 @@
-import { GameEntity, GameQuery, GameSystem, GameWorld } from '@gglib/ecs'
+import { GameEntity, GameQuery, GameSystem, GameWorld, SystemOrder } from '@gglib/ecs'
 import { Color } from '@gglib/graphics'
 import { BoundingSphere, IRay, IVec3, IVec4, rayPositionAt, vec3 } from '@gglib/math'
 import { ColliderComponent, CollisionEvent } from '../components/ColliderComponent'
@@ -81,14 +81,16 @@ const querySphere = new BoundingSphere()
  * Collisions are only detected, never resolved. Answers whether colliders touch and what a ray hits.
  * Use a physics engine if objects should bounce off each other.
  *
- * The system is not added by default. Add it in `onInitialize` of the game, so it runs after the behaviors
- * moved the entities, otherwise the events lag one frame behind.
+ * The system is not added by default, add it in `onCreate` of the game. It runs in the `SystemOrder.Physics` phase,
+ * after the behaviors moved the entities, so the events don't lag one frame behind.
  *
  * The queries accept an optional `out` parameter to reuse result objects and arrays.
  *
  * Set {@link debugDraw} to draw the colliders with the {@link DebugDrawSystem}, which must be added to the world.
  */
 export class CollisionSystem extends GameSystem {
+  public override order: number = SystemOrder.Physics
+
   /**
    * Draws the world volumes of the colliders with the {@link DebugDrawSystem}
    */
@@ -298,7 +300,11 @@ export class CollisionSystem extends GameSystem {
    * @param options - filter options
    * @param out - where to write the result
    */
-  public overlapPoint(point: IVec3, options?: CollisionQueryOptions, out: ColliderComponent[] = []): ColliderComponent[] {
+  public overlapPoint(
+    point: IVec3,
+    options?: CollisionQueryOptions,
+    out: ColliderComponent[] = [],
+  ): ColliderComponent[] {
     const mask = options?.mask ?? ALL_LAYERS
     let count = 0
     const colliders = this.collectColliders(this.queryColliders, false)

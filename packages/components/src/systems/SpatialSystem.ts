@@ -1,9 +1,11 @@
-import { GameEntity, GameSystem, GameWorld, GetComponent } from '@gglib/ecs'
+import { GameEntity, GameSystem, GameWorld, GetComponent, SystemOrder } from '@gglib/ecs'
 import { idMap } from '@gglib/utils'
 import { SpatialNodeComponent } from '../components/SpatialNodeComponent'
 import { SpatialComponent } from '../components/SpatialComponent'
 
 export class SpatialSystem extends GameSystem {
+  public override order: number = SystemOrder.Scene + 2
+
   protected world: GameWorld
   protected dirtySet = idMap<number, SpatialNodeComponent>()
 

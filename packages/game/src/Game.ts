@@ -20,24 +20,37 @@ export class Game {
   }
 
   private booted: Promise<void> | null = null
+  private created = false
   private destroyed = false
 
+  /**
+   * Creates the device. Everything else is created by {@link Game.run}, after the constructors of subclasses have run
+   */
   public constructor(options: CreateDeviceOptions) {
     this.device = createDevice(options)
-
-    this.onCreate()
-    this.onCreateEnd()
   }
 
   /**
-   * Called as part of the constructor after device is created, though the device may not be ready yet
+   * Called first during {@link Game.run}, after the constructor. The device may not be ready yet
    */
   protected onCreate(): void {
     //
   }
 
+  /**
+   * Called after {@link Game.onCreate}, creates the game loop if the subclass did not
+   */
   protected onCreateEnd() {
     this.loop ||= new GameLoop()
+  }
+
+  private create() {
+    if (this.created) {
+      return
+    }
+    this.created = true
+    this.onCreate()
+    this.onCreateEnd()
   }
 
   /**
@@ -139,9 +152,7 @@ export class Game {
   }
 
   public async run() {
-    if (this.booted) {
-    } else {
-    }
+    this.create()
     this.booted ||= this.boot()
     this.loop.run()
     return this.booted
@@ -151,7 +162,7 @@ export class Game {
    * Stops the game, but does not unload the content.
    */
   public stop() {
-    if (!this.loop.isRunning) {
+    if (!this.loop?.isRunning) {
       return
     }
     this.loop.stop()

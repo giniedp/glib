@@ -1,4 +1,4 @@
-import { GameSystem, GameWorld } from '@gglib/ecs'
+import { GameSystem, GameWorld, SystemOrder } from '@gglib/ecs'
 
 /**
  * A timer object holding elapsed and accumulated time values
@@ -71,6 +71,8 @@ function resetClock(clock: Clock) {
  */
 
 export class TimeSystem extends GameSystem {
+  public override order: number = SystemOrder.Time
+
   /**
    * The real time clock
    */
