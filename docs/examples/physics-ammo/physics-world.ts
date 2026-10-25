@@ -25,7 +25,8 @@ export class PhysicsWorld extends GameSystem {
     Ammo.destroy(this.config)
   }
 
-  public update(time: number, dt: number) {
-    this.world.stepSimulation(dt)
+  public override update(time: number, dt: number) {
+    // fixed 120 Hz sub steps keep the stacks stable
+    this.world.stepSimulation(dt, 10, 1 / 120)
   }
 }

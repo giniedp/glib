@@ -199,7 +199,20 @@ function humanize(name: string) {
     .trim()
 }
 
-const activeKey = computed(() => new URLSearchParams(locationSearch.value).get('model'))
+// without a selection the example shows the first loadable model
+const activeKey = computed(
+  () => new URLSearchParams(locationSearch.value).get('model') ?? firstModelKey(manifest.value),
+)
+
+function firstModelKey(list: Manifest) {
+  for (const folder of list) {
+    const modelId = folder.models.findIndex((it) => it.loadable)
+    if (modelId >= 0) {
+      return `${folder.id}-${modelId}`
+    }
+  }
+  return null
+}
 
 function isActive(folder: ManifestFolder, modelId: number) {
   return activeKey.value === `${folder.id}-${modelId}`

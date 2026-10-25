@@ -34,9 +34,12 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   //   })
   // })
 
-  const modelKey = new URL(location.href).searchParams.get('model')
-  const data = await fetch(indexFile).then((res) => res.json())
-  for (const mdl of data!) {
+  const data: GltfIndex = await fetch(indexFile).then((res) => res.json())
+  // without a selection the first model is shown, the side menu highlights the same one
+  const first = data[0]
+  const modelKey =
+    new URL(location.href).searchParams.get('model') ?? (first && `${first.name}_${Object.keys(first.variants)[0]}`)
+  for (const mdl of data) {
     for (const [name, path] of Object.entries(mdl.variants)) {
       if (modelKey !== `${mdl.name}_${name}`) {
         continue

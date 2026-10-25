@@ -144,7 +144,12 @@ const INDEX_FILE = `${BASE_URL}/model-index.json`
 
 const index = ref<GltfIndex>([])
 
-const activeKey = computed(() => new URLSearchParams(locationSearch.value).get('model'))
+// without a selection the example shows the first model
+const activeKey = computed(() => {
+  const first = index.value[0]
+  const fallback = first ? `${first.name}_${Object.keys(first.variants)[0]}` : null
+  return new URLSearchParams(locationSearch.value).get('model') ?? fallback
+})
 
 function isActive(model: GltfIndexModel, variant: string) {
   return activeKey.value === `${model.name}_${variant}`

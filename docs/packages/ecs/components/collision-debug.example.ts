@@ -59,14 +59,12 @@ class Game extends EcsGame {
     const canvas = this.device.canvas as HTMLCanvasElement
     this.mouse = new MouseInputSystem({ provider: new MouseListener({ eventTarget: canvas, captureTarget: canvas }) })
     this.world.addSystem(this.mouse)
-    // onCreate is called from the base constructor, before the fields of this class are initialized
     this.world.addSystem(new DebugDrawSystem())
+    // its order makes it run after the behaviors moved the entities
+    this.world.addSystem(this.collisions)
   }
 
   protected override onInitialize(): void {
-    // added here, so it runs after the behaviors moved the entities
-    this.world.addSystem(this.collisions)
-
     const camera = this.createEntity({
       name: 'camera',
       parent: this.scene.entity,

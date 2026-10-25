@@ -35,6 +35,21 @@ Components are looked up by type. A component can also be registered under an ad
 A `GameSystem` implements logic that runs for many entities, with `update` and `render` called once per frame.
 Systems are initialized in the order they are added. They can depend on other systems through the world.
 
+The `order` of a system decides when it updates and renders, not the time it was added. `SystemOrder` names the
+phases of a frame: `Input`, `Time`, `Default` (game logic, the default for custom systems), `Behavior`, `Physics`,
+`Scene`, `Effects` and `Render`. Systems with the same order run in the order they were added, values in between
+work too, e.g. `SystemOrder.Default + 1`.
+
+```ts
+class SteeringSystem extends GameSystem {
+  // after the input, before the behaviors
+  public override order = SystemOrder.Default
+}
+```
+
+`EcsGame` calls `onCreate` at the start of `run()`, after the constructor of the game. Add custom systems there, the
+game adds the default systems that are still missing.
+
 ## Queries
 
 A query selects entities by their component types, with required, optional and rejected types.

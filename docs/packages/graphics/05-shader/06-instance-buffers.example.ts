@@ -7,6 +7,8 @@ import {
   createDevice,
   Device,
   FrameContext,
+  GLSL_INSTANCE_INDEX,
+  GLSL_STORAGE,
   PlatformId,
   vertexLayout,
 } from '@gglib/graphics'
@@ -38,9 +40,10 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     bufferField('color', 'vec4f'),
     bufferField('params', 'vec4f'),
   ])
+  // WebGL has no storage buffers, it mirrors the buffer into a float texture that the shader reads from
   const buffer = device.createBuffer({
     size: 1000 * layout.byteSize,
-    usage: device.isWebGPU ? BufferUsage.STORAGE : BufferUsage.UNIFORM,
+    usage: BufferUsage.STORAGE,
   })
   const writer = new BufferRecorder({
     capacity: 1000,
@@ -107,25 +110,40 @@ const glslVS = /*glsl*/ `
     float time;
   } global;
 
-  // @block material
-  layout(std140) uniform MaterialBlock {
-    vec3 color;
-    float offset;
-  } mtl;
+  struct InstanceData {
+    vec4 position;
+    vec4 color;
+    vec4 params;
+  };
+  // the storage buffer as a texture, each vec4 field is one texel
+  // @storage InstanceData
+  uniform highp sampler2D instances;
+
+  ${GLSL_STORAGE}
+  ${GLSL_INSTANCE_INDEX}
 
   // @alias position
   in vec3 vPosition;
   out vec3 color;
   void main(void) {
-    gl_Position = vec4(
-      vPosition.xy + vec2(
-        cos(global.time + mtl.offset),
-        sin(global.time + mtl.offset)
-      ) * 0.5,
-      vPosition.z,
-      1.0
-    );
+    // an instance has 3 fields, so it starts at texel id * 3
+    int texel = gg_instanceIndex() * 3;
+    vec4 dataPosition = gg_storageTexel(instances, texel);
+    vec4 dataColor = gg_storageTexel(instances, texel + 1);
+    vec4 params = gg_storageTexel(instances, texel + 2);
+    float scale = params.x;
+    float radius = params.y;
+    float offset = params.z;
 
+    vec2 position = dataPosition.xy;
+    position += vPosition.xy * scale;
+    position += vec2(
+      cos(global.time + offset),
+      sin(global.time + offset)
+    ) * radius;
+
+    gl_Position = vec4(position, vPosition.z, 1.0);
+    color = dataColor.xyz;
   }
 `
 

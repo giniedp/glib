@@ -35,6 +35,9 @@ importers:
       '@gglib/model':
         specifier: workspace:^0.7.0
         version: link:packages/model
+      '@gglib/noise':
+        specifier: workspace:^0.7.0
+        version: link:packages/noise
       '@gglib/render':
         specifier: workspace:^0.7.0
         version: link:packages/render
@@ -270,7 +273,11 @@ importers:
         specifier: workspace:^0.7.0
         version: link:../utils
 
-  packages/noise: {}
+  packages/noise:
+    devDependencies:
+      '@gglib/graphics':
+        specifier: workspace:^0.7.0
+        version: link:../graphics
 
   packages/render:
     devDependencies:

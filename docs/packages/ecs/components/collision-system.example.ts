@@ -44,13 +44,11 @@ class Game extends EcsGame {
     const canvas = this.device.canvas as HTMLCanvasElement
     this.mouse = new MouseInputSystem({ provider: new MouseListener({ eventTarget: canvas, captureTarget: canvas }) })
     this.world.addSystem(this.mouse)
+    this.collisions = new CollisionSystem()
+    this.world.addSystem(this.collisions)
   }
 
   protected override onInitialize(): void {
-    // added here, so it runs after the behaviors moved the entities
-    this.collisions = new CollisionSystem()
-    this.world.addSystem(this.collisions)
-
     const renderer = this.world.getSystem(Renderer)
     renderer.inputs.set(CommonInputs.Global.AmbientColor, Color.DimGray)
     renderer.inputs.set(CommonInputs.Global.AmbientColorTop, Color.White)

@@ -42,7 +42,8 @@ type ManifestModel = {
 async function loadSample(tools: HTMLElement, loadModel: (url: string) => void) {
   const res: Manifest = await fetch(manifest).then((res) => res.json())
   const list = res.sort((a, b) => a.id - b.id)
-  const modelKey = new URL(location.href).searchParams.get('model')
+  // without a selection the first loadable model is shown, the side menu highlights the same one
+  const modelKey = new URL(location.href).searchParams.get('model') ?? firstModelKey(list)
   for (const folder of list) {
     for (const [modelId, model] of folder.models.entries()) {
       if (!model.loadable) {
@@ -56,4 +57,14 @@ async function loadSample(tools: HTMLElement, loadModel: (url: string) => void) 
       return
     }
   }
+}
+
+function firstModelKey(list: Manifest) {
+  for (const folder of list) {
+    const modelId = folder.models.findIndex((it) => it.loadable)
+    if (modelId >= 0) {
+      return `${folder.id}-${modelId}`
+    }
+  }
+  return null
 }

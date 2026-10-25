@@ -4,7 +4,7 @@ order: 60
 
 # Instance Buffers
 
-<Example platform="webgpu" />
+<Example />
 
 :::tabs variant:code
 == example.ts
