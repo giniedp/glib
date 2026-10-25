@@ -11,6 +11,7 @@
     "bundle": "pnpm task bundle",
     "build": "pnpm task build",
     "test": "pnpm task test",
+    "release": "pnpm task release",
     "dev": "pnpm task watch",
     "watch": "pnpm task watch"
   },
