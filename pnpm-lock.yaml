@@ -9,43 +9,43 @@ importers:
   .:
     devDependencies:
       '@gglib/components':
-        specifier: workspace:^0.7.0
+        specifier: workspace:^0.8.0
         version: link:packages/components
       '@gglib/content':
-        specifier: workspace:^0.7.0
+        specifier: workspace:^0.8.0
         version: link:packages/content
       '@gglib/ecs':
-        specifier: workspace:^0.7.0
+        specifier: workspace:^0.8.0
         version: link:packages/ecs
       '@gglib/effects':
-        specifier: workspace:^0.7.0
+        specifier: workspace:^0.8.0
         version: link:packages/effects
       '@gglib/game':
-        specifier: workspace:^0.7.0
+        specifier: workspace:^0.8.0
         version: link:packages/game
       '@gglib/graphics':
-        specifier: workspace:^0.7.0
+        specifier: workspace:^0.8.0
         version: link:packages/graphics
       '@gglib/loaders':
-        specifier: workspace:^0.7.0
+        specifier: workspace:^0.8.0
         version: link:packages/loaders
       '@gglib/math':
-        specifier: workspace:^0.7.0
+        specifier: workspace:^0.8.0
         version: link:packages/math
       '@gglib/model':
-        specifier: workspace:^0.7.0
+        specifier: workspace:^0.8.0
         version: link:packages/model
       '@gglib/noise':
-        specifier: workspace:^0.7.0
+        specifier: workspace:^0.8.0
         version: link:packages/noise
       '@gglib/render':
-        specifier: workspace:^0.7.0
+        specifier: workspace:^0.8.0
         version: link:packages/render
       '@gglib/utils':
-        specifier: workspace:^0.7.0
+        specifier: workspace:^0.8.0
         version: link:packages/utils
       '@gglib/viewer':
-        specifier: workspace:^0.7.0
+        specifier: workspace:^0.8.0
         version: link:packages/viewer
       '@types/mithril':
         specifier: ^2.2.9
@@ -157,106 +157,106 @@ importers:
   packages/components:
     devDependencies:
       '@gglib/content':
-        specifier: workspace:^0.7.0
+        specifier: workspace:^0.8.0
         version: link:../content
       '@gglib/ecs':
-        specifier: workspace:^0.7.0
+        specifier: workspace:^0.8.0
         version: link:../ecs
       '@gglib/effects':
-        specifier: workspace:^0.7.0
+        specifier: workspace:^0.8.0
         version: link:../effects
       '@gglib/game':
-        specifier: workspace:^0.7.0
+        specifier: workspace:^0.8.0
         version: link:../game
       '@gglib/graphics':
-        specifier: workspace:^0.7.0
+        specifier: workspace:^0.8.0
         version: link:../graphics
       '@gglib/math':
-        specifier: workspace:^0.7.0
+        specifier: workspace:^0.8.0
         version: link:../math
       '@gglib/model':
-        specifier: workspace:^0.7.0
+        specifier: workspace:^0.8.0
         version: link:../model
       '@gglib/render':
-        specifier: workspace:^0.7.0
+        specifier: workspace:^0.8.0
         version: link:../render
       '@gglib/utils':
-        specifier: workspace:^0.7.0
+        specifier: workspace:^0.8.0
         version: link:../utils
 
   packages/content:
     devDependencies:
       '@gglib/graphics':
-        specifier: workspace:^0.7.0
+        specifier: workspace:^0.8.0
         version: link:../graphics
       '@gglib/math':
-        specifier: workspace:^0.7.0
+        specifier: workspace:^0.8.0
         version: link:../math
       '@gglib/model':
-        specifier: workspace:^0.7.0
+        specifier: workspace:^0.8.0
         version: link:../model
       '@gglib/utils':
-        specifier: workspace:^0.7.0
+        specifier: workspace:^0.8.0
         version: link:../utils
 
   packages/ecs:
     devDependencies:
       '@gglib/math':
-        specifier: workspace:^0.7.0
+        specifier: workspace:^0.8.0
         version: link:../math
       '@gglib/utils':
-        specifier: workspace:^0.7.0
+        specifier: workspace:^0.8.0
         version: link:../utils
 
   packages/effects:
     devDependencies:
       '@gglib/graphics':
-        specifier: workspace:^0.7.0
+        specifier: workspace:^0.8.0
         version: link:../graphics
       '@gglib/math':
-        specifier: workspace:^0.7.0
+        specifier: workspace:^0.8.0
         version: link:../math
       '@gglib/utils':
-        specifier: workspace:^0.7.0
+        specifier: workspace:^0.8.0
         version: link:../utils
 
   packages/game:
     devDependencies:
       '@gglib/graphics':
-        specifier: workspace:^0.7.0
+        specifier: workspace:^0.8.0
         version: link:../graphics
       '@gglib/math':
-        specifier: workspace:^0.7.0
+        specifier: workspace:^0.8.0
         version: link:../math
       '@gglib/utils':
-        specifier: workspace:^0.7.0
+        specifier: workspace:^0.8.0
         version: link:../utils
 
   packages/graphics:
     devDependencies:
       '@gglib/math':
-        specifier: workspace:^0.7.0
+        specifier: workspace:^0.8.0
         version: link:../math
       '@gglib/utils':
-        specifier: workspace:^0.7.0
+        specifier: workspace:^0.8.0
         version: link:../utils
 
   packages/loaders:
     devDependencies:
       '@gglib/content':
-        specifier: workspace:^0.7.0
+        specifier: workspace:^0.8.0
         version: link:../content
       '@gglib/graphics':
-        specifier: workspace:^0.7.0
+        specifier: workspace:^0.8.0
         version: link:../graphics
       '@gglib/math':
-        specifier: workspace:^0.7.0
+        specifier: workspace:^0.8.0
         version: link:../math
       '@gglib/model':
-        specifier: workspace:^0.7.0
+        specifier: workspace:^0.8.0
         version: link:../model
       '@gglib/utils':
-        specifier: workspace:^0.7.0
+        specifier: workspace:^0.8.0
         version: link:../utils
 
   packages/math: {}
@@ -264,37 +264,43 @@ importers:
   packages/model:
     devDependencies:
       '@gglib/graphics':
-        specifier: workspace:^0.7.0
+        specifier: workspace:^0.8.0
         version: link:../graphics
       '@gglib/math':
-        specifier: workspace:^0.7.0
+        specifier: workspace:^0.8.0
         version: link:../math
       '@gglib/utils':
-        specifier: workspace:^0.7.0
+        specifier: workspace:^0.8.0
         version: link:../utils
 
   packages/noise:
     devDependencies:
       '@gglib/graphics':
-        specifier: workspace:^0.7.0
+        specifier: workspace:^0.8.0
         version: link:../graphics
+      '@gglib/math':
+        specifier: workspace:^0.8.0
+        version: link:../math
+      '@gglib/utils':
+        specifier: workspace:^0.8.0
+        version: link:../utils
 
   packages/render:
     devDependencies:
       '@gglib/effects':
-        specifier: workspace:^0.7.0
+        specifier: workspace:^0.8.0
         version: link:../effects
       '@gglib/graphics':
-        specifier: workspace:^0.7.0
+        specifier: workspace:^0.8.0
         version: link:../graphics
       '@gglib/math':
-        specifier: workspace:^0.7.0
+        specifier: workspace:^0.8.0
         version: link:../math
       '@gglib/model':
-        specifier: workspace:^0.7.0
+        specifier: workspace:^0.8.0
         version: link:../model
       '@gglib/utils':
-        specifier: workspace:^0.7.0
+        specifier: workspace:^0.8.0
         version: link:../utils
 
   packages/utils: {}
@@ -302,49 +308,49 @@ importers:
   packages/viewer:
     devDependencies:
       '@gglib/components':
-        specifier: workspace:^0.7.0
+        specifier: workspace:^0.8.0
         version: link:../components
       '@gglib/content':
-        specifier: workspace:^0.7.0
+        specifier: workspace:^0.8.0
         version: link:../content
       '@gglib/ecs':
-        specifier: workspace:^0.7.0
+        specifier: workspace:^0.8.0
         version: link:../ecs
       '@gglib/effects':
-        specifier: workspace:^0.7.0
+        specifier: workspace:^0.8.0
         version: link:../effects
       '@gglib/game':
-        specifier: workspace:^0.7.0
+        specifier: workspace:^0.8.0
         version: link:../game
       '@gglib/graphics':
-        specifier: workspace:^0.7.0
+        specifier: workspace:^0.8.0
         version: link:../graphics
       '@gglib/loaders':
-        specifier: workspace:^0.7.0
+        specifier: workspace:^0.8.0
         version: link:../loaders
       '@gglib/math':
-        specifier: workspace:^0.7.0
+        specifier: workspace:^0.8.0
         version: link:../math
       '@gglib/model':
-        specifier: workspace:^0.7.0
+        specifier: workspace:^0.8.0
         version: link:../model
       '@gglib/render':
-        specifier: workspace:^0.7.0
+        specifier: workspace:^0.8.0
         version: link:../render
       '@gglib/utils':
-        specifier: workspace:^0.7.0
+        specifier: workspace:^0.8.0
         version: link:../utils
 
   packages/vite-plugin:
     devDependencies:
       '@gglib/graphics':
-        specifier: workspace:^0.7.0
+        specifier: workspace:^0.8.0
         version: link:../graphics
       '@gglib/math':
-        specifier: workspace:^0.7.0
+        specifier: workspace:^0.8.0
         version: link:../math
       '@gglib/utils':
-        specifier: workspace:^0.7.0
+        specifier: workspace:^0.8.0
         version: link:../utils
       vite:
         specifier: ^7

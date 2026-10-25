@@ -1,7 +1,7 @@
 {
   "name": "@gglib/components",
   "description": "Part of the [G]glib project",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "repository": {
     "type": "git",
     "url": "github.com/giniedp/glib.git"
@@ -25,26 +25,26 @@
     }
   },
   "devDependencies": {
-    "@gglib/ecs": "workspace:^0.7.0",
-    "@gglib/math": "workspace:^0.7.0",
-    "@gglib/utils": "workspace:^0.7.0",
-    "@gglib/graphics": "workspace:^0.7.0",
-    "@gglib/render": "workspace:^0.7.0",
-    "@gglib/model": "workspace:^0.7.0",
-    "@gglib/game": "workspace:^0.7.0",
-    "@gglib/content": "workspace:^0.7.0",
-    "@gglib/effects": "workspace:^0.7.0"
+    "@gglib/content": "workspace:^0.8.0",
+    "@gglib/math": "workspace:^0.8.0",
+    "@gglib/ecs": "workspace:^0.8.0",
+    "@gglib/utils": "workspace:^0.8.0",
+    "@gglib/graphics": "workspace:^0.8.0",
+    "@gglib/render": "workspace:^0.8.0",
+    "@gglib/model": "workspace:^0.8.0",
+    "@gglib/effects": "workspace:^0.8.0",
+    "@gglib/game": "workspace:^0.8.0"
   },
   "peerDependencies": {
-    "@gglib/ecs": "0.7.0",
-    "@gglib/math": "0.7.0",
-    "@gglib/utils": "0.7.0",
-    "@gglib/graphics": "0.7.0",
-    "@gglib/render": "0.7.0",
-    "@gglib/model": "0.7.0",
-    "@gglib/game": "0.7.0",
-    "@gglib/content": "0.7.0",
-    "@gglib/effects": "0.7.0"
+    "@gglib/content": "0.8.0",
+    "@gglib/math": "0.8.0",
+    "@gglib/ecs": "0.8.0",
+    "@gglib/utils": "0.8.0",
+    "@gglib/graphics": "0.8.0",
+    "@gglib/render": "0.8.0",
+    "@gglib/model": "0.8.0",
+    "@gglib/effects": "0.8.0",
+    "@gglib/game": "0.8.0"
   },
   "files": [
     "package.json",

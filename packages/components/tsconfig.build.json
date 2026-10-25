@@ -22,10 +22,13 @@
   ],
   "references": [
     {
-      "path": "../ecs/tsconfig.build.json"
+      "path": "../content/tsconfig.build.json"
     },
     {
       "path": "../math/tsconfig.build.json"
+    },
+    {
+      "path": "../ecs/tsconfig.build.json"
     },
     {
       "path": "../utils/tsconfig.build.json"
@@ -40,13 +43,10 @@
       "path": "../model/tsconfig.build.json"
     },
     {
-      "path": "../game/tsconfig.build.json"
-    },
-    {
-      "path": "../content/tsconfig.build.json"
-    },
-    {
       "path": "../effects/tsconfig.build.json"
+    },
+    {
+      "path": "../game/tsconfig.build.json"
     }
   ]
 }

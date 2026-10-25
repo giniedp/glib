@@ -240,6 +240,26 @@ async function updateSrcPackage(pkg: GlibPackageContext) {
   ])
 }
 
+/**
+ * Points the `@gglib/*` workspace dependencies of the root package.json to the current version
+ */
+function updateRootPackageJson() {
+  const file = project.subPath('package.json')
+  const source = readFileSync(file, { encoding: 'utf8' })
+  const pkgJson = JSON.parse(source)
+  const version = pkgJson.version
+  for (const group of ['dependencies', 'devDependencies', 'peerDependencies']) {
+    for (const key in pkgJson[group] || {}) {
+      // versioned ranges only, `workspace:^` and `workspace:*` follow the workspace on their own
+      if (key.startsWith('@gglib/') && /^workspace:\^\d/.test(pkgJson[group][key])) {
+        pkgJson[group][key] = `workspace:^${version}`
+      }
+    }
+  }
+  return writeFile(file, JSON.stringify(pkgJson, null, 2) + (source.endsWith('\n') ? '\n' : ''))
+}
+
 export async function update() {
+  await updateRootPackageJson()
   return project.glibPackages.map(updateSrcPackage)
 }
