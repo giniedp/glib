@@ -80,7 +80,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
           rows: [
             {
               name: 'frameTime',
-              sample: () => params.frameTime,
+              sample: () => params.frameTime * 1000,
               fractionDigits: 2,
               smoothing: 0.9,
               min: 0,
@@ -118,8 +118,9 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   })
 
   const rtScene = device.createRenderTarget({
-    width: 512,
-    height: 512,
+    name: 'Scene Render Target',
+    width: device.output.width,
+    height: device.output.height,
     usage: TextureUsage.TextureBinding,
   })
 
@@ -172,6 +173,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     pass.setClearColor(0, Color.TransparentBlack)
     pass.clear()
 
+    rtScene.resizeToMatch(device.output)
     mat4$rotateY(world, -10 * DEGREE_TO_RAD * ctx.delta)
     mat4$initPerspectiveFieldOfView(
       proj,
@@ -261,24 +263,22 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     pass.setClearColor(0, Color.TransparentBlack)
     pass.clear()
 
-    let size = Math.min(device.output.width / 2, device.output.height / 2)
-    let offset = (device.output.width - size - size) / 2
     spriteBatch.begin()
-    spriteBatch.next(texture).source(0, 0, texture.width, texture.height).destination(offset, 0, size, size)
-
     spriteBatch
       .next(rtScene)
       .source(0, 0, rtScene.width, rtScene.height)
       .flipY(device.isWebGL2 && rtScene.isRenderTarget)
-      .destination(offset + size, 0, size, size)
+      .destination(0, 0, device.output.width, device.output.height)
 
-    spriteBatch.next(lutGGX).source(0, 0, lutGGX.width, lutGGX.height).destination(offset, size, size, size)
-
-    spriteBatch
-      .next(lutSheen)
-      .source(0, 0, lutSheen.width, lutSheen.height)
-      .destination(offset + size, size, size, size)
-
+    // input panorama and lookup tables aside, ui is on the right
+    const margin = 8
+    const width = Math.min(device.output.width / 4, 320)
+    let y = margin
+    for (const tex of [texture, lutGGX, lutSheen]) {
+      const height = (width * tex.height) / tex.width
+      spriteBatch.next(tex).source(0, 0, tex.width, tex.height).destination(margin, y, width, height)
+      y += height + margin
+    }
     spriteBatch.draw()
 
     pass.flush()

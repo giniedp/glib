@@ -35,6 +35,8 @@ const params = {
   texture: files.Court,
   zoom: 2,
   animate: false,
+  animateSpeed: 0.25,
+  animateRadius: 50,
   knee: 0.5,
   threshold: 0.75,
   range: 0.5,
@@ -78,7 +80,9 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
         onChange: () => loadTexture(params.texture),
       })
       ui.scalar(params, 'zoom', { range: true, min: 0.1, max: 10 })
-      ui.bool(params, 'animate')
+      ui.bool(params, 'animate', { label: 'Animate' })
+      ui.scalar(params, 'animateSpeed', { label: 'Speed', range: true, min: 0, max: 2, decimals: 2 })
+      ui.scalar(params, 'animateRadius', { label: 'Radius', range: true, min: 0, max: 200 })
       ui.select(params, 'output', {
         options: ['scene', 'extract', 'downsample', 'blur', 'combine', 'result'] satisfies Array<Output>,
         onChange: () => loadTexture(params.texture),
@@ -188,7 +192,14 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     result: null!,
   }
 
+  // circles the image with sub-pixel offsets, so bright texels jump between
+  // pixels and show how stable (or flickery) the blur filtering is
+  let phase = 0
   function frame(ctx: FrameContext) {
+    if (params.animate) {
+      phase = (phase + ctx.delta * params.animateSpeed) % 1
+    }
+
     sceneTarget.resizeToMatch(device.output)
     extractTarget.resizeToMatch(device.output)
     blurTarget.resizeToMatch(device.output)
@@ -231,8 +242,9 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     pass.setRenderTarget(0, sceneTarget)
     pass.setClearColor(0, Color.TransparentBlack)
     pass.clear()
-    const offX = !params.animate ? 0 : Math.sin(Math.PI * 2 * ctx.time * 0.0001) * 100
-    const offY = !params.animate ? 0 : Math.cos(Math.PI * 2 * ctx.time * 0.0001) * 100
+    const offX = Math.sin(Math.PI * 2 * phase) * params.animateRadius
+    // circle starts and ends at the resting position, pausing keeps the current offset
+    const offY = (1 - Math.cos(Math.PI * 2 * phase)) * params.animateRadius
 
     spriteBatch.linearToSrgb = false
     spriteBatch.begin()
