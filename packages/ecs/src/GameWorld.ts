@@ -213,7 +213,8 @@ export class GameWorld {
       const id = ids.pop()
       const entity = this.entities.get(id)
       this.entities.delete(id)
-      if (entity.canDestroy) {
+      // destroying a parent destroys and removes its children, they may be gone already
+      if (entity?.canDestroy) {
         entity.destroy()
       }
     }

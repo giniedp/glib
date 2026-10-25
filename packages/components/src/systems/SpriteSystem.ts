@@ -1,6 +1,6 @@
 import { GameEntity, GameQuery, GameSystem, GameWorld, GetComponent } from '@gglib/ecs'
 import { SpriteMesh } from '@gglib/effects'
-import { Color, Device, SamplerState, Texture } from '@gglib/graphics'
+import { Color, Device, type Ownable, ResourceOwnership, SamplerState, Texture } from '@gglib/graphics'
 import { IVec4, Mat4 } from '@gglib/math'
 import { removeItemUnordered } from '@gglib/utils'
 import { MeshComponent } from '../components/MeshComponent'
@@ -70,7 +70,13 @@ const MAX_IDLE_FRAMES = 60
  * The sprites are written in the render step, after all systems have moved the entities. Add the system
  * before the `Renderer`. The `EcsGame` adds it by default.
  */
-export class SpriteSystem extends GameSystem {
+export class SpriteSystem extends GameSystem implements Ownable {
+  /**
+   * Holds the white texture of untextured sprites. The materials of the batches hold it too, a removed batch
+   * would otherwise finalize it while the system still hands it out
+   */
+  public readonly ownership: ResourceOwnership = new ResourceOwnership(this)
+
   private world: GameWorld
   private device: Device
   private options: SpriteSystemOptions
@@ -105,7 +111,7 @@ export class SpriteSystem extends GameSystem {
     while (this.scenes.length) {
       this.removeSceneData(this.scenes[this.scenes.length - 1])
     }
-    this.whiteTexture?.dispose()
+    this.ownership.finalize()
     this.whiteTexture = null
   }
 
@@ -212,12 +218,14 @@ export class SpriteSystem extends GameSystem {
   }
 
   private getWhiteTexture(): Texture {
-    this.whiteTexture ??= this.device.createTexture({
-      source: Color.toByteArray(Color.White),
-      width: 1,
-      height: 1,
-      format: 'rgba8unorm',
-    })
+    this.whiteTexture ??= this.ownership.adopt(
+      this.device.createTexture({
+        source: Color.toByteArray(Color.White),
+        width: 1,
+        height: 1,
+        format: 'rgba8unorm',
+      }),
+    )
     return this.whiteTexture
   }
 

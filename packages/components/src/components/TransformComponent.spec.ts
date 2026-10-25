@@ -111,6 +111,24 @@ describe('@gglib/ecs/TransformComponent', () => {
       expect(root.children.map((it) => it.entity)).toEqual([sibling])
     })
 
+    it('should destroy a world whose entities have children', () => {
+      const child = world.createEntity({
+        name: 'child',
+        transform: new TransformComponent(),
+      })
+      // created after its child, so the world destroys it first, together with the child
+      const parent = world.createEntity({
+        name: 'parent',
+        transform: new TransformComponent(),
+      })
+      child.setParent(parent)
+      parent.initialize()
+
+      expect(() => world.destroy()).not.toThrow()
+      expect(parent.isDestroyed).toBe(true)
+      expect(child.isDestroyed).toBe(true)
+    })
+
     describe('when parent changes', () => {
       let root1: GameEntity
       let root2: GameEntity

@@ -67,6 +67,23 @@ describe('SpriteSystem', () => {
     expect(batchEntities(sceneB).length).toBe(1)
   })
 
+  it('keeps the white texture when an idle batch of untextured sprites is removed', () => {
+    const sprite = createSprite(sceneA)
+    world.render(0, 0)
+    expect(batchEntities(sceneA).length).toBe(1)
+    // an empty batch is removed after it was idle for a while, its material releases the white texture
+    sprite.deactivate()
+    for (let i = 0; i < 70; i++) {
+      world.render(0, 0)
+    }
+    expect(batchEntities(sceneA).length).toBe(0)
+
+    sprite.activate()
+    world.render(0, 0)
+    expect(batchEntities(sceneA).length).toBe(1)
+    expect(batchEntities(sceneA)[0].isActive).toBe(true)
+  })
+
   it('ignores sprites outside of a scene', () => {
     const entity = world.createEntity({
       transform: new TransformComponent(),

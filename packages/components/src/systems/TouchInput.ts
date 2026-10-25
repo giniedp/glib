@@ -36,14 +36,19 @@ export class TouchInput extends GameSystem {
     const ids = this.touchIds as number[]
     ids.length = 0
 
-    // swap states
-    ;[this.oldStates, this.newStates] = [this.newStates, this.oldStates]
+    // swap states, without allocating an array for the swap
+    const states = this.oldStates
+    this.oldStates = this.newStates
+    this.newStates = states
 
     this.newStates.clear()
-    this.touch.touches.forEach((touch, id) => {
-      ids.push(id)
-      this.newStates.set(id, touch)
-    })
+    this.touch.touches.forEach(this.collectTouch)
+  }
+
+  // created once, a closure in update would be allocated every frame
+  private collectTouch = (touch: Touch, id: number) => {
+    ;(this.touchIds as number[]).push(id)
+    this.newStates.set(id, touch)
   }
 
   public justTouched(id: number) {

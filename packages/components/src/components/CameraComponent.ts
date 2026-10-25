@@ -231,6 +231,9 @@ export class CameraComponent implements CameraData, GameComponent, BehaviorCompo
         break
       }
     }
+    // the scene system propagates the transforms after the behaviors. Without this the view lags a frame behind
+    // a camera that moved this frame, and entities attached to the camera jump on the screen
+    this.transform.propagateUpdates(true, false)
     mat4Invert(this.world, this.view)
     mat4Premultiply(this.view, this.space.toViewSpace, this.view)
     mat4Premultiply(this.view, this.projection, this.viewProjection)

@@ -1,3 +1,4 @@
+// #region imports
 import {
   BoundingBox,
   BoundingSphere,
@@ -41,6 +42,7 @@ import {
   vec4,
   vec4$init,
 } from '@gglib/math'
+// #endregion
 
 const tmpVec1 = vec3() // temporary vector
 const localRay = rayCreate() // temporary ray
