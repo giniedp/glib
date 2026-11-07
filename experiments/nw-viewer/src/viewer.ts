@@ -106,6 +106,7 @@ export class NwViewer extends EcsGame {
   public selection: GameEntity
 
   public debug: number = 0
+  private element: HTMLElement
   public constructor(options: NwViewerOptions) {
     super({
       canvas: options.canvas,
@@ -123,7 +124,7 @@ export class NwViewer extends EcsGame {
       // the render size is set by the RenderSizeSystem, from the config
       autosize: false,
     })
-    attachOverlay(options.element, this)
+    this.element = options.element
   }
 
   /**
@@ -175,6 +176,7 @@ export class NwViewer extends EcsGame {
         pipeline: createRenderPipeline(this.device),
       }),
     )
+    attachOverlay(this.element, this)
   }
 
   protected override onInitialize(): void {

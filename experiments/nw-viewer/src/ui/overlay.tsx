@@ -12,7 +12,7 @@ import { NwSceneBrowser, ScenesButton, SettingsButton, StatsBar, StatsPanel } fr
 import { configValue } from './reactive'
 import { uiRegistry } from './registry'
 
-export function attachOverlay(element: HTMLDivElement, viewer: NwViewer) {
+export function attachOverlay(element: HTMLElement, viewer: NwViewer) {
   const host = document.createElement('div')
   host.className = 'tweak-ui nw-overlay'
   element.appendChild(host)
