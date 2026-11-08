@@ -1,8 +1,8 @@
 import { BlendState, SamplerState, type Device, type InputValueType, type Program } from '@gglib/graphics'
 import { mat4Identity, mat4Invert } from '@gglib/math'
 import { FrameGraph, RenderChannel, type FrameResource, type RenderContext, type RenderPass } from '@gglib/render'
-import { ENABLE_VOLUMETRIC_FOG_2 } from '../../constants'
-import { InputSlots } from '../../material/common'
+import { ENABLE_VOLUMETRIC_FOG_2 } from '../../../constants'
+import { InputSlots } from '../../../material/common'
 import { FOG_MSAA_WGSL, FOG_WGSL } from './FogPass.wgsl'
 
 export interface FogPassTarget {
@@ -69,9 +69,18 @@ export class FogPass implements RenderPass {
       { color: RenderChannel.Color, depth: RenderChannel.LinearDepth },
     ]
     device.ready.then(() => {
-      this.program = device.createShaderModule({ name: 'NW Fog', wgsl: { source: FOG_WGSL } }).program.clone()
+      this.program = device
+        .createShaderModule({
+          name: 'NW Fog',
+          wgsl: { source: FOG_WGSL },
+        })
+        .program.clone()
+
       this.programMsaa = device
-        .createShaderModule({ name: 'NW Fog MSAA', wgsl: { source: FOG_MSAA_WGSL } })
+        .createShaderModule({
+          name: 'NW Fog MSAA',
+          wgsl: { source: FOG_MSAA_WGSL },
+        })
         .program.clone()
     })
   }

@@ -1,6 +1,6 @@
 import { TextureUsage, type Device, type Program, type Texture } from '@gglib/graphics'
 import { FrameGraph, RenderChannel, type FrameResource, type RenderContext, type RenderPass } from '@gglib/render'
-import { InputSlots } from '../../material/common'
+import { InputSlots } from '../../../material/common'
 import type { LuminancePass } from '../exposure/LuminancePass'
 import { FILM_MAPPING_WGSL } from './FilmMappingPass.wgsl'
 

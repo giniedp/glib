@@ -60,7 +60,7 @@ import { SliceSystem } from './game/slice/SliceSystem'
 import { TerrainSystem } from './game/terrain/TerrainSystem'
 import { VegetationSystem } from './game/vegetation/VegetationSystem'
 import { createRenderPipeline } from './graphics'
-import { LuminancePass } from './graphics/exposure/LuminancePass'
+import { LuminancePass } from './graphics/passes/exposure/LuminancePass'
 import { RenderSizeSystem } from './graphics/RenderSizeSystem'
 import { InputSlots, MaterialLayerMasks } from './material'
 import { createSceneOptions, VIEWER_MODE_PARAMS, type SceneOptions } from './scenes'
@@ -183,7 +183,9 @@ export class NwViewer extends EcsGame {
     this.world.addSystem(new RaycastSystem())
     this.world.addSystem(new SpatialSystem())
     this.world.addSystem(new SchedulerSystem({}))
-    const pipeline = createRenderPipeline(this.device)
+    const msaaSamples = (value: string) => (value === 'off' ? 1 : 4)
+    const pipeline = createRenderPipeline(this.device, { msaa: msaaSamples(config.value.msaa) })
+    config.onChange('msaa', (value) => pipeline.msaa.set(msaaSamples(value)))
     this.luminance = pipeline.passes.find((it): it is LuminancePass => it instanceof LuminancePass) ?? null
     this.world.addSystem(
       new Renderer(this.device, {

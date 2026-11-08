@@ -8,7 +8,7 @@ import {
   type TextureDescriptor,
 } from '@gglib/graphics'
 import { FrameGraph, RenderChannel, type FrameResource, type RenderContext, type RenderPass } from '@gglib/render'
-import { InputSlots } from '../../material/common'
+import { InputSlots } from '../../../material/common'
 import { SUN_SHAFTS_APPLY_WGSL, SUN_SHAFTS_GEN_WGSL, SUN_SHAFTS_MASK_WGSL } from './SunShaftsPass.wgsl'
 
 /**

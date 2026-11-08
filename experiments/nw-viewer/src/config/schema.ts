@@ -119,6 +119,15 @@ export const viewerConfigSchema = defineConfig({
     group: 'Lighting',
   }),
 
+  msaa: choice({
+    description:
+      'Multisample anti-aliasing of the scene geometry. WebGPU supports 4 samples or none.',
+    editable: true,
+    options: ['4x', 'off'],
+    default: '4x',
+    group: 'Display',
+  }),
+
   tonemapper: choice({
     description:
       'film uses the tone mapping of the game with the time of day values. aces is the previous generic curve.',

@@ -1,5 +1,5 @@
 import { FULLSCREEN_WGSL_VS } from '@gglib/effects'
-import { VOLUMETRIC_FOG_2_WGSL } from '../../material/volumetricFog2.wgsl'
+import { VOLUMETRIC_FOG_2_WGSL } from '../../../material/volumetricFog2.wgsl'
 
 /**
  * Deferred volumetric fog, matches `applyFog` in material/common.wgsl.ts

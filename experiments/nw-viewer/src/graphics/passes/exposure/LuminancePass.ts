@@ -1,6 +1,6 @@
 import { BlendState, TextureUsage, type Device, type Program, type Texture } from '@gglib/graphics'
 import { FrameGraph, RenderChannel, type FrameResource, type RenderContext, type RenderPass } from '@gglib/render'
-import { InputSlots } from '../../material/common'
+import { InputSlots } from '../../../material/common'
 import { LUMINANCE_ADAPT_WGSL, LUMINANCE_INITIAL_WGSL, LUMINANCE_REDUCE_WGSL } from './LuminancePass.wgsl'
 import { vec4 } from '@gglib/math'
 
