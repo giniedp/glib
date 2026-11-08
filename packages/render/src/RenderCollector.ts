@@ -75,7 +75,7 @@ export class ModelRenderCollector implements RenderCollector<ModelRenderItem> {
           continue
         }
 
-        effect = material.getEffect(this.variant)
+        effect = this.list.getEffect(material, this.variant)
         if (!effect) {
           continue
         }
@@ -118,7 +118,7 @@ export class MeshRenderCollector implements RenderCollector<MeshRenderItem> {
         continue
       }
 
-      effect = material.getEffect(this.variant)
+      effect = this.list.getEffect(material, this.variant)
       if (!effect) {
         continue
       }
@@ -179,7 +179,7 @@ export class MeshPartRenderCollector implements RenderCollector<MeshPartRenderIt
       return
     }
 
-    effect = material.getEffect(this.variant)
+    effect = this.list.getEffect(material, this.variant)
     if (!effect) {
       return
     }
@@ -223,7 +223,7 @@ export class InstanceBatchRenderCollector implements RenderCollector<InstanceBat
     const batch = item.data
     const material = batch.material
     const geometry = batch.geometry
-    const effect = material?.getEffect(this.variant)
+    const effect = material && this.list.getEffect(material, this.variant)
     if (!effect || !geometry) {
       return
     }

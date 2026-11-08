@@ -5,6 +5,7 @@ import {
   DepthState,
   Effect,
   Geometry,
+  Material,
   Program,
   ProgramInputBlock,
   Renderable,
@@ -162,6 +163,13 @@ export class RenderList {
       id |= cullState.id << 24
     }
     return id
+  }
+
+  /**
+   * The effect a material is listed with, null if the list skips the material (see {@link RenderListMode.getEffect})
+   */
+  public getEffect(material: Material, variant: RenderVariant): Effect | null {
+    return this.mode.getEffect(material, variant)
   }
 
   public getKey(depth: number, layer: number, material: number, state: number, geometry: number) {

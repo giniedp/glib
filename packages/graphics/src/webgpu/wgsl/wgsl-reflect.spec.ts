@@ -836,6 +836,37 @@ describe('wgslReflect', () => {
     })
   })
 
+  describe('texture', () => {
+    test('reflects format and access of a storage texture', () => {
+      const result = reflectWgsl(
+        parseWgsl(/* wgsl */ `@group(0) @binding(0) var out: texture_storage_2d<rgba16float, write>;`),
+      )
+      expect(result.resources[0].texture).toMatchObject({
+        storage: true,
+        dimension: 2,
+        format: 'rgba16float',
+        access: 'write',
+      })
+    })
+
+    test('reflects a 3d storage texture', () => {
+      const result = reflectWgsl(
+        parseWgsl(/* wgsl */ `@group(0) @binding(0) var vol: texture_storage_3d<r32float, read_write>;`),
+      )
+      expect(result.resources[0].texture).toMatchObject({
+        storage: true,
+        dimension: 3,
+        format: 'r32float',
+        access: 'read_write',
+      })
+    })
+
+    test('has no format on sampled textures', () => {
+      const result = reflectWgsl(parseWgsl(/* wgsl */ `@group(0) @binding(0) var tex: texture_2d<f32>;`))
+      expect(result.resources[0].texture).toMatchObject({ storage: false, format: null, access: null })
+    })
+  })
+
   describe('struct', () => {
     const tests = [
       {

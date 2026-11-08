@@ -1,3 +1,4 @@
+import { RenderVariant, type Material } from '@gglib/graphics'
 import { describe, expect, it } from 'vitest'
 import { RenderItemFlags, RenderListMode, RenderSortPriority } from './RenderListMode'
 
@@ -18,5 +19,18 @@ describe('RenderListMode', () => {
       expect(inFirst).not.toBe(inRest)
       expect(inFirst).toBe(!!(layer & water))
     }
+  })
+
+  it('skips materials with an effect of the excluded variant', () => {
+    const forward = { id: 'forward' }
+    const gbuffer = { id: 'gbuffer' }
+    const lit = { getEffect: (v: RenderVariant) => (v === RenderVariant.GBuffer ? gbuffer : forward) } as unknown as Material
+    const sky = { getEffect: (v: RenderVariant) => (v === RenderVariant.Forward ? forward : null) } as unknown as Material
+    const mode = new RenderListMode(RenderSortPriority.State, RenderItemFlags.Opaque, {
+      excludeVariant: RenderVariant.GBuffer,
+    })
+    expect(mode.getEffect(lit, RenderVariant.Forward)).toBe(null)
+    expect(mode.getEffect(sky, RenderVariant.Forward)).toBe(forward)
+    expect(RenderListMode.Opaque.getEffect(lit, RenderVariant.Forward)).toBe(forward)
   })
 })

@@ -29,6 +29,14 @@ describe('FrameGraph', () => {
     graph.setDescriptors(schema)
   })
 
+  it('takes the usage from the write descriptor, else from the schema', () => {
+    graph.begin([channels.Color], 1, 1)
+    graph.addPass('A')
+    const storage = TextureUsage.RenderTarget | TextureUsage.TextureBinding | TextureUsage.StorageBinding
+    expect(graph.write(channels.Color, { usage: storage }).desc.usage).toBe(storage)
+    expect(graph.write(channels.Normals).desc.usage).toBe(TextureUsage.RenderTarget | TextureUsage.TextureBinding)
+  })
+
   it('accepts read/write before end and trhows after', () => {
     graph.begin([channels.Color], 1, 1)
 

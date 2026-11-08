@@ -39,4 +39,19 @@ describe('RenderTargetManager', () => {
     expect(b).not.toBe(a)
     expect(b.mipLevelCount).toBe(5)
   })
+
+  it('does not reuse targets that lack a requested usage', () => {
+    const manager = createManager()
+    const a = manager.acquire(desc(1))
+    manager.release(a)
+    const b = manager.acquire({ ...desc(1), usage: desc(1).usage | TextureUsage.StorageBinding })
+    expect(b).not.toBe(a)
+  })
+
+  it('reuses targets that support more than the requested usage', () => {
+    const manager = createManager()
+    const a = manager.acquire({ ...desc(1), usage: desc(1).usage | TextureUsage.StorageBinding })
+    manager.release(a)
+    expect(manager.acquire(desc(1))).toBe(a)
+  })
 })

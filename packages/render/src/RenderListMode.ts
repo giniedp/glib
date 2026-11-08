@@ -1,3 +1,4 @@
+import type { Material, Effect, RenderVariant } from '@gglib/graphics'
 import { brand, Brand } from '@gglib/utils'
 
 export type RenderSortPriority = Brand<string, 'RenderSortPriority'>
@@ -91,9 +92,17 @@ export function compareSortKey(aHi: number, aLo: number, bHi: number, bLo: numbe
 }
 
 /**
- * Layer filter of a {@link RenderListMode}
+ * Layer and variant filter of a {@link RenderListMode}
  */
 export interface RenderListLayers {
+  /**
+   * Items whose material has an effect for this variant are skipped. Defaults to none.
+   *
+   * @remarks
+   * Lets a forward pass render only the items another pass does not handle, e.g. the opaque items without a
+   * GBuffer effect in a deferred pipeline.
+   */
+  excludeVariant?: RenderVariant
   /**
    * Only items with a layer that intersects this mask are listed. Defaults to all layers.
    */
@@ -120,12 +129,14 @@ export class RenderListMode {
   public readonly priority: RenderSortPriority
   public readonly includeLayers: number
   public readonly excludeLayers: number
+  public readonly excludeVariant: RenderVariant | null
 
   public constructor(priority: RenderSortPriority, mask: RenderItemFlags, layers?: RenderListLayers) {
     this.mask = mask
     this.priority = priority
     this.includeLayers = layers?.includeLayers ?? Number.MAX_SAFE_INTEGER
     this.excludeLayers = layers?.excludeLayers ?? 0
+    this.excludeVariant = layers?.excludeVariant ?? null
     this.getKey = this.buildKeyFn(mask, priority)
   }
 
@@ -134,6 +145,16 @@ export class RenderListMode {
    */
   public accepts(flags: number, layer: number): boolean {
     return !!(flags & this.mask) && !!(layer & this.includeLayers) && !(layer & this.excludeLayers)
+  }
+
+  /**
+   * The effect a material is listed with for the given variant, null if the material is not listed
+   */
+  public getEffect(material: Material, variant: RenderVariant): Effect | null {
+    if (this.excludeVariant != null && material.getEffect(this.excludeVariant)) {
+      return null
+    }
+    return material.getEffect(variant)
   }
 
   /**

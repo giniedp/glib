@@ -158,8 +158,9 @@ export class RenderTargetManager {
       a.format === b.format &&
       a.type === b.type &&
       a.sampleCount === b.sampleCount &&
-      (a.mipLevelCount ?? 1) === (b.mipLevelCount ?? 1)
-      // a.usage === b.usage
+      (a.mipLevelCount ?? 1) === (b.mipLevelCount ?? 1) &&
+      // the free target must support every requested usage
+      ((b.usage ?? 0) & (a.usage ?? 0)) === (a.usage ?? 0)
     )
   }
 

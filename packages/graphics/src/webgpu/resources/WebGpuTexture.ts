@@ -33,6 +33,10 @@ export class WebGpuTexture extends Texture implements GpuResource<GPUTexture> {
   public readonly isSampled: boolean
   public readonly isRenderTarget: boolean
   public readonly isMultisampled: boolean
+  /**
+   * Indicates whether this texture can be bound as a storage texture
+   */
+  public readonly isStorage: boolean
 
   public readonly ownership: ResourceOwnership
   public readonly gpuObject: GPUTexture
@@ -87,6 +91,7 @@ export class WebGpuTexture extends Texture implements GpuResource<GPUTexture> {
 
     self.isSampled = isSampled
     self.isRenderTarget = isRenderTarget
+    self.isStorage = !!(usage & TextureUsage.StorageBinding)
     self.isMultisampled = options.sampleCount > 1
     self.isCompressed = surfaceFormatIsCompressed(this.format)
     self.mipLevelCount = options.mipLevelCount ?? getMipmapCount(this.width, this.height, this.depth)
@@ -176,6 +181,7 @@ export class WebGpuTexture extends Texture implements GpuResource<GPUTexture> {
         GPUTextureUsage.COPY_SRC |
         (this.isSampled ? GPUTextureUsage.TEXTURE_BINDING : 0) |
         (this.isRenderTarget ? GPUTextureUsage.RENDER_ATTACHMENT : 0) |
+        (this.isStorage ? GPUTextureUsage.STORAGE_BINDING : 0) |
         (this.generateMipmap ? GPUTextureUsage.RENDER_ATTACHMENT : 0),
       dimension: this.gpuDimension,
       mipLevelCount: this.mipLevelCount,

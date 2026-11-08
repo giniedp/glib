@@ -205,8 +205,8 @@ function getLayoutEntry(info: WgslResourceInfo, visibility: number): GPUBindGrou
 
   if (info.texture && info.texture.storage) {
     result.storageTexture = {
-      format: 'rgba8unorm', // TODO
-      access: 'read-only', // TODO
+      format: (info.texture.format || 'rgba8unorm') as GPUTextureFormat,
+      access: getStorageTextureAccess(info.texture.access),
       viewDimension: getViewDimension(info.texture),
     }
     return result
@@ -233,6 +233,17 @@ function getLayoutEntry(info: WgslResourceInfo, visibility: number): GPUBindGrou
   }
 
   return result
+}
+
+function getStorageTextureAccess(access: string | null): GPUStorageTextureAccess {
+  switch (access) {
+    case 'read':
+      return 'read-only'
+    case 'read_write':
+      return 'read-write'
+    default:
+      return 'write-only'
+  }
 }
 
 function getViewDimension(texture: WgslTextureInfo): GPUTextureViewDimension {

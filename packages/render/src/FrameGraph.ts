@@ -357,6 +357,7 @@ export class FrameGraph<T = RenderPass> {
     resource.desc.depth = desc?.depth ?? schema.depth
     resource.desc.sampleCount = desc?.sampleCount ?? schema.sampleCount
     resource.desc.mipLevelCount = desc?.mipLevelCount ?? schema.mipLevelCount
+    resource.desc.usage = desc?.usage ?? schema.usage ?? TextureUsage.RenderTarget | TextureUsage.TextureBinding
     if (resource.desc.width <= 1 && resource.desc.height <= 1) {
       resource.desc.width = this.width * (resource.desc.width || 1)
       resource.desc.height = this.height

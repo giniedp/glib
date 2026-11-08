@@ -75,6 +75,14 @@ export interface WgslTextureInfo {
   multisample: boolean
   dimension: number
   storage: boolean
+  /**
+   * Texel format of a storage texture (e.g. `rgba16float`), null for other textures
+   */
+  format: string | null
+  /**
+   * Access mode of a storage texture (`read`, `write` or `read_write`), null for other textures
+   */
+  access: string | null
   array: boolean
   depth: boolean
   cube: boolean
@@ -523,9 +531,10 @@ function textureInfo(
   program: WgslProgram,
   type: WgslTypeReference,
 ): WgslResourceTypeInfo & WgslResourceFootprintInfo & { texture: WgslTextureInfo } {
+  const storage = type.name.includes('storage')
   const typeParam = getWgslTemplateParameter(type.template, 0)
   let typeInfo = resourceInfo(null, null, null, null, null)
-  if (typeParam) {
+  if (typeParam && !storage) {
     typeInfo = resolveTypeInfo(program, readWgslTypeReference(new TokenReader(typeParam)))
   }
   const texture: WgslTextureInfo = {
@@ -535,20 +544,27 @@ function textureInfo(
     external: type.name.includes('external'),
     multisample: type.name.includes('multisampled'),
     dimension: null,
-    storage: type.name.includes('storage'),
+    storage,
+    // texture_storage_2d<format, access>
+    format: storage ? templateText(typeParam) : null,
+    access: storage ? templateText(getWgslTemplateParameter(type.template, 1)) : null,
   }
   const match = type.name.match(/_(\d)d/)
   if (match) {
     texture.dimension = Number(match[1])
   }
   if (texture.storage) {
-    texture.dimension = 2
+    texture.dimension ??= 2
   }
   return {
     ...typeInfo,
     container: 'texture',
     texture,
   }
+}
+
+function templateText(tokens: ReturnType<typeof getWgslTemplateParameter>): string | null {
+  return tokens?.length ? tokens.map((it) => it.value).join('') : null
 }
 
 function samplerInfo(
