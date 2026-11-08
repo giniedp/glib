@@ -9,6 +9,7 @@ import {
 import { clamp, vec2, vec3, vec3$init, vec3$normalize, vec4, vec4$init, type IVec3 } from '@gglib/math'
 import SkyMaterialSchema from './SkyMaterial.meta'
 import WGSL from './SkyMaterial.wgsl'
+import { MaterialLayerMasks } from './common'
 
 export function skyShaderOptions(): ShaderModuleOptions {
   return {
@@ -43,6 +44,7 @@ export class SkyMaterial extends MaterialWithSchema(SkyMaterialSchema) {
 
     this.effect.cullState = CullState.None
     this.effect.depthState = DepthState.GreaterEqualNoWrite
+    this.layer = MaterialLayerMasks.Sky
 
     // Night sky base: deep blue-black at the horizon
     this.NightSkyColBase = vec3(0.308 * 0.3, 0.427 * 0.3, 0.555 * 0.3)

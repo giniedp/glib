@@ -175,6 +175,13 @@ export class FrameGraph<T = RenderPass> {
   }
 
   /**
+   * Whether an earlier pass of this frame produced the given render channel, so it can be read
+   */
+  public has(channel: RenderChannel): boolean {
+    return !!this.latestVersions[channel]
+  }
+
+  /**
    * Tracks a read of the given render channel by the current pass.
    */
   public read(channel: RenderChannel): FrameResource<T> {

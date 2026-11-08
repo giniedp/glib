@@ -861,6 +861,13 @@ describe('wgslReflect', () => {
       })
     })
 
+    test('reflects a depth texture without template', () => {
+      const result = reflectWgsl(
+        parseWgsl(/* wgsl */ `@group(0) @binding(0) var depth: texture_depth_multisampled_2d;`),
+      )
+      expect(result.resources[0].texture).toMatchObject({ depth: true, multisample: true, dimension: 2 })
+    })
+
     test('has no format on sampled textures', () => {
       const result = reflectWgsl(parseWgsl(/* wgsl */ `@group(0) @binding(0) var tex: texture_2d<f32>;`))
       expect(result.resources[0].texture).toMatchObject({ storage: false, format: null, access: null })

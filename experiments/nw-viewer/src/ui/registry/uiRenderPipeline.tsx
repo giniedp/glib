@@ -4,6 +4,8 @@ import { BloomPass, GroupPass, RenderPipeline, TonemapPass, type RenderPass } fr
 import { For, Show, type JSX } from 'solid-js'
 import { BoolWidget, Group, PollWidget, ScalarWidget, SelectWidget } from 'tweak-ui'
 import { GBufferDebugModes, GBufferDebugPass } from '../../graphics/passes/gbuffer/GBufferDebugPass'
+import { LightingPass } from '../../graphics/passes/lighting/LightingPass'
+import { LightingDebugModes } from '../../graphics/passes/lighting/LightingPass.wgsl'
 import { AmbientOcclusionApplyPass } from '../../graphics/passes/ssao/AmbientOcclusionApplyPass'
 import { XeGtaoPass } from '../../graphics/passes/ssao/XeGtaoPass'
 import icon from '../icons/list-tree.svg?raw'
@@ -79,7 +81,15 @@ function TimerFields(props: { pass: RenderPass; device: Device }) {
 /**
  * Passes with fields, see {@link renderPassFields}
  */
-const fieldPasses = [GroupPass, XeGtaoPass, AmbientOcclusionApplyPass, BloomPass, TonemapPass, GBufferDebugPass]
+const fieldPasses = [
+  GroupPass,
+  XeGtaoPass,
+  AmbientOcclusionApplyPass,
+  BloomPass,
+  TonemapPass,
+  GBufferDebugPass,
+  LightingPass,
+]
 
 function renderPassFields(panel: UiPanel, pass: RenderPass, device: Device): JSX.Element {
   if (pass instanceof GroupPass) {
@@ -104,6 +114,9 @@ function renderPassFields(panel: UiPanel, pass: RenderPass, device: Device): JSX
   }
   if (pass instanceof GBufferDebugPass) {
     return <SelectWidget {...panel.bind(pass, 'mode')} options={[...GBufferDebugModes]} />
+  }
+  if (pass instanceof LightingPass) {
+    return <SelectWidget {...panel.bind(pass, 'debug')} options={[...LightingDebugModes]} />
   }
   if (pass instanceof AmbientOcclusionApplyPass) {
     return <ScalarWidget {...panel.bind(pass, 'strength')} min={0} max={2} step={0.01} range />

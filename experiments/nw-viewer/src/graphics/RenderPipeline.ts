@@ -28,6 +28,7 @@ import { InputSlots, MaterialLayerMasks, NwRenderVariant } from '../material'
 import { GBUFFER_DESCRIPTORS, GBufferChannel } from './GBufferChannels'
 import { GBufferDebugPass } from './passes/gbuffer/GBufferDebugPass'
 import { CopyPass, NwCopyChannel } from './passes/CopyPass'
+import { DepthMsaaResolvePass } from './passes/DepthMsaaResolvePass'
 import { DepthResolveEffect } from './passes/DepthResolveEffect'
 import { GeometryPass } from './passes/GeometryPass'
 import { LightingPass } from './passes/lighting/LightingPass'
@@ -142,11 +143,50 @@ export interface PipelineState {
 }
 
 /**
- * Opaque items without a GBuffer effect (sky, unlit, debug), drawn forward after the deferred lighting
+ * Opaque items without a GBuffer effect (unlit, debug), drawn forward after the deferred lighting
  */
 const FORWARD_OPAQUE_LIST = new RenderListMode(RenderSortPriority.State, RenderItemFlags.Opaque, {
   excludeVariant: RenderVariant.GBuffer,
+  excludeLayers: MaterialLayerMasks.Sky,
 })
+
+/**
+ * The sky, drawn before the deferred lighting, which composes it into pixels and samples without geometry
+ */
+const SKY_LIST = new RenderListMode(RenderSortPriority.State, RenderItemFlags.Opaque, {
+  excludeVariant: RenderVariant.GBuffer,
+  includeLayers: MaterialLayerMasks.Sky,
+})
+
+/**
+ * GBuffer targets of the deferred pipeline for one MSAA sample count
+ */
+interface DeferredTargets {
+  samples: MsaaSamples
+  a: RenderChannel
+  b: RenderChannel
+  c: RenderChannel
+  linearDepth: RenderChannel
+  depth: RenderChannel
+}
+
+const DEFERRED_MSAA_TARGETS: DeferredTargets = {
+  samples: 4,
+  a: GBufferChannel.AMsaa,
+  b: GBufferChannel.BMsaa,
+  c: GBufferChannel.CMsaa,
+  linearDepth: RenderChannel.LinearDepthMsaa,
+  depth: RenderChannel.DepthMsaa,
+}
+
+const DEFERRED_SINGLE_TARGETS: DeferredTargets = {
+  samples: 1,
+  a: GBufferChannel.A,
+  b: GBufferChannel.B,
+  c: GBufferChannel.C,
+  linearDepth: GBufferChannel.LinearDepth,
+  depth: RenderChannel.Depth,
+}
 
 /**
  * Switches pass groups at runtime: MSAA or single sampled scene targets, forward or deferred opaque lighting.
@@ -172,7 +212,22 @@ export class PipelineSwitch {
   }
 
   /**
-   * Creates a group with the MSAA and the single sampled variant of the passes, of which only one is enabled
+   * Creates a group with the MSAA and the single sampled variant of the passes, of which only one is enabled.
+   * Selects by the configured MSAA, for the geometry of the deferred GBuffer.
+   */
+  public selectMsaa(name: string, msaa: RenderPass[], single: RenderPass[]): GroupPass {
+    return groupPass({
+      name,
+      passes: [
+        this.track(`${name} MSAA`, (it) => it.msaa === 4, msaa),
+        this.track(`${name} No MSAA`, (it) => it.msaa === 1, single),
+      ],
+    })
+  }
+
+  /**
+   * Creates a group with the MSAA and the single sampled variant of the passes, of which only one is enabled.
+   * Selects by the sample count of the scene targets ({@link samples}).
    */
   public select(name: string, msaa: RenderPass[], single: RenderPass[]): GroupPass {
     return groupPass({
@@ -212,7 +267,8 @@ export class PipelineSwitch {
 }
 
 /**
- * The deferred pipeline is single sampled until the per sample lighting exists (plan step 4.2)
+ * Sample count of the scene targets after the opaque geometry. The deferred pipeline resolves in the lighting pass
+ * and renders everything after it single sampled (plan step 4.3), only its GBuffer is multisampled.
  */
 function sceneSamples(state: PipelineState): MsaaSamples {
   return state.pipeline === 'deferred' ? 1 : state.msaa
@@ -252,7 +308,13 @@ export function createRenderPipeline(device: Device, options?: NwRenderPipelineO
     modes.selectPipeline(
       'Opaque',
       [modes.select('Forward Opaque', multi.opaque, single.opaque)],
-      createDeferredOpaquePasses(device),
+      [
+        modes.selectMsaa(
+          'Deferred Opaque',
+          createDeferredOpaquePasses(device, DEFERRED_MSAA_TARGETS),
+          createDeferredOpaquePasses(device, DEFERRED_SINGLE_TARGETS),
+        ),
+      ],
     ),
     renderInputsPass({
       name: 'SceneInputs',
@@ -303,32 +365,60 @@ export function createRenderPipeline(device: Device, options?: NwRenderPipelineO
 }
 
 /**
- * Single sampled deferred opaque stage (plan step 4.1): GBuffer, lighting, then forward for the remaining opaque
- * items. Writes the same channels as the single sampled forward opaque pass (Color, LinearDepth, Depth).
+ * Deferred opaque stage (plan steps 4.1-4.3) for one GBuffer sample count:
+ * 1. GBuffer pass (multisampled with MSAA)
+ * 2. with MSAA: depth resolve into the single sample Depth, which the passes after the lighting test against
+ * 3. sky into its own color target, tested against the single sample depth (drawn where any sample has no geometry)
+ * 4. lighting: lights, composes the sky, resolves Color and LinearDepth
+ * 5. emissive variant and the remaining forward opaque items, single sampled
+ *
+ * Writes the same channels as the single sampled forward opaque pass (Color, LinearDepth, Depth).
  */
-function createDeferredOpaquePasses(device: Device): RenderPass[] {
-  return [
+function createDeferredOpaquePasses(device: Device, targets: DeferredTargets): RenderPass[] {
+  const passes: RenderPass[] = [
     new GeometryPass({
       name: 'GBufferPass',
       list: RenderListMode.Opaque,
       variant: RenderVariant.GBuffer,
-      depth: RenderChannel.Depth,
+      depth: targets.depth,
       clearDepth: true,
       descriptors: GBUFFER_DESCRIPTORS,
       channels: [
-        { clear: Color.TransparentBlack, render: GBufferChannel.A },
-        { clear: Color.TransparentBlack, render: GBufferChannel.B },
-        { clear: Color.TransparentBlack, render: GBufferChannel.C },
-        { clear: Color.TransparentBlack, render: RenderChannel.LinearDepth },
+        { clear: Color.TransparentBlack, render: targets.a },
+        { clear: Color.TransparentBlack, render: targets.b },
+        { clear: Color.TransparentBlack, render: targets.c },
+        { clear: Color.TransparentBlack, render: targets.linearDepth },
+      ],
+    }),
+  ]
+  if (targets.samples > 1) {
+    passes.push(new DepthMsaaResolvePass(device, { input: targets.depth, output: RenderChannel.Depth }))
+  }
+  passes.push(
+    new GeometryPass({
+      name: 'SkyPass',
+      list: SKY_LIST,
+      depth: RenderChannel.Depth,
+      clearDepth: false,
+      descriptors: { ...GBUFFER_DESCRIPTORS, [TransparentLinearDepth]: TRANSPARENT_LINEAR_DEPTH_DESC },
+      channels: [
+        { clear: Color.TransparentBlack, render: GBufferChannel.SkyColor },
+        // the sky writes its depth as a second output, the lighting pass writes the scene linear depth
+        { clear: Color.TransparentBlack, render: TransparentLinearDepth },
       ],
     }),
     new LightingPass(device, {
-      a: GBufferChannel.A,
-      b: GBufferChannel.B,
-      c: GBufferChannel.C,
-      linearDepth: RenderChannel.LinearDepth,
+      samples: targets.samples,
+      a: targets.a,
+      b: targets.b,
+      c: targets.c,
+      linearDepth: targets.linearDepth,
+      sky: GBufferChannel.SkyColor,
       output: RenderChannel.Color,
+      outputDepth: RenderChannel.LinearDepth,
     }),
+  )
+  passes.push(
     // emittance of the opaque surfaces, the materials with emittance register the variant
     new GeometryPass({
       name: 'EmissivePass',
@@ -348,7 +438,8 @@ function createDeferredOpaquePasses(device: Device): RenderPass[] {
         { clear: null, render: RenderChannel.LinearDepth },
       ],
     }),
-  ]
+  )
+  return passes
 }
 
 /**

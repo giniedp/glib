@@ -56,7 +56,8 @@ export class AmbientOcclusionApplyPass implements RenderPass {
   }
 
   public setup(frame: FrameGraph<RenderPass>, ctx: RenderContext): void {
-    this.isActive = this.enabled && !!this.program?.isCompiled && this.strength > 0
+    // the AO pass declares its output only once its shaders are compiled
+    this.isActive = this.enabled && !!this.program?.isCompiled && this.strength > 0 && frame.has(this.input)
     if (!this.isActive) {
       return
     }

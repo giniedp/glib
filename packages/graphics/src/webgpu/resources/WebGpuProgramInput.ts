@@ -229,7 +229,11 @@ export class WebGpuProgramInput extends ProgramInput {
   public setTexture(value: Texture | TextureView | GPUTexture | GPUTextureView | GPUExternalTexture): void {
     value ||= this.device.defaultTexture
     if (value instanceof Texture) {
-      if (value.residentMipLevel > 0) {
+      const depthView = this.resource.info.texture?.depth ? (value as WebGpuTexture).gpuDepthView : null
+      if (depthView) {
+        // depth-stencil textures bind their depth aspect to texture_depth_* bindings
+        this.resource.setTexture(depthView, (value as WebGpuTexture).depthViewSource)
+      } else if (value.residentMipLevel > 0) {
         const view = value.subresource(value.residentMipLevel)
         this.resource.setTexture((value as WebGpuTexture).getGpuView(view))
       } else {

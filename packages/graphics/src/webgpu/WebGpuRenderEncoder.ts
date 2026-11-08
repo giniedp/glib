@@ -776,7 +776,9 @@ export class WebGpuRenderEncoder extends RenderEncoder {
       }
     }
 
-    if (colorAttachments.length === 0) {
+    // without any attachment the pass renders into the output. With only a depth target it is a depth only pass
+    // (e.g. shadow maps, depth resolves), its pipelines have no color targets.
+    if (colorAttachments.length === 0 && !this.depthBufferAttachment.view) {
       const clear = this.clearPassAttachment(0)
       const color = this.colorPassAttachment(0)
       const target = this.device.output.gpuObject

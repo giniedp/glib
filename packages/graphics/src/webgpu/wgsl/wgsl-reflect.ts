@@ -534,7 +534,8 @@ function textureInfo(
   const storage = type.name.includes('storage')
   const typeParam = getWgslTemplateParameter(type.template, 0)
   let typeInfo = resourceInfo(null, null, null, null, null)
-  if (typeParam && !storage) {
+  // depth and external textures have no template
+  if (typeParam?.length && !storage) {
     typeInfo = resolveTypeInfo(program, readWgslTypeReference(new TokenReader(typeParam)))
   }
   const texture: WgslTextureInfo = {

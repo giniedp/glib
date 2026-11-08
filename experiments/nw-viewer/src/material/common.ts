@@ -259,6 +259,11 @@ export const MaterialLayerMasks = {
    * Sprite particles of particle emitters
    */
   Particle: 1 << 13,
+  /**
+   * The sky dome. The deferred pipeline draws it before the lighting pass, which composes it into pixels and samples
+   * without geometry.
+   */
+  Sky: 1 << 14,
 }
 
 const FLAGS_ARRAY = [

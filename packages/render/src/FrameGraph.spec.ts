@@ -29,6 +29,14 @@ describe('FrameGraph', () => {
     graph.setDescriptors(schema)
   })
 
+  it('tells whether a channel has a producer', () => {
+    graph.begin([channels.Color], 1, 1)
+    graph.addPass('A')
+    expect(graph.has(channels.Color)).toBe(false)
+    graph.write(channels.Color)
+    expect(graph.has(channels.Color)).toBe(true)
+  })
+
   it('takes the usage from the write descriptor, else from the schema', () => {
     graph.begin([channels.Color], 1, 1)
     graph.addPass('A')

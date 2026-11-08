@@ -44,6 +44,22 @@ export class WebGpuTexture extends Texture implements GpuResource<GPUTexture> {
   public readonly gpuDimension: GPUTextureDimension
   public readonly gpuViewDimension: GPUTextureViewDimension
   public readonly gpuView: GPUTextureView
+  /**
+   * View of the depth aspect, to bind the texture as `texture_depth_*`. Depth-stencil formats can only be bound with a
+   * single aspect. Equals {@link gpuView} for depth formats without stencil.
+   */
+  public readonly gpuDepthView: GPUTextureView | null = null
+  /**
+   * Binding source of {@link gpuDepthView}, the binding follows the view when the GPU texture is recreated
+   */
+  public readonly depthViewSource: { readonly gpuView: GPUTextureView | null } = (() => {
+    const texture = this
+    return {
+      get gpuView() {
+        return texture.gpuDepthView
+      },
+    }
+  })()
 
   /**
    * Constructs an instance of a Texture.
@@ -143,6 +159,7 @@ export class WebGpuTexture extends Texture implements GpuResource<GPUTexture> {
     self.gpuObject?.destroy()
     self.gpuObject = null
     self.gpuView = null
+    self.gpuDepthView = null
     this.gpuSubViews.clear()
   }
 
@@ -192,6 +209,15 @@ export class WebGpuTexture extends Texture implements GpuResource<GPUTexture> {
       label: this.name || `Texture_${this.uid}`,
       dimension: this.gpuViewDimension,
     })
+    self.gpuDepthView = this.gpuFormat.includes('stencil')
+      ? self.gpuObject.createView({
+          label: `${this.name || `Texture_${this.uid}`} depth`,
+          dimension: this.gpuViewDimension,
+          aspect: 'depth-only',
+        })
+      : this.gpuFormat.startsWith('depth')
+        ? self.gpuView
+        : null
     this.gpuSubViews.clear()
 
     self.sizeInBytes = this.estimateSize()
