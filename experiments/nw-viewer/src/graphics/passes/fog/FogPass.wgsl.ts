@@ -122,9 +122,6 @@ fn computeFogColor(worldPos: vec3f, cameraToWorldPos: vec3f) -> vec3f {
 }
 `
 
-/**
- * Fog for single sampled targets
- */
 export const FOG_WGSL = /* wgsl */ `
 ${FOG_COMMON}
 
@@ -133,21 +130,6 @@ ${FOG_COMMON}
 @fragment
 fn fs_main(in: FragmentInput) -> @location(0) vec4f {
   let depth = textureLoad(depthMap, vec2i(in.position.xy), 0).r;
-  return computeFog(in.position.xy, depth);
-}
-`
-
-/**
- * Fog for multisampled targets, shaded per sample
- */
-export const FOG_MSAA_WGSL = /* wgsl */ `
-${FOG_COMMON}
-
-@group(0) @binding(1) var depthMap: texture_multisampled_2d<f32>;
-
-@fragment
-fn fs_main(in: FragmentInput, @builtin(sample_index) sampleIndex: u32) -> @location(0) vec4f {
-  let depth = textureLoad(depthMap, vec2i(in.position.xy), i32(sampleIndex)).r;
   return computeFog(in.position.xy, depth);
 }
 `

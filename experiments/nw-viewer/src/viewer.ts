@@ -29,7 +29,7 @@ import {
   vec3Subtract,
   vec4,
 } from '@gglib/math'
-import { Renderer, type RendererStats } from '@gglib/render'
+import { FxaaPass, Renderer, type RendererStats } from '@gglib/render'
 import { brand, lfmt, type EventType } from '@gglib/utils'
 import { getLevelListUrl } from './api'
 import { AudioSystem } from './audio/AudioSystem'
@@ -61,6 +61,8 @@ import { TerrainSystem } from './game/terrain/TerrainSystem'
 import { VegetationSystem } from './game/vegetation/VegetationSystem'
 import { createRenderPipeline } from './graphics'
 import { LuminancePass } from './graphics/passes/exposure/LuminancePass'
+import { SmaaPass } from './graphics/passes/smaa/SmaaPass'
+import { Cmaa2Pass } from './graphics/passes/cmaa2/Cmaa2Pass'
 import { RenderSizeSystem } from './graphics/RenderSizeSystem'
 import { InputSlots, MaterialLayerMasks } from './material'
 import { createSceneOptions, VIEWER_MODE_PARAMS, type SceneOptions } from './scenes'
@@ -183,13 +185,23 @@ export class NwViewer extends EcsGame {
     this.world.addSystem(new RaycastSystem())
     this.world.addSystem(new SpatialSystem())
     this.world.addSystem(new SchedulerSystem({}))
-    const msaaSamples = (value: string) => (value === 'off' ? 1 : 4)
-    const pipeline = createRenderPipeline(this.device, {
-      msaa: msaaSamples(config.value.msaa),
-      pipeline: config.value.pipeline,
-    })
-    config.onChange('msaa', (value) => pipeline.modes.set({ msaa: msaaSamples(value) }))
-    config.onChange('pipeline', (value) => pipeline.modes.set({ pipeline: value }))
+    const pipeline = createRenderPipeline(this.device)
+    const smaa = pipeline.passes.find((it): it is SmaaPass => it instanceof SmaaPass)
+    const fxaa = pipeline.passes.find((it): it is FxaaPass => it instanceof FxaaPass)
+    const cmaa2 = pipeline.passes.find((it): it is Cmaa2Pass => it instanceof Cmaa2Pass)
+    const applyAntialiasing = (value: string) => {
+      if (smaa) {
+        smaa.enabled = value === 'smaa'
+      }
+      if (fxaa) {
+        fxaa.enabled = value === 'fxaa'
+      }
+      if (cmaa2) {
+        cmaa2.enabled = value === 'cmaa2'
+      }
+    }
+    applyAntialiasing(config.value.antialiasing)
+    config.onChange('antialiasing', applyAntialiasing)
     this.luminance = pipeline.passes.find((it): it is LuminancePass => it instanceof LuminancePass) ?? null
     this.world.addSystem(
       new Renderer(this.device, {

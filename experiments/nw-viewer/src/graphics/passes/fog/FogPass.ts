@@ -3,22 +3,18 @@ import { mat4Identity, mat4Invert } from '@gglib/math'
 import { FrameGraph, RenderChannel, type FrameResource, type RenderContext, type RenderPass } from '@gglib/render'
 import { ENABLE_VOLUMETRIC_FOG_2 } from '../../../constants'
 import { InputSlots } from '../../../material/common'
-import { FOG_MSAA_WGSL, FOG_WGSL } from './FogPass.wgsl'
-
-export interface FogPassTarget {
-  /**
-   * Color channel to apply fog to (modified in place)
-   */
-  color: RenderChannel
-  /**
-   * Linear view space depth channel with the same size and sample count as the color channel
-   */
-  depth: RenderChannel
-}
+import { FOG_WGSL } from './FogPass.wgsl'
 
 export interface FogPassOptions {
   enabled?: boolean
-  targets?: FogPassTarget[]
+  /**
+   * Color channel to apply fog to (modified in place). Defaults to {@link RenderChannel.Color}
+   */
+  color?: RenderChannel
+  /**
+   * Linear view space depth channel with the size of the color channel. Defaults to {@link RenderChannel.LinearDepth}
+   */
+  depth?: RenderChannel
 }
 
 /**
@@ -45,13 +41,13 @@ export class FogPass implements RenderPass {
   public name: string = 'Fog'
   public enabled = true
 
-  private targets: FogPassTarget[]
+  private color: RenderChannel
+  private depth: RenderChannel
   private program: Program
-  private programMsaa: Program
   private isActive = false
 
-  private colorResources: FrameResource[] = []
-  private depthResources: FrameResource[] = []
+  private colorResource: FrameResource
+  private depthResource: FrameResource
 
   private ndcToView = new Float32Array(4)
   private cameraWorld = mat4Identity()
@@ -59,27 +55,18 @@ export class FogPass implements RenderPass {
   private depthRange = new Float32Array(4)
 
   private get isReady() {
-    return !!this.program?.isCompiled && !!this.programMsaa?.isCompiled
+    return !!this.program?.isCompiled
   }
 
   public constructor(device: Device, options?: FogPassOptions) {
     this.enabled = options?.enabled ?? this.enabled
-    this.targets = options?.targets ?? [
-      { color: RenderChannel.ColorMsaa, depth: RenderChannel.LinearDepthMsaa },
-      { color: RenderChannel.Color, depth: RenderChannel.LinearDepth },
-    ]
+    this.color = options?.color ?? RenderChannel.Color
+    this.depth = options?.depth ?? RenderChannel.LinearDepth
     device.ready.then(() => {
       this.program = device
         .createShaderModule({
           name: 'NW Fog',
           wgsl: { source: FOG_WGSL },
-        })
-        .program.clone()
-
-      this.programMsaa = device
-        .createShaderModule({
-          name: 'NW Fog MSAA',
-          wgsl: { source: FOG_MSAA_WGSL },
         })
         .program.clone()
     })
@@ -91,12 +78,8 @@ export class FogPass implements RenderPass {
       return
     }
     frame.addPass(this)
-    this.colorResources.length = 0
-    this.depthResources.length = 0
-    for (const target of this.targets) {
-      this.depthResources.push(frame.read(target.depth))
-      this.colorResources.push(frame.modifyInPlace(target.color))
-    }
+    this.depthResource = frame.read(this.depth)
+    this.colorResource = frame.modifyInPlace(this.color)
   }
 
   public render(ctx: RenderContext): void {
@@ -108,21 +91,18 @@ export class FogPass implements RenderPass {
     pass.flush()
 
     this.updateParams(ctx)
-    for (let i = 0; i < this.colorResources.length; i++) {
-      const color = this.colorResources[i].texture
-      const depth = this.depthResources[i].texture
-      const program = depth.sampleCount > 1 ? this.programMsaa : this.program
-      this.setParams(ctx, program)
-      program.mustSet('depthMap', depth)
-      program.commit()
+    const color = this.colorResource.texture
+    const program = this.program
+    this.setParams(ctx, program)
+    program.mustSet('depthMap', this.depthResource.texture)
+    program.commit()
 
-      pass.setRenderTarget(0, color)
-      pass.setRenderBlend(0, FOG_BLEND)
-      pass.setViewportState(0, 0, color.width, color.height)
-      pass.setProgram(program)
-      pass.draw(3)
-      pass.submit()
-    }
+    pass.setRenderTarget(0, color)
+    pass.setRenderBlend(0, FOG_BLEND)
+    pass.setViewportState(0, 0, color.width, color.height)
+    pass.setProgram(program)
+    pass.draw(3)
+    pass.submit()
     pass.flush()
   }
 

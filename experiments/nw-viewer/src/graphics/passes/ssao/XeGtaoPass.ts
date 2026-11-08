@@ -16,11 +16,12 @@ import {
   type RenderContext,
   type RenderPass,
 } from '@gglib/render'
+import { GBufferChannel } from '../../GBufferChannels'
 import {
   XE_GTAO_DENOISE_WGSL,
   XE_GTAO_DEPTH_MIP_LEVELS,
+  XE_GTAO_MAIN_WGSL,
   XE_GTAO_OCCLUSION_TERM_SCALE,
-  xeGtaoMainWgsl,
   XE_GTAO_PREFILTER_MIP0_WGSL,
   XE_GTAO_PREFILTER_MIPN_WGSL,
 } from './XeGtao.wgsl'
@@ -86,16 +87,16 @@ export interface XeGtaoPassOptions {
    */
   output?: RenderChannel
   /**
-   * GBuffer A channel to read the normals from (deferred pipeline). Without it, normals are reconstructed from depth.
+   * GBuffer A channel to read the normals from. Defaults to {@link GBufferChannel.A}
    */
-  normals?: { channel: RenderChannel; samples: 1 | 4 }
+  normals?: RenderChannel
 }
 
 /**
  * XeGTAO ground truth ambient occlusion (https://github.com/GameTechDev/XeGTAO)
  *
- * Reads linear view space depth and writes the denoised occlusion term into {@link NwRenderChannel.AmbientOcclusion}.
- * Normals are read from the GBuffer when {@link XeGtaoPassOptions.normals} is set, otherwise reconstructed from depth.
+ * Reads linear view space depth and the GBuffer normals, writes the denoised occlusion term into
+ * {@link NwRenderChannel.AmbientOcclusion}.
  */
 export class XeGtaoPass implements RenderPass {
   public name: string = 'XeGTAO'
@@ -133,10 +134,10 @@ export class XeGtaoPass implements RenderPass {
   private main: Program
   private denoise: Program
 
-  private normals: XeGtaoPassOptions['normals'] | null
+  private normals: RenderChannel
   private source: FrameResource
   private target: FrameResource
-  private normalSource: FrameResource | null = null
+  private normalSource: FrameResource
 
   private texDepthMips: Texture
   private texDepthMipsDesc: TextureDescriptor
@@ -180,13 +181,12 @@ export class XeGtaoPass implements RenderPass {
     this.maxDistance = options?.maxDistance ?? this.maxDistance
     this.input = options?.input ?? RenderChannel.LinearDepth
     this.output = options?.output ?? NwRenderChannel.AmbientOcclusion
-    this.normals = options?.normals ?? null
-    const normalSamples = this.normals?.samples ?? 0
+    this.normals = options?.normals ?? GBufferChannel.A
 
     device.ready.then(() => {
       this.prefilter0 = createProgram(device, 'XeGTAO Prefilter Mip0', XE_GTAO_PREFILTER_MIP0_WGSL)
       this.prefilterN = createProgram(device, 'XeGTAO Prefilter MipN', XE_GTAO_PREFILTER_MIPN_WGSL)
-      this.main = createProgram(device, `XeGTAO Main (normals ${normalSamples})`, xeGtaoMainWgsl(normalSamples))
+      this.main = createProgram(device, 'XeGTAO Main', XE_GTAO_MAIN_WGSL)
       this.denoise = createProgram(device, 'XeGTAO Denoise', XE_GTAO_DENOISE_WGSL)
     })
   }
@@ -205,7 +205,7 @@ export class XeGtaoPass implements RenderPass {
 
     frame.addPass(this)
     this.source = frame.read(this.input)
-    this.normalSource = this.normals ? frame.read(this.normals.channel) : null
+    this.normalSource = frame.read(this.normals)
     this.target = frame.write(this.output)
 
     const width = ctx.viewWidth
@@ -256,10 +256,8 @@ export class XeGtaoPass implements RenderPass {
     // main pass, writes working ao term and edges
     this.setParams(this.main)
     this.main.mustSet('depthMips', this.texDepthMips)
-    if (this.normalSource) {
-      this.main.mustSet('normalParams.viewMatrix', ctx.view.camera.view)
-      this.main.mustSet('gbufferA', this.normalSource.texture)
-    }
+    this.main.mustSet('normalParams.viewMatrix', ctx.view.camera.view)
+    this.main.mustSet('gbufferA', this.normalSource.texture)
     pass.setRenderTarget(1, this.texEdges)
     pass.setRenderBlend(1, BlendState.Opaque)
     this.draw(ctx, this.main, this.texAo, 0)

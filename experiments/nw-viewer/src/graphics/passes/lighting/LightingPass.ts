@@ -7,34 +7,25 @@ import {
   type WebGpuDevice,
 } from '@gglib/graphics'
 import { FrameGraph, type FrameResource, type RenderChannel, type RenderContext, type RenderPass } from '@gglib/render'
-import { LightingDebugModes, lightingWgsl, LIGHTING_WORKGROUP_SIZE, type LightingDebugMode } from './LightingPass.wgsl'
+import { LightingDebugModes, LIGHTING_WGSL, LIGHTING_WORKGROUP_SIZE, type LightingDebugMode } from './LightingPass.wgsl'
 
 export interface LightingPassOptions {
   /**
-   * Sample count of the GBuffer channels
-   */
-  samples: 1 | 4
-  /**
-   * GBuffer channels (layout in material/gbuffer.wgsl.ts), multisampled when samples > 1
+   * GBuffer channels (layout in material/gbuffer.wgsl.ts)
    */
   a: RenderChannel
   b: RenderChannel
   c: RenderChannel
   /**
-   * Linear view depth. With MSAA the GBuffer samples (0 without geometry), at 1x the scene linear depth (the far
-   * plane without geometry, written by the sky pass).
+   * Linear view depth of the GBuffer pass, 0 without geometry
    */
   linearDepth: RenderChannel
   /**
-   * Single sample sky color, composed into pixels and samples without geometry
-   */
-  sky: RenderChannel
-  /**
-   * Single sample ambient occlusion term (1 = not occluded). Not applied while no pass produced it.
+   * Ambient occlusion term (1 = not occluded). Not applied while no pass produced it.
    */
   ao: RenderChannel
   /**
-   * Single sample HDR color the resolved lighting is written to (rgba16float)
+   * HDR color the lighting is written to (rgba16float)
    */
   output: RenderChannel
 }
@@ -42,15 +33,15 @@ export interface LightingPassOptions {
 const STORAGE_USAGE = TextureUsage.RenderTarget | TextureUsage.TextureBinding | TextureUsage.StorageBinding
 
 /**
- * Deferred lighting compute pass. Lights the GBuffer, shades edge pixels per sample with MSAA and resolves into
- * single sample color and linear depth.
+ * Deferred lighting compute pass. Lights the GBuffer into the HDR color, pixels without geometry are left black for
+ * the sky.
  */
 export class LightingPass implements RenderPass {
   public name: string = 'LightingPass'
   public enabled = true
   public gpuTimer?: GpuTimer
   /**
-   * 'edges' tints the pixels that are shaded per sample, 'ao' shows the ambient occlusion term
+   * 'ao' shows the ambient occlusion term
    */
   public debug: LightingDebugMode = 'off'
   /**
@@ -70,8 +61,8 @@ export class LightingPass implements RenderPass {
     device.ready.then(() => {
       this.program = device
         .createShaderModule({
-          name: `NW Deferred Lighting ${options.samples}x`,
-          wgsl: { source: lightingWgsl(options.samples) },
+          name: 'NW Deferred Lighting',
+          wgsl: { source: LIGHTING_WGSL },
         })
         .program.clone()
     })
@@ -83,8 +74,8 @@ export class LightingPass implements RenderPass {
     }
     // declared before the shader is compiled, later passes read the output
     frame.addPass(this)
-    const { a, b, c, linearDepth, sky, ao, output } = this.options
-    this.inputs = [frame.read(a), frame.read(b), frame.read(c), frame.read(linearDepth), frame.read(sky)]
+    const { a, b, c, linearDepth, ao, output } = this.options
+    this.inputs = [frame.read(a), frame.read(b), frame.read(c), frame.read(linearDepth)]
     // the AO pass declares its output only once its shaders are compiled
     this.aoInput = frame.has(ao) ? frame.read(ao) : null
     this.target = frame.write(output, { usage: STORAGE_USAGE })
@@ -104,9 +95,8 @@ export class LightingPass implements RenderPass {
     program.mustSet('gbufferB', this.inputs[1].texture)
     program.mustSet('gbufferC', this.inputs[2].texture)
     program.mustSet('linearDepth', this.inputs[3].texture)
-    program.mustSet('skyColor', this.inputs[4].texture)
-    // without AO any single sample texture is bound, the shader does not read it
-    program.mustSet('aoMap', (this.aoInput ?? this.inputs[4]).texture)
+    // without AO any filterable texture is bound, the shader does not read it
+    program.mustSet('aoMap', (this.aoInput ?? this.inputs[0]).texture)
     program.mustSet('envSampler', SamplerState.LinearClamp)
     program.mustSet('outColor', target)
     program.mustSet('params.values', this.params)

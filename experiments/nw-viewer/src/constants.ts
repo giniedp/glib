@@ -33,11 +33,6 @@ export const AMBIENT_LIGHT_MODE: 'modulate' | 'skip' | 'direct' = 'modulate'
 export const ENABLE_VOLUMETRIC_FOG_2 = true
 
 /**
- * Opaque materials register a GBuffer effect variant (render pipeline plan, phase 3).
- * Temporary switch for A/B measurements of its cost. The deferred pipeline needs it.
- */
-export const ENABLE_GBUFFER_EFFECTS = true
-/**
  * Scales the distance in the volumetric fog 2 (PerFrame_FogDistanceScale.x in the shader).
  *
  * 1 in all GPA captures. An earlier value of 0.5 was tuned by eye to compensate for the fog pass reconstructing

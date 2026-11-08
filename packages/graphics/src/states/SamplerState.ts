@@ -41,7 +41,8 @@ let idCounter = 1
  */
 export class SamplerState implements SamplerStateOptions {
   /**
-   * The default sampler state which is essentially the same as {@link SamplerState.PointClamp}
+   * The default sampler state: trilinear filtering with anisotropy and clamp to edge. Bound to sampler inputs that
+   * are not set.
    */
   public static Default = SamplerState.cached({
     minFilter: 'linear',

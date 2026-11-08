@@ -119,21 +119,12 @@ export const viewerConfigSchema = defineConfig({
     group: 'Lighting',
   }),
 
-  msaa: choice({
+  antialiasing: choice({
     description:
-      'Multisample anti-aliasing of the scene geometry. WebGPU supports 4 samples or none.',
+      'Post-process anti-aliasing of the final image. smaa is SMAA 1x with depth predication (the game runs SMAA after its tonemap), cmaa2 is Intel CMAA2 (conservative, keeps texture detail), fxaa is FXAA 3.11 (cheaper, softer).',
     editable: true,
-    options: ['4x', 'off'],
-    default: '4x',
-    group: 'Display',
-  }),
-
-  pipeline: choice({
-    description:
-      'deferred writes a GBuffer and lights it in a compute pass, like the game (MSAA: edges are lit per sample). forward lights opaque geometry in its materials, kept for comparison until it is removed.',
-    editable: true,
-    options: ['deferred', 'forward'],
-    default: 'deferred',
+    options: ['smaa', 'cmaa2', 'fxaa', 'off'],
+    default: 'smaa',
     group: 'Display',
   }),
 

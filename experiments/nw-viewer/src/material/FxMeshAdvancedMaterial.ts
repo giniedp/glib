@@ -17,8 +17,8 @@ import SCHEMA from './FxMeshAdvancedMaterial.meta'
 import WGSL from './FxMeshAdvancedMaterial.wgsl'
 import type { NwMaterialProps } from './GltfExtension'
 import { TextureModifier } from './TexMod'
-import { ENABLE_GBUFFER_EFFECTS } from '../constants'
 import {
+  createDebugEffect,
   createEmissiveEffect,
   getShaderConstants,
   hasEmittance,
@@ -155,11 +155,15 @@ export class FxMeshAdvancedMaterial extends MaterialWithSchema(SCHEMA) {
     if (attrs.MtlFlags & MtlFlag.MTL_FLAG_2SIDED) {
       this.effect.cullState = CullState.None
     }
-    if (ENABLE_GBUFFER_EFFECTS && !this.isTransparent) {
+    if (!this.isTransparent) {
       const gbuffer = new Effect(this.device, fxMeshAdvancedEffectOptions(shaderConst, 'fs_gbuffer'))
       gbuffer.cullState = this.effect.cullState
       gbuffer.blendState = BlendState.Opaque
       this.setEffect(RenderVariant.GBuffer, gbuffer)
+      this.setEffect(
+        NwRenderVariant.Debug,
+        createDebugEffect(this.device, fxMeshAdvancedEffectOptions(shaderConst, 'fs_debug'), gbuffer),
+      )
     }
 
     this.layer = MaterialLayerMasks.FxMeshAdvanced

@@ -515,87 +515,102 @@ fn fs_main(input: FragmentInput) -> FragmentOutput {
   out.color = applyFog(color, alpha, input.worldPos, view.cameraPosition);
   out.depth = linearizeDepthReversedZ(input.position.z, view.near, view.far);
 
+  let debugColor = fxDebugColor(input, s);
+  if (debugColor.a >= 0.0) {
+    out.color = debugColor;
+  }
+  return out;
+}
 
+// Material debug view (global.debug) of a surface. Alpha is -1 for modes without a material view.
+fn fxDebugColor(input: FragmentInput, s: FxSurface) -> vec4f {
   switch (global.debug) {
     // #region Debug Material
     case DEBUG_MTL_ALBEDO: {
-      out.color = vec4f(surface.Diffuse.rgb, 1.0);
+      return vec4f(s.albedo, 1.0);
     }
     case DEBUG_MTL_SPECULAR: {
-      out.color = vec4f(surface.Specular.rgb, 1.0);
+      return vec4f(s.specular, 1.0);
     }
     case DEBUG_MTL_METALLIC: {
-      out.color = vec4f(vec3f(0.0), 1.0);
+      return vec4f(vec3f(0.0), 1.0);
     }
     case DEBUG_MTL_ROUGHNESS: {
-      out.color = vec4f(vec3f(surface.Roughness), 1.0);
+      return vec4f(vec3f(smoothnessToRoughness(s.gloss)), 1.0);
     }
     case DEBUG_MTL_IOR: {
-      out.color = vec4f(vec3f(0.0), 1.0);
+      return vec4f(vec3f(0.0), 1.0);
     }
     case DEBUG_MTL_EMISSIVE: {
-      out.color = vec4f(emittance.rgb, 1.0);
-    }
-    case DEBUG_MTL_AO: {
-
+      return vec4f(fxEmittance(s), 1.0);
     }
     case DEBUG_MTL_OPACITY: {
-      out.color = vec4f(vec3f(alpha), 1.0);
+      return vec4f(vec3f(s.alpha), 1.0);
     }
     case DEBUG_MTL_HEIGHT: {
-      out.color = vec4f(vec3f(sdf2d), 1.0);
-    }
-    case DEBUG_MTL_NOISE: {
-      //
+      return vec4f(vec3f(s.sdf2d), 1.0);
     }
     // #endregion
 
-
     // #region Debug Geometry / Vectors
     case DEBUG_GV_NORMAL: {
-      out.color = vec4f(input.worldNormal.xyz * 0.5 + 0.5, 1.0);
+      return vec4f(input.worldNormal.xyz * 0.5 + 0.5, 1.0);
     }
     case DEBUG_GV_TANGENT: {
-      out.color = vec4f(input.worldTangent.xyz * 0.5 + 0.5, 1.0);
+      return vec4f(input.worldTangent.xyz * 0.5 + 0.5, 1.0);
     }
     case DEBUG_GV_BITANGENT: {
-      out.color = vec4f(input.worldBitangent.xyz * 0.5 + 0.5, 1.0);
+      return vec4f(input.worldBitangent.xyz * 0.5 + 0.5, 1.0);
     }
     case DEBUG_GV_SHADE_NORMAL: {
-      out.color = vec4f(normal.xyz * 0.5 + 0.5, 1.0);
+      return vec4f(s.normal * 0.5 + 0.5, 1.0);
     }
     case DEBUG_GV_POSITION_WS: {
-      out.color = vec4f(fract(input.worldPos.xyz), 1.0);
+      return vec4f(fract(input.worldPos.xyz), 1.0);
     }
     case DEBUG_GV_DEPTH: {
-      out.color = vec4f(vec3f(fract(out.depth)), 1.0);
+      return vec4f(vec3f(fract(linearizeDepthReversedZ(input.position.z, view.near, view.far))), 1.0);
     }
     // #endregion
 
     // #region Vertex attributes
     case DEBUG_V_COLOR0: {
-      out.color = vec4f(input.vertexColor.xyz, 1.0);
-    }
-    case DEBUG_V_COLOR1: {
-      //
+      return vec4f(input.vertexColor.xyz, 1.0);
     }
     case DEBUG_V_UV0: {
-      out.color = vec4f(fract(uvBase.xy), 0.0, 1.0);
+      return vec4f(fract(s.uvBase.xy), 0.0, 1.0);
     }
     case DEBUG_V_UV1: {
-      out.color = vec4f(fract(uvEmittance.xy), 0.0, 1.0);
+      return vec4f(fract(s.uvEmittance), 0.0, 1.0);
     }
     case DEBUG_V_DEFORM: {
       if (material.deformWave1.w > 0) {
-        out.color = vec4f(1.0, 0.0, 1.0, 1.0);
+        return vec4f(1.0, 0.0, 1.0, 1.0);
       }
+      return vec4f(-1.0);
     }
     // #endregion
     default: {
-
+      return vec4f(-1.0);
     }
   }
+}
 
+struct DebugOutput {
+  @location(0) color: vec4f,
+};
+
+// Material debug view of opaque surfaces, drawn over the lit image (NwRenderVariant.Debug). Modes without a
+// material view draw nothing, the lighting pass shows the shading modes.
+@fragment
+fn fs_debug(input: FragmentInput) -> DebugOutput {
+  let s = fxSurface(input);
+  let color = fxDebugColor(input, s);
+  if (color.a < 0.0) {
+    discard;
+  }
+  var out: DebugOutput;
+  out.color = color;
   return out;
 }
 

@@ -136,7 +136,7 @@ export class GpuInstanceBatch {
       if (material.isTransparent) {
         return false
       }
-      if (!material.effect?.program.perInstanceTransformBlock) {
+      if (!material.primaryEffect?.program.perInstanceTransformBlock) {
         return false
       }
     }

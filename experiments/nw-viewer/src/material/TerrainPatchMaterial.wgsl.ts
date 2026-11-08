@@ -277,134 +277,88 @@ fn terrainSurface(input: VertexOutput) -> TerrainSurface {
   return s;
 }
 
+struct DebugOutput {
+  @location(0) color: vec4f,
+};
+
+// Material debug view (global.debug), drawn over the lit image (NwRenderVariant.Debug). Modes without a material
+// view draw nothing, the lighting pass shows the shading modes.
 @fragment
-fn fs_main(input: VertexOutput) -> FragmentOutput {
+fn fs_debug(input: VertexOutput) -> DebugOutput {
   let s = terrainSurface(input);
-  let toEye             = s.toEye;
-  let normal            = s.normal;
-  let albedo            = s.albedo;
-  let alpha             = 1.0;
-  let specular          = s.specular;
-  let gloss             = s.gloss;
-  let roughness         = smoothnessToRoughness(gloss);
-  let authoredRoughness = s.authoredRoughness;
-  let tbn               = mat3x3f(s.tangent, s.bitangent, s.geometryNormal);
-  let local             = s.local;
-  let regionUv          = s.regionUv;
-  let vtValid           = s.vtValid;
-
-  let reflectVec = normalize(reflect(-toEye, normal));
-  var reflectColor = environmentSpecular(colorMapSampler, reflectVec, gloss);
-
-  var surface: SurfaceParams;
-  surface.Diffuse   = albedo;
-  surface.Alpha     = alpha;
-  surface.Specular  = specular;
-  surface.Roughness = roughness;
-  surface.Normal    = vec4(normal, 1.0);
-
-  var shade = accumulateLightShade(lights, global, surface, toEye, input.vWorldPos);
-
-  let ambient = vec3f(1.0);
-  shade.ambient += environmentDiffuse(colorMapSampler, normal) * ambient;
-  let envFresnel = environmentFresnel(surface.Specular.rgb, gloss, dot(normal, toEye));
-  shade.specular += reflectColor * ambient * envFresnel * shade.ambientScale;
-  var color = composeShade(surface, shade);
-
-  var out: FragmentOutput;
-  out.color = applyFog(color, 1.0, input.vWorldPos, view.cameraPosition);
-  out.depth = linearizeDepthReversedZ(input.Position.z, view.near, view.far);
-
+  let roughness = smoothnessToRoughness(s.gloss);
+  var color = vec4f(-1.0);
   switch (global.debug) {
     // #region Debug Material
     case DEBUG_MTL_ALBEDO: {
-      out.color = vec4f(surface.Diffuse.rgb, 1.0);
+      color = vec4f(s.albedo, 1.0);
     }
     case DEBUG_MTL_SPECULAR: {
-      out.color = vec4f(surface.Specular.rgb, 1.0);
+      color = vec4f(s.specular, 1.0);
     }
     case DEBUG_MTL_METALLIC: {
-      out.color = vec4f(vec3f(0.0), 1.0);
+      color = vec4f(vec3f(0.0), 1.0);
     }
     case DEBUG_MTL_ROUGHNESS: {
-      out.color = vec4f(vec3f(surface.Roughness), 1.0);
+      color = vec4f(vec3f(roughness), 1.0);
     }
     case DEBUG_SH_SPECULAR_AA: {
-      out.color = vec4f((surface.Roughness - authoredRoughness) * 4.0, authoredRoughness * 0.25, 0.0, 1.0);
+      color = vec4f((roughness - s.authoredRoughness) * 4.0, s.authoredRoughness * 0.25, 0.0, 1.0);
     }
     case DEBUG_MTL_IOR: {
-      out.color = vec4f(vec3f(0.0), 1.0);
-    }
-    case DEBUG_MTL_EMISSIVE: {
-      // out.color = vec4f(vec3f(emittance), 1.0);
-    }
-    case DEBUG_MTL_AO: {
-      // out.color = vec4f(vec3f(ao), 1.0);
+      color = vec4f(vec3f(0.0), 1.0);
     }
     case DEBUG_MTL_OPACITY: {
-      out.color = vec4f(vec3f(alpha), 1.0);
+      color = vec4f(1.0);
     }
     case DEBUG_MTL_HEIGHT: {
-      out.color = vec4f(vec3f(gloss), 1.0);
-    }
-    case DEBUG_MTL_NOISE: {
-      //
+      color = vec4f(vec3f(s.gloss), 1.0);
     }
     // #endregion
 
-
     // #region Debug Geometry / Vectors
     case DEBUG_GV_NORMAL: {
-      out.color = vec4f(tbn[2].xyz * 0.5 + 0.5, 1.0);
+      color = vec4f(s.geometryNormal * 0.5 + 0.5, 1.0);
     }
     case DEBUG_GV_TANGENT: {
-      out.color = vec4f(tbn[0].xyz * 0.5 + 0.5, 1.0);
+      color = vec4f(s.tangent * 0.5 + 0.5, 1.0);
     }
     case DEBUG_GV_BITANGENT: {
-      out.color = vec4f(tbn[1].xyz * 0.5 + 0.5, 1.0);
+      color = vec4f(s.bitangent * 0.5 + 0.5, 1.0);
     }
     case DEBUG_GV_SHADE_NORMAL: {
-      out.color = vec4f(surface.Normal.xyz * 0.5 + 0.5, 1.0);
+      color = vec4f(s.normal * 0.5 + 0.5, 1.0);
     }
     case DEBUG_GV_POSITION_WS: {
-      out.color = vec4f(fract(input.vWorldPos.xyz), 1.0);
+      color = vec4f(fract(input.vWorldPos.xyz), 1.0);
     }
     case DEBUG_GV_DEPTH: {
-      out.color = vec4f(vec3f(fract(out.depth)), 1.0);
+      color = vec4f(vec3f(fract(linearizeDepthReversedZ(input.Position.z, view.near, view.far))), 1.0);
     }
     // #endregion
 
     // #region Debug Vertex attributes
     case DEBUG_V_COLOR0: {
-      out.color = vec4f(vec3f(input.vMorph), 1.0);
-    }
-    case DEBUG_V_COLOR1: {
-      // out.color = vec4f(cDetailMap.rgb, 1.0);
+      color = vec4f(vec3f(input.vMorph), 1.0);
     }
     case DEBUG_V_UV0: {
-      out.color = vec4f(fract(local / VT_PAGE_WORLD_SIZE), 0.0, 1.0);
+      color = vec4f(fract(s.local / VT_PAGE_WORLD_SIZE), 0.0, 1.0);
     }
     case DEBUG_V_UV1: {
-      out.color = vec4f(regionUv, 0.0, 1.0);
+      color = vec4f(s.regionUv, 0.0, 1.0);
     }
     case DEBUG_VT_MIP: {
-      let shade = 0.5 + 0.5 * max(dot(normal, normalize(vec3f(0.3, 0.3, 0.9))), 0.0);
-      out.color = vec4f(mix(vtMipColor(s.vtMip), vec3f(1.0, 0.0, 0.0), 1.0 - vtValid) * shade, 1.0);
-    }
-    case DEBUG_V_UV3: {
-      // out.color = vec4f(fract(uvEmittance.xy), 0.0, 1.0);
-    }
-    case DEBUG_V_UV4: {
-      // out.color = vec4f(fract(uvEmissiveIntensity.xy), 0.0, 1.0);
-    }
-    case DEBUG_V_DEFORM: {
-      //
+      let shade = 0.5 + 0.5 * max(dot(s.normal, normalize(vec3f(0.3, 0.3, 0.9))), 0.0);
+      color = vec4f(mix(vtMipColor(s.vtMip), vec3f(1.0, 0.0, 0.0), 1.0 - s.vtValid) * shade, 1.0);
     }
     // #endregion
-    default: {
-
-    }
+    default: {}
   }
+  if (color.a < 0.0) {
+    discard;
+  }
+  var out: DebugOutput;
+  out.color = color;
   return out;
 }
 

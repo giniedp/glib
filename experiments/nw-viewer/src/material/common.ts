@@ -25,6 +25,11 @@ export const NwRenderVariant = {
    * Only materials with emittance register it.
    */
   Emissive: brand<RenderVariant>('emissive'),
+  /**
+   * Material debug view (`global.debug`) of opaque surfaces, drawn over the lit image while a debug mode is selected
+   * (`fs_debug`). Modes without a material view draw nothing.
+   */
+  Debug: brand<RenderVariant>('debug'),
 }
 
 export const InputBlocks = {
@@ -259,11 +264,6 @@ export const MaterialLayerMasks = {
    * Sprite particles of particle emitters
    */
   Particle: 1 << 13,
-  /**
-   * The sky dome. The deferred pipeline draws it before the lighting pass, which composes it into pixels and samples
-   * without geometry.
-   */
-  Sky: 1 << 14,
 }
 
 const FLAGS_ARRAY = [
@@ -425,6 +425,19 @@ export function createEmissiveEffect(device: Device, options: EffectOptions, gbu
   const effect = new Effect(device, options)
   effect.cullState = gbuffer.cullState
   effect.blendState = BlendState.AdditivePure
+  // reversed z
+  effect.depthState = DepthState.GreaterEqualNoWrite
+  return effect
+}
+
+/**
+ * Effect of the {@link NwRenderVariant.Debug} variant: replaces the lit color of the opaque surface that the GBuffer
+ * effect wrote. Same culling as the GBuffer effect, depth tested against its depth without writing.
+ */
+export function createDebugEffect(device: Device, options: EffectOptions, gbuffer: Effect): Effect {
+  const effect = new Effect(device, options)
+  effect.cullState = gbuffer.cullState
+  effect.blendState = BlendState.Opaque
   // reversed z
   effect.depthState = DepthState.GreaterEqualNoWrite
   return effect

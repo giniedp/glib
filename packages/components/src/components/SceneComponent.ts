@@ -370,7 +370,7 @@ export class SceneComponent implements GameComponent, InitializableComponent, Re
   public updateMaterial(material: Material, transform: Mat4) {
     let isInstanced = material[materialIsInstanced] as boolean | undefined
     if (isInstanced === undefined) {
-      const effect = material.effect
+      const effect = material.primaryEffect
       if (effect) {
         isInstanced = !!effect.program.perInstanceTransformBlock
         material[materialIsInstanced] = isInstanced

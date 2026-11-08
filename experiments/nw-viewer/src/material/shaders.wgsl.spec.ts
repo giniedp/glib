@@ -4,18 +4,21 @@ import FX_MESH_ADVANCED_WGSL from './FxMeshAdvancedMaterial.wgsl'
 import ILLUM_WGSL from './IllumMaterial.wgsl'
 import { TERRAIN_PATCH_SHADER } from './TerrainPatchMaterial.wgsl'
 import VEGETATION_WGSL from './VegetationMaterial.wgsl'
-import { lightingWgsl } from '../graphics/passes/lighting/LightingPass.wgsl'
-import { xeGtaoMainWgsl } from '../graphics/passes/ssao/XeGtao.wgsl'
+import { LIGHTING_WGSL } from '../graphics/passes/lighting/LightingPass.wgsl'
+import { XE_GTAO_MAIN_WGSL } from '../graphics/passes/ssao/XeGtao.wgsl'
+import { SMAA_BLEND_WGSL, SMAA_EDGES_WGSL, SMAA_WEIGHTS_WGSL } from '../graphics/passes/smaa/SmaaPass.wgsl'
+import { CMAA2_WGSL } from '../graphics/passes/cmaa2/Cmaa2Pass.wgsl'
 
 // compiles material shader sources on the GPU and checks the entry points the render variants use
 const SHADERS: Array<{ name: string; source: string; fragmentEntries: string[] }> = [
-  { name: 'Illum', source: ILLUM_WGSL, fragmentEntries: ['fs_main', 'fs_gbuffer', 'fs_emissive'] },
-  { name: 'TerrainPatch', source: TERRAIN_PATCH_SHADER, fragmentEntries: ['fs_main', 'fs_gbuffer'] },
-  { name: 'Vegetation', source: VEGETATION_WGSL, fragmentEntries: ['fs_main', 'fs_gbuffer'] },
+  { name: 'Illum', source: ILLUM_WGSL, fragmentEntries: ['fs_main', 'fs_gbuffer', 'fs_emissive', 'fs_debug'] },
+  // opaque only: no forward entry
+  { name: 'TerrainPatch', source: TERRAIN_PATCH_SHADER, fragmentEntries: ['fs_gbuffer', 'fs_debug'] },
+  { name: 'Vegetation', source: VEGETATION_WGSL, fragmentEntries: ['fs_gbuffer', 'fs_debug'] },
   {
     name: 'FxMeshAdvanced',
     source: FX_MESH_ADVANCED_WGSL,
-    fragmentEntries: ['fs_main', 'fs_gbuffer', 'fs_emissive'],
+    fragmentEntries: ['fs_main', 'fs_gbuffer', 'fs_emissive', 'fs_debug'],
   },
 ]
 
@@ -43,11 +46,16 @@ describe('material shaders', () => {
     }
   }
 
-  // the deferred lighting reuses the material lighting chunks (COMMON_WGSL) in a compute shader,
-  // the pipeline creation checks that no fragment only builtin is reachable from the compute entry point
-  for (const normals of [0, 1, 4] as const) {
-    it(`XeGTAO main pass compiles (normals ${normals})`, async () => {
-      const module = device.createShaderModule({ code: xeGtaoMainWgsl(normals) })
+  const PASS_SHADERS: Array<[string, string]> = [
+    ['XeGTAO main', XE_GTAO_MAIN_WGSL],
+    ['SMAA edges', SMAA_EDGES_WGSL],
+    ['SMAA weights', SMAA_WEIGHTS_WGSL],
+    ['SMAA blend', SMAA_BLEND_WGSL],
+    ['CMAA2', CMAA2_WGSL],
+  ]
+  for (const [name, code] of PASS_SHADERS) {
+    it(`${name} pass compiles`, async () => {
+      const module = device.createShaderModule({ code })
       const info = await module.getCompilationInfo()
       const errors = info.messages
         .filter((m) => m.type === 'error')
@@ -56,13 +64,13 @@ describe('material shaders', () => {
     })
   }
 
-  for (const samples of [1, 4] as const) {
-    it(`deferred lighting compute pipeline builds (${samples}x)`, async () => {
-      device.pushErrorScope('validation')
-      const module = device.createShaderModule({ code: lightingWgsl(samples) })
-      device.createComputePipeline({ layout: 'auto', compute: { module, entryPoint: 'main' } })
-      const error = await device.popErrorScope()
-      expect(error?.message ?? null).toBe(null)
-    })
-  }
+  // the deferred lighting reuses the material lighting chunks (COMMON_WGSL) in a compute shader,
+  // the pipeline creation checks that no fragment only builtin is reachable from the compute entry point
+  it('deferred lighting compute pipeline builds', async () => {
+    device.pushErrorScope('validation')
+    const module = device.createShaderModule({ code: LIGHTING_WGSL })
+    device.createComputePipeline({ layout: 'auto', compute: { module, entryPoint: 'main' } })
+    const error = await device.popErrorScope()
+    expect(error?.message ?? null).toBe(null)
+  })
 })

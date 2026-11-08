@@ -12,18 +12,29 @@ import {
   TRUE,
 } from '@gglib/graphics'
 import { vec4 } from '@gglib/math'
-import { ENABLE_GBUFFER_EFFECTS, IMPOSTOR_FADE_RANGE, IMPOSTOR_VISIBILITY_START } from '../constants'
+import { IMPOSTOR_FADE_RANGE, IMPOSTOR_VISIBILITY_START } from '../constants'
 import type { NwMaterialProps } from './GltfExtension'
 import { TextureModifier } from './TexMod'
 import SCHEMA from './VegetationMaterial.meta'
 import WGSL from './VegetationMaterial.wgsl'
-import { type FeatureFlag, getShaderConstants, InputBlocks, MaterialLayerMasks, setDitherFadeConstants } from './common'
+import {
+  createDebugEffect,
+  type FeatureFlag,
+  getShaderConstants,
+  InputBlocks,
+  MaterialLayerMasks,
+  NwRenderVariant,
+  setDitherFadeConstants,
+} from './common'
 import { MtlFlag } from './types'
 import { getWhiteTexture, MtlUtil, paramValue, paramVec4 } from './utils'
 
+/**
+ * @param fragmentEntry - `fs_gbuffer` (default, vegetation is only drawn into the GBuffer) or `fs_debug`
+ */
 export function vegetationShaderOptions(
   constants: Record<string, number>,
-  fragmentEntry: string = 'fs_main',
+  fragmentEntry: string = 'fs_gbuffer',
 ): ShaderModuleOptions {
   return {
     name: `Vegetation Shader (${fragmentEntry})`,
@@ -104,25 +115,24 @@ export class VegetationMaterial extends MaterialWithSchema(SCHEMA) {
       })
     }
 
-    this.setEffect(RenderVariant.Forward, new Effect(this.device, vegetationEffectOptions(shaderConst)))
-    this.effect.cullState = CullState.CullBack
-    this.effect.blendState = BlendState.Opaque
+    // no forward effect: vegetation is drawn into the GBuffer and lit by the deferred lighting
+    const gbuffer = new Effect(this.device, vegetationEffectOptions(shaderConst, 'fs_gbuffer'))
+    gbuffer.cullState = CullState.CullBack
+    gbuffer.blendState = BlendState.Opaque
     if (attrs.MtlFlags & MtlFlag.MTL_FLAG_2SIDED) {
-      this.effect.cullState = CullState.None
+      gbuffer.cullState = CullState.None
     }
     if (shaderFlags.has('LEAVES')) {
-      this.effect.cullState = CullState.None
+      gbuffer.cullState = CullState.None
     }
     if (shaderFlags.has('GRASS')) {
-      this.effect.cullState = CullState.None
+      gbuffer.cullState = CullState.None
     }
-
-    if (ENABLE_GBUFFER_EFFECTS) {
-      const gbuffer = new Effect(this.device, vegetationEffectOptions(shaderConst, 'fs_gbuffer'))
-      gbuffer.cullState = this.effect.cullState
-      gbuffer.blendState = BlendState.Opaque
-      this.setEffect(RenderVariant.GBuffer, gbuffer)
-    }
+    this.setEffect(RenderVariant.GBuffer, gbuffer)
+    this.setEffect(
+      NwRenderVariant.Debug,
+      createDebugEffect(this.device, vegetationEffectOptions(shaderConst, 'fs_debug'), gbuffer),
+    )
 
     this.layer = MaterialLayerMasks.Vegetation
     this.setDefaults()

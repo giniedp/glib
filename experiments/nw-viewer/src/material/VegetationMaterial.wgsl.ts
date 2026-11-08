@@ -497,229 +497,118 @@ fn vegetationSurface(input: FragmentInput) -> VegetationSurface {
   return s;
 }
 
-@fragment
-fn fs_main(input: FragmentInput) -> FragmentOutput {
-  let s = vegetationSurface(input);
-  let toEye               = s.toEye;
-  let normal              = s.normal;
-  var albedo              = s.albedo;
-  var alpha               = s.alpha;
-  var specular            = s.specular;
-  let gloss               = s.gloss;
-  let authoredGloss       = s.authoredGloss;
-  var cShadingBack        = s.shadingBack;
-  let cFrontLight         = s.frontLight;
-  let uvBase              = s.uvBase;
-  let uvEmittance         = s.uvEmittance;
-  let uvEmissiveIntensity = s.uvEmissiveIntensity;
-  let cFilterColor        = vec3f(1.0);
-
-  // -- Environment mapping
-  // #if %ENVIRONMENT_MAP
-  //     if (pPass.nReflectionMapping > 0)
-  //     {
-  //         if (pPass.nReflectionMapping == REFLECT_CUBE)
-  //         {
-  //             pPass.cEnvironment = GetEnvironmentCMap(envMapCUBE, envMapCUBESampler, pPass.vReflVec.xyz, pPass.fGloss).xyz;
-  //         }
-  //         else
-  //         if (pPass.nReflectionMapping == REFLECT_SPHERE)
-  //         {
-  //             // should be transformed to view space - but adds quite a lot instructions
-  //             pPass.cEnvironment = GetEnvironment2DMap(envMap, envMapSampler, pPass.vReflVec.xy);
-  //         }
-  //     }
-  // #endif
-
-
-  var surface: SurfaceParams;
-  surface.Transmittance = vec4f(cShadingBack.rgb, material.normalViewDependency);
-  surface.Diffuse   = albedo;
-  surface.Alpha     = alpha;
-  surface.Specular  = specular;
-  surface.Normal    = vec4f(normal, 1.0);
-  surface.Roughness = smoothnessToRoughness(gloss);
-
-  var shade = accumulateLightShade(lights, global, surface, toEye, input.worldPos);
-
-
-
-  // #region Apply Light
-  // ApplyClusterForwardLighting(pPass, pPass.IN.vView.xyz);
-  // #endregion
-
-
-  // #region frag_ambient(pPass, vAmbientNormal);
-  // #if %_RT_FOG
-  //     #if %_RT_HDR_MODE
-  //         float3 amb = pPass.IN.Ambient.xyz;
-
-  //         // custom ambient pass
-  //         frag_custom_ambient(pPass, amb); ->  pPass.cAmbientAcc.xyz += cAmbient.xyz;
-  //     #else
-  //         // Use default probe in secondary viewports until we have tiled shading support there
-  //         pPass.cAmbientAcc += GetEnvironmentCMap(defaultProbeCUBE, defaultProbeCUBESampler, pPass.vNormal.xyz, 0).xyz * pPass.IN.Ambient.xyz;
-  //         pPass.cSpecularAcc += GetEnvironmentCMap(defaultProbeCUBE, defaultProbeCUBESampler, pPass.vReflVec.xyz, pPass.fGloss).xyz * pPass.IN.Ambient.xyz * pPass.cSpecularMap.rgb;
-  //         pPass.nReflectionMapping = 0;
-  //     #endif
-  // #endif
-  // #endregion
-
-
-
-  // #region frag_custom_end(pPass, cOut.xyz);
-  if (GRASS) {
-    cShadingBack *= cFilterColor;
-    shade.diffuseBack = vec3f(1.0);
-    shade.diffuse += cFrontLight.rgb * cFilterColor;
-  }
-
-  // Vertex color are not yet working on Cluster Forward
-  // #if !%_RT_CLUSTER_FORWARD
-  //     albedo *= pPass.pCustom.cColor0.w;
-  //     specular *= pPass.pCustom.cColor0.w;
-  // #endif
-
-  // #if %_RT_BLEND_WITH_TERRAIN_COLOR && %_RT_AMBIENT
-  //     float2 texCoords = pPass.IN.baseTC.zw;
-  //     float4 terrainColor = GetTerrainColor(fromObjTex0, fromObjSampler0, texCoords);
-  //     albedo = lerp(albedo, terrainColor.xyz, pPass.IN.screenProj.z);
-  //     specular = lerp(specular, terrainColor.xyz, pPass.IN.screenProj.z);
-  // #endif
-
-  // Final composition
-  // TODO: this uses PBF but shouldn't. albedo factor moved out of diffuse+ambient term, as it's aready in diffuseColor
-  albedo =  ((shade.diffuse.rgb + shade.ambient.rgb) + shade.diffuseBack.rgb * cShadingBack.rgb) * surface.Diffuse.rgb;
-  specular = shade.specular.rgb * input.color0.x;// pPass.pCustom.fRenderQuality;
-
-  // #endregion
-
-
-
-  // #region frag_fog_setup(pPass, cOut);
-  // frag_fog_setup(pPass, cOut);
-  // #endregion
-
-
-  // #region frag_hdr_setup(pPass, cOut);
-  // frag_hdr_setup(pPass, cOut);
-  // #endregion
-
-
-
-  // -- Emittance --------------------------------------------
+// Emitted light of a surface, zero without emittance. The deferred pipeline has no emissive variant for vegetation
+// yet, only the debug view shows it.
+fn vegetationEmittance(s: VegetationSurface) -> vec3f {
   var emittance = vec3f(0.0);
   let emissiveLum = getLuminance(material.emissiveColor.xyz);
   if (emissiveLum > 0.0) {
-
     var emitMapCol = vec4f(1.0);
     var emitMapInt = vec4f(0.5);
     if (EMITTANCE_MAP) {
-      emitMapCol     = textureSample(emittanceMap,     samplerLinear, uvEmittance.xy);
+      emitMapCol     = textureSample(emittanceMap,     samplerLinear, s.uvEmittance);
       if (!BLENDLAYER) {
-        emitMapInt = textureSample(decalEmissiveMap, samplerLinear, uvEmissiveIntensity.xy);
+        emitMapInt = textureSample(decalEmissiveMap, samplerLinear, s.uvEmissiveIntensity);
       }
     }
-
     emittance = emitMapCol.rgb;
     emittance *= pow(max(getLuminance(emitMapCol.rgb), 1e-6), material.emittanceMapGamma - 1.0);
     emittance *= emitMapInt.rgb;
     emittance *= (material.emissiveColor.xyz * material.emissiveColor.a * 0.1);
   }
+  return emittance;
+}
 
+struct DebugOutput {
+  @location(0) color: vec4f,
+};
 
-
-  // -- Compose final color ---------------------------------------------------
-  var color = albedo + specular + emittance;
-  // opaque surfaces write full alpha, the alpha tested edges would otherwise leak through to the canvas
-  alpha = select(1.0, alpha, material.enabledAlphaBlend == TRUE);
-
-  var out: FragmentOutput;
-  out.color = applyFog(color, alpha, input.worldPos, view.cameraPosition);
-  out.depth = linearizeDepthReversedZ(input.position.z, view.near, view.far);
-
+// Material debug view (global.debug), drawn over the lit image (NwRenderVariant.Debug). Modes without a material
+// view draw nothing, the lighting pass shows the shading modes.
+@fragment
+fn fs_debug(input: FragmentInput) -> DebugOutput {
+  let s = vegetationSurface(input);
+  let roughness = smoothnessToRoughness(s.gloss);
+  var color = vec4f(-1.0);
   switch (global.debug) {
     // #region Debug Material
     case DEBUG_MTL_ALBEDO: {
-      out.color = vec4f(albedo, 1.0);
+      color = vec4f(s.albedo, 1.0);
     }
     case DEBUG_MTL_SPECULAR: {
-      out.color = vec4f(specular, 1.0);
+      color = vec4f(s.specular, 1.0);
     }
     case DEBUG_MTL_METALLIC: {
-      out.color = vec4f(vec3f(0.0), 1.0);
+      color = vec4f(vec3f(0.0), 1.0);
     }
     case DEBUG_MTL_ROUGHNESS: {
-      out.color = vec4f(vec3f(surface.Roughness), 1.0);
+      color = vec4f(vec3f(roughness), 1.0);
     }
     case DEBUG_SH_SPECULAR_AA: {
-      out.color = vec4f((surface.Roughness - smoothnessToRoughness(authoredGloss)) * 4.0, smoothnessToRoughness(authoredGloss) * 0.25, 0.0, 1.0);
+      let authored = smoothnessToRoughness(s.authoredGloss);
+      color = vec4f((roughness - authored) * 4.0, authored * 0.25, 0.0, 1.0);
     }
     case DEBUG_MTL_IOR: {
-      out.color = vec4f(vec3f(0.0), 1.0);
+      color = vec4f(vec3f(0.0), 1.0);
     }
     case DEBUG_MTL_EMISSIVE: {
-      out.color = vec4f(vec3f(emittance), 1.0);
+      color = vec4f(vegetationEmittance(s), 1.0);
     }
     case DEBUG_MTL_AO: {
-      out.color = vec4f(vec3f(input.vertColor.a), 1.0);
+      color = vec4f(vec3f(input.vertColor.a), 1.0);
     }
     case DEBUG_MTL_OPACITY: {
-      out.color = vec4f(vec3f(alpha), 1.0);
+      color = vec4f(vec3f(s.opacity), 1.0);
     }
     case DEBUG_MTL_HEIGHT: {
-      out.color = vec4f(vec3f(material.emissiveColor.rgb), 1.0);
-    }
-    case DEBUG_MTL_NOISE: {
-      //
+      color = vec4f(vec3f(material.emissiveColor.rgb), 1.0);
     }
     // #endregion
 
-
     // #region Debug Geometry / Vectors
     case DEBUG_GV_NORMAL: {
-      out.color = vec4f(input.worldNormal.xyz * 0.5 + 0.5, 1.0);
+      color = vec4f(input.worldNormal.xyz * 0.5 + 0.5, 1.0);
     }
     case DEBUG_GV_TANGENT: {
-      out.color = vec4f(input.worldTangent.xyz * 0.5 + 0.5, 1.0);
+      color = vec4f(input.worldTangent.xyz * 0.5 + 0.5, 1.0);
     }
     case DEBUG_GV_BITANGENT: {
-      out.color = vec4f(input.worldBitangent.xyz * 0.5 + 0.5, 1.0);
+      color = vec4f(input.worldBitangent.xyz * 0.5 + 0.5, 1.0);
     }
     case DEBUG_GV_SHADE_NORMAL: {
-      out.color = vec4f(normal.xyz * 0.5 + 0.5, 1.0);
+      color = vec4f(s.normal * 0.5 + 0.5, 1.0);
     }
     case DEBUG_GV_POSITION_WS: {
-      out.color = vec4f(fract(input.worldPos.xyz), 1.0);
+      color = vec4f(fract(input.worldPos.xyz), 1.0);
     }
     case DEBUG_GV_DEPTH: {
-      out.color = vec4f(vec3f(fract(out.depth)), 1.0);
+      color = vec4f(vec3f(fract(linearizeDepthReversedZ(input.position.z, view.near, view.far))), 1.0);
     }
     // #endregion
 
     // #region Vertex attributes
     case DEBUG_V_COLOR0: {
-      out.color = vec4f(input.vertColor.xyz, 1.0);
-    }
-    case DEBUG_V_COLOR1: {
-      //
+      color = vec4f(input.vertColor.xyz, 1.0);
     }
     case DEBUG_V_UV0: {
-      out.color = vec4f(fract(uvBase.xy), 0.0, 1.0);
+      color = vec4f(fract(s.uvBase.xy), 0.0, 1.0);
     }
     case DEBUG_V_UV1: {
-      out.color = vec4f(fract(uvBase.zw), 0.0, 1.0);
+      color = vec4f(fract(s.uvBase.zw), 0.0, 1.0);
     }
     case DEBUG_V_DEFORM: {
       if (material.deformWave1.w > 0) {
-        out.color = vec4f(1.0, 0.0, 1.0, 1.0);
+        color = vec4f(1.0, 0.0, 1.0, 1.0);
       }
     }
     // #endregion
-    default: {
-
-    }
+    default: {}
   }
+  if (color.a < 0.0) {
+    discard;
+  }
+  var out: DebugOutput;
+  out.color = color;
   return out;
 }
 

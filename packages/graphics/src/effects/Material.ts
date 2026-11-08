@@ -118,6 +118,22 @@ export class Material implements Ownable {
   }
 
   /**
+   * The forward effect, or the first registered variant of materials without one (e.g. materials that only render
+   * into a GBuffer). Meant for properties all variants share, like whether the program reads per instance transforms.
+   */
+  public get primaryEffect(): Effect | null {
+    const forward = this.getEffect(RenderVariant.Forward)
+    if (forward) {
+      return forward
+    }
+    // through getEffect, which proxies of the material may override
+    for (const variant in this.effects) {
+      return this.getEffect(variant as RenderVariant)
+    }
+    return null
+  }
+
+  /**
    * Collection of managed input blocks
    */
   protected readonly inputs = new ProgramInputBlockCollection()

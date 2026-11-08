@@ -15,20 +15,20 @@ import {
   type RenderContext,
   type RenderPass,
 } from '@gglib/render'
-import type { MsaaResolver } from './MsaaResolve'
 
 // Fork of the gglib GeometryPass (packages/render/src/passes/GeometryPass.ts) for the viewer pipeline.
 // Differences:
 // - `channels` may be empty: a depth only pass (e.g. shadow maps). The viewport then follows the depth target.
 // - `variant` selects the material effect variant (RenderVariant) the list is collected and drawn with.
 //   Render lists are cached per (mode, variant), so passes with the same mode and variant share one list.
+// - single sample only, no MSAA resolve (the viewer pipeline has no MSAA, plan phase 6)
 
 /**
  * Describes a render target of the {@link GeometryPass}
  */
 export interface GeometryPassChannel {
   /**
-   * Channel the geometry is rendered into (usually multisampled)
+   * Channel the geometry is rendered into
    */
   render: RenderChannel
   /**
@@ -40,14 +40,6 @@ export interface GeometryPassChannel {
    * Blend state of the channel. Defaults to opaque.
    */
   blend?: BlendState
-  /**
-   * Single sampled channel to resolve the output into. If not set, the output is not resolved.
-   */
-  resolve?: RenderChannel | null
-  /**
-   * Custom resolver. If not set, the hardware resolve (average) is used.
-   */
-  resolver?: MsaaResolver
 }
 
 export interface GeometryPassOptions {
@@ -65,7 +57,7 @@ export interface GeometryPassOptions {
    */
   channels: GeometryPassChannel[]
   /**
-   * The depth target. Defaults to {@link RenderChannel.DepthMsaa}
+   * The depth target
    */
   depth: RenderChannel
   /**
@@ -84,7 +76,7 @@ export interface GeometryPassOptions {
 }
 
 /**
- * Renders a geometry list into a set of (multisampled) render targets and resolves them.
+ * Renders a geometry list into a set of render targets.
  * Covers the opaque case (cleared targets) as well as the transparent case (render on top of existing targets).
  */
 export class GeometryPass implements RenderPass {
@@ -106,8 +98,6 @@ export class GeometryPass implements RenderPass {
 
   private depthResource: FrameResource
   private renderResources: FrameResource[] = []
-  private resolveResources: Array<FrameResource | null> = []
-  private resolver: Array<MsaaResolver | null> = []
   private frame: FrameGraph<RenderPass>
   // whether clearing and drawing can share one render pass: all targets are cleared, or none
   private singlePass: boolean
@@ -117,13 +107,12 @@ export class GeometryPass implements RenderPass {
     this.list = options?.list ?? RenderListMode.Opaque
     this.variant = options?.variant ?? RenderVariant.Forward
     this.channels = options?.channels ?? []
-    this.depth = options?.depth ?? RenderChannel.DepthMsaa
+    this.depth = options?.depth ?? RenderChannel.Depth
     this.clearDepth = options?.clearDepth ?? false
     this.inputs = options?.inputs ?? []
     this.descriptors = options?.descriptors ?? null
     this.hasClear = this.clearDepth || this.channels.some((it) => !!it.clear)
     this.singlePass = !this.hasClear || (this.clearDepth && this.channels.every((it) => !!it.clear))
-    this.resolver = this.channels.map((it) => it.resolver ?? null)
   }
 
   public setup(frame: FrameGraph<RenderPass>, ctx: RenderContext): void {
@@ -150,7 +139,6 @@ export class GeometryPass implements RenderPass {
     for (let i = 0; i < this.channels.length; i++) {
       const channel = this.channels[i]
       this.renderResources[i] = channel.clear ? frame.write(channel.render) : frame.modifyInPlace(channel.render)
-      this.resolveResources[i] = channel.resolve ? frame.write(channel.resolve) : null
     }
   }
 
@@ -159,15 +147,6 @@ export class GeometryPass implements RenderPass {
    */
   private isLastUse(resource: FrameResource) {
     return !resource.exported && this.frame.nodes[resource.lastUse]?.pass === this
-  }
-
-  /**
-   * Whether a later pass overwrites the resolved channel without reading it, so resolving here is wasted work
-   */
-  private isOverwritten(resource: FrameResource) {
-    // passes that modify the resource in place read the resolved content, so they don't count
-    const writer = resource.writer
-    return !!writer && writer.pass !== this && !writer.culled
   }
 
   public render(ctx: RenderContext): void {
@@ -195,25 +174,17 @@ export class GeometryPass implements RenderPass {
   }
 
   /**
-   * Clears, draws and resolves in one render pass. Multisampled targets that no later pass uses are discarded,
-   * so tile based GPUs never write their samples to memory
+   * Clears and draws in one render pass. Targets that no later pass uses are discarded, so they are never stored
    */
   private renderSinglePass(ctx: RenderContext) {
     const pass = ctx.device.renderPass
     const targets = this.renderResources
-    const resolves = this.resolveResources
-    const resolvers = this.resolver
 
     pass.setDepthTarget(this.depthResource.texture)
     pass.setDepthDiscard(this.isLastUse(this.depthResource))
-    let hasHardwareResolve = false
     for (let i = 0; i < this.channels.length; i++) {
-      const resolve = resolves[i] && !this.isOverwritten(resolves[i]) ? resolves[i] : null
-      const hardware = !!resolve && !resolvers[i]
-      hasHardwareResolve ||= hardware
-      pass.setRenderTarget(i, targets[i].texture, 0, 0, hardware ? resolve.texture : null)
-      // a custom resolver reads the samples after the pass
-      pass.setDiscard(i, this.isLastUse(targets[i]) && !(resolve && resolvers[i]))
+      pass.setRenderTarget(i, targets[i].texture)
+      pass.setDiscard(i, this.isLastUse(targets[i]))
       pass.setRenderBlend(i, this.channels[i].blend ?? BlendState.Opaque)
       if (this.channels[i].clear) {
         pass.setClearColor(i, this.channels[i].clear)
@@ -225,9 +196,6 @@ export class GeometryPass implements RenderPass {
     }
     pass.setDepthState(ctx.view.camera.reversedZ ? DepthState.GreaterEqual : DepthState.LessEqual)
     pass.render(ctx.renderer.getList(this.list, ctx))
-    if (hasHardwareResolve) {
-      pass.resolve()
-    }
     pass.submit()
 
     pass.setDepthTarget(null)
@@ -235,15 +203,6 @@ export class GeometryPass implements RenderPass {
     for (let i = 0; i < targets.length; i++) {
       pass.setRenderTarget(i, null)
     }
-
-    // custom resolve
-    for (let i = 0; i < targets.length; i++) {
-      if (resolves[i] && resolvers[i] && !this.isOverwritten(resolves[i])) {
-        resolvers[i].resolve(pass, targets[i].texture, resolves[i].texture)
-        pass.setRenderTarget(0, null)
-      }
-    }
-    pass.submit()
   }
 
   /**
@@ -282,36 +241,8 @@ export class GeometryPass implements RenderPass {
 
     pass.setDepthTarget(null)
     pass.setDepthState(DepthState.Disabled)
-    // #endregion
-
-    // #region Resolve
-    {
-      const resolves = this.resolveResources
-      const resolvers = this.resolver
-      let hasHardwareResolve = false
-      for (let i = 0; i < targets.length; i++) {
-        if (resolves[i] && !resolvers[i]) {
-          pass.setRenderTarget(i, targets[i].texture, 0, 0, resolves[i].texture)
-          hasHardwareResolve = true
-        } else {
-          pass.setRenderTarget(i, null)
-        }
-      }
-      if (hasHardwareResolve) {
-        pass.resolve()
-      }
-      for (let i = 0; i < targets.length; i++) {
-        pass.setRenderTarget(i, null)
-      }
-
-      // custom resolve
-      for (let i = 0; i < targets.length; i++) {
-        if (resolves[i] && resolvers[i]) {
-          resolvers[i].resolve(pass, targets[i].texture, resolves[i].texture)
-          pass.setRenderTarget(0, null)
-        }
-      }
-      pass.submit()
+    for (let i = 0; i < targets.length; i++) {
+      pass.setRenderTarget(i, null)
     }
     // #endregion
   }

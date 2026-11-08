@@ -22,7 +22,7 @@ const LIGHTINGMODEL_TRANSMITTANCE: u32 = 1u;
 ${GBUFFER_WGSL}
 
 struct DebugParams {
-  values: vec4f, // x = mode
+  values: vec4f, // x = mode, y = camera far plane
 };
 
 @group(0) @binding(0) var<uniform> params: DebugParams;
@@ -38,7 +38,9 @@ fn display(c: vec3f) -> vec3f {
 @fragment
 fn fs_main(in: FragmentInput) -> @location(0) vec4f {
   let p = vec2i(in.position.xy);
-  if (textureLoad(linearDepth, p, 0).r <= 0.0) {
+  // no geometry: 0 from the GBuffer clear, or the far plane where the sky wrote it
+  let depth = textureLoad(linearDepth, p, 0).r;
+  if (depth <= 0.0 || depth >= params.values.y * 0.9999) {
     return vec4f(0.0, 0.0, 0.0, 1.0);
   }
   let s = decodeGBuffer(textureLoad(gbufferA, p, 0), textureLoad(gbufferB, p, 0), textureLoad(gbufferC, p, 0));
@@ -62,14 +64,15 @@ export interface GBufferDebugPassOptions {
   b: RenderChannel
   c: RenderChannel
   /**
-   * Linear depth written with the gbuffer, zero where no geometry was rendered
+   * Scene linear depth, zero or the far plane where no geometry was rendered
    */
   linearDepth: RenderChannel
   mode?: GBufferDebugMode
+  enabled?: boolean
 }
 
 /**
- * Shows a decoded gbuffer attribute in place of the final color (single sample gbuffer)
+ * Shows a decoded gbuffer attribute in place of the final color
  */
 export class GBufferDebugPass implements RenderPass {
   public name: string = 'GBuffer Debug'
@@ -86,6 +89,7 @@ export class GBufferDebugPass implements RenderPass {
   public constructor(device: Device, options: GBufferDebugPassOptions) {
     this.options = options
     this.mode = options.mode ?? 'normal'
+    this.enabled = options.enabled ?? this.enabled
     device.ready.then(() => {
       this.program = device.createShaderModule({ name: 'GBuffer Debug', wgsl: { source: DEBUG_WGSL } }).program.clone()
     })
@@ -110,6 +114,7 @@ export class GBufferDebugPass implements RenderPass {
     const target = this.target.texture
     pass.flush()
     this.params[0] = GBufferDebugModes.indexOf(this.mode)
+    this.params[1] = ctx.view.camera.far
     this.program.mustSet('params.values', this.params)
     this.program.mustSet('gbufferA', this.inputs[0].texture)
     this.program.mustSet('gbufferB', this.inputs[1].texture)

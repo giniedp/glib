@@ -13,11 +13,13 @@ import {
   type ShaderModuleOptions,
 } from '@gglib/graphics'
 import { vec4 } from '@gglib/math'
-import { ENABLE_GBUFFER_EFFECTS } from '../constants'
 import { TERRAIN_PATCH_SHADER as WGSL } from './TerrainPatchMaterial.wgsl'
-import { InputBlocks, MaterialLayerMasks } from './common'
+import { createDebugEffect, InputBlocks, MaterialLayerMasks, NwRenderVariant } from './common'
 
-export function terrainPatchShaderOptions(fragmentEntry: string = 'fs_main'): ShaderModuleOptions {
+/**
+ * @param fragmentEntry - `fs_gbuffer` (default, opaque terrain is only drawn into the GBuffer) or `fs_debug`
+ */
+export function terrainPatchShaderOptions(fragmentEntry: string = 'fs_gbuffer'): ShaderModuleOptions {
   return {
     name: `Terrain Patch Shader (${fragmentEntry})`,
     wgsl: {
@@ -68,9 +70,10 @@ export const TerrainPatchMaterialSchema = {
 
 export class TerrainPatchMaterial extends MaterialWithSchema(TerrainPatchMaterialSchema) {
   protected override configure(): void {
+    // no forward effect: opaque terrain is drawn into the GBuffer and lit by the deferred lighting
     super.configure({
       name: 'Terrain Patch Material',
-      effect: terrainPatchEffectOptions(),
+      effect: null,
       meta: {},
     })
 
@@ -82,12 +85,9 @@ export class TerrainPatchMaterial extends MaterialWithSchema(TerrainPatchMateria
     this.HeightMapUvTransform = vec4(1, 1, 0, 0)
     this.HeightMapUvTransformCoarse = vec4(1, 1, 0, 0)
 
-    this.effect.cullState = CullState.None
-
-    if (ENABLE_GBUFFER_EFFECTS) {
-      const gbuffer = new Effect(this.device, terrainPatchEffectOptions('fs_gbuffer'))
-      gbuffer.cullState = CullState.None
-      this.setEffect(RenderVariant.GBuffer, gbuffer)
-    }
+    const gbuffer = new Effect(this.device, terrainPatchEffectOptions('fs_gbuffer'))
+    gbuffer.cullState = CullState.None
+    this.setEffect(RenderVariant.GBuffer, gbuffer)
+    this.setEffect(NwRenderVariant.Debug, createDebugEffect(this.device, terrainPatchEffectOptions('fs_debug'), gbuffer))
   }
 }

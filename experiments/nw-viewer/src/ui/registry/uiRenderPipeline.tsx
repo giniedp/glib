@@ -1,15 +1,24 @@
 import { TonemapOperator } from '@gglib/effects'
 import type { Device, GpuTimer } from '@gglib/graphics'
-import { BloomPass, FunctionPass, GroupPass, RenderPipeline, TonemapPass, type RenderPass } from '@gglib/render'
+import {
+  BloomPass,
+  FunctionPass,
+  FxaaPass,
+  GroupPass,
+  RenderPipeline,
+  TonemapPass,
+  type RenderPass,
+} from '@gglib/render'
 import { For, Show, type JSX } from 'solid-js'
 import { BoolWidget, Group, PollWidget, ScalarWidget, SelectWidget } from 'tweak-ui'
-import { getPassInfo, getSwitchInfo } from '../../graphics/PassInfo'
+import { getPassInfo } from '../../graphics/PassInfo'
 import { FilmMappingPass } from '../../graphics/passes/filmmapping/FilmMappingPass'
 import { GBufferDebugModes, GBufferDebugPass } from '../../graphics/passes/gbuffer/GBufferDebugPass'
 import { LightingPass } from '../../graphics/passes/lighting/LightingPass'
 import { LightingDebugModes } from '../../graphics/passes/lighting/LightingPass.wgsl'
-import { AmbientOcclusionApplyPass } from '../../graphics/passes/ssao/AmbientOcclusionApplyPass'
 import { XeGtaoPass } from '../../graphics/passes/ssao/XeGtaoPass'
+import { SmaaDebugModes, SmaaPass } from '../../graphics/passes/smaa/SmaaPass'
+import { Cmaa2DebugModes, Cmaa2Pass } from '../../graphics/passes/cmaa2/Cmaa2Pass'
 import icon from '../icons/list-tree.svg?raw'
 import { usePanel, type UiPanel } from '../panel'
 import { type UiAnnotation } from './types'
@@ -21,8 +30,6 @@ const passTimers = new WeakMap<RenderPass, GpuTimer>()
 
 /**
  * The render pipeline as a tree of the passes that run:
- * - groups switched by the pipeline modes (MSAA, forward/deferred) show only their active variant and its mode,
- *   they are controlled by the config, not here
  * - only passes the frame works without (marked optional by the pipeline, see graphics/PassInfo) can be turned off
  * - input passes are listed read only
  */
@@ -36,9 +43,6 @@ function PassList(props: { passes: RenderPass[]; device: Device }) {
 }
 
 function PassEntry(props: { pass: RenderPass; device: Device }): JSX.Element {
-  if (getSwitchInfo(props.pass)) {
-    return <SwitchEntry pass={props.pass} device={props.device} />
-  }
   if (props.pass instanceof GroupPass) {
     return <GroupEntry pass={props.pass} device={props.device} />
   }
@@ -46,60 +50,6 @@ function PassEntry(props: { pass: RenderPass; device: Device }): JSX.Element {
     return <PollWidget label={props.pass.name} value={getPassInfo(props.pass)?.note ?? 'inputs'} />
   }
   return <LeafEntry pass={props.pass} device={props.device} />
-}
-
-/**
- * Follows the active variants of nested switched groups
- */
-function resolveSwitch(pass: RenderPass): { modes: string[]; passes: RenderPass[] } {
-  const modes: string[] = []
-  let current = pass
-  for (let info = getSwitchInfo(current); info; info = getSwitchInfo(current)) {
-    const active = info.variants.find((it) => it.group.enabled)
-    if (!active) {
-      return { modes, passes: [] }
-    }
-    modes.push(active.label)
-    const passes = active.group.passes
-    if (passes.length !== 1 || !getSwitchInfo(passes[0])) {
-      return { modes, passes }
-    }
-    current = passes[0]
-  }
-  return { modes, passes: [] }
-}
-
-/**
- * A group switched by the pipeline modes. Hidden when the active variant has no passes (e.g. the forward AO in
- * deferred mode, where the opaque stage computes AO).
- */
-function SwitchEntry(props: { pass: RenderPass; device: Device }) {
-  const panel = usePanel()
-  const resolved = () => panel.pull(() => resolveSwitch(props.pass))
-  const mode = () => resolved().modes.join(' · ')
-  // a single pass is shown as the entry itself, not nested in a group of the same name
-  const single = () => {
-    const passes = resolved().passes
-    return passes.length === 1 && !(passes[0] instanceof GroupPass) && !(passes[0] instanceof FunctionPass)
-      ? passes[0]
-      : null
-  }
-  return (
-    <Show when={resolved().passes.length > 0}>
-      <Show
-        when={single()}
-        keyed
-        fallback={
-          <Group title={props.pass.name} collapsible defaultCollapsed>
-            <PollWidget label="mode" value={mode()} />
-            <PassList passes={resolved().passes} device={props.device} />
-          </Group>
-        }
-      >
-        {(pass) => <LeafEntry pass={pass} device={props.device} mode={mode()} />}
-      </Show>
-    </Show>
-  )
 }
 
 function GroupEntry(props: { pass: GroupPass; device: Device }) {
@@ -111,11 +61,10 @@ function GroupEntry(props: { pass: GroupPass; device: Device }) {
   )
 }
 
-function LeafEntry(props: { pass: RenderPass; device: Device; mode?: string }) {
+function LeafEntry(props: { pass: RenderPass; device: Device }) {
   const panel = usePanel()
   return (
     <Group title={props.pass.name} collapsible defaultCollapsed>
-      <Show when={props.mode}>{(mode) => <PollWidget label="mode" value={mode()} />}</Show>
       <PassFlags pass={props.pass} device={props.device} />
       {renderPassFields(panel, props.pass)}
     </Group>
@@ -197,8 +146,42 @@ function renderPassFields(panel: UiPanel, pass: RenderPass): JSX.Element {
       </>
     )
   }
-  if (pass instanceof AmbientOcclusionApplyPass) {
-    return <ScalarWidget {...panel.bind(pass, 'strength')} min={0} max={2} step={0.01} range />
+  if (pass instanceof SmaaPass) {
+    return (
+      <>
+        <SelectWidget {...panel.bind(pass, 'preset')} options={['low', 'medium', 'high', 'ultra']} />
+        <SelectWidget {...panel.bind(pass, 'debug')} options={[...SmaaDebugModes]} />
+        <ScalarWidget {...panel.bind(pass, 'threshold')} min={0.01} max={0.3} step={0.005} range />
+        <ScalarWidget {...panel.bind(pass, 'maxSearchSteps')} min={1} max={64} step={1} range />
+        <ScalarWidget {...panel.bind(pass, 'maxSearchStepsDiag')} min={0} max={20} step={1} range />
+        <ScalarWidget {...panel.bind(pass, 'cornerRounding')} min={0} max={100} step={1} range />
+        <BoolWidget {...panel.bind(pass, 'predication')} />
+        <ScalarWidget {...panel.bind(pass, 'predicationThreshold')} min={0} max={0.1} step={0.001} range />
+        <ScalarWidget {...panel.bind(pass, 'predicationScale')} min={1} max={5} step={0.1} range />
+        <ScalarWidget {...panel.bind(pass, 'predicationStrength')} min={0} max={1} step={0.01} range />
+      </>
+    )
+  }
+  if (pass instanceof Cmaa2Pass) {
+    return (
+      <>
+        <SelectWidget {...panel.bind(pass, 'preset')} options={['low', 'medium', 'high', 'ultra']} />
+        <SelectWidget {...panel.bind(pass, 'debug')} options={[...Cmaa2DebugModes]} />
+        <ScalarWidget {...panel.bind(pass, 'threshold')} min={0.01} max={0.3} step={0.005} range />
+        <ScalarWidget {...panel.bind(pass, 'localContrastAdaptation')} min={0} max={0.5} step={0.01} range />
+        <ScalarWidget {...panel.bind(pass, 'simpleShapeBluriness')} min={0} max={0.5} step={0.01} range />
+        <BoolWidget {...panel.bind(pass, 'extraSharpness')} />
+      </>
+    )
+  }
+  if (pass instanceof FxaaPass) {
+    return (
+      <>
+        <ScalarWidget {...panel.bind(pass, 'thresholdMin')} min={0} max={0.1} step={0.001} range />
+        <ScalarWidget {...panel.bind(pass, 'thresholdMax')} min={0.03} max={0.35} step={0.001} range />
+        <ScalarWidget {...panel.bind(pass, 'quality')} label="subpix" min={0} max={1} step={0.01} range />
+      </>
+    )
   }
   if (pass instanceof BloomPass) {
     return (

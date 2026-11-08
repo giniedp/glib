@@ -134,7 +134,7 @@ export class CullingSystem extends GameSystem implements SceneSource {
         if (!material || material.noRender) {
           continue
         }
-        if (material.isTransparent || !material.effect?.program?.perInstanceTransformBlock) {
+        if (material.isTransparent || !material.primaryEffect?.program?.perInstanceTransformBlock) {
           return false
         }
         parts++

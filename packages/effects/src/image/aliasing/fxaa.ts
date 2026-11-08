@@ -6,6 +6,7 @@ import {
   Program,
   RenderEncoder,
   ResourceOwnership,
+  SamplerState,
   ShaderModuleOptions,
   Texture,
   typedProgramInputs,
@@ -45,8 +46,17 @@ export class FxaaEffect implements Ownable {
 
   public textureIn: Texture
   public textureOut: Texture | DeviceOutput
+  /**
+   * Minimum local contrast for an edge, keeps dark areas untouched (FXAA 3.11 edgeThresholdMin, 0.0833 - 0.0312)
+   */
   public thresholdMin: number = 0.0312
+  /**
+   * Local contrast relative to the brightest neighbor for an edge (FXAA 3.11 edgeThreshold, 0.333 - 0.063)
+   */
   public thresholdMax: number = 0.125
+  /**
+   * Sub-pixel aliasing removal (FXAA 3.11 subpix): 1.0 softest, 0.75 default, 0.5 sharper, 0.25 almost off
+   */
   public quality: number = 0.75
 
   public constructor(device: Device) {
@@ -64,6 +74,8 @@ export class FxaaEffect implements Ownable {
     params.thresholdMax = this.thresholdMax
     params.quality = this.quality
     params.texture = this.textureIn
+    // FXAA relies on bilinear fetches (edge search between two rows, final sub-pixel offset)
+    params.sampler = SamplerState.LinearClamp
     this.program.applyBlocks(params.blocks)
     this.program.commit()
 

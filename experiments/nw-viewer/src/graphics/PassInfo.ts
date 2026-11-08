@@ -1,4 +1,4 @@
-import type { GroupPass, RenderPass } from '@gglib/render'
+import type { RenderPass } from '@gglib/render'
 
 /**
  * How the pipeline panel shows a pass. Set by the pipeline definition, which knows what the frame depends on.
@@ -15,16 +15,7 @@ export interface PassInfo {
   note?: string
 }
 
-/**
- * A group whose variants are switched by the pipeline modes (MSAA, forward/deferred). Only the active variant is
- * shown, its toggle belongs to the switch.
- */
-export interface PassSwitchInfo {
-  variants: Array<{ label: string; group: GroupPass }>
-}
-
 const passInfos = new WeakMap<object, PassInfo>()
-const switchInfos = new WeakMap<object, PassSwitchInfo>()
 
 /**
  * Annotates a pass for the pipeline panel
@@ -49,16 +40,4 @@ export function optionalPass<T extends RenderPass>(pass: T, toggle?: { enabled: 
 
 export function getPassInfo(pass: RenderPass): PassInfo | null {
   return passInfos.get(pass) ?? null
-}
-
-/**
- * Registers a group whose variants are switched by the pipeline modes
- */
-export function describeSwitch(group: GroupPass, variants: PassSwitchInfo['variants']): GroupPass {
-  switchInfos.set(group, { variants })
-  return group
-}
-
-export function getSwitchInfo(pass: RenderPass): PassSwitchInfo | null {
-  return switchInfos.get(pass) ?? null
 }

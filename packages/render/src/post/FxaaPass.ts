@@ -5,10 +5,20 @@ import { RenderChannel } from '../RenderChannel'
 import { RenderContext, RenderPass } from '../Types'
 
 export interface FxaaOptions {
+  name?: string
   order?: number
   enabled?: boolean
+  /**
+   * See {@link FxaaEffect.thresholdMin}
+   */
   thresholdMin?: number
+  /**
+   * See {@link FxaaEffect.thresholdMax}
+   */
   thresholdMax?: number
+  /**
+   * Sub-pixel aliasing removal, see {@link FxaaEffect.quality}
+   */
   quality?: number
 }
 export class FxaaPass implements RenderPass, Ownable {
@@ -36,6 +46,7 @@ export class FxaaPass implements RenderPass, Ownable {
       this.effect = this.ownership.adopt(new FxaaEffect(device))
     }
 
+    this.name = options.name ?? this.name
     this.enabled = options.enabled ?? this.enabled
     this.thresholdMin = options.thresholdMin ?? this.thresholdMin
     this.thresholdMax = options.thresholdMax ?? this.thresholdMax

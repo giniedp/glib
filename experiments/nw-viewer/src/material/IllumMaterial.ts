@@ -14,12 +14,13 @@ import {
   TRUE,
 } from '@gglib/graphics'
 import { mat4Identity, vec2, vec4 } from '@gglib/math'
-import { ENABLE_GBUFFER_EFFECTS, IMPOSTOR_FADE_RANGE, IMPOSTOR_VISIBILITY_START } from '../constants'
+import { IMPOSTOR_FADE_RANGE, IMPOSTOR_VISIBILITY_START } from '../constants'
 import { type NwMaterialProps } from './GltfExtension'
 import SCHEMA from './IllumMaterial.meta'
 import WGSL from './IllumMaterial.wgsl'
 import { TextureModifier } from './TexMod'
 import {
+  createDebugEffect,
   createEmissiveEffect,
   type FeatureFlag,
   getShaderConstants,
@@ -48,6 +49,7 @@ const ILLUM_FRAGMENT_ENTRY = {
   forward: 'fs_main',
   gbuffer: 'fs_gbuffer',
   emissive: 'fs_emissive',
+  debug: 'fs_debug',
 } as const
 
 export function illumShaderOptions(
@@ -316,11 +318,15 @@ export class IllumMaterial extends MaterialWithSchema(SCHEMA) {
     this.DeformWave1 = deformWave1
 
     // opaque surfaces also write the gbuffer (blended surfaces and decals stay forward for now)
-    if (ENABLE_GBUFFER_EFFECTS && !this.isTransparent && this.EnabledAlphaBlend !== TRUE) {
+    if (!this.isTransparent && this.EnabledAlphaBlend !== TRUE) {
       const gbuffer = new Effect(this.device, illumEffectOptions(shaderConst, ILLUM_FRAGMENT_ENTRY.gbuffer))
       gbuffer.cullState = this.effect.cullState
       gbuffer.blendState = BlendState.Opaque
       this.setEffect(RenderVariant.GBuffer, gbuffer)
+      this.setEffect(
+        NwRenderVariant.Debug,
+        createDebugEffect(this.device, illumEffectOptions(shaderConst, ILLUM_FRAGMENT_ENTRY.debug), gbuffer),
+      )
       if (hasEmittance(this.EmissiveColor)) {
         this.setEffect(
           NwRenderVariant.Emissive,
