@@ -196,6 +196,11 @@ struct FragmentInput {
   @location(11)      dissolve      : f32,
 };
 
+// decal z-fighting remedy of the game (%_VT_DEPTH_OFFSET for shaders with the "Decal" script flag, modificatorvt.cfi):
+// r_ZFightingExtrude along the object space normal and r_ZFightingDepthScale on the clip position
+const DECAL_Z_EXTRUDE: f32 = 0.001;
+const DECAL_Z_SCALE: f32 = 0.995;
+
 @vertex
 fn vs_main(input : VertexInput) -> FragmentInput {
 
@@ -215,9 +220,17 @@ fn vs_main(input : VertexInput) -> FragmentInput {
     vPos = vertexModify(vmod);
   }
 
+  if (DECAL) {
+    vPos += input.normal.xyz * DECAL_Z_EXTRUDE;
+  }
+
   let worldPos = modelMatrix * vec4f(vPos, 1.0);
   let viewPos  = view.viewMatrix * worldPos;
   var clipPos  = view.projectionMatrix * viewPos;
+  if (DECAL) {
+    // scales the view distance by DECAL_Z_SCALE, pulls the decal towards the camera
+    clipPos = clipPos * DECAL_Z_SCALE + vec4f(0.0, 0.0, (1.0 - DECAL_Z_SCALE) * view.projectionMatrix[3][2], 0.0);
+  }
   let toEye    = normalize(view.cameraPosition - worldPos.xyz);
 
   // --- TBN
@@ -862,6 +875,36 @@ fn fs_gbuffer(input: FragmentInput) -> GBufferOutput {
   g.lightingModel = s.lightingModel;
   g.transmittance = select(vec3f(0.0), s.shadingBack, s.lightingModel == LIGHTINGMODEL_TRANSMITTANCE);
   return encodeGBuffer(g, linearizeDepthReversedZ(input.position.z, view.near, view.far));
+}
+
+struct GBufferDecalOutput {
+  @location(0) a: vec4f,
+  @location(1) b: vec4f,
+  @location(2) c: vec4f,
+};
+
+// %DECAL materials blended into the GBuffer after the opaque surfaces (ZPass decal list, commonzpass.cfi):
+// SRC_ALPHA / INV_SRC_ALPHA with color mask RGB on A, B and C (the effect's renderBlends / renderMasks), the alpha of
+// each target is its blend factor (SetGBufferBlending(fAlpha, fAlpha * DecalDiffuseOpacity, fAlpha)). The .w channels
+// of the surface below (lighting model, occlusion, chroma) are kept. %DECAL: reflectance as its luminance.
+@fragment
+fn fs_gbuffer_decal(input: FragmentInput) -> GBufferDecalOutput {
+  let s = illumSurface(input);
+  var g: GBufferSurface;
+  g.normal        = s.normal;
+  g.albedo        = s.albedo;
+  g.reflectance   = vec3f(dot(s.specular, vec3f(0.2126, 0.7152, 0.0722)));
+  g.smoothness    = s.gloss;
+  g.occlusion     = 1.0;
+  g.lightingModel = LIGHTINGMODEL_STANDARD;
+  g.transmittance = vec3f(0.0);
+  let e = encodeGBuffer(g, 0.0);
+  let alpha = saturate(s.alpha);
+  var out: GBufferDecalOutput;
+  out.a = vec4f(e.a.rgb, alpha);
+  out.b = vec4f(e.b.rgb, alpha * material.decalDiffuseOpacity);
+  out.c = vec4f(e.c.rgb, alpha);
+  return out;
 }
 
 // =============================================================

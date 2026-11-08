@@ -5,6 +5,7 @@ import {
   CommonInputs,
   FALSE,
   RenderVariant,
+  StencilState,
   TextureUsage,
   TRUE,
   type Device,
@@ -27,6 +28,7 @@ import {
 import { InputSlots, MaterialLayerMasks, NwRenderVariant } from '../material'
 import { GBUFFER_DESCRIPTORS, GBufferChannel } from './GBufferChannels'
 import { describePass, optionalPass } from './PassInfo'
+import { DecalReceiverDebugPass } from './passes/gbuffer/DecalReceiverDebugPass'
 import { GBufferDebugPass } from './passes/gbuffer/GBufferDebugPass'
 import { CopyPass, NwCopyChannel } from './passes/CopyPass'
 import { GeometryPass } from './passes/GeometryPass'
@@ -45,6 +47,43 @@ const WATER_VOLUME_LIST = new RenderListMode(RenderSortPriority.Depth, RenderIte
 })
 const TRANSPARENT_LIST = new RenderListMode(RenderSortPriority.Depth, RenderItemFlags.Transparent, {
   excludeLayers: MaterialLayerMasks.WaterVolume,
+})
+
+/**
+ * Surfaces that receive projected decals: terrain and mesh components with acceptDecals (plan 7.4)
+ */
+const DECAL_RECEIVER_LAYERS = MaterialLayerMasks.DecalReceiver | MaterialLayerMasks.Terrain
+/**
+ * Stencil bit of the decal receivers, written by the GBuffer pass, tested by the decal passes
+ */
+export const DECAL_RECEIVER_STENCIL = 1
+
+/**
+ * Opaque items of the GBuffer pass, each draw sets the receiver stencil reference from its layer
+ */
+const GBUFFER_LIST = new RenderListMode(RenderSortPriority.State, RenderItemFlags.Opaque, {
+  excludeLayers: MaterialLayerMasks.MeshDecal,
+  stencilReference: (layer) => (layer & DECAL_RECEIVER_LAYERS ? DECAL_RECEIVER_STENCIL : 0),
+})
+
+/**
+ * %DECAL meshes (roads, patches), blended into the GBuffer after all opaque surfaces like the game's ZPass decal list.
+ * The game sorts that list by object sort priority, then state; the viewer has no sort priority yet, so by state.
+ */
+const MESH_DECAL_LIST = new RenderListMode(RenderSortPriority.State, RenderItemFlags.Opaque, {
+  includeLayers: MaterialLayerMasks.MeshDecal,
+})
+
+/**
+ * Writes the stencil reference of each draw (the receiver bit) where the depth test passes
+ */
+const DECAL_RECEIVER_WRITE = StencilState.get({
+  enable: true,
+  writeMask: DECAL_RECEIVER_STENCIL,
+  frontFunction: 'always',
+  frontDepthPass: 'replace',
+  backFunction: 'always',
+  backDepthPass: 'replace',
 })
 
 /**
@@ -146,6 +185,8 @@ export function createRenderPipeline(device: Device): RenderPipelineOptions {
         linearDepth: RenderChannel.LinearDepth,
       }),
     ),
+    // tints the decal receivers (stencil bit of the GBuffer pass)
+    optionalPass(new DecalReceiverDebugPass(device, { stencilBit: DECAL_RECEIVER_STENCIL })),
   ]
   return { passes }
 }
@@ -162,10 +203,11 @@ function createOpaquePasses(device: Device): RenderPass[] {
   return [
     new GeometryPass({
       name: 'GBufferPass',
-      list: RenderListMode.Opaque,
+      list: GBUFFER_LIST,
       variant: RenderVariant.GBuffer,
       depth: RenderChannel.Depth,
       clearDepth: true,
+      stencil: DECAL_RECEIVER_WRITE,
       descriptors: GBUFFER_DESCRIPTORS,
       channels: [
         { clear: Color.TransparentBlack, render: GBufferChannel.A },
@@ -174,6 +216,22 @@ function createOpaquePasses(device: Device): RenderPass[] {
         { clear: Color.TransparentBlack, render: RenderChannel.LinearDepth },
       ],
     }),
+    // %DECAL meshes blend into A/B/C (their effects set the blend and the RGB mask), no stencil test, depth not written
+    describePass(
+      new GeometryPass({
+        name: 'MeshDecalPass',
+        list: MESH_DECAL_LIST,
+        variant: RenderVariant.GBuffer,
+        depth: RenderChannel.Depth,
+        clearDepth: false,
+        channels: [
+          { clear: null, render: GBufferChannel.A, blend: BlendState.Alpha },
+          { clear: null, render: GBufferChannel.B, blend: BlendState.Alpha },
+          { clear: null, render: GBufferChannel.C, blend: BlendState.Alpha },
+        ],
+      }),
+      { note: 'mesh decals (%DECAL) blended into the GBuffer, like the ZPass decal list of the game' },
+    ),
     // AO before the lighting (plan phase 5), from the depth and the GBuffer normals
     optionalPass(new XeGtaoPass(device, { normals: GBufferChannel.A })),
     new LightingPass(device, {

@@ -60,6 +60,14 @@ export interface EffectOptions {
    * The offset state to be used for this effect
    */
   offsetState?: DepthBiasState
+  /**
+   * Color write masks per render target index, see {@link Effect.renderMasks}
+   */
+  renderMasks?: ReadonlyArray<number | null | undefined>
+  /**
+   * Blend states per render target index, see {@link Effect.renderBlends}
+   */
+  renderBlends?: ReadonlyArray<BlendStateName | BlendState | null | undefined>
 }
 
 /**
@@ -125,6 +133,19 @@ export class Effect implements Disposable, Ownable {
    */
   public renderMasks: ReadonlyArray<number | null | undefined> | null = null
 
+  /**
+   * Blend states per render target index to be enabled on `apply`, for passes with several color targets.
+   * Targets without an entry are not changed. An entry for target 0 takes precedence over {@link blendState}.
+   * Restored to the previous states on `restoreState`.
+   *
+   * @example
+   * ```ts
+   * // the same blend on three GBuffer targets, each blended by its own alpha output
+   * effect.renderBlends = [BlendState.Alpha, BlendState.Alpha, BlendState.Alpha]
+   * ```
+   */
+  public renderBlends: ReadonlyArray<BlendState | null | undefined> | null = null
+
   public get isReady() {
     return this.program.isCompiled
   }
@@ -138,6 +159,7 @@ export class Effect implements Disposable, Ownable {
     blendState?: BlendState
     depthState?: DepthState
     offsetState?: DepthBiasState
+    renderBlends?: Array<BlendState | null>
   }
 
   public constructor(device: Device, options: EffectOptions) {
@@ -149,6 +171,8 @@ export class Effect implements Disposable, Ownable {
     this.blendState = options.blendState ? BlendState.get(options.blendState) : null
     this.depthState = options.depthState ? DepthState.get(options.depthState) : null
     this.offsetState = options.offsetState || null
+    this.renderMasks = options.renderMasks ?? null
+    this.renderBlends = options.renderBlends?.map((it) => (it ? BlendState.get(it) : null)) ?? null
     this.program = this.createProgram(options.program)
   }
 
@@ -229,6 +253,27 @@ export class Effect implements Disposable, Ownable {
         }
       }
     }
+    if (this.renderBlends) {
+      const previous = (restore.renderBlends ||= [])
+      previous.length = this.renderBlends.length
+      for (let i = 0; i < this.renderBlends.length; i++) {
+        const state = this.renderBlends[i]
+        previous[i] = null
+        if (!state) {
+          continue
+        }
+        const current = pass.getRenderBlend(i)
+        if (current !== state) {
+          // target 0 restores the state from before blendState
+          previous[i] = i === 0 && restore.blendState ? restore.blendState : current
+          pass.setRenderBlend(i, state)
+        }
+      }
+      if (previous[0] && restore.blendState) {
+        // restored by renderBlends instead
+        restore.blendState = null
+      }
+    }
     pass.setProgram(this.program)
   }
 
@@ -241,6 +286,9 @@ export class Effect implements Disposable, Ownable {
    * - {@link Effect.blendState}
    * - {@link Effect.depthState}
    * - {@link Effect.offsetState}
+   * - {@link Effect.renderBlends}
+   *
+   * {@link Effect.renderMasks} are reset to write all channels.
    */
   public restoreState(pass: RenderEncoder): void {
     const restore = this.restoreStates
@@ -263,6 +311,13 @@ export class Effect implements Disposable, Ownable {
       for (let i = 0; i < this.renderMasks.length; i++) {
         if (this.renderMasks[i] != null) {
           pass.setRenderMask(i, 0xf)
+        }
+      }
+    }
+    if (this.renderBlends && restore.renderBlends) {
+      for (let i = 0; i < restore.renderBlends.length; i++) {
+        if (restore.renderBlends[i]) {
+          pass.setRenderBlend(i, restore.renderBlends[i])
         }
       }
     }
@@ -311,6 +366,8 @@ export class Effect implements Disposable, Ownable {
       blendState: this.blendState,
       depthState: this.depthState,
       cullState: this.cullState,
+      renderMasks: this.renderMasks,
+      renderBlends: this.renderBlends,
     }
   }
 

@@ -73,6 +73,11 @@ export interface GeometryPassOptions {
    * Descriptors of custom channels this pass writes (registered on the frame graph in setup)
    */
   descriptors?: Record<RenderChannel, Readonly<TextureDescriptor>>
+  /**
+   * Stencil state of the pass, e.g. to write the decal receiver bit. The list sets the reference per draw
+   * (`RenderListLayers.stencilReference`). Defaults to {@link StencilState.Default} (disabled).
+   */
+  stencil?: StencilState
 }
 
 /**
@@ -94,6 +99,7 @@ export class GeometryPass implements RenderPass {
   private clearDepth: boolean
   private inputs: RenderChannel[]
   private descriptors: Record<RenderChannel, Readonly<TextureDescriptor>> | null
+  private stencil: StencilState
   private hasClear: boolean
 
   private depthResource: FrameResource
@@ -111,6 +117,7 @@ export class GeometryPass implements RenderPass {
     this.clearDepth = options?.clearDepth ?? false
     this.inputs = options?.inputs ?? []
     this.descriptors = options?.descriptors ?? null
+    this.stencil = options?.stencil ?? StencilState.Default
     this.hasClear = this.clearDepth || this.channels.some((it) => !!it.clear)
     this.singlePass = !this.hasClear || (this.clearDepth && this.channels.every((it) => !!it.clear))
   }
@@ -158,7 +165,7 @@ export class GeometryPass implements RenderPass {
     pass.flush()
     pass.setAsync(true)
     pass.setCullState(CullState.CullBack)
-    pass.setStencilState(StencilState.Default)
+    pass.setStencilState(this.stencil)
     pass.setViewportState(0, 0, viewport.width, viewport.height)
 
     try {
@@ -169,6 +176,8 @@ export class GeometryPass implements RenderPass {
       }
     } finally {
       ctx.renderVariant = variant
+      pass.setStencilState(StencilState.Default)
+      pass.setStencilReference(0)
     }
     pass.flush()
   }

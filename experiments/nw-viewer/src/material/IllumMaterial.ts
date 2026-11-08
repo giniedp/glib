@@ -1,7 +1,6 @@
 import {
   BlendState,
   CullState,
-  DepthBiasState,
   DepthState,
   Effect,
   type EffectOptions,
@@ -48,6 +47,7 @@ import {
 const ILLUM_FRAGMENT_ENTRY = {
   forward: 'fs_main',
   gbuffer: 'fs_gbuffer',
+  gbufferDecal: 'fs_gbuffer_decal',
   emissive: 'fs_emissive',
   debug: 'fs_debug',
 } as const
@@ -206,11 +206,9 @@ const illum = new MtlUtil('Illum', {
 })
 
 /**
- * Depth bias of decal materials. Reversed Z, so a positive bias moves towards the camera.
- * WebGPU takes an integer constant bias, and with a float depth buffer its unit is tiny for distant
- * geometry, so the slope term does most of the work. (DepthBiasState.Decal has bias 0.5 and no slope, which is 0 on WebGPU.)
+ * Color write mask of the decal targets: RGB, the .w channels of the surface below are kept (game: color mask RGB)
  */
-const DECAL_DEPTH_BIAS = DepthBiasState.get({ enable: true, bias: 1, slopeScale: 1 })
+const DECAL_WRITE_MASK = GPUColorWrite.RED | GPUColorWrite.GREEN | GPUColorWrite.BLUE
 
 export class IllumMaterial extends MaterialWithSchema(SCHEMA) {
   // declared without emit: assigned in configure(), which runs inside the base constructor before field initializers
@@ -317,8 +315,22 @@ export class IllumMaterial extends MaterialWithSchema(SCHEMA) {
     this.DeformWave0 = deformWave0
     this.DeformWave1 = deformWave1
 
-    // opaque surfaces also write the gbuffer (blended surfaces and decals stay forward for now)
-    if (!this.isTransparent && this.EnabledAlphaBlend !== TRUE) {
+    if (shaderFlags.has('DECAL')) {
+      // %DECAL: blended into the GBuffer by the MeshDecalPass, like the game's ZPass decal list (plan 7.5):
+      // one SRC_ALPHA / INV_SRC_ALPHA blend on A, B and C, color mask RGB, depth test without write, the depth offset is
+      // in the vertex shader (DECAL_Z_*). The forward effect is not listed (the item is opaque and has a GBuffer effect).
+      const decal = new Effect(this.device, {
+        ...illumEffectOptions(shaderConst, ILLUM_FRAGMENT_ENTRY.gbufferDecal),
+        renderBlends: [BlendState.Alpha, BlendState.Alpha, BlendState.Alpha],
+        renderMasks: [DECAL_WRITE_MASK, DECAL_WRITE_MASK, DECAL_WRITE_MASK],
+      })
+      decal.cullState = this.effect.cullState
+      decal.depthState = DepthState.GreaterEqualNoWrite
+      this.setEffect(RenderVariant.GBuffer, decal)
+      this.isTransparent = false
+      this.layer = MaterialLayerMasks.Illum | MaterialLayerMasks.MeshDecal
+    } else if (!this.isTransparent && this.EnabledAlphaBlend !== TRUE) {
+      // opaque surfaces also write the gbuffer, blended surfaces stay forward
       const gbuffer = new Effect(this.device, illumEffectOptions(shaderConst, ILLUM_FRAGMENT_ENTRY.gbuffer))
       gbuffer.cullState = this.effect.cullState
       gbuffer.blendState = BlendState.Opaque
@@ -568,7 +580,7 @@ export class IllumMaterial extends MaterialWithSchema(SCHEMA) {
 
     if (attrs.Opacity < 1 || flags.has('DECAL')) {
       let opacity = attrs.Opacity ?? 1
-      this.DecalDiffuseOpacity = opacity
+      // DecalDiffuseOpacity is a public param with default 1 (illum.cfx), the opacity is in DiffuseColor.w
       this.DiffuseColor.w = opacity
       // decals always blend (illum.cfx %DECAL: ZWriteEnable = false), the alpha test only discards faint pixels
       this.isTransparent = !this.EnabledAlphaTest || flags.has('DECAL')
@@ -576,8 +588,8 @@ export class IllumMaterial extends MaterialWithSchema(SCHEMA) {
       this.effect.blendState = BlendState.Alpha
       this.effect.depthState = DepthState.GreaterEqualNoWrite
       if (flags.has('DECAL')) {
-        // decals are coplanar with the surface below, pull them towards the camera to avoid z-fighting
-        this.effect.offsetState = DECAL_DEPTH_BIAS
+        // the forward effect is kept for reference only (decals render in the GBuffer, see the constructor),
+        // the depth offset is in the vertex shader (DECAL_Z_*)
         // keep the linear depth of the surface below (render target 1), AO, fog and soft particles read it
         this.effect.renderMasks = [null, 0]
       }

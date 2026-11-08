@@ -106,7 +106,7 @@ struct NormalParams {
 
 // GBuffer normal in XeGTAO view space (x right, y up, z = linear depth, so z points away from the camera)
 fn loadViewspaceNormal(px: vec2i) -> vec3f {
-  let world = gbufferDecodeNormal(textureLoad(gbufferA, px, 0).xy);
+  let world = gbufferDecodeNormal(textureLoad(gbufferA, px, 0).xyz);
   let n = (normalParams.viewMatrix * vec4f(world, 0.0)).xyz;
   return normalize(vec3f(n.x, n.y, -n.z));
 }

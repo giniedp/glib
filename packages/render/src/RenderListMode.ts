@@ -111,6 +111,17 @@ export interface RenderListLayers {
    * Items with a layer that intersects this mask are skipped. Defaults to none.
    */
   excludeLayers?: number
+  /**
+   * Stencil reference per item, from its layer. The list sets it before each draw, the pass sets the stencil state.
+   * Defaults to none (the reference is not changed).
+   *
+   * @example
+   * ```ts
+   * // decal receivers write stencil 1, all others 0
+   * stencilReference: (layer) => (layer & DecalReceiverLayer ? 1 : 0)
+   * ```
+   */
+  stencilReference?: (layer: number) => number
 }
 
 /**
@@ -130,6 +141,7 @@ export class RenderListMode {
   public readonly includeLayers: number
   public readonly excludeLayers: number
   public readonly excludeVariant: RenderVariant | null
+  public readonly stencilReference: ((layer: number) => number) | null
 
   public constructor(priority: RenderSortPriority, mask: RenderItemFlags, layers?: RenderListLayers) {
     this.mask = mask
@@ -137,6 +149,7 @@ export class RenderListMode {
     this.includeLayers = layers?.includeLayers ?? Number.MAX_SAFE_INTEGER
     this.excludeLayers = layers?.excludeLayers ?? 0
     this.excludeVariant = layers?.excludeVariant ?? null
+    this.stencilReference = layers?.stencilReference ?? null
     this.getKey = this.buildKeyFn(mask, priority)
   }
 

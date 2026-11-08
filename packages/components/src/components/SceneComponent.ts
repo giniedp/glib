@@ -22,6 +22,7 @@ import {
 } from '@gglib/math'
 import type { Model } from '@gglib/model'
 import {
+  addLayerFlags,
   CameraData,
   FrameInfo,
   LayerMask,
@@ -336,9 +337,10 @@ export class SceneComponent implements GameComponent, InitializableComponent, Re
         continue
       }
 
-      // an entity layer overrides the material layer, so entities can be hidden or shown as a group
+      // an entity layer overrides the material layer, so entities can be hidden or shown as a group,
+      // the entity layer flags are added on top.
       // items are cached for all layers, the visibility mask is applied per frame when collecting
-      const layer = entity.layer ?? material.layer ?? LayerMask.All
+      const layer = addLayerFlags(entity.layer ?? material.layer ?? LayerMask.All, entity.layerFlags)
 
       this.updateMaterial(material, transform)
 

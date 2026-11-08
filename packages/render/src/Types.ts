@@ -27,6 +27,20 @@ export const LayerMask = {
   All: Number.MAX_SAFE_INTEGER,
 }
 
+/**
+ * Adds flag bits to a layer.
+ *
+ * @remarks
+ * {@link LayerMask.All} has all bits already and stays as is: bitwise operators work on 32 bits, so `All | flags`
+ * would become -1.
+ */
+export function addLayerFlags(layer: number, flags: number): number {
+  if (!flags || layer === LayerMask.All) {
+    return layer
+  }
+  return layer | flags
+}
+
 export function mergeLayerMask(...masks: (LayerMask | null | undefined)[]): LayerMask | null
 /**
  * Merges multiple layer masks into a single mask by performing a bitwise OR operation.

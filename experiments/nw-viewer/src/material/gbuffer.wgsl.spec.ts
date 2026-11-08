@@ -109,9 +109,8 @@ function angleDeg(a: number[], b: number[]) {
   return (Math.acos(dot) * 180) / Math.PI
 }
 
-// 10+10 bit octahedral normals with plain rounding. Measured: 0.08° at +z (0.5 is not exact in unorm10),
-// up to 0.24° on the folded lower hemisphere diagonal, where the cells are coarsest
-const MAX_NORMAL_ERROR_DEG = 0.3
+// 10 bit unsigned xyz normals with plain rounding: up to ~0.1° (200k random normals, plan 7.1)
+const MAX_NORMAL_ERROR_DEG = 0.12
 
 const NORMALS: Array<[number, number, number]> = [
   [0, 0, 1],
@@ -159,7 +158,7 @@ describe('GBuffer encoding', () => {
       normal: normalize(n),
       model: 1,
       albedo: [0.2, 0.5, 0.1],
-      occlusion: 1,
+      occlusion: 0.5, // ignored, decoded as 1
       reflectance: [0.04, 0.04, 0.04],
       smoothness: 0.3,
       transmittance: [0.3, 0.6, 0.05],
@@ -174,7 +173,9 @@ describe('GBuffer encoding', () => {
       for (let c = 0; c < 3; c++) {
         expect(Math.abs(o[8 + c] - luma)).toBeLessThan(0.01)
       }
-      // transmittance color from the 10 bit luma and the 8 bit chroma
+      // the occlusion is 1 with the transmittance model, B.a holds the transmittance luma
+      expect(o[7]).toBe(1)
+      // transmittance color from the 8 bit luma and chroma
       for (let c = 0; c < 3; c++) {
         expect(Math.abs(o[12 + c] - s.transmittance[c])).toBeLessThan(0.02)
       }

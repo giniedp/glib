@@ -93,6 +93,10 @@ export class RenderList {
    */
   protected rangeOffset: number[] = []
   protected rangeCount: number[] = []
+  /**
+   * Layer of each entry, from the last {@link getKey}
+   */
+  protected layers: number[] = []
 
   protected item: Sortable = {
     depth: 0,
@@ -106,6 +110,10 @@ export class RenderList {
 
   protected drawInstanceOffset: number[] = []
   protected drawInstanceCount: number[] = []
+  /**
+   * Stencil reference per draw, -1 leaves it unchanged (see {@link RenderListLayers.stencilReference})
+   */
+  protected drawStencil: number[] = []
 
   protected viewForward: IVec4
   protected viewInputs: Record<string, ProgramInputBlock>
@@ -204,6 +212,7 @@ export class RenderList {
     this.transforms[index] = transform
     this.instanceData[index] = instanceData
     this.rangeCount[index] = 0
+    this.layers[index] = this.item.layer
   }
 
   /**
@@ -235,6 +244,7 @@ export class RenderList {
     this.instanceData[index] = null
     this.rangeOffset[index] = instanceOffset
     this.rangeCount[index] = instanceCount
+    this.layers[index] = this.item.layer
   }
 
   /**
@@ -285,6 +295,10 @@ export class RenderList {
     let instanceOffset = this.instances.count
     this.drawCount = 0
 
+    const stencilReference = this.mode.stencilReference
+    let stencil = -1
+    let instanceStencil = -1
+
     for (let i = 0; i < this.size; i++) {
       index = this.indices[i]
       item = this.items[index]
@@ -292,6 +306,7 @@ export class RenderList {
       inputs = this.inputs[index]
       transform = this.transforms[index]
       instance = this.instanceData[index]
+      stencil = stencilReference ? stencilReference(this.layers[index]) : -1
       if (!effect) {
         // item is self-renderable and does not participate in batching
         instanceItem = null
@@ -299,6 +314,7 @@ export class RenderList {
         this.drawIndices[this.drawCount] = index
         this.drawInstanceCount[this.drawCount] = 0
         this.drawInstanceOffset[this.drawCount] = 0
+        this.drawStencil[this.drawCount] = stencil
         this.drawCount++
         continue
       }
@@ -338,6 +354,7 @@ export class RenderList {
         this.drawIndices[this.drawCount] = index
         this.drawInstanceCount[this.drawCount] = this.rangeCount[index]
         this.drawInstanceOffset[this.drawCount] = this.rangeOffset[index]
+        this.drawStencil[this.drawCount] = stencil
         this.drawCount++
         continue
       }
@@ -349,16 +366,19 @@ export class RenderList {
         this.drawIndices[this.drawCount] = index
         this.drawInstanceCount[this.drawCount] = 0
         this.drawInstanceOffset[this.drawCount] = 0
+        this.drawStencil[this.drawCount] = stencil
         this.drawCount++
         continue
       }
 
-      if (instanceItem !== item || instanceEffect !== effect) {
+      if (instanceItem !== item || instanceEffect !== effect || instanceStencil !== stencil) {
         instanceItem = item
         instanceEffect = effect
+        instanceStencil = stencil
         this.drawIndices[this.drawCount] = index
         this.drawInstanceCount[this.drawCount] = 0
         this.drawInstanceOffset[this.drawCount] = instanceOffset
+        this.drawStencil[this.drawCount] = stencil
         this.drawCount++
 
         this.instances.apply(program)
@@ -379,10 +399,16 @@ export class RenderList {
 
     let instanceCount: number
     let instanceOffset: number
+    let stencil = -1
     for (let drawIndex = 0; drawIndex < this.drawCount; drawIndex++) {
       itemIndex = this.drawIndices[drawIndex]
       item = this.items[itemIndex]
       effect = this.effect[itemIndex]
+
+      if (this.drawStencil[drawIndex] >= 0 && this.drawStencil[drawIndex] !== stencil) {
+        stencil = this.drawStencil[drawIndex]
+        pass.setStencilReference(stencil)
+      }
 
       if (!effect) {
         // item is self-renderable, so we just call render without applying any effect

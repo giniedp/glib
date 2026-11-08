@@ -264,6 +264,15 @@ export const MaterialLayerMasks = {
    * Sprite particles of particle emitters
    */
   Particle: 1 << 13,
+  /**
+   * Decal receivers (mesh components with acceptDecals). Added as entity layer flags on top of the material layer,
+   * the GBuffer pass writes the receiver stencil bit for them and for terrain (plan 7.4).
+   */
+  DecalReceiver: 1 << 14,
+  /**
+   * %DECAL materials, blended into the GBuffer by the MeshDecalPass after the GBufferPass (plan 7.5)
+   */
+  MeshDecal: 1 << 15,
 }
 
 const FLAGS_ARRAY = [

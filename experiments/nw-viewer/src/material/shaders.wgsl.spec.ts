@@ -11,7 +11,7 @@ import { CMAA2_WGSL } from '../graphics/passes/cmaa2/Cmaa2Pass.wgsl'
 
 // compiles material shader sources on the GPU and checks the entry points the render variants use
 const SHADERS: Array<{ name: string; source: string; fragmentEntries: string[] }> = [
-  { name: 'Illum', source: ILLUM_WGSL, fragmentEntries: ['fs_main', 'fs_gbuffer', 'fs_emissive', 'fs_debug'] },
+  { name: 'Illum', source: ILLUM_WGSL, fragmentEntries: ['fs_main', 'fs_gbuffer', 'fs_gbuffer_decal', 'fs_emissive', 'fs_debug'] },
   // opaque only: no forward entry
   { name: 'TerrainPatch', source: TERRAIN_PATCH_SHADER, fragmentEntries: ['fs_gbuffer', 'fs_debug'] },
   { name: 'Vegetation', source: VEGETATION_WGSL, fragmentEntries: ['fs_gbuffer', 'fs_debug'] },

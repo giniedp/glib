@@ -4,6 +4,7 @@ import type { Geometry, Material } from '@gglib/graphics'
 import { mat4GetTranslation, vec3, type Mat4 } from '@gglib/math'
 import type { Model } from '@gglib/model'
 import {
+  addLayerFlags,
   LayerMask,
   RenderItemFlags,
   RenderItemType,
@@ -351,6 +352,7 @@ export class CullingSystem extends GameSystem implements SceneSource {
 
   private createLevel(entry: RecordEntry, model: Model): CullLevel {
     const layer = entry.component.entity.layer
+    const layerFlags = entry.component.entity.layerFlags
     const matrices: number[] = []
     const boxes: number[] = []
     const batchStart: number[] = [0]
@@ -369,7 +371,8 @@ export class CullingSystem extends GameSystem implements SceneSource {
         if (!material || !geometry || material.noRender) {
           continue
         }
-        const batch = this.getBatch(geometry, material, layer ?? material.layer ?? LayerMask.All)
+        // batches are keyed by layer, so they split by the entity layer flags (e.g. decal receivers)
+        const batch = this.getBatch(geometry, material, addLayerFlags(layer ?? material.layer ?? LayerMask.All, layerFlags))
         this.batches[batch].refs++
         entry.batches.push(batch)
         batches.push(batch)

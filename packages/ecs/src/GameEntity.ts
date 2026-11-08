@@ -103,6 +103,16 @@ export class GameEntity {
   public layer: number | null = GameEntity.defaultLayer
 
   /**
+   * Bits that are added to the layer of the render items of this entity, on top of the entity layer or the
+   * material layer
+   *
+   * @remarks
+   * Unlike {@link layer} this does not replace the material layer, so it can mark entities for a pass (e.g. decal
+   * receivers) while list filters by material layer keep working. Read when the render items are created.
+   */
+  public layerFlags: number = 0
+
+  /**
    * The world this entity has been initialized in
    */
   public readonly world: GameWorld

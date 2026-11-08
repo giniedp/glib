@@ -1,12 +1,17 @@
 /**
  * GBuffer encoding of the deferred pipeline (see tmp/render-pipeline/plan.md, step 3.2).
  *
- * Follows Lumberyard's layout (CryFX/Common.cfi EncodeGBuffer/DecodeGBuffer) except for the normal:
- * - A (rgb10a2unorm): octahedral normal (rg), transmittance luma (b), lighting model (a, 2 bit)
- * - B (rgba8unorm):   sqrt(albedo) (rgb), occlusion (a)
+ * Follows Lumberyard's layout (CryFX/Common.cfi EncodeGBuffer/DecodeGBuffer):
+ * - A (rgb10a2unorm): unsigned normal xyz (rgb, n * 0.5 + 0.5), lighting model (a, 2 bit)
+ * - B (rgba8unorm):   sqrt(albedo) (rgb), occlusion (a). With the transmittance lighting model (a) holds the
+ *                     transmittance luma instead and the occlusion is 1, like the game's DecodeGBuffer.
  * - C (rgba8unorm):   smoothness (r), reflectance as sqrt YCbCr (gba). With the transmittance lighting model the
  *                     chroma (ba) holds the transmittance color instead, the reflectance keeps its luma only.
  * - location 3 (r32float): linear view depth, as the forward materials write it
+ *
+ * The normal is stored like the game (without the best fit scaling, 10 bit xyz is precise enough), so decals blend
+ * all three targets in hardware: SRC_ALPHA / ONE_MINUS_SRC_ALPHA with color mask RGB, the alpha output of each
+ * target is its blend factor (SetGBufferBlending). Blended normals decode to an nlerp.
  *
  * Requires COMMON_WGSL (LIGHTINGMODEL_* constants).
  */
@@ -30,26 +35,14 @@ struct GBufferOutput {
 
 const GBUFFER_MIDPOINT_8_BIT: f32 = 127.0 / 255.0;
 
-fn gbufferOctWrap(v: vec2f) -> vec2f {
-  return (vec2f(1.0) - abs(v.yx)) * select(vec2f(-1.0), vec2f(1.0), v >= vec2f(0.0));
+// unsigned normal encoding into [0, 1], linear so that it can be blended
+fn gbufferEncodeNormal(n: vec3f) -> vec3f {
+  return n * 0.5 + 0.5;
 }
 
-// octahedral normal encoding into [0, 1]
-fn gbufferEncodeNormal(n: vec3f) -> vec2f {
-  var p = n.xy / (abs(n.x) + abs(n.y) + abs(n.z));
-  if (n.z < 0.0) {
-    p = gbufferOctWrap(p);
-  }
-  return p * 0.5 + 0.5;
-}
-
-fn gbufferDecodeNormal(e: vec2f) -> vec3f {
-  let f = e * 2.0 - 1.0;
-  var n = vec3f(f.x, f.y, 1.0 - abs(f.x) - abs(f.y));
-  let t = saturate(-n.z);
-  n.x += select(t, -t, n.x >= 0.0);
-  n.y += select(t, -t, n.y >= 0.0);
-  return normalize(n);
+// decodes the rgb of GBuffer A, also blended or interpolated values
+fn gbufferDecodeNormal(e: vec3f) -> vec3f {
+  return normalize(e * 2.0 - 1.0);
 }
 
 // sqrt(color) as YCbCr, chroma remapped into [0, 1] (EncodeColorYCC)
@@ -77,12 +70,12 @@ fn gbufferDecodeYCC(encoded: vec3f, useChroma: bool) -> vec3f {
 
 fn encodeGBuffer(s: GBufferSurface, linearDepth: f32) -> GBufferOutput {
   var out: GBufferOutput;
-  out.a = vec4f(gbufferEncodeNormal(s.normal), 0.0, f32(min(s.lightingModel, 3u)) / 3.0);
+  out.a = vec4f(gbufferEncodeNormal(s.normal), f32(min(s.lightingModel, 3u)) / 3.0);
   out.b = vec4f(sqrt(max(s.albedo, vec3f(0.0))), s.occlusion);
   out.c = vec4f(s.smoothness, gbufferEncodeYCC(s.reflectance));
   if (s.lightingModel == LIGHTINGMODEL_TRANSMITTANCE) {
     let t = gbufferEncodeYCC(s.transmittance);
-    out.a.z = t.x;
+    out.b.a = t.x; // in place of the occlusion
     out.c = vec4f(out.c.xy, t.yz); // keeps smoothness and reflectance luma
   }
   out.depth = linearDepth;
@@ -92,13 +85,14 @@ fn encodeGBuffer(s: GBufferSurface, linearDepth: f32) -> GBufferOutput {
 fn decodeGBuffer(a: vec4f, b: vec4f, c: vec4f) -> GBufferSurface {
   var s: GBufferSurface;
   s.lightingModel = u32(round(a.w * 3.0));
-  s.normal = gbufferDecodeNormal(a.xy);
+  s.normal = gbufferDecodeNormal(a.xyz);
   s.albedo = b.rgb * b.rgb;
   s.occlusion = b.a;
   s.smoothness = c.x;
   if (s.lightingModel == LIGHTINGMODEL_TRANSMITTANCE) {
+    s.occlusion = 1.0;
     s.reflectance = gbufferDecodeYCC(c.yzw, false);
-    s.transmittance = gbufferDecodeYCC(vec3f(a.z, c.zw), true);
+    s.transmittance = gbufferDecodeYCC(vec3f(b.a, c.zw), true);
   } else {
     s.reflectance = gbufferDecodeYCC(c.yzw, true);
     s.transmittance = vec3f(0.0);

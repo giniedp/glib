@@ -27,7 +27,7 @@ import { brand, type Brand, type EventType } from '@gglib/utils'
 import type { ViewerMeshComponent } from '../../api'
 import { COMBINE_INSTANCE_ARRAYS, ENABLE_INSTANCED_LEVEL_OBJECTS } from '../../constants'
 import { ContentService, type CgfLodInfo } from '../../content'
-import { createInstanceData } from '../../material/common'
+import { createInstanceData, MaterialLayerMasks } from '../../material/common'
 import { ViewerConfig } from '../../config'
 import { CulledModelComponent } from '../culling/CulledModelComponent'
 import { CullingSystem } from '../culling/CullingSystem'
@@ -55,6 +55,13 @@ export class MeshLoaderComponent implements GameComponent {
 
   public readonly entity: GameEntity
   public readonly data: ViewerMeshComponent
+
+  /**
+   * Layer flags of the model entities: decal receivers (acceptDecals) get {@link MaterialLayerMasks.DecalReceiver}
+   */
+  private get layerFlags() {
+    return this.data.acceptDecals ? MaterialLayerMasks.DecalReceiver : 0
+  }
 
   private content: ContentService
   /**
@@ -131,6 +138,7 @@ export class MeshLoaderComponent implements GameComponent {
             })
             // render layer of the owning entity (e.g. inactive entities)
             child.layer = this.entity.layer
+            child.layerFlags = this.layerFlags
           }
         } else {
           let instantiate = instantiateModel
@@ -181,6 +189,7 @@ export class MeshLoaderComponent implements GameComponent {
           })
           // render layer of the owning entity (e.g. inactive entities)
           child.layer = this.entity.layer
+          child.layerFlags = this.layerFlags
         }
         return true
       },
