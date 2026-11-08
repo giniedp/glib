@@ -1,4 +1,5 @@
 import { FULLSCREEN_WGSL_VS } from '@gglib/effects'
+import { GBUFFER_WGSL } from '../../../material/gbuffer.wgsl'
 
 /**
  * WGSL port of XeGTAO (https://github.com/GameTechDev/XeGTAO, MIT License, Copyright (C) 2016-2021, Intel Corporation)
@@ -6,7 +7,8 @@ import { FULLSCREEN_WGSL_VS } from '@gglib/effects'
  * Differences to the reference implementation:
  * - fragment shaders instead of compute shaders (one fullscreen draw per step)
  * - input is linear view space depth (RenderChannel.LinearDepth), no depth unpacking
- * - normals are always generated in place from depth (XE_GTAO_GENERATE_NORMALS_INPLACE)
+ * - normals are generated in place from depth (XE_GTAO_GENERATE_NORMALS_INPLACE) or read from the GBuffer of the
+ *   deferred pipeline (sample 0 with MSAA)
  * - depth is read with textureLoad (point sampling, clamp to edge) instead of samplers
  * - edges are stored unpacked in rgba8unorm instead of 2 bit packed
  * - no bent normals
@@ -90,14 +92,51 @@ fn fs_main(in: FragmentInput) -> @location(0) vec4f {
 `
 
 /**
- * XeGTAO_MainPass. Outputs the working AO term (scaled by 1/OCCLUSION_TERM_SCALE) and the depth edges
+ * Sample count of the GBuffer normals the main pass reads, 0 reconstructs the normals from depth
  */
-export const XE_GTAO_MAIN_WGSL = /* wgsl */ `
+export type XeGtaoNormalSamples = 0 | 1 | 4
+
+function normalsWgsl(samples: XeGtaoNormalSamples): string {
+  if (!samples) {
+    return ''
+  }
+  const textureType = samples > 1 ? 'texture_multisampled_2d<f32>' : 'texture_2d<f32>'
+  return /* wgsl */ `
+const LIGHTINGMODEL_STANDARD:      u32 = 0u;
+const LIGHTINGMODEL_TRANSMITTANCE: u32 = 1u;
+${GBUFFER_WGSL}
+
+struct NormalParams {
+  // world to view space (right handed, looking down -z)
+  viewMatrix: mat4x4f,
+};
+
+@group(0) @binding(2) var<uniform> normalParams: NormalParams;
+// GBuffer A, octahedral world space normal in rg. With MSAA sample 0 is used.
+@group(0) @binding(3) var gbufferA: ${textureType};
+
+// GBuffer normal in XeGTAO view space (x right, y up, z = linear depth, so z points away from the camera)
+fn loadViewspaceNormal(px: vec2i) -> vec3f {
+  let world = gbufferDecodeNormal(textureLoad(gbufferA, px, 0).xy);
+  let n = (normalParams.viewMatrix * vec4f(world, 0.0)).xyz;
+  return normalize(vec3f(n.x, n.y, -n.z));
+}
+`
+}
+
+/**
+ * XeGTAO_MainPass. Outputs the working AO term (scaled by 1/OCCLUSION_TERM_SCALE) and the depth edges
+ *
+ * @param normals - sample count of the GBuffer normals to read, 0 reconstructs them from depth
+ */
+export function xeGtaoMainWgsl(normals: XeGtaoNormalSamples): string {
+  return /* wgsl */ `
 ${FULLSCREEN_WGSL_VS}
 ${GTAO_PARAMS}
 
 @group(0) @binding(0) var<uniform> params: GtaoParams;
 @group(0) @binding(1) var depthMips: texture_2d<f32>;
+${normalsWgsl(normals)}
 
 const PI = 3.1415926535897932384626433832795;
 const PI_HALF = 1.5707963267948966192313216916398;
@@ -212,13 +251,19 @@ fn fs_main(in: FragmentInput) -> MainOutput {
     return out;
   }
 
+${
+  normals
+    ? /* wgsl */ `
+  let viewspaceNormal = loadViewspaceNormal(pixCoord);`
+    : /* wgsl */ `
   // XE_GTAO_GENERATE_NORMALS_INPLACE
   let CENTER = computeViewspacePosition(normalizedScreenPos, viewspaceZ);
   let LEFT   = computeViewspacePosition(normalizedScreenPos + vec2f(-1.0,  0.0) * pixelSize, pixLZ);
   let RIGHT  = computeViewspacePosition(normalizedScreenPos + vec2f( 1.0,  0.0) * pixelSize, pixRZ);
   let TOP    = computeViewspacePosition(normalizedScreenPos + vec2f( 0.0, -1.0) * pixelSize, pixTZ);
   let BOTTOM = computeViewspacePosition(normalizedScreenPos + vec2f( 0.0,  1.0) * pixelSize, pixBZ);
-  let viewspaceNormal = calculateNormal(edgesLRTB, CENTER, LEFT, RIGHT, TOP, BOTTOM);
+  let viewspaceNormal = calculateNormal(edgesLRTB, CENTER, LEFT, RIGHT, TOP, BOTTOM);`
+}
 
   // Move center pixel slightly towards camera to avoid imprecision artifacts due to depth buffer imprecision (FP16 depth)
   viewspaceZ *= 0.99920;
@@ -367,6 +412,9 @@ fn fs_main(in: FragmentInput) -> MainOutput {
   return out;
 }
 `
+}
+
+export const XE_GTAO_MAIN_WGSL = xeGtaoMainWgsl(0)
 
 /**
  * XeGTAO_Denoise. Edge aware 3x3 blur, one pixel per invocation

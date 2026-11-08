@@ -18,8 +18,12 @@ export class FilmMappingPass implements RenderPass {
   public name = 'Film Mapping'
   public enabled = true
 
+  /**
+   * Tone mapping used instead of the film mapping, when the time of day disables it (config `tonemapper`)
+   */
+  public readonly fallback: RenderPass
+
   private program: Program
-  private fallback: RenderPass
   private isActive = false
   private source: FrameResource
   private target: FrameResource

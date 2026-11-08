@@ -89,6 +89,11 @@ export interface GeometryPassOptions {
  */
 export class GeometryPass implements RenderPass {
   public name: string = 'GeometryPass'
+  /**
+   * Skips the pass. Only safe for passes that render on top of existing targets: a pass that clears its targets
+   * produces channels later passes read.
+   */
+  public enabled = true
 
   private list: RenderListMode
   private variant: RenderVariant
@@ -122,6 +127,9 @@ export class GeometryPass implements RenderPass {
   }
 
   public setup(frame: FrameGraph<RenderPass>, ctx: RenderContext): void {
+    if (!this.enabled) {
+      return
+    }
     this.frame = frame
     if (this.descriptors) {
       frame.setDescriptors(this.descriptors)

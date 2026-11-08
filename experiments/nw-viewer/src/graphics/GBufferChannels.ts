@@ -26,11 +26,6 @@ export const GBufferChannel = {
   C: renderChannel('nw_gbuffer_c'),
   CMsaa: renderChannel('nw_gbuffer_c_msaa'),
   /**
-   * Linear view depth of the single sample GBuffer, 0 without geometry. The lighting pass writes the scene
-   * LinearDepth from it (with MSAA it reads LinearDepthMsaa).
-   */
-  LinearDepth: renderChannel('nw_gbuffer_linear_depth'),
-  /**
    * Single sample sky, drawn before the lighting pass, which composes it into pixels and samples without geometry
    */
   SkyColor: renderChannel('nw_sky_color'),
@@ -68,7 +63,6 @@ export const GBUFFER_DESCRIPTORS: Record<RenderChannel, Readonly<TextureDescript
   [GBufferChannel.BMsaa]: descriptor('GBufferChannel.BMsaa', FORMAT_BC, 4),
   [GBufferChannel.C]: descriptor('GBufferChannel.C', FORMAT_BC, 1),
   [GBufferChannel.CMsaa]: descriptor('GBufferChannel.CMsaa', FORMAT_BC, 4),
-  [GBufferChannel.LinearDepth]: descriptor('GBufferChannel.LinearDepth', 'r32float', 1),
   [GBufferChannel.SkyColor]: descriptor('GBufferChannel.SkyColor', 'rgba16float', 1),
   [GBufferChannel.DebugDepth]: descriptor('GBufferChannel.DebugDepth', 'depth24plus-stencil8', 1),
   [GBufferChannel.DebugLinearDepth]: descriptor('GBufferChannel.DebugLinearDepth', 'r32float', 1),

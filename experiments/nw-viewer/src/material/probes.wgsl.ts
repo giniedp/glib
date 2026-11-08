@@ -30,6 +30,12 @@ fn environmentFresnel(specCol0: vec3f, gloss: f32, NdotE: f32) -> vec3f {
   return mix(specCol0, vec3f(1.0), pow(1.0 - saturate(NdotE), 5.0) / (40.0 - 39.0 * gloss));
 }
 
+// DeriveSpecularOcclusion (shadelib.cfi): rough surfaces receive the full ambient occlusion, smooth surfaces more at
+// grazing angles and less at normal incidence
+fn deriveSpecularOcclusion(NdotV: f32, aoAmount: f32, smoothness: f32) -> f32 {
+  return saturate(pow(max(NdotV + aoAmount, 0.0), smoothness) - 1.0 + aoAmount);
+}
+
 fn environmentDiffuse(cubeSampler: sampler, normal: vec3f) -> vec3f {
   if (global.probeGlobal.y < 0.5) {
     return getReflectColor(envMap, cubeSampler, normal, 0.0);

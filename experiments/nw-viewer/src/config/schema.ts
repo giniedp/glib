@@ -130,10 +130,10 @@ export const viewerConfigSchema = defineConfig({
 
   pipeline: choice({
     description:
-      'forward lights opaque geometry in its materials. deferred writes a GBuffer and lights it in a compute pass, like the game (single sampled for now, MSAA is ignored).',
+      'deferred writes a GBuffer and lights it in a compute pass, like the game (MSAA: edges are lit per sample). forward lights opaque geometry in its materials, kept for comparison until it is removed.',
     editable: true,
-    options: ['forward', 'deferred'],
-    default: 'forward',
+    options: ['deferred', 'forward'],
+    default: 'deferred',
     group: 'Display',
   }),
 

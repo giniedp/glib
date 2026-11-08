@@ -19,8 +19,8 @@ import {
 import {
   XE_GTAO_DENOISE_WGSL,
   XE_GTAO_DEPTH_MIP_LEVELS,
-  XE_GTAO_MAIN_WGSL,
   XE_GTAO_OCCLUSION_TERM_SCALE,
+  xeGtaoMainWgsl,
   XE_GTAO_PREFILTER_MIP0_WGSL,
   XE_GTAO_PREFILTER_MIPN_WGSL,
 } from './XeGtao.wgsl'
@@ -85,16 +85,24 @@ export interface XeGtaoPassOptions {
    * Ambient occlusion output
    */
   output?: RenderChannel
+  /**
+   * GBuffer A channel to read the normals from (deferred pipeline). Without it, normals are reconstructed from depth.
+   */
+  normals?: { channel: RenderChannel; samples: 1 | 4 }
 }
 
 /**
  * XeGTAO ground truth ambient occlusion (https://github.com/GameTechDev/XeGTAO)
  *
  * Reads linear view space depth and writes the denoised occlusion term into {@link NwRenderChannel.AmbientOcclusion}.
- * Normals are reconstructed from depth.
+ * Normals are read from the GBuffer when {@link XeGtaoPassOptions.normals} is set, otherwise reconstructed from depth.
  */
 export class XeGtaoPass implements RenderPass {
   public name: string = 'XeGTAO'
+  /**
+   * Turns the pass off. The passes that apply the AO skip it while no AO is produced.
+   */
+  public enabled = true
 
   public quality: XeGtaoQuality = 'medium'
   public denoisePasses = 1
@@ -125,8 +133,10 @@ export class XeGtaoPass implements RenderPass {
   private main: Program
   private denoise: Program
 
+  private normals: XeGtaoPassOptions['normals'] | null
   private source: FrameResource
   private target: FrameResource
+  private normalSource: FrameResource | null = null
 
   private texDepthMips: Texture
   private texDepthMipsDesc: TextureDescriptor
@@ -170,17 +180,19 @@ export class XeGtaoPass implements RenderPass {
     this.maxDistance = options?.maxDistance ?? this.maxDistance
     this.input = options?.input ?? RenderChannel.LinearDepth
     this.output = options?.output ?? NwRenderChannel.AmbientOcclusion
+    this.normals = options?.normals ?? null
+    const normalSamples = this.normals?.samples ?? 0
 
     device.ready.then(() => {
       this.prefilter0 = createProgram(device, 'XeGTAO Prefilter Mip0', XE_GTAO_PREFILTER_MIP0_WGSL)
       this.prefilterN = createProgram(device, 'XeGTAO Prefilter MipN', XE_GTAO_PREFILTER_MIPN_WGSL)
-      this.main = createProgram(device, 'XeGTAO Main', XE_GTAO_MAIN_WGSL)
+      this.main = createProgram(device, `XeGTAO Main (normals ${normalSamples})`, xeGtaoMainWgsl(normalSamples))
       this.denoise = createProgram(device, 'XeGTAO Denoise', XE_GTAO_DENOISE_WGSL)
     })
   }
 
   public setup(frame: FrameGraph<RenderPass>, ctx: RenderContext): void {
-    this.isActive = this.isReady
+    this.isActive = this.enabled && this.isReady
     if (!this.isActive) {
       this.source = null
       this.target = null
@@ -193,6 +205,7 @@ export class XeGtaoPass implements RenderPass {
 
     frame.addPass(this)
     this.source = frame.read(this.input)
+    this.normalSource = this.normals ? frame.read(this.normals.channel) : null
     this.target = frame.write(this.output)
 
     const width = ctx.viewWidth
@@ -243,6 +256,10 @@ export class XeGtaoPass implements RenderPass {
     // main pass, writes working ao term and edges
     this.setParams(this.main)
     this.main.mustSet('depthMips', this.texDepthMips)
+    if (this.normalSource) {
+      this.main.mustSet('normalParams.viewMatrix', ctx.view.camera.view)
+      this.main.mustSet('gbufferA', this.normalSource.texture)
+    }
     pass.setRenderTarget(1, this.texEdges)
     pass.setRenderBlend(1, BlendState.Opaque)
     this.draw(ctx, this.main, this.texAo, 0)

@@ -26,6 +26,7 @@ import {
 } from '@gglib/render'
 import { InputSlots, MaterialLayerMasks, NwRenderVariant } from '../material'
 import { GBUFFER_DESCRIPTORS, GBufferChannel } from './GBufferChannels'
+import { describePass, describeSwitch, optionalPass } from './PassInfo'
 import { GBufferDebugPass } from './passes/gbuffer/GBufferDebugPass'
 import { CopyPass, NwCopyChannel } from './passes/CopyPass'
 import { DepthMsaaResolvePass } from './passes/DepthMsaaResolvePass'
@@ -37,7 +38,7 @@ import { LuminancePass } from './passes/exposure/LuminancePass'
 import { FogPass, type FogPassTarget } from './passes/fog/FogPass'
 import { AmbientOcclusionApplyPass } from './passes/ssao/AmbientOcclusionApplyPass'
 import { SunShaftsPass } from './passes/sunshafts/SunShaftsPass'
-import { XeGtaoPass } from './passes/ssao/XeGtaoPass'
+import { NwRenderChannel, XeGtaoPass } from './passes/ssao/XeGtaoPass'
 
 export type MsaaSamples = 1 | 4
 
@@ -184,7 +185,8 @@ const DEFERRED_SINGLE_TARGETS: DeferredTargets = {
   a: GBufferChannel.A,
   b: GBufferChannel.B,
   c: GBufferChannel.C,
-  linearDepth: GBufferChannel.LinearDepth,
+  // written directly, the sky pass adds the far plane where no geometry is
+  linearDepth: RenderChannel.LinearDepth,
   depth: RenderChannel.Depth,
 }
 
@@ -216,13 +218,10 @@ export class PipelineSwitch {
    * Selects by the configured MSAA, for the geometry of the deferred GBuffer.
    */
   public selectMsaa(name: string, msaa: RenderPass[], single: RenderPass[]): GroupPass {
-    return groupPass({
-      name,
-      passes: [
-        this.track(`${name} MSAA`, (it) => it.msaa === 4, msaa),
-        this.track(`${name} No MSAA`, (it) => it.msaa === 1, single),
-      ],
-    })
+    return this.variants(name, [
+      ['4x MSAA', (it) => it.msaa === 4, msaa],
+      ['single sample', (it) => it.msaa === 1, single],
+    ])
   }
 
   /**
@@ -230,26 +229,20 @@ export class PipelineSwitch {
    * Selects by the sample count of the scene targets ({@link samples}).
    */
   public select(name: string, msaa: RenderPass[], single: RenderPass[]): GroupPass {
-    return groupPass({
-      name,
-      passes: [
-        this.track(`${name} MSAA`, (it) => sceneSamples(it) === 4, msaa),
-        this.track(`${name} No MSAA`, (it) => sceneSamples(it) === 1, single),
-      ],
-    })
+    return this.variants(name, [
+      ['4x MSAA', (it) => sceneSamples(it) === 4, msaa],
+      ['single sample', (it) => sceneSamples(it) === 1, single],
+    ])
   }
 
   /**
    * Creates a group with the passes of each pipeline mode, of which only one is enabled
    */
   public selectPipeline(name: string, forward: RenderPass[], deferred: RenderPass[]): GroupPass {
-    return groupPass({
-      name,
-      passes: [
-        this.track(`${name} Forward`, (it) => it.pipeline === 'forward', forward),
-        this.track(`${name} Deferred`, (it) => it.pipeline === 'deferred', deferred),
-      ],
-    })
+    return this.variants(name, [
+      ['Forward', (it) => it.pipeline === 'forward', forward],
+      ['Deferred', (it) => it.pipeline === 'deferred', deferred],
+    ])
   }
 
   public set(state: Partial<PipelineState>) {
@@ -259,10 +252,20 @@ export class PipelineSwitch {
     }
   }
 
-  private track(name: string, active: (state: PipelineState) => boolean, passes: RenderPass[]) {
-    const group = groupPass({ name, passes, enabled: active(this.current) })
-    this.groups.push({ group, active })
-    return group
+  /**
+   * A group with one subgroup per variant, of which only the active one is enabled. Registered for the pipeline
+   * panel, which shows only the active variant and no toggles for them.
+   */
+  private variants(
+    name: string,
+    variants: Array<[label: string, active: (state: PipelineState) => boolean, passes: RenderPass[]]>,
+  ): GroupPass {
+    const groups = variants.map(([label, active, passes]) => {
+      const group = groupPass({ name: `${name} ${label}`, passes, enabled: active(this.current) })
+      this.groups.push({ group, active })
+      return { label, group }
+    })
+    return describeSwitch(groupPass({ name, passes: groups.map((it) => it.group) }), groups)
   }
 }
 
@@ -280,7 +283,7 @@ export interface NwRenderPipelineOptions {
    */
   msaa?: MsaaSamples
   /**
-   * Initial pipeline mode. Defaults to forward.
+   * Initial pipeline mode. Defaults to deferred.
    */
   pipeline?: PipelineMode
 }
@@ -293,18 +296,21 @@ export interface NwRenderPipeline extends RenderPipelineOptions {
 }
 
 export function createRenderPipeline(device: Device, options?: NwRenderPipelineOptions): NwRenderPipeline {
-  const modes = new PipelineSwitch({ msaa: options?.msaa ?? 4, pipeline: options?.pipeline ?? 'forward' })
+  const modes = new PipelineSwitch({ msaa: options?.msaa ?? 4, pipeline: options?.pipeline ?? 'deferred' })
   const multi = createScenePasses(device, MSAA_TARGETS)
   const single = createScenePasses(device, SINGLE_TARGETS)
   const sunShafts = new SunShaftsPass(device)
   const luminance = new LuminancePass(device)
 
   const passes: RenderPass[] = [
-    renderInputsPass({
-      name: 'OpaqueInputs',
-      // fog is applied by the FogPass
-      values: [[InputSlots.Global.SkipFog, TRUE]],
-    }),
+    describePass(
+      renderInputsPass({
+        name: 'OpaqueInputs',
+        // fog is applied by the FogPass
+        values: [[InputSlots.Global.SkipFog, TRUE]],
+      }),
+      { note: 'opaque materials skip fog, the fog pass applies it' },
+    ),
     modes.selectPipeline(
       'Opaque',
       [modes.select('Forward Opaque', multi.opaque, single.opaque)],
@@ -316,32 +322,38 @@ export function createRenderPipeline(device: Device, options?: NwRenderPipelineO
         ),
       ],
     ),
-    renderInputsPass({
-      name: 'SceneInputs',
-      textures: [
-        [CommonInputs.View.SceneColorMap, RenderChannel.Color],
-        [CommonInputs.View.SceneDepthMap, RenderChannel.LinearDepth],
-      ],
-    }),
-    groupPass({
-      name: 'Ambient Occlusion',
-      enabled: true,
-      passes: [new XeGtaoPass(device), modes.select('AO Apply', multi.aoApply, single.aoApply)],
-    }),
+    describePass(
+      renderInputsPass({
+        name: 'SceneInputs',
+        textures: [
+          [CommonInputs.View.SceneColorMap, RenderChannel.Color],
+          [CommonInputs.View.SceneDepthMap, RenderChannel.LinearDepth],
+        ],
+      }),
+      { note: 'binds Color and LinearDepth as scene inputs' },
+    ),
+    // the deferred pipeline computes AO before its lighting pass, which applies it
+    modes.selectPipeline(
+      'Ambient Occlusion',
+      [optionalPass(new XeGtaoPass(device)), modes.select('AO Apply', multi.aoApply, single.aoApply)],
+      [],
+    ),
     modes.select('Fog', multi.fog, single.fog),
     modes.select('Transparent', multi.transparent, single.transparent),
     // mask and blur from the HDR scene
-    sunShafts.generate,
+    optionalPass(sunShafts.generate, sunShafts),
     // scene luminance for the exposure of the film mapping, measured before bloom like the game
-    luminance,
-    bloomPass(device, {
-      enabled: true,
-      threshold: 1.5,
-      knee: 0.5,
-      intensity: 0.6,
-      steps: 10,
-      mode: 'jimnez',
-    }),
+    describePass(luminance, { note: 'scene luminance for the film mapping exposure' }),
+    optionalPass(
+      bloomPass(device, {
+        enabled: true,
+        threshold: 1.5,
+        knee: 0.5,
+        intensity: 0.6,
+        steps: 10,
+        mode: 'jimnez',
+      }),
+    ),
     new FilmMappingPass(
       device,
       tonemapPass(device, {
@@ -354,12 +366,14 @@ export function createRenderPipeline(device: Device, options?: NwRenderPipelineO
       luminance,
     ),
     // blended into the tone mapped image, like the HDR final pass of the original
-    sunShafts.apply,
-    groupPass({
-      name: 'GBuffer Debug',
-      enabled: false,
-      passes: createGBufferDebugPasses(device),
-    }),
+    describePass(sunShafts.apply, { note: 'blends the sun shafts into the image, toggled with Sun Shafts' }),
+    optionalPass(
+      groupPass({
+        name: 'GBuffer Debug',
+        enabled: false,
+        passes: createGBufferDebugPasses(device),
+      }),
+    ),
   ]
   return { passes, modes }
 }
@@ -392,7 +406,14 @@ function createDeferredOpaquePasses(device: Device, targets: DeferredTargets): R
     }),
   ]
   if (targets.samples > 1) {
-    passes.push(new DepthMsaaResolvePass(device, { input: targets.depth, output: RenderChannel.Depth }))
+    passes.push(
+      new DepthMsaaResolvePass(device, {
+        input: targets.depth,
+        output: RenderChannel.Depth,
+        linearInput: targets.linearDepth,
+        linearOutput: RenderChannel.LinearDepth,
+      }),
+    )
   }
   passes.push(
     new GeometryPass({
@@ -400,13 +421,15 @@ function createDeferredOpaquePasses(device: Device, targets: DeferredTargets): R
       list: SKY_LIST,
       depth: RenderChannel.Depth,
       clearDepth: false,
-      descriptors: { ...GBUFFER_DESCRIPTORS, [TransparentLinearDepth]: TRANSPARENT_LINEAR_DEPTH_DESC },
+      descriptors: GBUFFER_DESCRIPTORS,
       channels: [
         { clear: Color.TransparentBlack, render: GBufferChannel.SkyColor },
-        // the sky writes its depth as a second output, the lighting pass writes the scene linear depth
-        { clear: Color.TransparentBlack, render: TransparentLinearDepth },
+        // the sky depth (far plane) completes the scene linear depth where pixels have samples without geometry
+        { clear: null, render: RenderChannel.LinearDepth },
       ],
     }),
+    // AO before the lighting (plan phase 5), from the resolved depth and the GBuffer normals
+    optionalPass(new XeGtaoPass(device, { normals: { channel: targets.a, samples: targets.samples } })),
     new LightingPass(device, {
       samples: targets.samples,
       a: targets.a,
@@ -414,30 +437,34 @@ function createDeferredOpaquePasses(device: Device, targets: DeferredTargets): R
       c: targets.c,
       linearDepth: targets.linearDepth,
       sky: GBufferChannel.SkyColor,
+      ao: NwRenderChannel.AmbientOcclusion,
       output: RenderChannel.Color,
-      outputDepth: RenderChannel.LinearDepth,
     }),
   )
   passes.push(
     // emittance of the opaque surfaces, the materials with emittance register the variant
-    new GeometryPass({
-      name: 'EmissivePass',
-      list: RenderListMode.Opaque,
-      variant: NwRenderVariant.Emissive,
-      depth: RenderChannel.Depth,
-      clearDepth: false,
-      channels: [{ clear: null, render: RenderChannel.Color, blend: BlendState.AdditivePure }],
-    }),
-    new GeometryPass({
-      name: 'ForwardOpaquePass',
-      list: FORWARD_OPAQUE_LIST,
-      depth: RenderChannel.Depth,
-      clearDepth: false,
-      channels: [
-        { clear: null, render: RenderChannel.Color },
-        { clear: null, render: RenderChannel.LinearDepth },
-      ],
-    }),
+    optionalPass(
+      new GeometryPass({
+        name: 'EmissivePass',
+        list: RenderListMode.Opaque,
+        variant: NwRenderVariant.Emissive,
+        depth: RenderChannel.Depth,
+        clearDepth: false,
+        channels: [{ clear: null, render: RenderChannel.Color, blend: BlendState.AdditivePure }],
+      }),
+    ),
+    optionalPass(
+      new GeometryPass({
+        name: 'ForwardOpaquePass',
+        list: FORWARD_OPAQUE_LIST,
+        depth: RenderChannel.Depth,
+        clearDepth: false,
+        channels: [
+          { clear: null, render: RenderChannel.Color },
+          { clear: null, render: RenderChannel.LinearDepth },
+        ],
+      }),
+    ),
   )
   return passes
 }
@@ -477,8 +504,8 @@ function createGBufferDebugPasses(device: Device): RenderPass[] {
 function createScenePasses(device: Device, targets: SceneTargets) {
   return {
     opaque: [createOpaquePass(device, targets)],
-    aoApply: [new AmbientOcclusionApplyPass(device, { targets: targets.sceneColors })],
-    fog: [new FogPass(device, { targets: targets.fog })],
+    aoApply: [optionalPass(new AmbientOcclusionApplyPass(device, { targets: targets.sceneColors }))],
+    fog: [optionalPass(new FogPass(device, { targets: targets.fog }))],
     transparent: createTransparentPasses(device, targets),
   }
 }
@@ -511,25 +538,35 @@ function createTransparentPasses(device: Device, targets: SceneTargets): RenderP
   const passes: RenderPass[] = []
   if (targets.sceneColorInput === NwCopyChannel.SceneColor) {
     // the transparent passes render into Color, so they sample a copy
-    passes.push(new CopyPass(device, { name: 'SceneColorCopy', input: RenderChannel.Color }))
+    passes.push(
+      describePass(new CopyPass(device, { name: 'SceneColorCopy', input: RenderChannel.Color }), {
+        note: 'copy of the scene color that transparent materials sample',
+      }),
+    )
   }
   passes.push(
-    renderInputsPass({
-      name: 'TransparentInputs',
-      values: [[InputSlots.Global.SkipFog, FALSE]],
-      textures: [
-        [CommonInputs.View.SceneColorMap, targets.sceneColorInput],
-        [CommonInputs.View.SceneDepthMap, RenderChannel.LinearDepth],
-      ],
-    }),
+    describePass(
+      renderInputsPass({
+        name: 'TransparentInputs',
+        values: [[InputSlots.Global.SkipFog, FALSE]],
+        textures: [
+          [CommonInputs.View.SceneColorMap, targets.sceneColorInput],
+          [CommonInputs.View.SceneDepthMap, RenderChannel.LinearDepth],
+        ],
+      }),
+      { note: 'transparent materials apply fog, binds scene color and depth' },
+    ),
     // water volumes (rivers) before all other transparent geometry, like the WATER_VOLUMES list of the original
     // that is rendered before the TRANSPARENT_AW list. Waterfalls and other transparent meshes end up on top.
-    groupPass({
-      name: 'Water Volumes',
-      enabled: true,
-      // with MSAA the color is resolved by the transparent pass
-      passes: [createTransparentPass(targets, 'WaterVolumePass', WATER_VOLUME_LIST, null)],
-    }),
+    optionalPass(
+      groupPass({
+        name: 'Water Volumes',
+        enabled: true,
+        // with MSAA the color is resolved by the transparent pass
+        passes: [createTransparentPass(targets, 'WaterVolumePass', WATER_VOLUME_LIST, null)],
+      }),
+    ),
+    // not optional: with MSAA it resolves the color
     createTransparentPass(targets, 'TransparentPass', TRANSPARENT_LIST, targets.resolveColor),
   )
   return passes

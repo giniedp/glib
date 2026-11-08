@@ -21,7 +21,8 @@ export interface LightingPassOptions {
   b: RenderChannel
   c: RenderChannel
   /**
-   * Linear view depth written with the GBuffer, zero where no geometry was rendered. Same sample count as the GBuffer.
+   * Linear view depth. With MSAA the GBuffer samples (0 without geometry), at 1x the scene linear depth (the far
+   * plane without geometry, written by the sky pass).
    */
   linearDepth: RenderChannel
   /**
@@ -29,14 +30,13 @@ export interface LightingPassOptions {
    */
   sky: RenderChannel
   /**
+   * Single sample ambient occlusion term (1 = not occluded). Not applied while no pass produced it.
+   */
+  ao: RenderChannel
+  /**
    * Single sample HDR color the resolved lighting is written to (rgba16float)
    */
   output: RenderChannel
-  /**
-   * Single sample linear depth the resolved depth is written to (r32float): the farthest sample, the far plane
-   * without geometry
-   */
-  outputDepth: RenderChannel
 }
 
 const STORAGE_USAGE = TextureUsage.RenderTarget | TextureUsage.TextureBinding | TextureUsage.StorageBinding
@@ -50,15 +50,19 @@ export class LightingPass implements RenderPass {
   public enabled = true
   public gpuTimer?: GpuTimer
   /**
-   * 'edges' tints the pixels that are shaded per sample
+   * 'edges' tints the pixels that are shaded per sample, 'ao' shows the ambient occlusion term
    */
   public debug: LightingDebugMode = 'off'
+  /**
+   * Blends between no ambient occlusion (0) and the full term (1)
+   */
+  public aoStrength = 1
 
   private options: LightingPassOptions
   private program: Program
   private inputs: FrameResource[] = []
+  private aoInput: FrameResource | null = null
   private target: FrameResource
-  private targetDepth: FrameResource
   private params = new Float32Array(4)
 
   public constructor(device: Device, options: LightingPassOptions) {
@@ -79,10 +83,11 @@ export class LightingPass implements RenderPass {
     }
     // declared before the shader is compiled, later passes read the output
     frame.addPass(this)
-    const { a, b, c, linearDepth, sky, output, outputDepth } = this.options
+    const { a, b, c, linearDepth, sky, ao, output } = this.options
     this.inputs = [frame.read(a), frame.read(b), frame.read(c), frame.read(linearDepth), frame.read(sky)]
+    // the AO pass declares its output only once its shaders are compiled
+    this.aoInput = frame.has(ao) ? frame.read(ao) : null
     this.target = frame.write(output, { usage: STORAGE_USAGE })
-    this.targetDepth = frame.write(outputDepth, { usage: STORAGE_USAGE })
   }
 
   public render(ctx: RenderContext): void {
@@ -92,15 +97,18 @@ export class LightingPass implements RenderPass {
     }
     const target = this.target.texture
     this.params[0] = LightingDebugModes.indexOf(this.debug)
+    this.params[1] = this.aoInput ? 1 : 0
+    this.params[2] = this.aoStrength
     program.applyBlocks(ctx.renderInputs.blocks)
     program.mustSet('gbufferA', this.inputs[0].texture)
     program.mustSet('gbufferB', this.inputs[1].texture)
     program.mustSet('gbufferC', this.inputs[2].texture)
     program.mustSet('linearDepth', this.inputs[3].texture)
     program.mustSet('skyColor', this.inputs[4].texture)
+    // without AO any single sample texture is bound, the shader does not read it
+    program.mustSet('aoMap', (this.aoInput ?? this.inputs[4]).texture)
     program.mustSet('envSampler', SamplerState.LinearClamp)
     program.mustSet('outColor', target)
-    program.mustSet('outDepth', this.targetDepth.texture)
     program.mustSet('params.values', this.params)
     program.commit()
 
