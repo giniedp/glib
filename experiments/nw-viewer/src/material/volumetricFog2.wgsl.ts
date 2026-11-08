@@ -5,10 +5,32 @@
  * beyond. The viewer has no froxel volume, the analytical solution covers the full span (fullSpan in the original).
  *
  * Parameters are computed like the sGetVolumetricFog* functions in D3DHWShader.cpp, see TimeOfDay.
- * The global environment probe in-scattering is replaced by a constant ambient color (no probes).
+ * The caller provides the global environment probe in-scattering in `ambient`, see volFog2ProbeInscatter.
  * Includes the New World zenith fade (GetZenithFadeAmount), which thins the fog when looking up.
  */
 export const VOLUMETRIC_FOG_2_WGSL = /* wgsl */ `
+// Mip of the 256² specular probe cube the fog samples. The game binds a 128² cube with 6 mips to the fog pass
+// (GPA, tmp/sky-fog/findings.md), Lumberyard's CVolumetricFog takes the diffuse cube instead.
+const VOLFOG2_PROBE_LOD: f32 = 1.0;
+
+// Isotropic in-scattering of the global environment probe along the view ray (GetVolumetricFogAnalyticalColor,
+// ENABLE_GLOBAL_ENV_PROBE_FOR_ANALYTICAL_FOG). probe: rgb = probe color times the entities fog albedo,
+// w = attenuation, falls back to the constant stand-in without a baked probe.
+fn volFog2ProbeInscatter(
+  cubes: texture_cube_array<f32>,
+  cubeSampler: sampler,
+  slot: f32,
+  probe: vec4f,
+  fallback: vec4f,
+  ray: vec3f,
+) -> vec4f {
+  if (probe.w <= 0.0) {
+    return fallback;
+  }
+  let cube = textureSampleLevel(cubes, cubeSampler, ray, i32(slot), VOLFOG2_PROBE_LOD).rgb;
+  return vec4f(cube * probe.rgb * probe.w / (4.0 * 3.14159265), 0.0);
+}
+
 struct VolFog2Params {
   // x = height scale, y = log2(e) * density at viewer height, z = analytical fog visibility, w = final density clamp
   heightDensity: vec4f,
@@ -22,7 +44,7 @@ struct VolFog2Params {
   color1       : vec4f,
   // rgb = sun color * fog albedo (sun radial), w = 1 - k * k (sun radial)
   color2       : vec4f,
-  // rgb = isotropic ambient in-scattering, stands in for the global environment probe of the original
+  // rgb = isotropic in-scattering of the global environment probe along this ray, see volFog2ProbeInscatter
   ambient      : vec4f,
   // x = zenith fade factor, y = zenith fade curve (exponent), PerFrame_VolumetricFogDistributionParams.xw
   // z = ray-marching range, the froxel volume of the original (PerFrame_VolumetricFogDistanceParams.w)

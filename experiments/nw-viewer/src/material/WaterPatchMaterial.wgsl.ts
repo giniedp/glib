@@ -299,7 +299,10 @@ fn fsMain(in: Varyings) -> FragmentOutput {
 
   // ── Ocean fog ─────────────────────────────────────────────
   let oceanFog       = global.oceanFogColorDensity;
-  let volumeDepth    = max(sceneDepth - surfaceDepth, 0.0);
+  // depth of the refracted scene, so the fog matches the refracted colors.
+  // Falls back to the unrefracted depth where the refracted sample is in front of the water.
+  let refrDepth      = select(sceneDepth, depthRefr.y, refrMask.y > 0.0);
+  let volumeDepth    = max(refrDepth - surfaceDepth, 0.0);
   let volumeLength   = volumeDepth * dist / max(surfaceDepth, 1e-3);
   let waterVolumeFog = exp2(-oceanFog.w * volumeLength);
   refractColor = mix(oceanFog.rgb, refractColor, saturate(waterVolumeFog));

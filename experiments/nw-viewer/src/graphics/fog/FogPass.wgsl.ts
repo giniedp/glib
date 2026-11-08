@@ -40,11 +40,17 @@ struct FogParams {
   volFog2Zenith                  : vec4f,
   // x = 1 when volumetric fog 2 is enabled
   volFog2Enabled                 : vec4f,
+  // x = atlas slot of the global probe
+  probeGlobal                    : vec4f,
+  // rgb = global probe color times the entities fog albedo, w = attenuation
+  volFog2Probe                   : vec4f,
 };
 
 ${VOLUMETRIC_FOG_2_WGSL}
 
 @group(0) @binding(0) var<uniform> params: FogParams;
+@group(0) @binding(2) var probeSpecularCubes: texture_cube_array<f32>;
+@group(0) @binding(3) var probeSampler: sampler;
 
 fn computeVolumetricFogInternal(cameraToWorldPos: vec3f) -> f32 {
   let heightScale                 = params.volumetricFogParams.x;
@@ -86,7 +92,9 @@ fn computeFog(position: vec2f, depth: f32) -> vec4f {
     p.blend         = params.volFog2Blend;
     p.color1        = params.fogScatteringColor;
     p.color2        = params.fogScatteringSecondaryColor;
-    p.ambient       = params.volFog2Ambient;
+    p.ambient       = volFog2ProbeInscatter(
+      probeSpecularCubes, probeSampler, params.probeGlobal.x, params.volFog2Probe, params.volFog2Ambient, cameraToWorldPos,
+    );
     p.zenith        = params.volFog2Zenith;
     // in-scattering and transmittance, matches the blending dst = src.rgb + dst.rgb * src.a
     return volFog2Analytical(p, cameraToWorldPos, -params.sunDirection.xyz);

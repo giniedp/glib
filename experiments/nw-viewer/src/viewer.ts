@@ -36,6 +36,7 @@ import { AudioSystem } from './audio/AudioSystem'
 import { ViewerConfig } from './config'
 import { REGION_SIZE } from './constants'
 import { ContentService } from './content'
+import { ProbeCubeLoader } from './content/ProbeCubeLoader'
 import { registerCgf } from './formats/cgf'
 import { registerMtl } from './formats/mtl'
 import { CollisionSystem } from './game/collision/CollisionSystem'
@@ -48,6 +49,8 @@ import { InstancedRenderSystem } from './game/instancing/InstancedRenderSystem'
 import { LevelSystem } from './game/level/LevelSystem'
 import { SkyLightSystem } from './game/level/SkyLightSystem'
 import { LightSystem } from './game/light/LightSystem'
+import { EnvProbeDebugSystem } from './game/probes/EnvProbeDebugSystem'
+import { EnvProbeSystem } from './game/probes/EnvProbeSystem'
 import { ParticleSystem } from './game/particles'
 import { PlayerMovementComponent } from './game/player/PlayerMovementComponent'
 import { RegionSystem } from './game/region/RegionSystem'
@@ -57,6 +60,7 @@ import { SliceSystem } from './game/slice/SliceSystem'
 import { TerrainSystem } from './game/terrain/TerrainSystem'
 import { VegetationSystem } from './game/vegetation/VegetationSystem'
 import { createRenderPipeline } from './graphics'
+import { LuminancePass } from './graphics/exposure/LuminancePass'
 import { RenderSizeSystem } from './graphics/RenderSizeSystem'
 import { InputSlots, MaterialLayerMasks } from './material'
 import { createSceneOptions, VIEWER_MODE_PARAMS, type SceneOptions } from './scenes'
@@ -87,6 +91,10 @@ export class NwViewer extends EcsGame {
   public sceneStats: SceneStats
   public renderStats: RendererStats
   public scheduler: SchedulerSystem
+  /**
+   * Scene luminance of the eye adaptation, for debugging and scripts (`await nwViewer.luminance.read()`)
+   */
+  public luminance: LuminancePass | null = null
   public levelSelection: string
   public levelOptions: Record<string, LevelLoadOption[]> = {}
   /**
@@ -116,6 +124,8 @@ export class NwViewer extends EcsGame {
             requiredLimits: {
               // terrain virtual texture page cache, see VT_PAGE_CAPACITY
               maxTextureArrayLayers: 1024,
+              // Illum has 16 textures (default limit) plus the two cube arrays of the environment probes
+              maxSampledTexturesPerShaderStage: 18,
             },
           }
         },
@@ -163,6 +173,9 @@ export class NwViewer extends EcsGame {
     this.world.addSystem(new RangeActivationSystem())
     this.world.addSystem(new SkyLightSystem())
     this.world.addSystem(new LightSystem())
+    this.world.addSystem(new ProbeCubeLoader())
+    this.world.addSystem(new EnvProbeSystem())
+    this.world.addSystem(new EnvProbeDebugSystem())
     this.world.addSystem(new LevelSystem())
     this.world.addSystem(new AudioSystem())
     this.world.addSystem(new ParticleSystem())
@@ -170,10 +183,12 @@ export class NwViewer extends EcsGame {
     this.world.addSystem(new RaycastSystem())
     this.world.addSystem(new SpatialSystem())
     this.world.addSystem(new SchedulerSystem({}))
+    const pipeline = createRenderPipeline(this.device)
+    this.luminance = pipeline.passes.find((it): it is LuminancePass => it instanceof LuminancePass) ?? null
     this.world.addSystem(
       new Renderer(this.device, {
         linearToSrgb: false,
-        pipeline: createRenderPipeline(this.device),
+        pipeline,
       }),
     )
     attachOverlay(this.element, this)

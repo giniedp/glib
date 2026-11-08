@@ -2,7 +2,6 @@ import { BoundsComponent, EcsGame, LifeCycleFlags, TransformComponent } from '@g
 import { GameQuery, GameSystem, GameWorld, GetComponent, type GameComponent } from '@gglib/ecs'
 import { Color } from '@gglib/graphics'
 import {
-  BoundingBox,
   BoundingSphere,
   DEGREE_TO_RAD,
   mat4$invert,
@@ -52,6 +51,7 @@ import { DebugLayer, DebugShapeComponent, type DebugShapeOptions } from '../debu
 import { TimeOfDayComponent } from '../level/TimeOfDayComponent'
 import { LightComponent } from '../light/LightComponent'
 import { ParticleComponent, particleRange } from '../particles/ParticleComponent'
+import { createEnvProbeComponents } from '../probes/EnvProbeComponent'
 import { RegionComponent } from '../region/RegionComponent'
 import type { RegionImpostorComponent } from '../region/RegionImpostorComponent'
 import { RoadComponent } from '../road/RoadComponent'
@@ -365,25 +365,7 @@ export function executeSpawner(spawner: SliceSpawnerComponent) {
             if (light.viewDistanceEnabled) {
               range = Math.max(range, light.maxViewDistance)
             }
-            debug.add({
-              type: 'bounds-box',
-              color: vec3(light.color),
-              alpha: 0.125,
-              solid: true,
-              layer: DebugLayer.LightProbe,
-            })
-            components.push(
-              new BoundsComponent({
-                box: BoundingBox.create(
-                  -light.boxWidth,
-                  -light.boxHeight,
-                  -light.boxDepth,
-                  light.boxWidth,
-                  light.boxHeight,
-                  light.boxDepth,
-                ),
-              }),
-            )
+            components.push(...createEnvProbeComponents(light, debug))
             break
           }
         }
@@ -453,7 +435,7 @@ export function executeSpawner(spawner: SliceSpawnerComponent) {
     let impostorCell: RegionImpostorComponent | null = null
     if (!meshLoaders.length) {
       //
-    } else if (meshLoaders.some((it) => it.data.impostor)) {
+    } else if (meshLoaders.some((it) => region.isImpostorMesh(it.data))) {
       impostorCell = region.poiImpostorAt(world[12], world[13])
     } else if (spawner.impostor && IMPOSTOR_HOLD_CHUNK_SIZES.includes(spawner.chunkSize)) {
       impostorCell = spawner.impostor

@@ -33,6 +33,11 @@ export const TodParams = {
   SUN_INTENSITY: value("Sun", "Sun intensity (lux)", "Sun intensity", 119000.0, 0.0, 550000.0),
   SUN_SPECULAR_MULTIPLIER: value("Sun", "", "Sun specular multiplier", 1.0, 0.0, 4.0),
 
+  // New World: scale the baked environment probes, the cubes do not change over the day
+  ENV_PROBE_MULTIPLIER: color("Environment probes", "Multiplier", "Environment Probe Multiplier", vec3(1.0)),
+  ENV_PROBE_DIFFUSE_MULTIPLIER: value("Environment probes", "Diffuse multiplier", "Environment Probe Diffuse Multiplier", 1.0, 0.0, 16.0),
+  ENV_PROBE_SPECULAR_MULTIPLIER: value("Environment probes", "Specular multiplier", "Environment Probe Specular Multiplier", 1.0, 0.0, 16.0),
+
   FOG_COLOR: color("Fog", "Color (bottom)", "Fog color", vec3(0.0)),
   FOG_COLOR_MULTIPLIER: value("Fog", "Color (bottom) multiplier", "Fog color multiplier", 0.0, 0.0, 16.0),
   VOLFOG_HEIGHT: value("Fog", "Height (bottom)", "Fog height (bottom)", 0.0, -5000.0, 30000.0),

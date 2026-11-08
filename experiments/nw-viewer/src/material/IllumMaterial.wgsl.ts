@@ -1,4 +1,5 @@
 import { COMMON_WGSL } from './common.wgsl'
+import { PROBES_WGSL } from './probes.wgsl'
 
 export default /* wgsl */ `
 
@@ -571,7 +572,7 @@ fn fs_main(input: FragmentInput) -> FragmentOutput {
 
   // --- Environment mapping
   let reflectVec = normalize(reflect(-toEye, normal));
-  var reflectColor = getReflectColor(envMap, samplerLinear, reflectVec, gloss).rgb;
+  var reflectColor = environmentSpecular(samplerLinear, reflectVec, gloss);
   // #if %ENVIRONMENT_MAP
   //     if (pPass.nReflectionMapping > 0)
   //     {
@@ -615,8 +616,9 @@ fn fs_main(input: FragmentInput) -> FragmentOutput {
 
   let ambient = vec3f(ao);
   var shade = accumulateLightShade(lights, global, surface, toEye, input.worldPos);
-  shade.ambient += getReflectColor(envMap, samplerLinear, normal, 0.0).xyz * ambient;
-  shade.specular += reflectColor * ambient * surface.Specular.rgb * shade.ambientScale;
+  shade.ambient += environmentDiffuse(samplerLinear, normal) * ambient;
+  let envFresnel = environmentFresnel(surface.Specular.rgb, gloss, dot(normal, toEye));
+  shade.specular += reflectColor * ambient * envFresnel * shade.ambientScale;
   var color = composeShade(surface, shade);
 
   // --- Ambient / Environment --------------------------------
@@ -824,4 +826,5 @@ fn getMaterialEmittance() -> vec3f {
 }
 
 ${COMMON_WGSL}
+${PROBES_WGSL}
 `

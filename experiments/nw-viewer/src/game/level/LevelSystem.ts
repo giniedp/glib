@@ -43,14 +43,17 @@ import {
   fetchTypedRequest,
   getLevelInfoUrl,
   isTimeOfDayComponent,
+  isViewerLightComponent,
   isViewerMeshComponent,
   type LevelInfo,
+  type ViewerEntity,
   type ViewerMeshComponent,
   type ViewerSlice,
 } from '../../api'
 import { ContentService } from '../../content'
 import { InputSlots, SkyMaterial } from '../../material'
 import { ShapeMaterial } from '../../material/ShapeMaterial'
+import { DebugShapeComponent } from '../debug/DebugShapeComponent'
 import {
   createParticleShowcase,
   particleShowcaseGrid,
@@ -58,6 +61,7 @@ import {
   type ParticleShowcaseOptions,
 } from '../particles/ParticleShowcase'
 import { ParticleSystem } from '../particles/ParticleSystem'
+import { createEnvProbeComponents } from '../probes/EnvProbeComponent'
 import {
   createGroundGeometry,
   createShaderBallGeometries,
@@ -205,6 +209,9 @@ export class LevelSystem extends GameSystem {
     this.cloudsEntity = this.game.createEntity(createCloudsDome(this.entity))
     this.content.updateSlices(levelInfo.slices ?? {})
     for (const options of createSkyboxSystem(this.entity, levelInfo.skyboxSystem)) {
+      this.game.createEntity(options)
+    }
+    for (const options of createMissionProbes(this.entity, levelInfo.missionEntities)) {
       this.game.createEntity(options)
     }
 
@@ -739,6 +746,35 @@ function createSkyboxSystem(parent: GameEntity, slice: ViewerSlice | null | unde
       }),
       components: [new TimeOfDayComponent(tod)],
     })
+  }
+  return result
+}
+
+/**
+ * Environment probes of mission0.entities_xml. Every level has its global probe here, slices do not reference it.
+ * The other mission entities (e.g. lights) are not spawned.
+ */
+function createMissionProbes(parent: GameEntity, entities: ViewerEntity[] | null | undefined): CreateEntityOptions[] {
+  const result: CreateEntityOptions[] = []
+  for (const item of entities ?? []) {
+    if (item.inactive) {
+      continue
+    }
+    for (const component of item.components) {
+      if (!isViewerLightComponent(component) || component.light.type !== 'Probe') {
+        continue
+      }
+      const debug = new DebugShapeComponent()
+      result.push({
+        name: item.name,
+        parent,
+        transform: new TransformComponent({
+          keepWorld: true,
+          world: mat4CreateFromArray(item.transform),
+        }),
+        components: [debug, ...createEnvProbeComponents(component.light, debug)],
+      })
+    }
   }
   return result
 }

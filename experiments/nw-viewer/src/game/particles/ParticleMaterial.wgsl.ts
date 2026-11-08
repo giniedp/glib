@@ -143,7 +143,7 @@ fn fs_main(input: FragmentInput) -> FragmentOutput {
   var alpha = saturate(tex.a * input.color.a);
 
   // ambient of the engine: emissive + ambient * diffuse lighting (ParticleContainer m_AmbColor), plus a sun term
-  let ambient = global.volFog2Ambient.rgb + global.fakeProbeAmbient;
+  let ambient = globalProbeAmbient(input.worldPos - view.cameraPosition.xyz);
   let sun = global.sunColor.rgb * mix(0.25, 0.5, material.lighting.z);
   let lit = vec3f(material.lighting.x) + (ambient + sun) * material.lighting.y;
   var color = tex.rgb * material.diffuseColor.rgb * input.color.rgb * lit * material.options.z;

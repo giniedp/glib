@@ -235,8 +235,11 @@ struct GlobalBlock {
   oceanFogColorDensity : vec4f,
   // ocean water level (PerFrame_WaterLevel.z), far below the terrain when the level has no ocean
   oceanLevel           : f32,
-  // stand-in for the probe ambient within the range of ambient lights, zero when disabled
-  fakeProbeAmbient     : vec3f,
+  // x = atlas slot of the global probe, y = 1 uses the baked probes, 0 the dynamic sky cube
+  probeGlobal          : vec4f,
+  // color of the global probe, including its multipliers and the time of day
+  probeDiffuseColor    : vec4f,
+  probeSpecularColor   : vec4f,
   // PerFrame_VolumetricFogScatteringColor, xyz = sun color times the atmosphere fog albedo
   fogScatteringColor   : vec4f,
   // volumetric fog 2 (analytical), see VolFog2Params, enabled when volFog2Enabled != 0
@@ -246,8 +249,10 @@ struct GlobalBlock {
   volFog2Blend         : vec4f,
   // rgb = sun color * fog albedo (sun radial), w = 1 - k * k (sun radial)
   fogScatteringSecondaryColor : vec4f,
-  // rgb = ambient in-scattering, stand-in for the global environment probe
+  // rgb = ambient in-scattering without a baked global probe, see volFog2ProbeInscatter
   volFog2Ambient       : vec4f,
+  // rgb = global probe color times the entities fog albedo, w = attenuation
+  volFog2Probe         : vec4f,
   // x = zenith fade factor, y = zenith fade curve (exponent)
   volFog2Zenith        : vec4f,
   volFog2Enabled       : u32,
@@ -337,6 +342,14 @@ struct LightIndex {
 // @private
 // @block lights
 @group(0) @binding(10) var<storage, read> lightIndices : array<LightIndex, 1>;
+
+// Specular cubes of the probe atlas (ProbeCubeAtlas), read by the fog and the materials (probes.wgsl)
+// @block global
+// @private
+@group(0) @binding(11) var probeSpecularCubes : texture_cube_array<f32>;
+// @block global
+// @private
+@group(0) @binding(13) var probeSampler       : sampler;
 
 struct LightParams {
   Color: vec4f,
@@ -595,26 +608,17 @@ fn accumulateLightShade(lights: LightBlock, env: GlobalBlock, surface: SurfacePa
   }
   let cluster = lightClusters[clusterIndex];
   let reflectDir = reflect(-toEye, surface.Normal.xyz);
-  // coverage of the ambient lights, places a stand-in for the probe ambient
-  var probeCoverage = 0.0;
   for (var i = 0u; i < cluster.count; i++) {
     let light = lightList[lightIndices[cluster.offset + i].light];
     let result = getClusterLight(light, worldPos, reflectDir);
     if (result.falloff > 0.0) {
       if (u32(light.direction.w) >= LIGHT_TYPE_AMBIENT) {
         shadeAmbientLight(&output, surface, light, result);
-        // probes are roughly uniform within their volume, use a smooth window over the light range
-        let d = distance(worldPos, light.position.xyz) / max(light.position.w, 0.0001);
-        let window = saturate(1.0 - d * d);
-        probeCoverage = max(probeCoverage, window * window);
       } else {
         shadeLight(&output, surface, toEye, result);
       }
     }
   }
-  // no probes: within the range of ambient lights add a base ambient for them to modulate (AMBIENT_LIGHT_MODE fake-probe)
-  output.ambient += env.fakeProbeAmbient * probeCoverage;
-
   return output;
 }
 
@@ -1024,6 +1028,17 @@ fn farPlaneWorldPos(fragCoord: vec2f) -> vec3f {
   return worldH.xyz / worldH.w;
 }
 
+// Ambient of the global probe in a direction for shaders without a surface normal (particles). The lowest mip of
+// the specular cube stands in for the diffuse cube, which only Illum and Terrain bind.
+// Falls back to the fog stand-in without a baked probe.
+fn globalProbeAmbient(direction: vec3f) -> vec3f {
+  if (global.probeGlobal.y < 0.5) {
+    return global.volFog2Ambient.rgb;
+  }
+  let cube = textureSampleLevel(probeSpecularCubes, probeSampler, direction, i32(global.probeGlobal.x), 6.0).rgb;
+  return cube * global.probeDiffuseColor.rgb;
+}
+
 fn globalVolFog2Params() -> VolFog2Params {
   var p: VolFog2Params;
   p.heightDensity = global.volFog2HeightDensity;
@@ -1032,7 +1047,6 @@ fn globalVolFog2Params() -> VolFog2Params {
   p.blend         = global.volFog2Blend;
   p.color1        = global.fogScatteringColor;
   p.color2        = global.fogScatteringSecondaryColor;
-  p.ambient       = global.volFog2Ambient;
   p.zenith        = global.volFog2Zenith;
   return p;
 }
@@ -1042,8 +1056,12 @@ fn globalVolFog2Params() -> VolFog2Params {
 fn getSceneFog(worldPos: vec3f) -> vec4f {
   let cameraToWorldPos = worldPos - view.cameraPosition.xyz;
   if (global.volFog2Enabled != 0u) {
+    var p = globalVolFog2Params();
+    p.ambient = volFog2ProbeInscatter(
+      probeSpecularCubes, probeSampler, global.probeGlobal.x, global.volFog2Probe, global.volFog2Ambient, cameraToWorldPos,
+    );
     // global.sunDirection points away from the light
-    return volFog2Analytical(globalVolFog2Params(), cameraToWorldPos, -global.sunDirection);
+    return volFog2Analytical(p, cameraToWorldPos, -global.sunDirection);
   }
   let legacy = getVolumetricFogColor(worldPos);
   return vec4f(legacy.rgb * (1.0 - legacy.w), legacy.w);

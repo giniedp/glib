@@ -1,6 +1,7 @@
 import {
   CommonInputs,
   inputSlotBuffer,
+  inputSlotSampler,
   inputSlotScalar,
   inputSlotTexture,
   inputSlotVec3,
@@ -56,6 +57,31 @@ export const InputSlots = {
      */
     Color: inputSlotVec4('sunShafts', 'color'),
   },
+  /**
+   * Tone mapping of the game (FilmMappingPass), not bound by materials
+   */
+  FilmMapping: {
+    /**
+     * 1 uses the film mapping, 0 the fallback tone mapping
+     */
+    Enabled: inputSlotScalar('filmMapping', 'enabled'),
+    /**
+     * rgb = color balance, a = saturation
+     */
+    ColorBalance: inputSlotVec4('filmMapping', 'colorBalance'),
+    /**
+     * x = shoulder, y = midtones, z = toe, w = whitepoint
+     */
+    FilmCurve: inputSlotVec4('filmMapping', 'filmCurve'),
+    /**
+     * x = exposure, used when the eye adaptation is off
+     */
+    Exposure: inputSlotVec4('filmMapping', 'exposure'),
+    /**
+     * x = EV min, y = EV max, z = EV auto compensation (HDREyeAdaptation, EV mode), w = 1 enables the eye adaptation
+     */
+    EyeAdaptation: inputSlotVec4('filmMapping', 'eyeAdaptation'),
+  },
   View: {
     ViewMatrix: CommonInputs.View.ViewMatrix,
     ProjectionMatrix: CommonInputs.View.ProjectionMatrix,
@@ -92,10 +118,6 @@ export const InputSlots = {
      */
     OceanLevel: inputSlotScalar('global', 'oceanLevel'),
     /**
-     * Stand-in for the probe ambient within the range of ambient lights, zero when disabled (AMBIENT_LIGHT_MODE)
-     */
-    FakeProbeAmbient: inputSlotVec3('global', 'fakeProbeAmbient'),
-    /**
      * PerFrame_VolumetricFogScatteringColor, xyz = sun color times the atmosphere fog albedo
      */
     FogScatteringColor: inputSlotVec4('global', 'fogScatteringColor'),
@@ -108,9 +130,15 @@ export const InputSlots = {
     VolFog2Blend: inputSlotVec4('global', 'volFog2Blend'),
     FogScatteringSecondaryColor: inputSlotVec4('global', 'fogScatteringSecondaryColor'),
     /**
-     * Ambient in-scattering of the volumetric fog 2, stand-in for the global environment probe
+     * Ambient in-scattering of the volumetric fog 2 without a baked global probe (sky mode, previews).
+     * Also the particle ambient until particles read the probes.
      */
     VolFog2Ambient: inputSlotVec4('global', 'volFog2Ambient'),
+    /**
+     * Global probe in-scattering of the volumetric fog 2 (PerFrame_VolumetricFogGlobalEnvProbe0),
+     * rgb = probe color times the entities fog albedo, w = attenuation, 0 falls back to {@link VolFog2Ambient}
+     */
+    VolFog2Probe: inputSlotVec4('global', 'volFog2Probe'),
     /**
      * Zenith fade of the volumetric fog 2, x = factor, y = curve exponent
      */
@@ -123,6 +151,21 @@ export const InputSlots = {
      */
     SkipFog: inputSlotScalar('global', 'skipFog'),
     EnvMap: inputSlotTexture('global', 'envMap'),
+    /**
+     * Cube arrays of the probe atlas, see ProbeCubeAtlas
+     */
+    ProbeSpecularCubes: inputSlotTexture('global', 'probeSpecularCubes'),
+    ProbeDiffuseCubes: inputSlotTexture('global', 'probeDiffuseCubes'),
+    /**
+     * Sampler of the probe cubes for code without a material sampler (fog)
+     */
+    ProbeSampler: inputSlotSampler('global', 'probeSampler'),
+    /**
+     * x = atlas slot of the global probe, y = 1 uses the baked probes, 0 the dynamic sky cube
+     */
+    ProbeGlobal: inputSlotVec4('global', 'probeGlobal'),
+    ProbeDiffuseColor: inputSlotVec4('global', 'probeDiffuseColor'),
+    ProbeSpecularColor: inputSlotVec4('global', 'probeSpecularColor'),
   },
 }
 

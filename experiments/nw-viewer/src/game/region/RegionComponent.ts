@@ -38,6 +38,7 @@ import {
   type ChunkRuntimeData,
   type RegionCapitalsData,
   type RegionImpostor,
+  type ViewerMeshComponent,
   type RegionInfo,
 } from '../../api'
 import { ENABLE_CAPITALS, ENABLE_CHUNKS, ENABLE_IMPOSTOR_POI, ENABLE_IMPOSTOR_VEG } from '../../constants'
@@ -340,6 +341,16 @@ export class RegionComponent implements GameComponent {
     return this.poiImpostor[this.cellIndex(x, y)] || null
   }
 
+  /**
+   * Whether the capital mesh is part of the content of its POI impostor cell, so the cell waits for it.
+   *
+   * Regions with a region.slicedata flag the meshes baked into the impostor. Regions without (e.g. dungeons)
+   * have no such link, there every capital mesh belongs to the cell it is in.
+   */
+  public isImpostorMesh(comp: ViewerMeshComponent): boolean {
+    return !!comp.impostor || this.regionInfo?.hasSliceData === false
+  }
+
   // #region Tasks
   public loadRegionInfo() {
     if (this.regionInfo || this.regionInfoTask || this.regionInfoLoaded) {
@@ -495,7 +506,7 @@ export class RegionComponent implements GameComponent {
     for (const entity of slice.entities) {
       let entityWorld: Mat4 = null
       for (const comp of entity.components) {
-        if (isViewerMeshComponent(comp) && comp.impostor) {
+        if (isViewerMeshComponent(comp) && this.isImpostorMesh(comp)) {
           entityWorld ??= mat4Multiply(parent, mat4CreateFromArray(entity.transform))
           const cell = this.poiImpostorAt(entityWorld[12], entityWorld[13])
           if (cell) {

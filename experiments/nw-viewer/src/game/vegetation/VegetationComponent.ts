@@ -57,7 +57,8 @@ export class VegetationComponent implements GameComponent {
   }
 
   public get isLoadRequested() {
-    return !!(this.data || this.task)
+    // a failed load (e.g. missing file) is loaded without data, it must not be requested again
+    return !!(this.data || this.task || this.isLoaded)
   }
 
   /**

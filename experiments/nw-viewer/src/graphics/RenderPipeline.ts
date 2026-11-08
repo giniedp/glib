@@ -14,6 +14,8 @@ import {
 } from '@gglib/render'
 import { InputSlots, MaterialLayerMasks } from '../material'
 import { DepthResolveEffect } from './DepthResolveEffect'
+import { FilmMappingPass } from './filmmapping/FilmMappingPass'
+import { LuminancePass } from './exposure/LuminancePass'
 import { FogPass } from './fog/FogPass'
 import { AmbientOcclusionApplyPass } from './ssao/AmbientOcclusionApplyPass'
 import { SunShaftsPass } from './sunshafts/SunShaftsPass'
@@ -28,6 +30,7 @@ const TRANSPARENT_LIST = new RenderListMode(RenderSortPriority.Depth, RenderItem
 
 export function createRenderPipeline(device: Device): RenderPipelineOptions {
   const sunShafts = new SunShaftsPass(device)
+  const luminance = new LuminancePass(device)
   return {
     passes: [
       renderInputsPass({
@@ -127,6 +130,8 @@ export function createRenderPipeline(device: Device): RenderPipelineOptions {
       }),
       // mask and blur from the HDR scene
       sunShafts.generate,
+      // scene luminance for the exposure of the film mapping, measured before bloom like the game
+      luminance,
       bloomPass(device, {
         enabled: true,
         threshold: 1.5,
@@ -135,13 +140,17 @@ export function createRenderPipeline(device: Device): RenderPipelineOptions {
         steps: 10,
         mode: 'jimnez',
       }),
-      tonemapPass(device, {
-        enabled: true,
-        exposure: 1,
-        operator: TonemapOperator.ACES_NARKOWICZ,
-        whitePoint: 10.0,
-        srgb: true,
-      }),
+      new FilmMappingPass(
+        device,
+        tonemapPass(device, {
+          enabled: true,
+          exposure: 1,
+          operator: TonemapOperator.ACES_NARKOWICZ,
+          whitePoint: 10.0,
+          srgb: true,
+        }),
+        luminance,
+      ),
       // blended into the tone mapped image, like the HDR final pass of the original
       sunShafts.apply,
     ],

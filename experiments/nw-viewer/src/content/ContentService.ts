@@ -1,6 +1,6 @@
 import { AssetType, BoundedAsyncExecutor, ContentLoader } from '@gglib/content'
 import { GameEntity, GameSystem, GameWorld, GetComponent } from '@gglib/ecs'
-import { Device, Texture, type ResourceScope } from '@gglib/graphics'
+import { Device, Texture, type ResourceScope, type TextureSource } from '@gglib/graphics'
 import { Model } from '@gglib/model'
 import { fetchTypedRequest, type TypedRequest, type ViewerSlice } from '../api'
 import { ViewerConfig, type ViewerConfigValues } from '../config'
@@ -457,6 +457,15 @@ export class ContentService extends GameSystem {
     return this.loader.loadContainer(url, {
       baseUrl: this.nwbtFileUrl,
     })
+  }
+
+  /**
+   * Loads the data of a texture without creating a texture object, for callers that upload into their own texture
+   */
+  public async loadTextureSource(url: string): Promise<TextureSource> {
+    const asset = await this.loadAsset(url)
+    const options = await asset.load(AssetType.Texture, 0, { content: this.loader })
+    return options.source as TextureSource
   }
 
   public fetchTypedRequest<T>(url: TypedRequest<T>): Promise<T> {

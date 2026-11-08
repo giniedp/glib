@@ -74,6 +74,14 @@ export interface RegionLocation {
    */
   location: [number, number]
   playable: boolean
+  /**
+   * Whether the region has a region.vegetation file
+   */
+  hasVegetation?: boolean
+  /**
+   * Whether the region has a region.distribution file
+   */
+  hasDistribution?: boolean
 }
 
 export interface MissionInfo {
@@ -168,6 +176,11 @@ export interface RegionInfo {
    * `tractmap.bin` holds u8 indices in image order like the heightmap (row 0 at region max y), 255 = unmapped.
    */
   tracts?: string[]
+  /**
+   * Whether the region has a region.slicedata file, which flags the capital meshes baked into the POI impostors
+   * (see {@link ViewerMeshComponent.impostor}). Without it (e.g. dungeons) no mesh is flagged.
+   */
+  hasSliceData?: boolean
 }
 
 export interface RegionImpostor {
@@ -539,10 +552,33 @@ export interface ViewerLightConfig {
   projectorNearPlane: number
   // ProjectorTexture          AssetReference
 
-  // type 4: environment probe
-  boxWidth: number
-  boxHeight: number
-  boxDepth: number
+  // type 3: environment probe
+  /**
+   * Full size of the oriented influence box along the local x, y, z axes
+   */
+  probeArea?: [number, number, number]
+  /**
+   * Specular cubemap, `_diff` sibling is the diffuse cubemap. Missing if the probe has none or the file does not exist
+   */
+  cubemap?: string
+  sortPriority?: number
+  falloff?: number
+  todInfluence?: number
+  /**
+   * Whether reflections are corrected against the world axis aligned parallax box (boxLength, boxWidth, boxHeight)
+   */
+  boxProject?: boolean
+  boxWidth?: number
+  boxLength?: number
+  boxHeight?: number
+  /**
+   * The probe contributes to volumetric fog only, not to surfaces
+   */
+  volumetricFogOnly?: boolean
+  /**
+   * Invisible lights are not rendered
+   */
+  hidden?: boolean
 
   maxViewDistance: number
   viewDistanceEnabled: boolean

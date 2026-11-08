@@ -59,6 +59,21 @@ export class TimeOfDay {
   public skySunIntensity = vec3(20, 20, 20)
   public sunMultiplier = 1.0
   public sunSpecularMultiplier = 1.0
+  public envProbeMultiplier = vec3(1)
+  public envProbeDiffuseMultiplier = 1.0
+  public envProbeSpecularMultiplier = 1.0
+  /**
+   * rgb = color balance, a = saturation
+   */
+  public hdrColorBalance = vec4(1)
+  /**
+   * x = shoulder, y = midtones, z = toe, w = whitepoint
+   */
+  public hdrFilmCurve = vec4(1)
+  /**
+   * x = EV min, y = EV max, z = EV auto compensation (HDREyeAdaptation of the EV mode, the mode of the game)
+   */
+  public hdrEyeAdaptation = vec4(0)
   public sunIsMoon = false
 
   public cloudshadingCustomSkyColor = vec3(0)
@@ -121,6 +136,10 @@ export class TimeOfDay {
   public volFog2ScatteringColor = vec4(0)
   public volFog2ScatteringSecondaryColor = vec4(0)
   private volFog2Albedo = vec3()
+  /**
+   * Fog albedo for entities (E3DPARAM_VOLFOG2_COLOR), tints the global probe in-scattering (D3DVolumetricFog.cpp)
+   */
+  public volFog2EntityAlbedo = vec3(1)
 
   public fogHeightOffset = 0.5
 
@@ -473,6 +492,21 @@ export class TimeOfDay {
     convertIlluminanceToLightColor(this.sunColor, sunIntensity)
     this.sunSpecularMultiplier = this.getParamValue(TodParams.SUN_SPECULAR_MULTIPLIER)
 
+    this.getParamColor(TodParams.ENV_PROBE_MULTIPLIER, this.envProbeMultiplier)
+    this.envProbeDiffuseMultiplier = this.getParamValue(TodParams.ENV_PROBE_DIFFUSE_MULTIPLIER)
+    this.envProbeSpecularMultiplier = this.getParamValue(TodParams.ENV_PROBE_SPECULAR_MULTIPLIER)
+
+    // C3DEngine::GetHDRSetupParams
+    this.getParamColor(TodParams.HDR_COLORGRADING_COLOR_BALANCE, this.hdrColorBalance)
+    this.hdrColorBalance.w = this.getParamValue(TodParams.HDR_COLORGRADING_COLOR_SATURATION)
+    this.hdrFilmCurve.x = this.getParamValue(TodParams.HDR_FILMCURVE_SHOULDER_SCALE)
+    this.hdrFilmCurve.y = this.getParamValue(TodParams.HDR_FILMCURVE_LINEAR_SCALE)
+    this.hdrFilmCurve.z = this.getParamValue(TodParams.HDR_FILMCURVE_TOE_SCALE)
+    this.hdrFilmCurve.w = this.getParamValue(TodParams.HDR_FILMCURVE_WHITEPOINT)
+    this.hdrEyeAdaptation.x = this.getParamValue(TodParams.HDR_EYEADAPTATION_EV_MIN)
+    this.hdrEyeAdaptation.y = this.getParamValue(TodParams.HDR_EYEADAPTATION_EV_MAX)
+    this.hdrEyeAdaptation.z = this.getParamValue(TodParams.HDR_EYEADAPTATION_EV_AUTO_COMPENSATION)
+
     // HDR sky lighting, independent of the sun light fading at dawn and dusk
     this.getParamColor(TodParams.SKYLIGHT_SUN_INTENSITY, this.skySunIntensity)
     vec3$multiplyScalar(
@@ -705,6 +739,7 @@ export class TimeOfDay {
     this.volFog2ScatteringSecondaryColor.y = this.sunColor.y * this.volFog2Albedo.y
     this.volFog2ScatteringSecondaryColor.z = this.sunColor.z * this.volFog2Albedo.z
     this.volFog2ScatteringSecondaryColor.w = 1.0 - k2 * k2
+    this.getParamColor(TodParams.VOLFOG2_COLOR, this.volFog2EntityAlbedo)
   }
 
   private updateFogColorGradientParams() {

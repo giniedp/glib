@@ -20,19 +20,11 @@ export const VT_LOD_QUALITY = 1.5
  * Ambient lights do not emit light, they multiply the ambient lighting of the environment probes
  * (lerp(1, color, attenuation), TiledShading.cfi).
  *
- * - `fake-probe`: like modulate, and adds FAKE_PROBE_AMBIENT within the range of the ambient lights as a stand-in
- *   for the missing probe ambient. Designers place ambient lights where probes are, so indoor areas get a base ambient
- *   while open terrain is not affected.
- * - `modulate`: multiply the ambient lighting we have (sky IBL), as the original does with the probe ambient
+ * - `modulate`: multiply the environment probe ambient (diffuse and specular), as the original does
  * - `skip`: ignore them
  * - `direct`: render them as regular direct lights, adds light the original does not have
  */
-export const AMBIENT_LIGHT_MODE: 'fake-probe' | 'modulate' | 'skip' | 'direct' = 'fake-probe'
-/**
- * Base ambient (linear rgb) within the range of ambient lights, see AMBIENT_LIGHT_MODE `fake-probe`.
- * Not taken from the game data, tuned by eye.
- */
-export const FAKE_PROBE_AMBIENT: [number, number, number] = [0.5, 0.5, 0.5]
+export const AMBIENT_LIGHT_MODE: 'modulate' | 'skip' | 'direct' = 'modulate'
 
 /**
  * Fog with the analytical volumetric fog 2 (VOLFOG2_* time of day parameters), like the game.

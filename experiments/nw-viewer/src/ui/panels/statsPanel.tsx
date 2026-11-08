@@ -3,12 +3,16 @@ import { Graph, Group, SelectWidget, Tabs, type GraphRow } from 'tweak-ui'
 import { DebugShapeSystem } from '../../game/debug/DebugShapeSystem'
 import { SkyLightSystem } from '../../game/level/SkyLightSystem'
 import { LightSystem } from '../../game/light/LightSystem'
+import { ProbeCubeLoader } from '../../content/ProbeCubeLoader'
+import { EnvProbeDebugSystem } from '../../game/probes/EnvProbeDebugSystem'
+import { EnvProbeSystem } from '../../game/probes/EnvProbeSystem'
 import { DebugOptions } from '../../material'
 import type { NwViewer } from '../../viewer'
 import { usePanel } from '../panel'
 import { ResourcesStats } from './resourcesStats'
 import { CameraComponentProps } from '../registry/uiCameraComponent'
 import { DebugShapeSystemProps } from '../registry/uiDebugShapeSystem'
+import { EnvProbeSystemProps } from '../registry/uiEnvProbeSystem'
 import { LightSystemProps } from '../registry/uiLightSystem'
 import { RenderPipelineProps } from '../registry/uiRenderPipeline'
 import { TimeOfDayProps } from '../registry/uiTimeOfDay'
@@ -45,6 +49,14 @@ export function StatsPanel(props: { viewer: NwViewer }) {
       </Group>
       <Group title="Lights">
         <LightSystemProps data={viewer.world.getSystem(LightSystem)} />
+      </Group>
+      <Group title="Environment Probes" collapsible>
+        <EnvProbeSystemProps
+          data={viewer.world.getSystem(EnvProbeSystem)}
+          cubes={viewer.world.getSystem(ProbeCubeLoader)}
+          debug={viewer.world.getSystem(EnvProbeDebugSystem)}
+          viewer={viewer}
+        />
       </Group>
       <Group title="Render Pipeline" collapsible>
         <RenderPipelineProps data={viewer.world.getSystem(Renderer).pipeline} device={viewer.device} />

@@ -1,4 +1,4 @@
-import { BlendState, type Device, type InputValueType, type Program } from '@gglib/graphics'
+import { BlendState, SamplerState, type Device, type InputValueType, type Program } from '@gglib/graphics'
 import { mat4Identity, mat4Invert } from '@gglib/math'
 import { FrameGraph, RenderChannel, type FrameResource, type RenderContext, type RenderPass } from '@gglib/render'
 import { ENABLE_VOLUMETRIC_FOG_2 } from '../../constants'
@@ -189,10 +189,23 @@ export class FogPass implements RenderPass {
     )
     this.volFog2Enabled[0] = ENABLE_VOLUMETRIC_FOG_2 ? 1 : 0
     program.set('params.volFog2Enabled', this.volFog2Enabled)
+    // global probe in-scattering, see EnvProbeInputs. Without probes the stand-in volFog2Ambient applies
+    const cubes = inputs.get(InputSlots.Global.ProbeSpecularCubes)
+    const probe = inputs.get(InputSlots.Global.VolFog2Probe)
+    if (cubes && probe) {
+      setIfPresent(program, 'params.probeGlobal', inputs.get(InputSlots.Global.ProbeGlobal))
+      program.set('params.volFog2Probe', probe)
+      program.set('probeSpecularCubes', cubes)
+      program.set('probeSampler', SamplerState.LinearClamp)
+    } else {
+      program.set('params.volFog2Probe', NO_PROBE)
+    }
   }
 
   private volFog2Enabled = new Float32Array(4)
 }
+
+const NO_PROBE = new Float32Array(4)
 
 function setIfPresent(program: Program, path: string, value: InputValueType | null) {
   if (value != null) {

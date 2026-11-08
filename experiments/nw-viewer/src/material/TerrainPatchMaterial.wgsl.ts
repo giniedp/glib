@@ -1,4 +1,5 @@
 import { COMMON_WGSL } from './common.wgsl'
+import { PROBES_WGSL } from './probes.wgsl'
 
 export const TERRAIN_PATCH_SHADER = /* wgsl */ `
 
@@ -244,7 +245,7 @@ fn fs_main(input: VertexOutput) -> FragmentOutput {
   specular *= saa.specularScale;
 
   let reflectVec = normalize(reflect(-toEye, normal));
-  var reflectColor = getReflectColor(envMap, colorMapSampler, reflectVec, gloss).rgb;
+  var reflectColor = environmentSpecular(colorMapSampler, reflectVec, gloss);
 
   var surface: SurfaceParams;
   surface.Diffuse   = albedo;
@@ -256,8 +257,9 @@ fn fs_main(input: VertexOutput) -> FragmentOutput {
   var shade = accumulateLightShade(lights, global, surface, toEye, input.vWorldPos);
 
   let ambient = vec3f(1.0);
-  shade.ambient += getReflectColor(envMap, colorMapSampler, normal, 0.0).xyz * ambient;
-  shade.specular += reflectColor * ambient * surface.Specular.rgb * shade.ambientScale;
+  shade.ambient += environmentDiffuse(colorMapSampler, normal) * ambient;
+  let envFresnel = environmentFresnel(surface.Specular.rgb, gloss, dot(normal, toEye));
+  shade.specular += reflectColor * ambient * envFresnel * shade.ambientScale;
   var color = composeShade(surface, shade);
 
   var out: FragmentOutput;
@@ -565,4 +567,5 @@ fn vtMipColor(mip: f32) -> vec3f {
 }
 
 ${COMMON_WGSL}
+${PROBES_WGSL}
 `

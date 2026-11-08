@@ -110,6 +110,33 @@ export const viewerConfigSchema = defineConfig({
     group: 'Particles',
   }),
 
+  environmentLight: choice({
+    description:
+      'Source of the environment lighting. baked uses the environment probes of the game, sky the dynamic sky cube.',
+    editable: true,
+    options: ['baked', 'sky'],
+    default: 'baked',
+    group: 'Lighting',
+  }),
+
+  tonemapper: choice({
+    description:
+      'film uses the tone mapping of the game with the time of day values. aces is the previous generic curve.',
+    editable: true,
+    options: ['film', 'aces'],
+    default: 'film',
+    group: 'Lighting',
+  }),
+
+  exposure: choice({
+    description:
+      'Exposure of the film tone mapping. auto adapts to the scene luminance like the game (EV mode), fixed uses exposure 1.',
+    editable: true,
+    options: ['auto', 'fixed'],
+    default: 'auto',
+    group: 'Lighting',
+  }),
+
   workerCulling: boolean({
     description:
       'Culls static level objects in a worker and draws them as instance batches, instead of the scene traversal. ' +

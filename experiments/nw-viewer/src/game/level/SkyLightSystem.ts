@@ -5,6 +5,7 @@ import { Device, getMipmapCount, Texture, TextureUsage } from '@gglib/graphics'
 import { mat4GetTranslation, vec3, vec4 } from '@gglib/math'
 import { Renderer } from '@gglib/render'
 import type { AssetReference } from '../../api'
+import { ViewerConfig } from '../../config'
 import { ENABLE_VOLUMETRIC_FOG_2 } from '../../constants'
 import { InputSlots } from '../../material'
 import { TimeOfDay } from './TimeOfDay'
@@ -14,6 +15,15 @@ export class SkyLightSystem extends GameSystem {
   private game: EcsGame
   private renderer: Renderer
   private todQuery: GameQuery
+  private config: ViewerConfig
+  /**
+   * x = exposure of the film mapping when the eye adaptation is off (config `exposure: fixed`)
+   */
+  private filmExposure = vec4(1, 0, 0, 0)
+  /**
+   * EV min, max, auto compensation of the time of day, w = 1 enables the eye adaptation
+   */
+  private eyeAdaptation = vec4(0)
 
   public device: Device
   public timeOfDay = new TimeOfDay()
@@ -46,6 +56,11 @@ export class SkyLightSystem extends GameSystem {
     if (!this.renderer.inputs.hasBlock('sunShafts')) {
       this.renderer.inputs.createBlock('sunShafts')
     }
+    // read by the FilmMappingPass, not bound by materials
+    if (!this.renderer.inputs.hasBlock('filmMapping')) {
+      this.renderer.inputs.createBlock('filmMapping')
+    }
+    this.config = world.getSystem(ViewerConfig)
     this.fxSky = new NishitaSkyEffect(this.device, {})
     // materials only read the GGX map (EnvMap), it is re-filtered every frame
     this.fxIbl = new IblSampler(this.device, { lambert: false, charlie: false })
@@ -142,6 +157,16 @@ export class SkyLightSystem extends GameSystem {
     inputs.set(InputSlots.Global.CloudShadingSunColor, tod.cloudshadingCustomSunColor)
     inputs.set(InputSlots.Global.CloudShadingSkyColor, tod.cloudshadingCustomSkyColor)
 
+    inputs.set(InputSlots.FilmMapping.Enabled, this.config.value.tonemapper === 'film' ? 1 : 0)
+    inputs.set(InputSlots.FilmMapping.ColorBalance, tod.hdrColorBalance)
+    inputs.set(InputSlots.FilmMapping.FilmCurve, tod.hdrFilmCurve)
+    inputs.set(InputSlots.FilmMapping.Exposure, this.filmExposure)
+    this.eyeAdaptation.x = tod.hdrEyeAdaptation.x
+    this.eyeAdaptation.y = tod.hdrEyeAdaptation.y
+    this.eyeAdaptation.z = tod.hdrEyeAdaptation.z
+    this.eyeAdaptation.w = this.config.value.exposure === 'auto' ? 1 : 0
+    inputs.set(InputSlots.FilmMapping.EyeAdaptation, this.eyeAdaptation)
+
     inputs.set(InputSlots.SunShafts.Params, tod.sunShaftsParams)
     inputs.set(InputSlots.SunShafts.Color, tod.sunShaftsColor)
 
@@ -171,7 +196,8 @@ export class SkyLightSystem extends GameSystem {
     inputs.set(InputSlots.Global.VolFog2Scattering, tod.volFog2Scattering)
     inputs.set(InputSlots.Global.VolFog2Blend, tod.volFog2Blend)
     inputs.set(InputSlots.Global.VolFog2Zenith, tod.volFog2Zenith)
-    // no environment probes: the fog color of the time of day stands in for the probe in-scattering
+    // fallback without a baked global probe (sky mode, previews), EnvProbeInputs writes the probe in-scattering.
+    // Particles still use it as their ambient.
     inputs.set(InputSlots.Global.VolFog2Ambient, tod.fogColGradBase)
     inputs.set(InputSlots.Global.VolFog2Enabled, ENABLE_VOLUMETRIC_FOG_2 ? 1 : 0)
   }

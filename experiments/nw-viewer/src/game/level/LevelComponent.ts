@@ -85,8 +85,10 @@ export class LevelComponent implements GameComponent {
       origin: vec3$multiplyScalar(vec3(location, 0), regionSize),
       mountainHeight: this.data.mountainHeight,
       oceanLevel: this.data.oceanLevel,
-      enableDistribution: this.data.enableDistribution,
-      enableVegetation: this.data.enableVegetation,
+      // the level flags enable the feature, the region flags tell whether the region has the file at all
+      // (missing on older nwbt versions)
+      enableDistribution: this.data.enableDistribution && region.hasDistribution !== false,
+      enableVegetation: this.data.enableVegetation && region.hasVegetation !== false,
       enableChunks: this.data.enableChunks,
       enableTerrain: this.hasTerrain,
     })

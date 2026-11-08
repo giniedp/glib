@@ -3,7 +3,7 @@ import { GameQuery, GameSystem, GameWorld } from '@gglib/ecs'
 import { Device, type WebGpuDevice } from '@gglib/graphics'
 import { DEGREE_TO_RAD, mat4GetRight, mat4GetTranslation, mat4GetUp, vec3, vec3$normalize } from '@gglib/math'
 import { Renderer } from '@gglib/render'
-import { AMBIENT_LIGHT_MODE, FAKE_PROBE_AMBIENT } from '../../constants'
+import { AMBIENT_LIGHT_MODE } from '../../constants'
 import { InputBlocks, InputSlots } from '../../material'
 import { LightClusterShader, type LightClusterLight, type LightClusterShaderOptions } from './LightClusterShader'
 import { LightComponent } from './LightComponent'
@@ -97,10 +97,7 @@ export class LightSystem extends GameSystem {
   private updateClusterInputs() {
     this.renderer.inputs.set(InputSlots.Lights.ClusterGrid, this.shader.clusterGrid)
     this.renderer.inputs.set(InputSlots.Lights.ClusterDepth, this.shader.clusterDepth)
-    this.renderer.inputs.set(InputSlots.Global.FakeProbeAmbient, this.fakeProbeAmbient)
   }
-
-  private fakeProbeAmbient = AMBIENT_LIGHT_MODE === 'fake-probe' ? vec3(FAKE_PROBE_AMBIENT) : vec3(0)
 
   private addLights() {
     for (const entity of this.query) {
@@ -116,7 +113,7 @@ export class LightSystem extends GameSystem {
 
   private writeLight(component: LightComponent, out: LightClusterLight): boolean {
     const config = component.config
-    const ambient = !!config.ambient && (AMBIENT_LIGHT_MODE === 'modulate' || AMBIENT_LIGHT_MODE === 'fake-probe')
+    const ambient = !!config.ambient && AMBIENT_LIGHT_MODE === 'modulate'
     // the color of ambient lights is a multiplier, the viewer intensity scale does not apply
     const diffuse = (config.diffuseMultiplier ?? 1) * (ambient ? 1 : this.intensityScale)
     const specular = config.specMultiplier ?? 1

@@ -1,6 +1,14 @@
 import { EcsGame } from '@gglib/components'
 import { GameQuery, GameSystem, GameWorld } from '@gglib/ecs'
-import { mat4GetForward, mat4GetTranslation, mat4GetUp, mat4Invert, vec3, type Mat4 } from '@gglib/math'
+import {
+  mat4GetTranslation,
+  mat4Invert,
+  SpaceBasis,
+  vec3,
+  vec3$normalize,
+  vec3ApplyMat4Rotation,
+  type Mat4,
+} from '@gglib/math'
 import { lfmt } from '@gglib/utils'
 import {
   assetReferenceKey,
@@ -38,6 +46,7 @@ export class AudioSystem extends GameSystem {
   private content: ContentService
   private level: LevelSystem
   private sky: SkyLightSystem
+  private space: SpaceBasis
   private query: GameQuery
   private scriptQuery: GameQuery
   private sentScripts = new Set<number>()
@@ -127,6 +136,7 @@ export class AudioSystem extends GameSystem {
     this.content = world.getSystem(ContentService)
     this.level = world.getSystem(LevelSystem)
     this.sky = world.getSystem(SkyLightSystem)
+    this.space = world.getSystem(SpaceBasis)
     this.query = world.query({ scope: 'active', required: [AudioEmitterComponent] })
     this.scriptQuery = world.query({ scope: 'active', required: [AudioScriptComponent] })
     this.output.onEvicted = (mediaIds) => this.post({ type: 'evicted', mediaIds })
@@ -166,8 +176,8 @@ export class AudioSystem extends GameSystem {
     if (camera?.entity) {
       const world = camera.entity.getTransform().world as Mat4
       mat4GetTranslation(world, this.position)
-      mat4GetForward(world, this.forward)
-      mat4GetUp(world, this.up)
+      vec3$normalize(vec3ApplyMat4Rotation(this.space.forward, world, this.forward))
+      vec3$normalize(vec3ApplyMat4Rotation(this.space.up, world, this.up))
       this.output.tick(this.position, this.forward, this.up)
     }
 
