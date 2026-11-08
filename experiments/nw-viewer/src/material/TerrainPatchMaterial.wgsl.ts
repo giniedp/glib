@@ -1,4 +1,5 @@
 import { COMMON_WGSL } from './common.wgsl'
+import { GBUFFER_WGSL } from './gbuffer.wgsl'
 import { PROBES_WGSL } from './probes.wgsl'
 
 export const TERRAIN_PATCH_SHADER = /* wgsl */ `
@@ -180,8 +181,25 @@ fn vs_main(input : VertexInput) -> VertexOutput {
   return output;
 }
 
-@fragment
-fn fs_main(input: VertexOutput) -> FragmentOutput {
+// Surface attributes of a fragment, shared by the forward (fs_main) and gbuffer (fs_gbuffer) entry points
+struct TerrainSurface {
+  toEye             : vec3f,
+  normal            : vec3f,
+  albedo            : vec3f,
+  specular          : vec3f,
+  gloss             : f32,
+  authoredRoughness : f32, // before specular AA, for debug
+  tangent           : vec3f,
+  bitangent         : vec3f,
+  geometryNormal    : vec3f,
+  local             : vec2f, // region local position, for debug
+  regionUv          : vec2f, // for debug
+  vtMip             : f32,   // for debug
+  vtValid           : f32,   // for debug
+};
+
+// Virtual texture and macro map lookup, specular AA
+fn terrainSurface(input: VertexOutput) -> TerrainSurface {
   let instance = instances[input.iid];
 
   let toEye = normalize(view.cameraPosition - input.vWorldPos);
@@ -240,9 +258,40 @@ fn fs_main(input: VertexOutput) -> FragmentOutput {
     roughnessToSmoothness(authoredRoughness),
     specular,
   );
-  let gloss = saa.smoothness;
-  let roughness = smoothnessToRoughness(gloss);
   specular *= saa.specularScale;
+
+  var s: TerrainSurface;
+  s.toEye             = toEye;
+  s.normal            = normal;
+  s.albedo            = albedo;
+  s.specular          = specular;
+  s.gloss             = saa.smoothness;
+  s.authoredRoughness = authoredRoughness;
+  s.tangent           = tbn[0];
+  s.bitangent         = tbn[1];
+  s.geometryNormal    = tbn[2];
+  s.local             = local;
+  s.regionUv          = regionUv;
+  s.vtMip             = vt.mip;
+  s.vtValid           = vtValid;
+  return s;
+}
+
+@fragment
+fn fs_main(input: VertexOutput) -> FragmentOutput {
+  let s = terrainSurface(input);
+  let toEye             = s.toEye;
+  let normal            = s.normal;
+  let albedo            = s.albedo;
+  let alpha             = 1.0;
+  let specular          = s.specular;
+  let gloss             = s.gloss;
+  let roughness         = smoothnessToRoughness(gloss);
+  let authoredRoughness = s.authoredRoughness;
+  let tbn               = mat3x3f(s.tangent, s.bitangent, s.geometryNormal);
+  let local             = s.local;
+  let regionUv          = s.regionUv;
+  let vtValid           = s.vtValid;
 
   let reflectVec = normalize(reflect(-toEye, normal));
   var reflectColor = environmentSpecular(colorMapSampler, reflectVec, gloss);
@@ -340,7 +389,7 @@ fn fs_main(input: VertexOutput) -> FragmentOutput {
     }
     case DEBUG_VT_MIP: {
       let shade = 0.5 + 0.5 * max(dot(normal, normalize(vec3f(0.3, 0.3, 0.9))), 0.0);
-      out.color = vec4f(mix(vtMipColor(vt.mip), vec3f(1.0, 0.0, 0.0), 1.0 - vtValid) * shade, 1.0);
+      out.color = vec4f(mix(vtMipColor(s.vtMip), vec3f(1.0, 0.0, 0.0), 1.0 - vtValid) * shade, 1.0);
     }
     case DEBUG_V_UV3: {
       // out.color = vec4f(fract(uvEmittance.xy), 0.0, 1.0);
@@ -357,6 +406,21 @@ fn fs_main(input: VertexOutput) -> FragmentOutput {
     }
   }
   return out;
+}
+
+// GBuffer attributes (coatlicue-terrain ZPass), lit by the deferred lighting pass
+@fragment
+fn fs_gbuffer(input: VertexOutput) -> GBufferOutput {
+  let s = terrainSurface(input);
+  var g: GBufferSurface;
+  g.normal        = s.normal;
+  g.albedo        = s.albedo;
+  g.reflectance   = s.specular;
+  g.smoothness    = s.gloss;
+  g.occlusion     = 1.0;
+  g.lightingModel = LIGHTINGMODEL_STANDARD;
+  g.transmittance = vec3f(0.0);
+  return encodeGBuffer(g, linearizeDepthReversedZ(input.Position.z, view.near, view.far));
 }
 
 struct MtlParams {
@@ -567,5 +631,6 @@ fn vtMipColor(mip: f32) -> vec3f {
 }
 
 ${COMMON_WGSL}
+${GBUFFER_WGSL}
 ${PROBES_WGSL}
 `

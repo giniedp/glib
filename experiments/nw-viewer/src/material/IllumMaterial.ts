@@ -14,7 +14,7 @@ import {
   TRUE,
 } from '@gglib/graphics'
 import { mat4Identity, vec2, vec4 } from '@gglib/math'
-import { IMPOSTOR_FADE_RANGE, IMPOSTOR_VISIBILITY_START } from '../constants'
+import { ENABLE_GBUFFER_EFFECTS, IMPOSTOR_FADE_RANGE, IMPOSTOR_VISIBILITY_START } from '../constants'
 import { type NwMaterialProps } from './GltfExtension'
 import SCHEMA from './IllumMaterial.meta'
 import WGSL from './IllumMaterial.wgsl'
@@ -32,24 +32,36 @@ import {
   paramVec4,
 } from './utils'
 
-export function illumShaderOptions(constants: Record<string, number>): ShaderModuleOptions {
+/**
+ * Fragment entry points of the Illum shader per render variant
+ */
+const ILLUM_FRAGMENT_ENTRY = {
+  forward: 'fs_main',
+  gbuffer: 'fs_gbuffer',
+} as const
+
+export function illumShaderOptions(
+  constants: Record<string, number>,
+  fragmentEntry: string = ILLUM_FRAGMENT_ENTRY.forward,
+): ShaderModuleOptions {
   return {
-    name: 'Illum Shader',
+    name: `Illum Shader (${fragmentEntry})`,
     wgsl: {
       source: WGSL,
       fragmentConstants: ShaderConstants.get(constants),
       vertexConstants: ShaderConstants.get(constants),
+      fragmentEntry,
     },
     glsl: null,
   }
 }
 
-export function illumEffectOptions(constants: Record<string, number>): EffectOptions {
+export function illumEffectOptions(constants: Record<string, number>, fragmentEntry?: string): EffectOptions {
   return {
     name: 'Illum Effect',
     meta: {},
     program: {
-      shader: illumShaderOptions(constants),
+      shader: illumShaderOptions(constants, fragmentEntry),
       sharedBlocks: [InputBlocks.Global, InputBlocks.View, InputBlocks.Frame, InputBlocks.Lights],
       perInstanceTransformBlock: 'object',
       perInstanceDataBlock: 'instanceData',
@@ -292,6 +304,14 @@ export class IllumMaterial extends MaterialWithSchema(SCHEMA) {
     this.setPublicParams(params)
     this.DeformWave0 = deformWave0
     this.DeformWave1 = deformWave1
+
+    // opaque surfaces also write the gbuffer (blended surfaces and decals stay forward for now)
+    if (ENABLE_GBUFFER_EFFECTS && !this.isTransparent && this.EnabledAlphaBlend !== TRUE) {
+      const gbuffer = new Effect(this.device, illumEffectOptions(shaderConst, ILLUM_FRAGMENT_ENTRY.gbuffer))
+      gbuffer.cullState = this.effect.cullState
+      gbuffer.blendState = BlendState.Opaque
+      this.setEffect(RenderVariant.GBuffer, gbuffer)
+    }
 
     if (attrs.MtlFlags & MtlFlag.MTL_FLAG_ADDITIVE) {
       // never seen

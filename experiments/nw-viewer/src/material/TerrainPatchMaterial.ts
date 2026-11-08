@@ -1,6 +1,8 @@
 import {
   CommonInputs,
   CullState,
+  Effect,
+  RenderVariant,
   inputSlotSampler,
   inputSlotScalar,
   inputSlotTexture,
@@ -11,25 +13,27 @@ import {
   type ShaderModuleOptions,
 } from '@gglib/graphics'
 import { vec4 } from '@gglib/math'
+import { ENABLE_GBUFFER_EFFECTS } from '../constants'
 import { TERRAIN_PATCH_SHADER as WGSL } from './TerrainPatchMaterial.wgsl'
 import { InputBlocks, MaterialLayerMasks } from './common'
 
-export function terrainPatchShaderOptions(): ShaderModuleOptions {
+export function terrainPatchShaderOptions(fragmentEntry: string = 'fs_main'): ShaderModuleOptions {
   return {
-    name: 'Terrain Patch Shader',
+    name: `Terrain Patch Shader (${fragmentEntry})`,
     wgsl: {
       source: WGSL,
+      fragmentEntry,
     },
     glsl: null,
   }
 }
 
-export function terrainPatchEffectOptions(): EffectOptions {
+export function terrainPatchEffectOptions(fragmentEntry?: string): EffectOptions {
   return {
     name: 'Terrain Patch Effect',
     meta: {},
     program: {
-      shader: terrainPatchShaderOptions(),
+      shader: terrainPatchShaderOptions(fragmentEntry),
       sharedBlocks: [InputBlocks.Global, InputBlocks.View, InputBlocks.Frame, InputBlocks.Lights],
     },
   }
@@ -79,5 +83,11 @@ export class TerrainPatchMaterial extends MaterialWithSchema(TerrainPatchMateria
     this.HeightMapUvTransformCoarse = vec4(1, 1, 0, 0)
 
     this.effect.cullState = CullState.None
+
+    if (ENABLE_GBUFFER_EFFECTS) {
+      const gbuffer = new Effect(this.device, terrainPatchEffectOptions('fs_gbuffer'))
+      gbuffer.cullState = CullState.None
+      this.setEffect(RenderVariant.GBuffer, gbuffer)
+    }
   }
 }

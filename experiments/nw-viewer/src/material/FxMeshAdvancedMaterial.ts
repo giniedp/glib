@@ -17,28 +17,33 @@ import SCHEMA from './FxMeshAdvancedMaterial.meta'
 import WGSL from './FxMeshAdvancedMaterial.wgsl'
 import type { NwMaterialProps } from './GltfExtension'
 import { TextureModifier } from './TexMod'
+import { ENABLE_GBUFFER_EFFECTS } from '../constants'
 import { getShaderConstants, InputBlocks, MaterialLayerMasks, type FeatureFlag } from './common'
 import { MtlFlag } from './types'
 import { MtlUtil, paramValue, paramVec4, getWhiteTexture } from './utils'
 
-export function fxMeshAdvancedShaderOptions(constants: Record<string, number>): ShaderModuleOptions {
+export function fxMeshAdvancedShaderOptions(
+  constants: Record<string, number>,
+  fragmentEntry: string = 'fs_main',
+): ShaderModuleOptions {
   return {
-    name: 'FX Mesh Advanced Shader',
+    name: `FX Mesh Advanced Shader (${fragmentEntry})`,
     wgsl: {
       source: WGSL,
       fragmentConstants: ShaderConstants.get(constants),
       vertexConstants: ShaderConstants.get(constants),
+      fragmentEntry,
     },
     glsl: null,
   }
 }
 
-export function fxMeshAdvancedEffectOptions(constants: Record<string, number>): EffectOptions {
+export function fxMeshAdvancedEffectOptions(constants: Record<string, number>, fragmentEntry?: string): EffectOptions {
   return {
     name: 'FX Mesh Advanced Effect',
     meta: {},
     program: {
-      shader: fxMeshAdvancedShaderOptions(constants),
+      shader: fxMeshAdvancedShaderOptions(constants, fragmentEntry),
       sharedBlocks: [InputBlocks.Global, InputBlocks.View, InputBlocks.Frame, InputBlocks.Lights],
       perInstanceTransformBlock: 'object',
     },
@@ -141,6 +146,12 @@ export class FxMeshAdvancedMaterial extends MaterialWithSchema(SCHEMA) {
     // a two sided material overrides the cull mode of the technique (D3DFXPipeline: MTL_FLAG_2SIDED, RBSI_LOCKCULL)
     if (attrs.MtlFlags & MtlFlag.MTL_FLAG_2SIDED) {
       this.effect.cullState = CullState.None
+    }
+    if (ENABLE_GBUFFER_EFFECTS && !this.isTransparent) {
+      const gbuffer = new Effect(this.device, fxMeshAdvancedEffectOptions(shaderConst, 'fs_gbuffer'))
+      gbuffer.cullState = this.effect.cullState
+      gbuffer.blendState = BlendState.Opaque
+      this.setEffect(RenderVariant.GBuffer, gbuffer)
     }
 
     this.layer = MaterialLayerMasks.FxMeshAdvanced

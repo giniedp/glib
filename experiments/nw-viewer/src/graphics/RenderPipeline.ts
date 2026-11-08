@@ -4,6 +4,7 @@ import {
   Color,
   CommonInputs,
   FALSE,
+  RenderVariant,
   TextureUsage,
   TRUE,
   type Device,
@@ -24,6 +25,8 @@ import {
   type RenderPipelineOptions,
 } from '@gglib/render'
 import { InputSlots, MaterialLayerMasks } from '../material'
+import { GBUFFER_DESCRIPTORS, GBufferChannel } from './GBufferChannels'
+import { GBufferDebugPass } from './passes/gbuffer/GBufferDebugPass'
 import { CopyPass, NwCopyChannel } from './passes/CopyPass'
 import { DepthResolveEffect } from './passes/DepthResolveEffect'
 import { GeometryPass } from './passes/GeometryPass'
@@ -232,8 +235,42 @@ export function createRenderPipeline(device: Device, options?: NwRenderPipelineO
     ),
     // blended into the tone mapped image, like the HDR final pass of the original
     sunShafts.apply,
+    groupPass({
+      name: 'GBuffer Debug',
+      enabled: false,
+      passes: createGBufferDebugPasses(device),
+    }),
   ]
   return { passes, msaa }
+}
+
+/**
+ * GBuffer pass next to the forward pipeline (own depth, single sample) and a view of the decoded attributes.
+ * Replaced by the deferred pipeline in phase 4.
+ */
+function createGBufferDebugPasses(device: Device): RenderPass[] {
+  return [
+    new GeometryPass({
+      name: 'GBufferPass',
+      list: RenderListMode.Opaque,
+      variant: RenderVariant.GBuffer,
+      depth: GBufferChannel.DebugDepth,
+      clearDepth: true,
+      descriptors: GBUFFER_DESCRIPTORS,
+      channels: [
+        { clear: Color.TransparentBlack, render: GBufferChannel.A },
+        { clear: Color.TransparentBlack, render: GBufferChannel.B },
+        { clear: Color.TransparentBlack, render: GBufferChannel.C },
+        { clear: Color.TransparentBlack, render: GBufferChannel.DebugLinearDepth },
+      ],
+    }),
+    new GBufferDebugPass(device, {
+      a: GBufferChannel.A,
+      b: GBufferChannel.B,
+      c: GBufferChannel.C,
+      linearDepth: GBufferChannel.DebugLinearDepth,
+    }),
+  ]
 }
 
 /**

@@ -1,4 +1,5 @@
 import { COMMON_WGSL } from './common.wgsl'
+import { GBUFFER_WGSL } from './gbuffer.wgsl'
 import { PROBES_WGSL } from './probes.wgsl'
 
 export default /* wgsl */ `
@@ -275,8 +276,26 @@ fn vs_main(input : VertexInput) -> FragmentInput {
   return output;
 }
 
-@fragment
-fn fs_main(input: FragmentInput) -> FragmentOutput {
+// Surface attributes of a fragment, shared by the forward (fs_main) and gbuffer (fs_gbuffer) entry points
+struct IllumSurface {
+  toEye               : vec3f,
+  albedo              : vec3f,
+  alpha               : f32,
+  normal              : vec3f,
+  specular            : vec3f,
+  gloss               : f32,
+  authoredGloss       : f32, // before specular AA, for debug
+  ao                  : f32,
+  shadingBack         : vec3f, // transmittance color
+  lightingModel       : u32,
+  uvBase              : vec4f,
+  uvEmittance         : vec2f,
+  uvEmissiveIntensity : vec2f,
+  detail              : vec4f, // detail map, for debug
+};
+
+// Samples and combines the material maps, applies alpha test, dissolve and specular AA (may discard)
+fn illumSurface(input: FragmentInput) -> IllumSurface {
   // impostor fade in, distribution / vegetation fade out (DITHER_FADE_* constants)
   ditherFade(input.position.xy, distance(view.cameraPosition, input.worldPos), input.dissolve);
 
@@ -570,9 +589,6 @@ fn fs_main(input: FragmentInput) -> FragmentOutput {
   gloss = saa.smoothness;
   specular *= saa.specularScale;
 
-  // --- Environment mapping
-  let reflectVec = normalize(reflect(-toEye, normal));
-  var reflectColor = environmentSpecular(samplerLinear, reflectVec, gloss);
   // #if %ENVIRONMENT_MAP
   //     if (pPass.nReflectionMapping > 0)
   //     {
@@ -604,6 +620,46 @@ fn fs_main(input: FragmentInput) -> FragmentOutput {
   if (VERTCOLORS) {
     albedo *= input.vertexColor.rgb;
   }
+
+  var s: IllumSurface;
+  s.toEye               = toEye;
+  s.albedo              = albedo;
+  s.alpha               = alpha;
+  s.normal              = normal;
+  s.specular            = specular;
+  s.gloss               = gloss;
+  s.authoredGloss       = authoredGloss;
+  s.ao                  = ao;
+  s.shadingBack         = cShadingBack;
+  s.lightingModel       = lightingModel;
+  s.uvBase              = uvBase;
+  s.uvEmittance         = uvEmittance;
+  s.uvEmissiveIntensity = uvEmissiveIntensity;
+  s.detail              = cDetailMap;
+  return s;
+}
+
+@fragment
+fn fs_main(input: FragmentInput) -> FragmentOutput {
+  let s = illumSurface(input);
+  let toEye               = s.toEye;
+  let normal              = s.normal;
+  let albedo              = s.albedo;
+  var alpha               = s.alpha;
+  let specular            = s.specular;
+  let gloss               = s.gloss;
+  let authoredGloss       = s.authoredGloss;
+  let ao                  = s.ao;
+  let cShadingBack        = s.shadingBack;
+  let lightingModel       = s.lightingModel;
+  let uvBase              = s.uvBase;
+  let uvEmittance         = s.uvEmittance;
+  let uvEmissiveIntensity = s.uvEmissiveIntensity;
+  let cDetailMap          = s.detail;
+
+  // --- Environment mapping
+  let reflectVec = normalize(reflect(-toEye, normal));
+  var reflectColor = environmentSpecular(samplerLinear, reflectVec, gloss);
 
   var surface: SurfaceParams;
   surface.Transmittance = vec4f(cShadingBack.rgb, material.normalViewDependency);
@@ -751,6 +807,21 @@ fn fs_main(input: FragmentInput) -> FragmentOutput {
   return out;
 }
 
+// GBuffer attributes of opaque surfaces (illum.cfx ZPass), lit by the deferred lighting pass
+@fragment
+fn fs_gbuffer(input: FragmentInput) -> GBufferOutput {
+  let s = illumSurface(input);
+  var g: GBufferSurface;
+  g.normal        = s.normal;
+  g.albedo        = s.albedo;
+  g.reflectance   = s.specular;
+  g.smoothness    = s.gloss;
+  g.occlusion     = s.ao;
+  g.lightingModel = s.lightingModel;
+  g.transmittance = select(vec3f(0.0), s.shadingBack, s.lightingModel == LIGHTINGMODEL_TRANSMITTANCE);
+  return encodeGBuffer(g, linearizeDepthReversedZ(input.position.z, view.near, view.far));
+}
+
 // =============================================================
 // Helpers - Specular AA (Kaplanyan 2016)
 // =============================================================
@@ -826,5 +897,6 @@ fn getMaterialEmittance() -> vec3f {
 }
 
 ${COMMON_WGSL}
+${GBUFFER_WGSL}
 ${PROBES_WGSL}
 `

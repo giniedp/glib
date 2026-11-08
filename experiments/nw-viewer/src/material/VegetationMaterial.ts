@@ -12,7 +12,7 @@ import {
   TRUE,
 } from '@gglib/graphics'
 import { vec4 } from '@gglib/math'
-import { IMPOSTOR_FADE_RANGE, IMPOSTOR_VISIBILITY_START } from '../constants'
+import { ENABLE_GBUFFER_EFFECTS, IMPOSTOR_FADE_RANGE, IMPOSTOR_VISIBILITY_START } from '../constants'
 import type { NwMaterialProps } from './GltfExtension'
 import { TextureModifier } from './TexMod'
 import SCHEMA from './VegetationMaterial.meta'
@@ -21,24 +21,28 @@ import { type FeatureFlag, getShaderConstants, InputBlocks, MaterialLayerMasks, 
 import { MtlFlag } from './types'
 import { getWhiteTexture, MtlUtil, paramValue, paramVec4 } from './utils'
 
-export function vegetationShaderOptions(constants: Record<string, number>): ShaderModuleOptions {
+export function vegetationShaderOptions(
+  constants: Record<string, number>,
+  fragmentEntry: string = 'fs_main',
+): ShaderModuleOptions {
   return {
-    name: 'Vegetation Shader',
+    name: `Vegetation Shader (${fragmentEntry})`,
     wgsl: {
       source: WGSL,
       fragmentConstants: ShaderConstants.get(constants),
       vertexConstants: ShaderConstants.get(constants),
+      fragmentEntry,
     },
     glsl: null,
   }
 }
 
-export function vegetationEffectOptions(constants: Record<string, number>): EffectOptions {
+export function vegetationEffectOptions(constants: Record<string, number>, fragmentEntry?: string): EffectOptions {
   return {
     name: 'New World Effect',
     meta: {},
     program: {
-      shader: vegetationShaderOptions(constants),
+      shader: vegetationShaderOptions(constants, fragmentEntry),
       sharedBlocks: [InputBlocks.Global, InputBlocks.View, InputBlocks.Frame, InputBlocks.Lights],
       perInstanceTransformBlock: 'object',
     },
@@ -111,6 +115,13 @@ export class VegetationMaterial extends MaterialWithSchema(SCHEMA) {
     }
     if (shaderFlags.has('GRASS')) {
       this.effect.cullState = CullState.None
+    }
+
+    if (ENABLE_GBUFFER_EFFECTS) {
+      const gbuffer = new Effect(this.device, vegetationEffectOptions(shaderConst, 'fs_gbuffer'))
+      gbuffer.cullState = this.effect.cullState
+      gbuffer.blendState = BlendState.Opaque
+      this.setEffect(RenderVariant.GBuffer, gbuffer)
     }
 
     this.layer = MaterialLayerMasks.Vegetation

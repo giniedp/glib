@@ -1,7 +1,9 @@
 import { COMMON_WGSL } from './common.wgsl'
+import { GBUFFER_WGSL } from './gbuffer.wgsl'
 
 export default /* wgsl */ `
 ${COMMON_WGSL}
+${GBUFFER_WGSL}
 
 struct MaterialBlock {
   diffuseColor  : vec4f,
@@ -256,8 +258,25 @@ fn vs_main(input : VertexInput) -> FragmentInput {
   return output;
 }
 
-@fragment
-fn fs_main(input: FragmentInput) -> FragmentOutput {
+// Surface attributes of a fragment, shared by the forward (fs_main) and gbuffer (fs_gbuffer) entry points
+struct VegetationSurface {
+  toEye               : vec3f,
+  normal              : vec3f,
+  albedo              : vec3f,
+  alpha               : f32,
+  specular            : vec3f,
+  gloss               : f32,
+  authoredGloss       : f32, // before specular AA, for debug
+  shadingBack         : vec3f, // forward back light (vertex back light x opacity)
+  frontLight          : vec3f, // forward grass front light
+  opacity             : f32,   // opacity map (leaves translucency), 1 otherwise
+  uvBase              : vec4f,
+  uvEmittance         : vec2f,
+  uvEmissiveIntensity : vec2f,
+};
+
+// Samples and combines the material maps, specular AA and alpha test (may discard)
+fn vegetationSurface(input: FragmentInput) -> VegetationSurface {
   // impostor fade in, distribution / vegetation fade out (DITHER_FADE_* constants)
   ditherFade(input.position.xy, distance(view.cameraPosition, input.worldPos), 1.0);
 
@@ -397,12 +416,14 @@ fn fs_main(input: FragmentInput) -> FragmentOutput {
   // -- frag_custom_begin
   vertCol = vec4f(1.0); // Vegetation has custom color ouput - override vtx color back to default
 
+  var opacity = 1.0;
   if (LEAVES || GRASS) {
     // orient normal of vegetation planes towards viewer to reduce fresnel gain and mimic some forward scattering
     // (clusterforward_commonzpass.cfi)
     normal = normalize(normal + normalize(input.toEye) * material.normalViewDependency);
     if (LEAVES) {
-      cShadingBack = cBackLight.rgb * textureSample(opacityMap, samplerLinear, uvBase.xy).r;
+      opacity = textureSample(opacityMap, samplerLinear, uvBase.xy).r;
+      cShadingBack = cBackLight.rgb * opacity;
     } else {
       cShadingBack = cBackLight.rgb;
     }
@@ -454,7 +475,44 @@ fn fs_main(input: FragmentInput) -> FragmentOutput {
   gloss = saa.smoothness;
   specular *= saa.specularScale;
 
+  // -- Alpha test (%_RT_ALPHATEST) --------------------------
+  if (material.enabledAlphaTest != 0u && alpha < material.alphaTestRef) {
+    discard;
+  }
 
+  var s: VegetationSurface;
+  s.toEye               = toEye;
+  s.normal              = normal;
+  s.albedo              = albedo;
+  s.alpha               = alpha;
+  s.specular            = specular;
+  s.gloss               = gloss;
+  s.authoredGloss       = authoredGloss;
+  s.shadingBack         = cShadingBack;
+  s.frontLight          = cFrontLight;
+  s.opacity             = opacity;
+  s.uvBase              = uvBase;
+  s.uvEmittance         = uvEmittance;
+  s.uvEmissiveIntensity = uvEmissiveIntensity;
+  return s;
+}
+
+@fragment
+fn fs_main(input: FragmentInput) -> FragmentOutput {
+  let s = vegetationSurface(input);
+  let toEye               = s.toEye;
+  let normal              = s.normal;
+  var albedo              = s.albedo;
+  var alpha               = s.alpha;
+  var specular            = s.specular;
+  let gloss               = s.gloss;
+  let authoredGloss       = s.authoredGloss;
+  var cShadingBack        = s.shadingBack;
+  let cFrontLight         = s.frontLight;
+  let uvBase              = s.uvBase;
+  let uvEmittance         = s.uvEmittance;
+  let uvEmissiveIntensity = s.uvEmissiveIntensity;
+  let cFilterColor        = vec3f(1.0);
 
   // -- Environment mapping
   // #if %ENVIRONMENT_MAP
@@ -535,13 +593,6 @@ fn fs_main(input: FragmentInput) -> FragmentOutput {
   specular = shade.specular.rgb * input.color0.x;// pPass.pCustom.fRenderQuality;
 
   // #endregion
-
-
-
-  // -- Alpha test (%_RT_ALPHATEST) --------------------------
-  if (material.enabledAlphaTest != 0u && alpha < material.alphaTestRef) {
-    discard;
-  }
 
 
 
@@ -670,6 +721,27 @@ fn fs_main(input: FragmentInput) -> FragmentOutput {
     }
   }
   return out;
+}
+
+// GBuffer attributes (vegetation.cfx ZPass, clusterforward_commonzpass.cfi): leaves and grass use the transmittance
+// lighting model with transmittance = saturate(BackDiffuseMultiplier x opacity (leaves)) x TransmittanceColor.
+// The forward only terms (grass front light, render quality scale) are not part of the gbuffer.
+@fragment
+fn fs_gbuffer(input: FragmentInput) -> GBufferOutput {
+  let s = vegetationSurface(input);
+  var g: GBufferSurface;
+  g.normal        = s.normal;
+  g.albedo        = s.albedo;
+  g.reflectance   = s.specular;
+  g.smoothness    = s.gloss;
+  g.occlusion     = 1.0;
+  g.lightingModel = LIGHTINGMODEL_STANDARD;
+  g.transmittance = vec3f(0.0);
+  if (LEAVES || GRASS) {
+    g.lightingModel = LIGHTINGMODEL_TRANSMITTANCE;
+    g.transmittance = saturate(material.backDiffuseMultiplier * s.opacity) * material.transmittanceColor.rgb;
+  }
+  return encodeGBuffer(g, linearizeDepthReversedZ(input.position.z, view.near, view.far));
 }
 
 // Blinn-Phong specular with smoothness remapped from [0,1] to a reasonable exponent.

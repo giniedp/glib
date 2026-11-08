@@ -31,6 +31,12 @@ export const AMBIENT_LIGHT_MODE: 'modulate' | 'skip' | 'direct' = 'modulate'
  * When disabled the legacy fog (VOLFOG_* and FOG_COLOR* parameters) is used, which New World does not tune.
  */
 export const ENABLE_VOLUMETRIC_FOG_2 = true
+
+/**
+ * Opaque materials register a GBuffer effect variant (render pipeline plan, phase 3).
+ * Temporary switch for A/B measurements of its cost.
+ */
+export const ENABLE_GBUFFER_EFFECTS = false
 /**
  * Scales the distance in the volumetric fog 2 (PerFrame_FogDistanceScale.x in the shader).
  *

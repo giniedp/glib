@@ -1,4 +1,5 @@
 import { COMMON_WGSL } from './common.wgsl'
+import { GBUFFER_WGSL } from './gbuffer.wgsl'
 export default /* wgsl */ `
 
 struct MaterialBlock {
@@ -274,8 +275,21 @@ fn vs_main(input: VertexInput) -> FragmentInput {
   return output;
 }
 
-@fragment
-fn fs_main(input: FragmentInput) -> FragmentOutput {
+// Surface attributes of a fragment, shared by the forward (fs_main) and gbuffer (fs_gbuffer) entry points
+struct FxSurface {
+  toEye       : vec3f,
+  normal      : vec3f,
+  albedo      : vec3f,
+  alpha       : f32,
+  specular    : vec3f,
+  gloss       : f32,
+  ao          : f32,
+  uvBase      : vec4f,
+  uvEmittance : vec2f,
+  sdf2d       : f32,
+};
+
+fn fxSurface(input: FragmentInput) -> FxSurface {
   let time = frame.elapsedTime;
 
   let toEye = normalize(input.toEye);
@@ -449,6 +463,34 @@ fn fs_main(input: FragmentInput) -> FragmentOutput {
   //   ao = textureSample(occlusionMap, samplerLinear, uvBase.xy).r;
   // }
 
+  var s: FxSurface;
+  s.toEye       = toEye;
+  s.normal      = normal;
+  s.albedo      = albedo;
+  s.alpha       = alpha;
+  s.specular    = specular;
+  s.gloss       = gloss;
+  s.ao          = ao;
+  s.uvBase      = uvBase;
+  s.uvEmittance = uvEmittance;
+  s.sdf2d       = sdf2d;
+  return s;
+}
+
+@fragment
+fn fs_main(input: FragmentInput) -> FragmentOutput {
+  let s = fxSurface(input);
+  let toEye       = s.toEye;
+  let normal      = s.normal;
+  let albedo      = s.albedo;
+  let alpha       = s.alpha;
+  let specular    = s.specular;
+  let gloss       = s.gloss;
+  let ao          = s.ao;
+  let uvBase      = s.uvBase;
+  let uvEmittance = s.uvEmittance;
+  let sdf2d       = s.sdf2d;
+
   var surface: SurfaceParams;
   // surface.Transmittance = vec4f(cShadingBack.rgb, material.normalViewDependency);
   surface.Diffuse = albedo;
@@ -578,6 +620,22 @@ fn fs_main(input: FragmentInput) -> FragmentOutput {
   return out;
 }
 
+// GBuffer attributes of opaque surfaces (fxmeshadvanced.cfx ZPass). The emittance is added after the lighting by
+// the emissive variant (phase 4).
+@fragment
+fn fs_gbuffer(input: FragmentInput) -> GBufferOutput {
+  let s = fxSurface(input);
+  var g: GBufferSurface;
+  g.normal        = s.normal;
+  g.albedo        = s.albedo;
+  g.reflectance   = s.specular;
+  g.smoothness    = s.gloss;
+  g.occlusion     = s.ao;
+  g.lightingModel = LIGHTINGMODEL_STANDARD;
+  g.transmittance = vec3f(0.0);
+  return encodeGBuffer(g, linearizeDepthReversedZ(input.position.z, view.near, view.far));
+}
+
 fn getMaterialEmittance() -> vec3f {
   return material.emissiveColor.rgb * material.emissiveColor.a * EMITTANCE_TO_ENGINE_LIGHT_SCALE;
 }
@@ -628,4 +686,5 @@ fn fxFresnelApprox(view: vec3f, normal: vec3f, invert: f32, exponent: f32, power
   return c;
 }
 ${COMMON_WGSL}
+${GBUFFER_WGSL}
 `

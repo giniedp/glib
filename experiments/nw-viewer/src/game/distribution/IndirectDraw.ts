@@ -134,6 +134,9 @@ export class IndirectMaterials {
     return {
       wgsl: {
         source: module.source,
+        // keep the entry points of the variant (e.g. fs_gbuffer), not the module defaults
+        vertexEntry: module.vertexFn,
+        fragmentEntry: module.fragmentFn,
         vertexConstants: module.vertexConstants,
         fragmentConstants: ShaderConstants.get({
           ...(module.fragmentConstants?.state || {}),
