@@ -44,7 +44,7 @@ export function StatsPanel(props: { viewer: NwViewer }) {
           },
         ]}
       />
-      <Group title="Resources" collapsible>
+      <Group title="Resources" collapsible defaultCollapsed>
         <ResourcesStats viewer={viewer} />
       </Group>
       <Group title="Lights">
