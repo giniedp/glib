@@ -21,8 +21,7 @@ import type { MsaaResolver } from './MsaaResolve'
 // Differences:
 // - `channels` may be empty: a depth only pass (e.g. shadow maps). The viewport then follows the depth target.
 // - `variant` selects the material effect variant (RenderVariant) the list is collected and drawn with.
-//   Caveat until render list caching is variant aware (plan step 2.2): two passes using the same `list` mode with
-//   different variants would share one cached list. Use distinct RenderListMode instances per variant.
+//   Render lists are cached per (mode, variant), so passes with the same mode and variant share one list.
 
 /**
  * Describes a render target of the {@link GeometryPass}

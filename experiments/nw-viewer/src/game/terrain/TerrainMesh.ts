@@ -7,6 +7,7 @@ import {
   Device,
   Mesh,
   patchGeometry,
+  type Effect,
 } from '@gglib/graphics'
 import { DEGREE_TO_RAD, type Mat4, mat4CreateAxisAngle, vec3, type IVec4 } from '@gglib/math'
 import { TerrainPatchMaterial, WaterPatchMaterial } from '../../material'
@@ -105,10 +106,13 @@ export class TerrainMesh extends Mesh {
     this.writer.writeField(instanceLayout.fields.heightUvTransformCoarse, value)
   }
 
+  private bindEffect = (effect: Effect) => effect.program.mustGet('instances').setBuffer(this.buffer)
+
   public commitInstanceData() {
     this.writer.upload(this.buffer)
-    this.TerrainMaterial.effect.program.mustGet('instances').setBuffer(this.buffer)
-    this.WaterMaterial.effect.program.mustGet('instances').setBuffer(this.buffer)
+    // every render variant (forward, gbuffer, shadow) reads the same instance buffer
+    this.TerrainMaterial.forEachEffect(this.bindEffect)
+    this.WaterMaterial.forEachEffect(this.bindEffect)
     for (const geometry of this.geometries) {
       geometry.instanceCount = this.writer.count
     }

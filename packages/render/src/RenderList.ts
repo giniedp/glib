@@ -9,6 +9,7 @@ import {
   ProgramInputBlock,
   Renderable,
   RenderEncoder,
+  RenderVariant,
 } from '@gglib/graphics'
 import {
   IVec4,
@@ -23,32 +24,47 @@ import { RenderInstanceWriter } from './RenderInstanceWriter'
 import { compareSortKey, RenderListMode, Sortable, SortKey } from './RenderListMode'
 import { RenderView } from './Types'
 
+/**
+ * Render lists of a frame, one per list mode and material effect variant.
+ *
+ * The effect of each item is resolved for a variant when the list is collected (it decides the sort state and
+ * the batches), so a list collected for one variant can't be reused by a pass that renders another variant.
+ */
 export class RenderListCache {
-  private lists = new Map<RenderListMode, RenderList>()
+  private lists = new Map<RenderListMode, Map<RenderVariant, RenderList>>()
 
   /**
    * Clears all render lists in the cache. This should be called at the beginning of each frame, before rendering.
    */
   public clear() {
-    for (const list of this.lists.values()) {
-      list.clear()
-      list.isSorted = false
+    for (const byVariant of this.lists.values()) {
+      for (const list of byVariant.values()) {
+        list.clear()
+        list.isSorted = false
+      }
     }
   }
 
-  public get(mode: RenderListMode): RenderList {
-    let list = this.lists.get(mode)
+  public get(mode: RenderListMode, variant: RenderVariant = RenderVariant.Forward): RenderList {
+    let byVariant = this.lists.get(mode)
+    if (!byVariant) {
+      byVariant = new Map()
+      this.lists.set(mode, byVariant)
+    }
+    let list = byVariant.get(variant)
     if (!list) {
       list = new RenderList()
-      this.lists.set(mode, list)
+      byVariant.set(variant, list)
     }
     return list
   }
 
   public sumDrawCount(): number {
     let size = 0
-    for (const list of this.lists.values()) {
-      size += list.drawCount
+    for (const byVariant of this.lists.values()) {
+      for (const list of byVariant.values()) {
+        size += list.drawCount
+      }
     }
     return size
   }
@@ -213,15 +229,30 @@ export class RenderList {
     this.rangeCount[index] = instanceCount
   }
 
+  /**
+   * CPU time in ms of the last sort, measured by {@link end}
+   */
+  public sortTime = 0
+  /**
+   * CPU time in ms of the last batch, measured by {@link end}
+   */
+  public batchTime = 0
+
   public end(): void {
+    this.sortTime = 0
+    this.batchTime = 0
     if (!this.isSorted) {
+      const t0 = performance.now()
       this.indices.length = this.size
       this.indices.sort(this.sortBy)
       this.isSorted = true
+      this.sortTime = performance.now() - t0
     }
     if (!this.isBatched) {
+      const t0 = performance.now()
       this.batch()
       this.isBatched = true
+      this.batchTime = performance.now() - t0
     }
   }
 

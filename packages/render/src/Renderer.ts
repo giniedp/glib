@@ -56,6 +56,32 @@ export const ViewChannelsSymbol = Symbol('ViewChannels')
 
 export interface RendererStats {
   drawCount: number
+  /**
+   * Render lists collected in the last frame (all views)
+   */
+  listCount?: number
+  /**
+   * Items added to render lists in the last frame
+   */
+  listItems?: number
+  /**
+   * CPU time in ms of the last frame spent collecting, sorting and batching render lists
+   */
+  listCollectMs?: number
+  listSortMs?: number
+  listBatchMs?: number
+}
+
+interface RenderListTimes {
+  lists: number
+  items: number
+  collect: number
+  sort: number
+  batch: number
+}
+
+function renderListTimes(): RenderListTimes {
+  return { lists: 0, items: 0, collect: 0, sort: 0, batch: 0 }
 }
 
 export interface RendererOptions {
@@ -97,6 +123,9 @@ export class Renderer implements Ownable {
   public channelDescriptors: Record<string, TextureDescriptor>
 
   public lastInstanceCount = 0
+  // render list timings of the current frame, and of the last completed frame (reported by stats)
+  private listTimes = renderListTimes()
+  private lastListTimes = renderListTimes()
   protected context: RenderContext
   protected renderLists: RenderListCache
   protected collectors: RenderCollectorRegistry
@@ -190,6 +219,12 @@ export class Renderer implements Ownable {
   public stats(out?: RendererStats): RendererStats {
     out ||= { drawCount: 0 } as RendererStats
     out.drawCount = this.renderLists.sumDrawCount()
+    const times = this.lastListTimes
+    out.listCount = times.lists
+    out.listItems = times.items
+    out.listCollectMs = times.collect
+    out.listSortMs = times.sort
+    out.listBatchMs = times.batch
     return out
   }
 
@@ -226,6 +261,10 @@ export class Renderer implements Ownable {
    */
   public update(time: number) {
     this.lastInstanceCount = this.instances.count
+    const times = this.listTimes
+    this.listTimes = this.lastListTimes
+    this.lastListTimes = times
+    Object.assign(this.listTimes, renderListTimes())
     this.frameInfo.time ||= time
     this.frameInfo.delta = time - this.frameInfo.time
     this.frameInfo.time = time
@@ -314,16 +353,16 @@ export class Renderer implements Ownable {
   }
 
   /**
-   *
-   * @param mode
-   * @param ctx
-   * @returns
+   * Gets the render list of the given mode for the current {@link RenderContext.renderVariant}.
+   * The list is collected, sorted and batched on first request in a view and shared by later passes
+   * that request the same mode and variant.
    */
   public getList(mode: RenderListMode, ctx: RenderContext): RenderList {
-    const list = this.renderLists.get(mode)
+    const list = this.renderLists.get(mode, ctx.renderVariant)
     if (list.isSorted) {
       return list
     }
+    const t0 = performance.now()
     list.begin(mode, ctx.view, ctx.renderInputs.blocks, this.instances)
     this.collectors.begin(ctx, list)
     for (const item of ctx.view.items) {
@@ -333,7 +372,15 @@ export class Renderer implements Ownable {
       this.collectors.add(item)
     }
     this.collectors.end()
+    const collect = performance.now() - t0
     list.end()
+
+    const times = this.listTimes
+    times.lists++
+    times.items += list.size
+    times.collect += collect
+    times.sort += list.sortTime
+    times.batch += list.batchTime
     return list
   }
 

@@ -253,6 +253,15 @@ export class Material implements Ownable {
   }
 
   /**
+   * Calls the callback for the effect of each render variant, e.g. to bind a resource to all programs
+   */
+  public forEachEffect(callback: (effect: Effect, variant: RenderVariant) => void) {
+    for (const variant in this.effects) {
+      callback(this.effects[variant as RenderVariant], variant as RenderVariant)
+    }
+  }
+
+  /**
    * Implementations can override this method to update material parameters on each frame, for example to implement animated materials.
    *
    * @param time

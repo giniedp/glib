@@ -18,14 +18,19 @@ import { RenderPipelineProps } from '../registry/uiRenderPipeline'
 import { TimeOfDayProps } from '../registry/uiTimeOfDay'
 
 /**
- * Stats graph, camera, debug, time of day, lights and render pipeline
+ * Stats graphs (tabs), camera, debug, time of day, lights and render pipeline
  */
 export function StatsPanel(props: { viewer: NwViewer }) {
   const viewer = props.viewer
   const panel = usePanel()
   return (
     <>
-      <Graph collapsed rows={graphRows(viewer)} />
+      <Tabs
+        tabs={graphTabs(viewer).map((tab) => ({
+          title: tab.title,
+          content: () => <Graph collapsed rows={tab.rows} />,
+        }))}
+      />
       <Tabs
         tabs={[
           { title: 'Camera', content: () => <CameraComponentProps data={viewer.camera} /> },
@@ -65,48 +70,57 @@ export function StatsPanel(props: { viewer: NwViewer }) {
   )
 }
 
-function graphRows(viewer: NwViewer): GraphRow[] {
+/**
+ * A graph row with a smoothed curve
+ */
+function curve(name: string, max: number, sample: () => number): GraphRow {
+  return { name, min: 0, max, smoothing: 0.9, sample }
+}
+
+/**
+ * A text only row (no curve) for integer counters
+ */
+function counter(name: string, sample: () => number): GraphRow {
+  return { name, min: 0, max: 1, sample, noGraph: true, fractionDigits: 0 }
+}
+
+/**
+ * Stats graph rows, grouped into tabs so each graph stays readable
+ */
+function graphTabs(viewer: NwViewer): Array<{ title: string; rows: GraphRow[] }> {
   const mb = (bytes: number) => bytes / 1024 / 1024
   return [
-    { name: 'Frame Time', min: 0, max: 100, smoothing: 0.9, sample: () => viewer.stats.frameTime.current * 1000 },
     {
-      name: 'FPS',
-      min: 0,
-      max: 240,
-      smoothing: 0.9,
-      sample: () => viewer.stats.fps.current,
-    },
-    { name: 'Update (ms)', min: 0, max: 50, smoothing: 0.9, sample: () => viewer.world.stats.update.current },
-    { name: 'Draw (ms)', min: 0, max: 50, smoothing: 0.9, sample: () => viewer.stats.draw.current },
-    { name: 'Frame (MB)', min: 0, max: 2048, sample: () => mb(viewer.world.getSystem(Renderer).resourceSizeInBytes) },
-    { name: 'Heap (MB)', min: 0, max: 2048, sample: () => mb((performance as any).memory?.usedJSHeapSize ?? 0) },
-    { name: 'Textures', min: 0, max: 1000, sample: () => viewer.deviceStats?.textureCount || 0 },
-    { name: 'Texture (MB)', min: 0, max: 2048, sample: () => mb(viewer.deviceStats?.textureByteCount || 0) },
-    { name: 'Shaders', min: 0, max: 20, sample: () => viewer.deviceStats?.shaderCount || 0 },
-    { name: 'Tasks total', sample: () => viewer.schedulerStats?.total || 0, noGraph: true, fractionDigits: 0 },
-    {
-      name: 'Tasks in Flight',
-      min: 0,
-      max: 1,
-      sample: () => viewer.schedulerStats?.inFlight || 0,
-      noGraph: true,
-      fractionDigits: 0,
+      title: 'Frame',
+      rows: [
+        curve('Frame Time', 100, () => viewer.stats.frameTime.current * 1000),
+        curve('FPS', 240, () => viewer.stats.fps.current),
+        curve('Update (ms)', 50, () => viewer.world.stats.update.current),
+        curve('Draw (ms)', 50, () => viewer.stats.draw.current),
+        counter('Tasks total', () => viewer.schedulerStats?.total || 0),
+        counter('Tasks in Flight', () => viewer.schedulerStats?.inFlight || 0),
+      ],
     },
     {
-      name: 'Visible count',
-      min: 0,
-      max: 1,
-      sample: () => viewer.sceneStats?.visible || 0,
-      noGraph: true,
-      fractionDigits: 0,
+      title: 'Render',
+      rows: [
+        curve('Lists collect (ms)', 20, () => viewer.renderStats?.listCollectMs ?? 0),
+        curve('Lists sort (ms)', 20, () => viewer.renderStats?.listSortMs ?? 0),
+        curve('Lists batch (ms)', 20, () => viewer.renderStats?.listBatchMs ?? 0),
+        counter('List items', () => viewer.renderStats?.listItems ?? 0),
+        counter('Draw count', () => viewer.renderStats?.drawCount || 0),
+        counter('Visible count', () => viewer.sceneStats?.visible || 0),
+      ],
     },
     {
-      name: 'Draw count',
-      min: 0,
-      max: 1,
-      sample: () => viewer.renderStats?.drawCount || 0,
-      noGraph: true,
-      fractionDigits: 0,
+      title: 'Memory',
+      rows: [
+        curve('Frame (MB)', 2048, () => mb(viewer.world.getSystem(Renderer).resourceSizeInBytes)),
+        curve('Heap (MB)', 2048, () => mb((performance as any).memory?.usedJSHeapSize ?? 0)),
+        curve('Textures', 1000, () => viewer.deviceStats?.textureCount || 0),
+        curve('Texture (MB)', 2048, () => mb(viewer.deviceStats?.textureByteCount || 0)),
+        curve('Shaders', 20, () => viewer.deviceStats?.shaderCount || 0),
+      ],
     },
   ]
 }
