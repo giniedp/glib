@@ -20,8 +20,18 @@ export type TextureAsset = TextureOptions | AcquireTextureOptions
 export type RenderVariant = Brand<string, 'RenderVariant'>
 
 export const RenderVariant = {
+  /**
+   * Depth only, e.g. shadow maps
+   */
   Depth: brand<RenderVariant>('depth'),
+  /**
+   * Lit color output
+   */
   Forward: brand<RenderVariant>('forward'),
+  /**
+   * Surface attributes into a geometry buffer, lit by a deferred lighting pass
+   */
+  GBuffer: brand<RenderVariant>('gbuffer'),
 }
 
 export const TRUE = 1

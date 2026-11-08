@@ -19,6 +19,20 @@ export type WgslModuleSource = {
   vertexConstants?: ShaderConstants
   fragmentConstants?: ShaderConstants
   computeConstants?: ShaderConstants
+  /**
+   * Name of the vertex entry point. Defaults to the first `@vertex` function of the source.
+   */
+  vertexEntry?: string
+  /**
+   * Name of the fragment entry point. Defaults to the first `@fragment` function of the source.
+   * Lets one source provide several variants of a material (e.g. forward, gbuffer, shadow) that share
+   * their bindings and helper functions.
+   */
+  fragmentEntry?: string
+  /**
+   * Name of the compute entry point. Defaults to the first `@compute` function of the source.
+   */
+  computeEntry?: string
 }
 
 export type GlslModuleSource = {

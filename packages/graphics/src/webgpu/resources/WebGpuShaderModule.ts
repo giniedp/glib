@@ -3,7 +3,14 @@ import { ResourceOwnership, ShaderModule, VertexBuffer } from '../../resources'
 import { ShaderConstants } from '../../states'
 import type { GpuResource, Mutable } from '../types'
 import type { WebGpuDevice } from '../WebGpuDevice'
-import { parseWgsl, reflectWgsl, WgslEntryPointInfo, WgslProgramInfo, type WgslInputInfo } from '../wgsl'
+import {
+  parseWgsl,
+  reflectWgsl,
+  WgslEntryPointInfo,
+  WgslProgramInfo,
+  type WgslInputInfo,
+  type WgslShaderStage,
+} from '../wgsl'
 import { WebGpuBuffer } from './WebGpuBuffer'
 import { WebGpuProgram } from './WebGpuProgram'
 
@@ -28,6 +35,18 @@ export interface WebGpuShaderOptions {
    * The constants used to configure the fragment shader stage of this shader module.
    */
   computeConstants?: ShaderConstants
+  /**
+   * Name of the vertex entry point. Defaults to the first `@vertex` function.
+   */
+  vertexEntry?: string
+  /**
+   * Name of the fragment entry point. Defaults to the first `@fragment` function.
+   */
+  fragmentEntry?: string
+  /**
+   * Name of the compute entry point. Defaults to the first `@compute` function.
+   */
+  computeEntry?: string
 }
 
 export class WebGpuShaderModule extends ShaderModule implements GpuResource<GPUShaderModule> {
@@ -112,9 +131,9 @@ export class WebGpuShaderModule extends ShaderModule implements GpuResource<GPUS
     })
 
     this.info = reflectWgsl(parseWgsl(this.source))
-    this.vertexEntry = this.info.entryPoints.find((it) => it.stage === 'vertex')
-    this.fragmentEntry = this.info.entryPoints.find((it) => it.stage === 'fragment')
-    this.computeEntry = this.info.entryPoints.find((it) => it.stage === 'compute')
+    this.vertexEntry = findEntryPoint(this.info, 'vertex', options.vertexEntry, options.name)
+    this.fragmentEntry = findEntryPoint(this.info, 'fragment', options.fragmentEntry, options.name)
+    this.computeEntry = findEntryPoint(this.info, 'compute', options.computeEntry, options.name)
     this.program = new WebGpuProgram(this, this.info)
     this.pipelineLayout = this.device.gpu.createPipelineLayout({
       bindGroupLayouts: this.program.bindGroupLayouts,
@@ -229,6 +248,25 @@ export class WebGpuShaderModule extends ShaderModule implements GpuResource<GPUS
     self.program.dispose()
     self.program = null
   }
+}
+
+/**
+ * Finds the entry point of a stage by name, or the first one of that stage when no name is given
+ */
+function findEntryPoint(
+  info: WgslProgramInfo,
+  stage: WgslShaderStage,
+  name: string | undefined,
+  moduleName: string | undefined,
+): WgslEntryPointInfo | undefined {
+  if (!name) {
+    return info.entryPoints.find((it) => it.stage === stage)
+  }
+  const entry = info.entryPoints.find((it) => it.stage === stage && it.name === name)
+  if (!entry) {
+    throw new Error(`${stage} entry point '${name}' not found in shader module '${moduleName ?? ''}'`)
+  }
+  return entry
 }
 
 function getInputBySemanticOrName(entry: WgslEntryPointInfo, name: string) {

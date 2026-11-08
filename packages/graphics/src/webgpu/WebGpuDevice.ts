@@ -292,16 +292,22 @@ export class WebGpuDevice extends Device<GPUCanvasContext> {
     if (!options || !('wgsl' in options)) {
       throw new Error('Only WGSL shader code is supported in WebGPU')
     }
-    const code = typeof options.wgsl === 'string' ? options.wgsl : options.wgsl.source
-    const fConst = typeof options.wgsl === 'string' ? null : options.wgsl.fragmentConstants
-    const vConst = typeof options.wgsl === 'string' ? null : options.wgsl.vertexConstants
-    const cConst = typeof options.wgsl === 'string' ? null : options.wgsl.computeConstants
+    if (typeof options.wgsl === 'string') {
+      return this.createWgslModule({
+        name: options.name,
+        code: options.wgsl,
+      })
+    }
+    const wgsl = options.wgsl
     return this.createWgslModule({
       name: options.name,
-      code,
-      fragmentConstants: fConst,
-      vertexConstants: vConst,
-      computeConstants: cConst,
+      code: wgsl.source,
+      fragmentConstants: wgsl.fragmentConstants,
+      vertexConstants: wgsl.vertexConstants,
+      computeConstants: wgsl.computeConstants,
+      vertexEntry: wgsl.vertexEntry,
+      fragmentEntry: wgsl.fragmentEntry,
+      computeEntry: wgsl.computeEntry,
     })
   }
 
@@ -355,7 +361,14 @@ export class WebGpuDevice extends Device<GPUCanvasContext> {
     if (typeof wgsl === 'string') {
       return wgsl
     }
-    return [wgsl.source, wgsl.vertexConstants?.key, wgsl.fragmentConstants?.key].join('|')
+    return [
+      wgsl.source,
+      wgsl.vertexConstants?.key,
+      wgsl.fragmentConstants?.key,
+      wgsl.vertexEntry,
+      wgsl.fragmentEntry,
+      wgsl.computeEntry,
+    ].join('|')
   }
 
   public acquireTexture(options: AcquireTextureOptions): WebGpuTexture {
