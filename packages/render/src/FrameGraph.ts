@@ -15,6 +15,11 @@ export interface FrameResource<T = unknown> {
   version: number
 
   producer: FrameGraphNode<T>
+  /**
+   * The last pass that wrote this resource without reading it, i.e. replaced its content.
+   * Unlike {@link producer} this is not changed by {@link FrameGraph.modifyInPlace}
+   */
+  writer: FrameGraphNode<T>
   desc: TextureDescriptor
 
   imported: boolean
@@ -223,6 +228,7 @@ export class FrameGraph<T = RenderPass> {
     } else if (!readers.length) {
       // write after write, can reuse resource
       version.producer = this.current
+      version.writer = this.current
     } else {
       // write after read, need new version
       version = this.createResource(channel, desc)
@@ -284,6 +290,7 @@ export class FrameGraph<T = RenderPass> {
     resource.texture = texture
     resource.imported = true
     resource.producer = null
+    resource.writer = null
     this.latestVersions[channel] = resource
     return resource
   }
@@ -319,6 +326,7 @@ export class FrameGraph<T = RenderPass> {
       channel,
       version: 0,
       producer: null,
+      writer: null,
       desc: {
         format: null,
         type: '2d',
@@ -338,6 +346,7 @@ export class FrameGraph<T = RenderPass> {
     resource.channel = channel
     resource.version = (this.latestVersions[channel]?.version ?? -1) + 1
     resource.producer = this.current || null
+    resource.writer = resource.producer
     resource.firstUse = Infinity
     resource.lastUse = -Infinity
     resource.imported = false

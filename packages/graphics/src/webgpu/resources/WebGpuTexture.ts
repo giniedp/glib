@@ -209,7 +209,8 @@ export class WebGpuTexture extends Texture implements GpuResource<GPUTexture> {
         self.depth = 1
         break
       }
-      case '2d-array': {
+      case '2d-array':
+      case 'cube-array': {
         needsResize = this.width !== width || this.height !== height || this.depth !== depth
         self.width = width
         self.height = height
@@ -250,7 +251,8 @@ export class WebGpuTexture extends Texture implements GpuResource<GPUTexture> {
         setData(source, this, 1)
         break
       }
-      case '2d-array': {
+      case '2d-array':
+      case 'cube-array': {
         setData(source, this, null)
         break
       }
@@ -262,6 +264,29 @@ export class WebGpuTexture extends Texture implements GpuResource<GPUTexture> {
     if (this.generateMipmap && !this.isCompressed) {
       this.updateMipmaps()
     }
+  }
+
+  /**
+   * Writes the levels of a source into the array layers starting at `baseLayer`, leaving all other layers untouched.
+   * The size of the texture does not change, the source must have the same size and format.
+   *
+   * @remarks
+   * Each face of a cube is one layer, so cube `n` of a `cube-array` starts at layer `n * 6`.
+   */
+  public setLayerDataFromSource(source: TextureSource, baseLayer: number): void {
+    if (this.type !== '2d-array' && this.type !== 'cube-array') {
+      throw new Error(`setLayerDataFromSource requires an array texture but type is '${this.type}'`)
+    }
+    if (source.width !== this.width || source.height !== this.height) {
+      throw new Error(
+        `Source size ${source.width}x${source.height} does not match the texture size ${this.width}x${this.height}`,
+      )
+    }
+    const layers = Math.max(...source.levels.map((level) => level.length))
+    if (baseLayer < 0 || baseLayer + layers > this.depth) {
+      throw new Error(`Layers ${baseLayer}..${baseLayer + layers} are out of range, the texture has ${this.depth}`)
+    }
+    setData(source, this, null, baseLayer)
   }
 
   /**
@@ -352,7 +377,7 @@ export class WebGpuTexture extends Texture implements GpuResource<GPUTexture> {
 type Mutable<T> = {
   -readonly [K in keyof T]: T[K]
 }
-function setData(source: TextureSource, image: WebGpuTexture, faceCount: number | null) {
+function setData(source: TextureSource, image: WebGpuTexture, faceCount: number | null, baseLayer = 0) {
   const gpu = image.device.gpu
   const queue = gpu.queue
 
@@ -378,7 +403,7 @@ function setData(source: TextureSource, image: WebGpuTexture, faceCount: number 
           {
             texture: image.gpuObject,
             mipLevel: mipIndex,
-            origin: { x: 0, y: 0, z: faceIndex },
+            origin: { x: 0, y: 0, z: baseLayer + faceIndex },
           },
           data.buffer,
           {
@@ -398,7 +423,7 @@ function setData(source: TextureSource, image: WebGpuTexture, faceCount: number 
           {
             texture: image.gpuObject,
             mipLevel: mipIndex,
-            origin: { x: 0, y: 0, z: faceIndex },
+            origin: { x: 0, y: 0, z: baseLayer + faceIndex },
           },
           data.data.buffer,
           {
@@ -421,7 +446,7 @@ function setData(source: TextureSource, image: WebGpuTexture, faceCount: number 
           {
             texture: image.gpuObject,
             mipLevel: mipIndex,
-            origin: { x: 0, y: 0, z: faceIndex },
+            origin: { x: 0, y: 0, z: baseLayer + faceIndex },
           },
           {
             width: width,

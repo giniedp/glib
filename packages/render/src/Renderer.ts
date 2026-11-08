@@ -404,7 +404,7 @@ export class Renderer implements Ownable {
       ctx.renderInputs.set(inverseViewKey, inverseViewMatrix)
 
       const inverseProjectionKey = CommonInputs.View.InverseProjectionMatrix
-      const inverseProjectionMatrix: Mat4 = (ctx.renderInputs.get(inverseViewKey) || mat4Identity()) as Mat4
+      const inverseProjectionMatrix: Mat4 = (ctx.renderInputs.get(inverseProjectionKey) || mat4Identity()) as Mat4
       mat4Invert(ctx.view.camera.projection, inverseProjectionMatrix)
       ctx.renderInputs.set(inverseProjectionKey, inverseProjectionMatrix)
 
@@ -423,7 +423,8 @@ export class Renderer implements Ownable {
       ctx.renderInputs.set(CommonInputs.View.CameraPosition, cameraPosition)
 
       const cameraDirection = ctx.renderInputs.get(CommonInputs.View.CameraDirection) || vec3()
-      mat4GetForward(ctx.view.camera.world, cameraDirection)
+      // view space looks along -z in every world space, the camera world matrix depends on the SpaceBasis
+      mat4GetForward(inverseViewMatrix, cameraDirection)
       ctx.renderInputs.set(CommonInputs.View.CameraDirection, cameraDirection)
 
       const viewSize = ctx.renderInputs.get(CommonInputs.View.ViewportSize) || vec2(0)

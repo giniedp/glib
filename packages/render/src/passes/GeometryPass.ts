@@ -211,8 +211,9 @@ export class GeometryPass implements RenderPass {
    * Whether a later pass overwrites the resolved channel without reading it, so resolving here is wasted work
    */
   private isOverwritten(resource: FrameResource) {
-    const producer = resource.producer
-    return !!producer && producer.pass !== this && !producer.culled
+    // passes that modify the resource in place read the resolved content, so they don't count
+    const writer = resource.writer
+    return !!writer && writer.pass !== this && !writer.culled
   }
 
   public render(ctx: RenderContext): void {

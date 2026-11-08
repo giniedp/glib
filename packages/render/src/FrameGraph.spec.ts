@@ -150,6 +150,35 @@ describe('FrameGraph', () => {
     expect(graph.nodes.map((it) => it.pass)).toEqual(['A', 'B', 'C'])
   })
 
+  it('keeps the writer when a later pass modifies in place', () => {
+    graph.begin([channels.Color], 1, 1)
+
+    graph.addPass('A')
+    const resource = graph.write(channels.Color)
+
+    graph.addPass('B')
+    graph.modifyInPlace(channels.Color)
+
+    graph.compile()
+
+    expect(resource.producer.pass).toBe('B')
+    expect(resource.writer.pass).toBe('A') // B reads the content of A, so A's write is not overwritten
+  })
+
+  it('tracks the writer on write after write', () => {
+    graph.begin([channels.Color], 1, 1)
+
+    graph.addPass('A')
+    const resource = graph.write(channels.Color)
+
+    graph.addPass('B')
+    expect(graph.write(channels.Color)).toBe(resource)
+
+    graph.compile()
+
+    expect(resource.writer.pass).toBe('B') // A's content is replaced
+  })
+
   it('keeps passes with side effects', () => {
     graph.begin([channels.Color], 1, 1)
 

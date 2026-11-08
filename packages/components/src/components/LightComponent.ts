@@ -1,6 +1,14 @@
 import type { GameComponent, GameEntity, InitializableComponent } from '@gglib/ecs'
 import { LightType } from '@gglib/graphics'
-import { BoundingSphere, IVec3, mat4GetForward, mat4GetTranslation, vec3 } from '@gglib/math'
+import {
+  BoundingSphere,
+  IVec3,
+  mat4GetTranslation,
+  SpaceBasis,
+  vec3,
+  vec3$normalize,
+  vec3ApplyMat4Rotation,
+} from '@gglib/math'
 import { BoundsComponent } from './BoundsComponent'
 import type { TransformComponent } from './TransformComponent'
 
@@ -36,6 +44,8 @@ export class LightComponent implements GameComponent, InitializableComponent {
    * The bounding volume component of the entity
    */
   public volume?: BoundsComponent
+
+  private space: SpaceBasis = SpaceBasis.Y_UP_NEG_Z
 
   /**
    * Enables and disables the light source
@@ -98,6 +108,7 @@ export class LightComponent implements GameComponent, InitializableComponent {
 
   public initialize(): void {
     this.transform = this.entity.getTransform<TransformComponent>()
+    this.space = this.entity.service(SpaceBasis, { optional: true }) ?? SpaceBasis.Y_UP_NEG_Z
     this.volume = this.entity.component(BoundsComponent, { optional: true })
     this.volume?.setLocalBounds(this.localVolume, null)
   }
@@ -108,7 +119,7 @@ export class LightComponent implements GameComponent, InitializableComponent {
 
   public update() {
     if (this.transform) {
-      mat4GetForward(this.transform.world, this.direction)
+      vec3$normalize(vec3ApplyMat4Rotation(this.space.forward, this.transform.world, this.direction))
       mat4GetTranslation(this.transform.world, this.position)
     }
     this.updateParams()

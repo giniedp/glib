@@ -95,6 +95,9 @@ export class WebglTexture extends Texture implements WebglResource<WebGLTexture 
     self.mipLevelCount = options.mipLevelCount ?? getMipmapCount(this.width, this.height, this.depth)
     self.sampleCount = options.sampleCount ?? 1
 
+    if (this.type === 'cube-array') {
+      throw new Error(`Texture type 'cube-array' is not available in WebGL2`)
+    }
     if (this.isRenderBuffer) {
       self.glType = this.device.context.RENDERBUFFER
     } else {

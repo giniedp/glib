@@ -2,8 +2,7 @@ import { GLConst as gl } from './GLConst'
 
 export type TextureType = Extract<
   GPUTextureViewDimension,
-  '1d' | '2d' | '2d-array' | '3d' | 'cube'
-  // |'cube-array'
+  '1d' | '2d' | '2d-array' | '3d' | 'cube' | 'cube-array'
 >
 
 export const mapToWebGL: Record<TextureType, number> = {
@@ -12,7 +11,8 @@ export const mapToWebGL: Record<TextureType, number> = {
   '3d': gl.TEXTURE_3D,
   cube: gl.TEXTURE_CUBE_MAP,
   '2d-array': gl.TEXTURE_2D_ARRAY,
-  // 'cube-array': null,
+  // not available in WebGL2, rejected by the WebglTexture constructor
+  'cube-array': gl.NONE,
 }
 
 export const mapToWebGPUDimension: Record<TextureType, GPUTextureDimension> = {
@@ -21,7 +21,7 @@ export const mapToWebGPUDimension: Record<TextureType, GPUTextureDimension> = {
   '3d': '3d',
   cube: '2d',
   '2d-array': '2d',
-  // 'cube-array': '2d',
+  'cube-array': '2d',
 }
 
 export function textureTypeToWebGL(type: TextureType): number {

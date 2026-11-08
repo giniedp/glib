@@ -1,9 +1,10 @@
-import { GameEntity, GameSystem } from '@gglib/ecs'
+import { GameEntity, GameSystem, GameWorld } from '@gglib/ecs'
 import {
-  mat4GetForward,
   mat4GetTranslation,
+  SpaceBasis,
   vec3,
   vec3$normalize,
+  vec3ApplyMat4Rotation,
   vec3Distance,
   vec3Dot,
   vec3Subtract,
@@ -13,6 +14,8 @@ import { AsyncScheduler, PriorityLane, ScheduledTask, SchedulerConfig } from './
 
 export class SchedulerSystem extends GameSystem {
   public instance: AsyncScheduler
+
+  private basis: SpaceBasis = SpaceBasis.Y_UP_NEG_Z
 
   public constructor(config?: Partial<SchedulerConfig>) {
     super()
@@ -44,8 +47,8 @@ export class SchedulerSystem extends GameSystem {
     })
   }
 
-  public override initialize(): void {
-    //
+  public override initialize(world: GameWorld): void {
+    this.basis = world.getSystem(SpaceBasis, { optional: true }) ?? this.basis
   }
 
   public override update(): void {
@@ -117,7 +120,8 @@ export class SchedulerSystem extends GameSystem {
     const camPos = mat4GetTranslation(camera.world, this._v2)
     const dist = vec3Distance(objPos, camPos)
     const toObj = vec3$normalize(vec3Subtract(objPos, camPos, this._v3))
-    const alignment = dist > 0 ? vec3Dot(toObj, mat4GetForward(camera.world, this._v4)) : 1 // [-1, 1]
+    const forward = vec3$normalize(vec3ApplyMat4Rotation(this.basis.forward, camera.world, this._v4))
+    const alignment = dist > 0 ? vec3Dot(toObj, forward) : 1 // [-1, 1]
 
     // objects behind the camera count up to 3 times as far
     const score = dist * (2 - alignment)
