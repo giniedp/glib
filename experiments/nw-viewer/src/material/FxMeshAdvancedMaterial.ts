@@ -18,7 +18,15 @@ import WGSL from './FxMeshAdvancedMaterial.wgsl'
 import type { NwMaterialProps } from './GltfExtension'
 import { TextureModifier } from './TexMod'
 import { ENABLE_GBUFFER_EFFECTS } from '../constants'
-import { getShaderConstants, InputBlocks, MaterialLayerMasks, type FeatureFlag } from './common'
+import {
+  createEmissiveEffect,
+  getShaderConstants,
+  hasEmittance,
+  InputBlocks,
+  MaterialLayerMasks,
+  NwRenderVariant,
+  type FeatureFlag,
+} from './common'
 import { MtlFlag } from './types'
 import { MtlUtil, paramValue, paramVec4, getWhiteTexture } from './utils'
 
@@ -160,6 +168,15 @@ export class FxMeshAdvancedMaterial extends MaterialWithSchema(SCHEMA) {
     this.setModifiers(texMods)
     this.setAttributes(attrs, shaderFlags)
     this.setPublicParams(params)
+
+    // the emittance is known after the attributes are applied
+    const gbuffer = this.getEffect(RenderVariant.GBuffer)
+    if (gbuffer && hasEmittance(this.EmissiveColor)) {
+      this.setEffect(
+        NwRenderVariant.Emissive,
+        createEmissiveEffect(this.device, fxMeshAdvancedEffectOptions(shaderConst, 'fs_emissive'), gbuffer),
+      )
+    }
   }
 
   private setDefaults() {

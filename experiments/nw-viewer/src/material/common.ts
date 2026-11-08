@@ -7,7 +7,25 @@ import {
   inputSlotVec3,
   inputSlotVec4,
   TRUE,
+  BlendState,
+  DepthState,
+  Effect,
+  type Device,
+  type EffectOptions,
+  type RenderVariant,
 } from '@gglib/graphics'
+import { brand } from '@gglib/utils'
+
+/**
+ * Render variants of the viewer in addition to {@link RenderVariant}
+ */
+export const NwRenderVariant = {
+  /**
+   * Emittance of opaque surfaces, added to the lit color after the deferred lighting (`fs_emissive`).
+   * Only materials with emittance register it.
+   */
+  Emissive: brand<RenderVariant>('emissive'),
+}
 
 export const InputBlocks = {
   Global: 'global',
@@ -382,6 +400,29 @@ export function setDitherFadeConstants(
   constants['DITHER_FADE_MODE'] = options.mode === 'in' ? 1 : 2
   constants['DITHER_FADE_START'] = options.start
   constants['DITHER_FADE_END'] = options.end
+}
+
+/**
+ * Whether a material emits light, the same check as the shaders (luminance of PerMaterial_EmissiveColor.xyz)
+ */
+export function hasEmittance(emissiveColor: { x: number; y: number; z: number } | null | undefined): boolean {
+  if (!emissiveColor) {
+    return false
+  }
+  return emissiveColor.x * 0.2126 + emissiveColor.y * 0.7152 + emissiveColor.z * 0.0722 > 0
+}
+
+/**
+ * Effect of the {@link NwRenderVariant.Emissive} variant: adds the emittance onto the lit opaque surface that the
+ * GBuffer effect wrote. Same culling as the GBuffer effect, depth tested against its depth without writing.
+ */
+export function createEmissiveEffect(device: Device, options: EffectOptions, gbuffer: Effect): Effect {
+  const effect = new Effect(device, options)
+  effect.cullState = gbuffer.cullState
+  effect.blendState = BlendState.AdditivePure
+  // reversed z
+  effect.depthState = DepthState.GreaterEqualNoWrite
+  return effect
 }
 
 export function getShaderConstants(flags: Set<FeatureFlag>) {

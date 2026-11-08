@@ -128,6 +128,15 @@ export const viewerConfigSchema = defineConfig({
     group: 'Display',
   }),
 
+  pipeline: choice({
+    description:
+      'forward lights opaque geometry in its materials. deferred writes a GBuffer and lights it in a compute pass, like the game (single sampled for now, MSAA is ignored).',
+    editable: true,
+    options: ['forward', 'deferred'],
+    default: 'forward',
+    group: 'Display',
+  }),
+
   tonemapper: choice({
     description:
       'film uses the tone mapping of the game with the time of day values. aces is the previous generic curve.',

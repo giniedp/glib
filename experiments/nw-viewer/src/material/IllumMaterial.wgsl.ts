@@ -681,23 +681,7 @@ fn fs_main(input: FragmentInput) -> FragmentOutput {
   // TODO:
 
   // --- Emittance --------------------------------------------
-  var emittance = vec3f(0.0);
-  let emissiveLum = getLuminance(material.emissiveColor.xyz);
-  if (emissiveLum > 0.0) {
-
-    var emitMapCol = vec4f(1.0);
-    var emitMapInt = vec4f(0.5);
-    if (EMITTANCE_MAP) {
-      emitMapCol = textureSample(emittanceMap,     samplerLinear, uvEmittance.xy);
-      emitMapInt = textureSample(decalEmissiveMap, samplerLinear, uvEmissiveIntensity.xy);
-    }
-
-    emittance = emitMapCol.rgb;
-    emittance *= pow(max(getLuminance(emitMapCol.rgb), 1e-6), material.emittanceMapGamma - 1.0);
-    emittance *= emitMapInt.rgb;
-    emittance *= emitMapCol.a; // DEPRECATED
-    emittance *= getMaterialEmittance();
-  }
+  let emittance = illumEmittance(s);
 
   // --- Rim lighting (added to emittance term) ---------------
   // if (material.enabledRimLighting == TRUE) {
@@ -804,6 +788,41 @@ fn fs_main(input: FragmentInput) -> FragmentOutput {
     }
   }
   // out.color = vec4f(instanceData[input.id].dissolveAmount, 0.0,0.0,1.0);
+  return out;
+}
+
+// Emitted light of a surface, zero without emittance
+fn illumEmittance(s: IllumSurface) -> vec3f {
+  var emittance = vec3f(0.0);
+  let emissiveLum = getLuminance(material.emissiveColor.xyz);
+  if (emissiveLum > 0.0) {
+
+    var emitMapCol = vec4f(1.0);
+    var emitMapInt = vec4f(0.5);
+    if (EMITTANCE_MAP) {
+      emitMapCol = textureSample(emittanceMap,     samplerLinear, s.uvEmittance.xy);
+      emitMapInt = textureSample(decalEmissiveMap, samplerLinear, s.uvEmissiveIntensity.xy);
+    }
+
+    emittance = emitMapCol.rgb;
+    emittance *= pow(max(getLuminance(emitMapCol.rgb), 1e-6), material.emittanceMapGamma - 1.0);
+    emittance *= emitMapInt.rgb;
+    emittance *= emitMapCol.a; // DEPRECATED
+    emittance *= getMaterialEmittance();
+  }
+  return emittance;
+}
+
+struct EmissiveOutput {
+  @location(0) color: vec4f,
+};
+
+// Emittance added to the deferred lit color (additive, after the lighting pass), see NwRenderVariant.Emissive
+@fragment
+fn fs_emissive(input: FragmentInput) -> EmissiveOutput {
+  let s = illumSurface(input);
+  var out: EmissiveOutput;
+  out.color = vec4f(illumEmittance(s), 0.0);
   return out;
 }
 

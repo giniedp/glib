@@ -4,13 +4,18 @@ import FX_MESH_ADVANCED_WGSL from './FxMeshAdvancedMaterial.wgsl'
 import ILLUM_WGSL from './IllumMaterial.wgsl'
 import { TERRAIN_PATCH_SHADER } from './TerrainPatchMaterial.wgsl'
 import VEGETATION_WGSL from './VegetationMaterial.wgsl'
+import { LIGHTING_WGSL } from '../graphics/passes/lighting/LightingPass.wgsl'
 
 // compiles material shader sources on the GPU and checks the entry points the render variants use
 const SHADERS: Array<{ name: string; source: string; fragmentEntries: string[] }> = [
-  { name: 'Illum', source: ILLUM_WGSL, fragmentEntries: ['fs_main', 'fs_gbuffer'] },
+  { name: 'Illum', source: ILLUM_WGSL, fragmentEntries: ['fs_main', 'fs_gbuffer', 'fs_emissive'] },
   { name: 'TerrainPatch', source: TERRAIN_PATCH_SHADER, fragmentEntries: ['fs_main', 'fs_gbuffer'] },
   { name: 'Vegetation', source: VEGETATION_WGSL, fragmentEntries: ['fs_main', 'fs_gbuffer'] },
-  { name: 'FxMeshAdvanced', source: FX_MESH_ADVANCED_WGSL, fragmentEntries: ['fs_main', 'fs_gbuffer'] },
+  {
+    name: 'FxMeshAdvanced',
+    source: FX_MESH_ADVANCED_WGSL,
+    fragmentEntries: ['fs_main', 'fs_gbuffer', 'fs_emissive'],
+  },
 ]
 
 describe('material shaders', () => {
@@ -36,4 +41,14 @@ describe('material shaders', () => {
       })
     }
   }
+
+  // the deferred lighting reuses the material lighting chunks (COMMON_WGSL) in a compute shader,
+  // the pipeline creation checks that no fragment only builtin is reachable from the compute entry point
+  it('deferred lighting compute pipeline builds', async () => {
+    device.pushErrorScope('validation')
+    const module = device.createShaderModule({ code: LIGHTING_WGSL })
+    device.createComputePipeline({ layout: 'auto', compute: { module, entryPoint: 'main' } })
+    const error = await device.popErrorScope()
+    expect(error?.message ?? null).toBe(null)
+  })
 })

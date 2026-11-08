@@ -184,8 +184,12 @@ export class NwViewer extends EcsGame {
     this.world.addSystem(new SpatialSystem())
     this.world.addSystem(new SchedulerSystem({}))
     const msaaSamples = (value: string) => (value === 'off' ? 1 : 4)
-    const pipeline = createRenderPipeline(this.device, { msaa: msaaSamples(config.value.msaa) })
-    config.onChange('msaa', (value) => pipeline.msaa.set(msaaSamples(value)))
+    const pipeline = createRenderPipeline(this.device, {
+      msaa: msaaSamples(config.value.msaa),
+      pipeline: config.value.pipeline,
+    })
+    config.onChange('msaa', (value) => pipeline.modes.set({ msaa: msaaSamples(value) }))
+    config.onChange('pipeline', (value) => pipeline.modes.set({ pipeline: value }))
     this.luminance = pipeline.passes.find((it): it is LuminancePass => it instanceof LuminancePass) ?? null
     this.world.addSystem(
       new Renderer(this.device, {

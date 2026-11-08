@@ -19,7 +19,16 @@ import { type NwMaterialProps } from './GltfExtension'
 import SCHEMA from './IllumMaterial.meta'
 import WGSL from './IllumMaterial.wgsl'
 import { TextureModifier } from './TexMod'
-import { type FeatureFlag, getShaderConstants, InputBlocks, MaterialLayerMasks, setDitherFadeConstants } from './common'
+import {
+  createEmissiveEffect,
+  type FeatureFlag,
+  getShaderConstants,
+  hasEmittance,
+  InputBlocks,
+  MaterialLayerMasks,
+  NwRenderVariant,
+  setDitherFadeConstants,
+} from './common'
 
 import { MtlFlag } from './types'
 import {
@@ -38,6 +47,7 @@ import {
 const ILLUM_FRAGMENT_ENTRY = {
   forward: 'fs_main',
   gbuffer: 'fs_gbuffer',
+  emissive: 'fs_emissive',
 } as const
 
 export function illumShaderOptions(
@@ -311,6 +321,12 @@ export class IllumMaterial extends MaterialWithSchema(SCHEMA) {
       gbuffer.cullState = this.effect.cullState
       gbuffer.blendState = BlendState.Opaque
       this.setEffect(RenderVariant.GBuffer, gbuffer)
+      if (hasEmittance(this.EmissiveColor)) {
+        this.setEffect(
+          NwRenderVariant.Emissive,
+          createEmissiveEffect(this.device, illumEffectOptions(shaderConst, ILLUM_FRAGMENT_ENTRY.emissive), gbuffer),
+        )
+      }
     }
 
     if (attrs.MtlFlags & MtlFlag.MTL_FLAG_ADDITIVE) {

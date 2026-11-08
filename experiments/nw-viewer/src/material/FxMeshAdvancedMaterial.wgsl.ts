@@ -507,28 +507,7 @@ fn fs_main(input: FragmentInput) -> FragmentOutput {
   // TODO:
 
   // --- Emittance (frag_custom_end()
-  var emittance = vec3f(0.0);
-  let emissiveLum = getLuminance(material.emissiveColor.xyz);
-  if (emissiveLum > 0.0) {
-    if (EMITTANCE_MAP) {
-      let sample = textureSample(emittanceMap, samplerLinear, uvEmittance.xy);
-      emittance  = sample.rgb;
-      emittance *= sample.a; // DEPRECATED
-    }
-
-    if (GLOW_FRESNEL) {
-      let fresnelApprox = fxFresnelApprox(
-        toEye.xyz,
-        normal.xyz,
-        material.fresnelInvert,
-        material.fresnelExponent,
-        material.fresnelStrength
-      );
-      emittance += vec3f(fresnelApprox);
-    }
-
-    emittance *= getMaterialEmittance();
-  }
+  let emittance = fxEmittance(s);
 
   color = color + emittance;
 
@@ -620,8 +599,48 @@ fn fs_main(input: FragmentInput) -> FragmentOutput {
   return out;
 }
 
+// Emitted light of a surface, zero without emittance
+fn fxEmittance(s: FxSurface) -> vec3f {
+  var emittance = vec3f(0.0);
+  let emissiveLum = getLuminance(material.emissiveColor.xyz);
+  if (emissiveLum > 0.0) {
+    if (EMITTANCE_MAP) {
+      let sample = textureSample(emittanceMap, samplerLinear, s.uvEmittance.xy);
+      emittance  = sample.rgb;
+      emittance *= sample.a; // DEPRECATED
+    }
+
+    if (GLOW_FRESNEL) {
+      let fresnelApprox = fxFresnelApprox(
+        s.toEye.xyz,
+        s.normal.xyz,
+        material.fresnelInvert,
+        material.fresnelExponent,
+        material.fresnelStrength
+      );
+      emittance += vec3f(fresnelApprox);
+    }
+
+    emittance *= getMaterialEmittance();
+  }
+  return emittance;
+}
+
+struct EmissiveOutput {
+  @location(0) color: vec4f,
+};
+
+// Emittance added to the deferred lit color (additive, after the lighting pass), see NwRenderVariant.Emissive
+@fragment
+fn fs_emissive(input: FragmentInput) -> EmissiveOutput {
+  let s = fxSurface(input);
+  var out: EmissiveOutput;
+  out.color = vec4f(fxEmittance(s), 0.0);
+  return out;
+}
+
 // GBuffer attributes of opaque surfaces (fxmeshadvanced.cfx ZPass). The emittance is added after the lighting by
-// the emissive variant (phase 4).
+// the emissive variant (fs_emissive).
 @fragment
 fn fs_gbuffer(input: FragmentInput) -> GBufferOutput {
   let s = fxSurface(input);
