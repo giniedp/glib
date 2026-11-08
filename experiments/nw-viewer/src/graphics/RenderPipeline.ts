@@ -57,13 +57,13 @@ const FORWARD_OPAQUE_LIST = new RenderListMode(RenderSortPriority.State, RenderI
 /**
  * Scratch target for the linear depth output of transparent materials.
  * Transparent materials write a second (linear depth) output, which needs an attachment, but nothing reads it.
- * It can't be LinearDepth, which they sample.
+ * It can't be LinearDepth, which they sample. r8unorm keeps it small, the f32 output is valid for any float format.
  */
 const TransparentLinearDepth = renderChannel('nw_transparent_linear_depth')
 const TRANSPARENT_LINEAR_DEPTH_DESC: Readonly<TextureDescriptor> = {
   name: 'NwRenderChannel.TransparentLinearDepth',
   type: '2d',
-  format: 'r32float',
+  format: 'r8unorm',
   width: 1,
   height: 1,
   depth: 1,

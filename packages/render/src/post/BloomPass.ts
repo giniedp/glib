@@ -1,13 +1,4 @@
-import {
-  CombineEffect,
-  CombineOperator,
-  DownsampleEffect,
-  DownsampleOperator,
-  ExtractEffect,
-  ExtractOperator,
-  UpsampleEffect,
-  UpsampleOperator,
-} from '@gglib/effects'
+import { DownsampleEffect, DownsampleOperator, UpsampleEffect, UpsampleOperator } from '@gglib/effects'
 import {
   BlendState,
   Color,
@@ -37,6 +28,20 @@ export type BloomPassMode = 'kawase' | 'jimnez'
 export function bloomPass(device: Device, options: BloomPassOptions = {}): BloomPass {
   return new BloomPass(device, options)
 }
+
+/**
+ * Adds the glow onto the color like {@link BlendState.Additive} (the upsample output is scaled by its alpha), and
+ * keeps the alpha of the color
+ */
+const BLOOM_COMPOSITE = BlendState.get({
+  enable: true,
+  colorBlendFunction: 'add',
+  alphaBlendFunction: 'add',
+  colorSrcBlend: 'src-alpha',
+  colorDstBlend: 'one',
+  alphaSrcBlend: 'zero',
+  alphaDstBlend: 'one',
+})
 
 export class BloomPass implements RenderPass, Ownable {
   /**
@@ -77,18 +82,11 @@ export class BloomPass implements RenderPass, Ownable {
   public mode: BloomPassMode = 'kawase'
 
   private device: Device
-  private fxExtract: ExtractEffect
   private fxDownsample: DownsampleEffect
   private fxUpsample: UpsampleEffect
-  private fxCombine: CombineEffect
 
   private get isReady() {
-    return (
-      !!this.fxExtract?.isCompiled &&
-      !!this.fxDownsample?.isCompiled &&
-      !!this.fxUpsample?.isCompiled &&
-      !!this.fxCombine?.isCompiled
-    )
+    return !!this.fxDownsample?.isCompiled && !!this.fxUpsample?.isCompiled
   }
 
   private get isKawase() {
@@ -96,13 +94,8 @@ export class BloomPass implements RenderPass, Ownable {
   }
 
   private active = false
-  private source: FrameResource
   private target: FrameResource
 
-  private texExtract: Texture
-  private texExtractDesc: TextureDescriptor
-  private texBlur: Texture
-  private texBlurDesc: TextureDescriptor
   private texDownUp: Texture[] = []
   private texDownUpDesc: TextureDescriptor[] = []
 
@@ -114,86 +107,73 @@ export class BloomPass implements RenderPass, Ownable {
 
     this.enabled = options.enabled ?? this.enabled
     this.threshold = options.threshold ?? this.threshold
+    this.knee = options.knee ?? this.knee
     this.intensity = options.intensity ?? this.intensity
     this.steps = options.steps ?? this.steps
     this.mode = options.mode ?? this.mode
   }
 
   private createEffects() {
-    this.fxExtract ||= this.ownership.adopt(new ExtractEffect(this.device))
     this.fxDownsample ||= this.ownership.adopt(new DownsampleEffect(this.device))
     this.fxUpsample ||= this.ownership.adopt(new UpsampleEffect(this.device))
-    this.fxCombine ||= this.ownership.adopt(new CombineEffect(this.device))
   }
 
   public setup(frame: FrameGraph<RenderPass>, ctx: RenderContext): void {
     this.createEffects()
     this.active = this.enabled && this.isReady
     if (!this.active) {
-      this.source = null
       this.target = null
       return
     }
 
     frame.addPass(this)
-    this.source = frame.read(RenderChannel.Color)
-    this.target = frame.write(RenderChannel.Color)
+    // the glow is blended onto the color, so no full resolution target is needed
+    this.target = frame.modifyInPlace(RenderChannel.Color)
 
-    this.texExtractDesc ||= {
-      type: '2d',
-      format: 'rgba16float',
-      width: ctx.viewWidth,
-      height: ctx.viewHeight,
-      depth: 1,
-      mipLevelCount: 1,
-      sampleCount: 1,
-      usage: TextureUsage.RenderTarget | TextureUsage.TextureBinding,
-    }
-    this.texExtractDesc.width = ctx.viewWidth
-    this.texExtractDesc.height = ctx.viewHeight
-    this.texExtract ||= ctx.resources.acquire(this.texExtractDesc, 'Bloom Extract')
-
-    this.texBlurDesc ||= { ...this.texExtractDesc }
-    this.texBlurDesc.width = ctx.viewWidth
-    this.texBlurDesc.height = ctx.viewHeight
-    this.texBlur ||= ctx.resources.acquire(this.texBlurDesc, `Bloom Blur`)
-
-    const steps = Math.max(1, Math.min(10, this.steps))
+    const steps = this.stepCount
     for (let i = 0; i < steps; i++) {
-      this.texDownUpDesc[i] ||= { ...this.texExtractDesc }
+      this.texDownUpDesc[i] ||= {
+        type: '2d',
+        format: 'rgba16float',
+        width: 1,
+        height: 1,
+        depth: 1,
+        mipLevelCount: 1,
+        sampleCount: 1,
+        usage: TextureUsage.RenderTarget | TextureUsage.TextureBinding,
+      }
       this.texDownUpDesc[i].width = Math.ceil(ctx.viewWidth / Math.pow(2, i + 1))
       this.texDownUpDesc[i].height = Math.ceil(ctx.viewHeight / Math.pow(2, i + 1))
-      this.texDownUp[i] ||= ctx.resources.acquire(this.texDownUpDesc[i], `Bloom Step[${i}]`)
     }
   }
 
+  private get stepCount() {
+    return Math.max(1, Math.min(10, this.steps))
+  }
+
+  /**
+   * Downsamples the color into a mip chain (the first step applies the threshold), upsamples it back while
+   * accumulating the levels, and adds the half resolution level onto the color.
+   *
+   * @remarks
+   * The chain targets are acquired and released within this pass, so later passes reuse them.
+   */
   public render(ctx: RenderContext) {
     if (!this.active) {
       return
     }
 
-    const pass = ctx.device.renderPass
-    pass.setClearColor(0, Color.TransparentBlack)
-    pass.setRenderTarget(0, this.texExtract)
-    pass.clear()
-    pass.setRenderTarget(0, this.texBlur)
-    pass.clear()
-    pass.setRenderBlend(0, BlendState.Opaque)
-
-    // extract pass
-    {
-      const fx = this.fxExtract
-      fx.operatorId = ExtractOperator.HIGH_PASS
-      fx.threshold = this.threshold
-      fx.knee = this.knee
-      fx.textureIn = this.source.texture
-      fx.textureOut = this.texExtract
-      fx.render(pass)
+    const color = this.target.texture
+    const steps = this.stepCount
+    for (let i = 0; i < steps; i++) {
+      this.texDownUp[i] = ctx.resources.acquire(this.texDownUpDesc[i], `Bloom Step[${i}]`)
     }
 
+    const pass = ctx.device.renderPass
+    pass.setRenderBlend(0, BlendState.Opaque)
+
     const kawase = this.isKawase
-    const steps = Math.max(1, Math.min(10, this.steps))
-    // downsample pass
+    // downsample pass, the first step extracts the bright parts
     {
       const fx = this.fxDownsample
       for (let i = 0; i < steps; i++) {
@@ -202,57 +182,43 @@ export class BloomPass implements RenderPass, Ownable {
         } else {
           fx.operator = DownsampleOperator.KAWASE
         }
-        fx.textureIn = i === 0 ? this.texExtract : this.texDownUp[i - 1]
+        fx.highPass = i === 0
+        fx.threshold = this.threshold
+        fx.knee = this.knee
+        fx.textureIn = i === 0 ? color : this.texDownUp[i - 1]
         fx.textureOut = this.texDownUp[i]
         fx.render(pass)
       }
+      fx.highPass = false
     }
 
-    // upsample pass
+    // upsample pass, each level is added onto the next larger one, the last onto the color
     {
       const fx = this.fxUpsample
       fx.operator = kawase ? UpsampleOperator.KAWASE : UpsampleOperator.TENT_3X3
       fx.weight = this.intensity
       pass.setRenderBlend(0, BlendState.Additive)
       for (let i = steps - 1; i >= 0; i--) {
+        if (i === 0) {
+          pass.setRenderBlend(0, BLOOM_COMPOSITE)
+        }
         fx.textureIn = this.texDownUp[i]
-        fx.textureOut = this.texDownUp[i - 1] || this.texBlur
+        fx.textureOut = this.texDownUp[i - 1] || color
         fx.render(pass)
       }
       pass.setRenderBlend(0, BlendState.Opaque)
     }
 
-    // combine pass
-    {
-      const fx = this.fxCombine
-      fx.operator = CombineOperator.ADD
-      fx.weight1 = 1
-      fx.weight2 = 1
-      fx.blend = 1
-      fx.textureIn1 = this.source.texture
-      fx.textureIn2 = this.texBlur
-      fx.textureOut = this.target.texture
-      fx.render(pass)
-    }
-
     pass.flush()
+
+    for (let i = 0; i < steps; i++) {
+      ctx.resources.release(this.texDownUp[i])
+      this.texDownUp[i] = null
+    }
   }
 
   public cleanup(ctx: RenderContext): void {
-    if (this.texExtract) {
-      ctx.resources.release(this.texExtract)
-      this.texExtract = null
-    }
-    if (this.texBlur) {
-      ctx.resources.release(this.texBlur)
-      this.texBlur = null
-    }
-    for (let i = 0; i < this.texDownUp.length; i++) {
-      if (this.texDownUp[i]) {
-        ctx.resources.release(this.texDownUp[i])
-        this.texDownUp[i] = null
-      }
-    }
+    //
   }
 
   /**

@@ -207,7 +207,12 @@ export class XeGtaoPass implements RenderPass {
     this.source = frame.read(this.input)
     this.normalSource = frame.read(this.normals)
     this.target = frame.write(this.output)
+  }
 
+  /**
+   * Acquires the working targets for the duration of {@link render}, so later passes reuse them
+   */
+  private acquireTargets(ctx: RenderContext) {
     const width = ctx.viewWidth
     const height = ctx.viewHeight
     const mipCount = Math.min(XE_GTAO_DEPTH_MIP_LEVELS, Math.floor(Math.log2(Math.max(width, height))) + 1)
@@ -232,11 +237,31 @@ export class XeGtaoPass implements RenderPass {
     this.texEdges = ctx.resources.acquire(this.texEdgesDesc, 'XeGTAO Edges')
   }
 
+  private releaseTargets(ctx: RenderContext) {
+    if (this.texDepthMips) {
+      ctx.resources.release(this.texDepthMips)
+      this.texDepthMips = null
+    }
+    if (this.texAo) {
+      ctx.resources.release(this.texAo)
+      this.texAo = null
+    }
+    if (this.texAoPong) {
+      ctx.resources.release(this.texAoPong)
+      this.texAoPong = null
+    }
+    if (this.texEdges) {
+      ctx.resources.release(this.texEdges)
+      this.texEdges = null
+    }
+  }
+
   public render(ctx: RenderContext): void {
     if (!this.isActive) {
       return
     }
 
+    this.acquireTargets(ctx)
     const pass = ctx.device.renderPass
     pass.flush()
     this.updateParams(ctx)
@@ -282,26 +307,14 @@ export class XeGtaoPass implements RenderPass {
     }
 
     pass.flush()
+    this.releaseTargets(ctx)
   }
 
   public cleanup(ctx: RenderContext): void {
-    if (this.texDepthMips) {
-      ctx.resources.release(this.texDepthMips)
-      this.texDepthMips = null
-    }
-    if (this.texAo) {
-      ctx.resources.release(this.texAo)
-      this.texAo = null
-    }
-    if (this.texAoPong) {
-      ctx.resources.release(this.texAoPong)
-      this.texAoPong = null
-    }
-    if (this.texEdges) {
-      ctx.resources.release(this.texEdges)
-      this.texEdges = null
-    }
+    // released at the end of render, this only runs if the render threw
+    this.releaseTargets(ctx)
   }
+
 
   private draw(ctx: RenderContext, program: Program, target: Texture, mipLevel: number) {
     const pass = ctx.device.renderPass

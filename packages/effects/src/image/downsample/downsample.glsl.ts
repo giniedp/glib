@@ -3,31 +3,55 @@ const BASE = /* glsl */ `
   precision highp float;
   precision highp int;
 
+  // @block params
+  layout(std140) uniform Uniforms {
+    int   operatorId;
+    int   highPass;
+    float threshold;
+    float knee;
+  } params;
+
+  // high pass of the bloom threshold (extract EXTRACT_HIGH_PASS), applied to every tap when params.highPass is set
+  vec3 highPass(vec3 color) {
+    float lum = max(max(color.r, color.g), color.b);
+    float soft = clamp((lum - params.threshold + params.knee) / max(2.0 * params.knee, 1e-4), 0.0, 1.0);
+    float contribution = max(lum - params.threshold, 0.0) + soft * soft * params.knee;
+    return color * contribution / max(lum, 1e-4);
+  }
+
+  vec4 tap(sampler2D tex, vec2 uv) {
+    vec4 c = texture(tex, uv);
+    if (params.highPass != 0) {
+      return vec4(highPass(c.rgb), c.a);
+    }
+    return c;
+  }
+
   float getLuminance(vec3 c) {
     return dot(c, vec3(0.2126f, 0.7152f, 0.0722f));
   }
 
   vec4 downsampleBilinear2x2(sampler2D tex, vec2 uv) {
     // relies on the sampler already being linear-filtered;
-    return texture(tex, uv);
+    return tap(tex, uv);
   }
 
   vec4 downsampleBilinear4x4(sampler2D tex, vec2 uv, vec2 texelSize) {
     vec4 sum = vec4(0.0);
-    sum += texture(tex, uv + vec2(-1.0,-1.0) * texelSize);
-    sum += texture(tex, uv + vec2( 1.0,-1.0) * texelSize);
-    sum += texture(tex, uv + vec2(-1.0, 1.0) * texelSize);
-    sum += texture(tex, uv + vec2( 1.0, 1.0) * texelSize);
+    sum += tap(tex, uv + vec2(-1.0,-1.0) * texelSize);
+    sum += tap(tex, uv + vec2( 1.0,-1.0) * texelSize);
+    sum += tap(tex, uv + vec2(-1.0, 1.0) * texelSize);
+    sum += tap(tex, uv + vec2( 1.0, 1.0) * texelSize);
     return sum * 0.25;
   }
 
   vec4 downsampleKawase(sampler2D tex, vec2 uv, vec2 texelSize) {
     vec4 sum = vec4(0.0);
-    sum += texture(tex, uv) * 4.0;
-    sum += texture(tex, uv + vec2(-1.0,-1.0) * texelSize);
-    sum += texture(tex, uv + vec2( 1.0,-1.0) * texelSize);
-    sum += texture(tex, uv + vec2(-1.0, 1.0) * texelSize);
-    sum += texture(tex, uv + vec2( 1.0, 1.0) * texelSize);
+    sum += tap(tex, uv) * 4.0;
+    sum += tap(tex, uv + vec2(-1.0,-1.0) * texelSize);
+    sum += tap(tex, uv + vec2( 1.0,-1.0) * texelSize);
+    sum += tap(tex, uv + vec2(-1.0, 1.0) * texelSize);
+    sum += tap(tex, uv + vec2( 1.0, 1.0) * texelSize);
     return sum * 0.125;
   }
 
@@ -37,23 +61,23 @@ const BASE = /* glsl */ `
   // https://www.iryoku.com/next-generation-post-processing-in-call-of-duty-advanced-warfare/
   vec4 downsampleJimenez13Tap(sampler2D tex, vec2 uv, vec2 texelSize) {
 
-    vec4 a = texture(tex, uv + vec2(-1.0,-1.0) * texelSize);
-    vec4 b = texture(tex, uv + vec2( 0.0,-1.0) * texelSize);
-    vec4 c = texture(tex, uv + vec2( 1.0,-1.0) * texelSize);
+    vec4 a = tap(tex, uv + vec2(-1.0,-1.0) * texelSize);
+    vec4 b = tap(tex, uv + vec2( 0.0,-1.0) * texelSize);
+    vec4 c = tap(tex, uv + vec2( 1.0,-1.0) * texelSize);
 
-    vec4 d = texture(tex, uv + vec2(-0.5,-0.5) * texelSize);
-    vec4 e = texture(tex, uv + vec2( 0.5,-0.5) * texelSize);
+    vec4 d = tap(tex, uv + vec2(-0.5,-0.5) * texelSize);
+    vec4 e = tap(tex, uv + vec2( 0.5,-0.5) * texelSize);
 
-    vec4 f = texture(tex, uv + vec2(-1.0, 0.0) * texelSize);
-    vec4 g = texture(tex, uv);
-    vec4 h = texture(tex, uv + vec2( 1.0, 0.0) * texelSize);
+    vec4 f = tap(tex, uv + vec2(-1.0, 0.0) * texelSize);
+    vec4 g = tap(tex, uv);
+    vec4 h = tap(tex, uv + vec2( 1.0, 0.0) * texelSize);
 
-    vec4 i = texture(tex, uv + vec2(-0.5, 0.5) * texelSize);
-    vec4 j = texture(tex, uv + vec2( 0.5, 0.5) * texelSize);
+    vec4 i = tap(tex, uv + vec2(-0.5, 0.5) * texelSize);
+    vec4 j = tap(tex, uv + vec2( 0.5, 0.5) * texelSize);
 
-    vec4 k = texture(tex, uv + vec2(-1.0, 1.0) * texelSize);
-    vec4 l = texture(tex, uv + vec2( 0.0, 1.0) * texelSize);
-    vec4 m = texture(tex, uv + vec2( 1.0, 1.0) * texelSize);
+    vec4 k = tap(tex, uv + vec2(-1.0, 1.0) * texelSize);
+    vec4 l = tap(tex, uv + vec2( 0.0, 1.0) * texelSize);
+    vec4 m = tap(tex, uv + vec2( 1.0, 1.0) * texelSize);
 
     vec4 center      = (d + e + i + j) * 0.5;
     vec4 topLeft     = (a + b + f + g) * 0.125;
@@ -91,19 +115,19 @@ const BASE = /* glsl */ `
   }
 
   vec4 downsampleJimenez13TapKaris(sampler2D tex, vec2 uv, vec2 texelSize) {
-    vec4 a = texture(tex, uv + vec2(-1.0,-1.0) * texelSize);
-    vec4 b = texture(tex, uv + vec2( 0.0,-1.0) * texelSize);
-    vec4 c = texture(tex, uv + vec2( 1.0,-1.0) * texelSize);
-    vec4 d = texture(tex, uv + vec2(-0.5,-0.5) * texelSize);
-    vec4 e = texture(tex, uv + vec2( 0.5,-0.5) * texelSize);
-    vec4 f = texture(tex, uv + vec2(-1.0, 0.0) * texelSize);
-    vec4 g = texture(tex, uv);
-    vec4 h = texture(tex, uv + vec2( 1.0, 0.0) * texelSize);
-    vec4 i = texture(tex, uv + vec2(-0.5, 0.5) * texelSize);
-    vec4 j = texture(tex, uv + vec2( 0.5, 0.5) * texelSize);
-    vec4 k = texture(tex, uv + vec2(-1.0, 1.0) * texelSize);
-    vec4 l = texture(tex, uv + vec2( 0.0, 1.0) * texelSize);
-    vec4 m = texture(tex, uv + vec2( 1.0, 1.0) * texelSize);
+    vec4 a = tap(tex, uv + vec2(-1.0,-1.0) * texelSize);
+    vec4 b = tap(tex, uv + vec2( 0.0,-1.0) * texelSize);
+    vec4 c = tap(tex, uv + vec2( 1.0,-1.0) * texelSize);
+    vec4 d = tap(tex, uv + vec2(-0.5,-0.5) * texelSize);
+    vec4 e = tap(tex, uv + vec2( 0.5,-0.5) * texelSize);
+    vec4 f = tap(tex, uv + vec2(-1.0, 0.0) * texelSize);
+    vec4 g = tap(tex, uv);
+    vec4 h = tap(tex, uv + vec2( 1.0, 0.0) * texelSize);
+    vec4 i = tap(tex, uv + vec2(-0.5, 0.5) * texelSize);
+    vec4 j = tap(tex, uv + vec2( 0.5, 0.5) * texelSize);
+    vec4 k = tap(tex, uv + vec2(-1.0, 1.0) * texelSize);
+    vec4 l = tap(tex, uv + vec2( 0.0, 1.0) * texelSize);
+    vec4 m = tap(tex, uv + vec2( 1.0, 1.0) * texelSize);
 
     // vec4 center      = karisAverage4(d, e, i, j);
     // vec4 topLeft     = karisAverage4(a, b, f, g);
@@ -140,11 +164,6 @@ export const DOWNSAMPLE_GLSL_FS = /* glsl */ `
 
   in vec2 uv;
   out vec4 fragColor;
-
-  // @block params
-  layout(std140) uniform Uniforms {
-    int   operatorId;
-  } params;
 
   // @alias colorMap
   uniform sampler2D colorMap;

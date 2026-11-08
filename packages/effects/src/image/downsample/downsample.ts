@@ -42,6 +42,9 @@ export class DownsampleEffect implements Ownable {
   public readonly params = typedProgramInputs({
     texture: inputSlot('', 'colorMap', 'texture'),
     operatorId: inputSlot('params', 'operatorId', 'scalar'),
+    highPass: inputSlot('params', 'highPass', 'scalar'),
+    threshold: inputSlot('params', 'threshold', 'scalar'),
+    knee: inputSlot('params', 'knee', 'scalar'),
   })
 
   public compiled: Promise<this>
@@ -55,6 +58,19 @@ export class DownsampleEffect implements Ownable {
   public textureIn: Texture
   public textureOut: Texture | DeviceOutput
   public operator: DownsampleOperator = DownsampleOperator.BILINEAR_2X2
+  /**
+   * Applies a soft threshold high pass (like {@link ExtractOperator.HIGH_PASS}) to every tap before filtering.
+   * Lets a bloom chain extract the bright parts in its first downsample, without a full resolution extract target.
+   */
+  public highPass = false
+  /**
+   * High pass threshold, on the max color component
+   */
+  public threshold = 1
+  /**
+   * High pass soft knee
+   */
+  public knee = 0.5
 
   public constructor(device: Device) {
     const shader = this.ownership.adopt(device.acquireShaderModule(downsampleShaderOptions()))
@@ -68,6 +84,9 @@ export class DownsampleEffect implements Ownable {
 
     const params = this.params
     params.operatorId = this.operator
+    params.highPass = this.highPass ? 1 : 0
+    params.threshold = this.threshold
+    params.knee = this.knee
     params.texture = this.textureIn
     this.program.applyBlocks(params.blocks)
     this.program.commit()

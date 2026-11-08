@@ -127,16 +127,18 @@ export class SmaaPass implements RenderPass {
     this.depth = frame.read(RenderChannel.LinearDepth)
     this.target = frame.write(RenderChannel.Color)
 
-    this.edgesDesc.width = this.weightsDesc.width = ctx.viewWidth
-    this.edgesDesc.height = this.weightsDesc.height = ctx.viewHeight
-    this.edges = ctx.resources.acquire(this.edgesDesc, 'SMAA Edges')
-    this.weights = ctx.resources.acquire(this.weightsDesc, 'SMAA Weights')
   }
 
   public render(ctx: RenderContext): void {
     if (!this.isActive) {
       return
     }
+    // acquired for the duration of the pass, so later passes reuse the targets
+    this.edgesDesc.width = this.weightsDesc.width = ctx.viewWidth
+    this.edgesDesc.height = this.weightsDesc.height = ctx.viewHeight
+    this.edges = ctx.resources.acquire(this.edgesDesc, 'SMAA Edges')
+    this.weights = ctx.resources.acquire(this.weightsDesc, 'SMAA Weights')
+
     const target = this.target.texture
     this.rt[0] = 1 / target.width
     this.rt[1] = 1 / target.height
@@ -178,9 +180,15 @@ export class SmaaPass implements RenderPass {
     this.draw(ctx, blend, target)
 
     pass.flush()
+    this.releaseTargets(ctx)
   }
 
   public cleanup(ctx: RenderContext): void {
+    // released at the end of render, this only runs if the render threw
+    this.releaseTargets(ctx)
+  }
+
+  private releaseTargets(ctx: RenderContext) {
     if (this.edges) {
       ctx.resources.release(this.edges)
       this.edges = null

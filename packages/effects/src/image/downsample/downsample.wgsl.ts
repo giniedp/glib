@@ -7,27 +7,43 @@ export const DOWNSAMPLE_WGSL_FS = /* wgsl */ `
     return dot(c, vec3f(0.2126, 0.7152, 0.0722));
   }
 
+  // high pass of the bloom threshold (extract.wgsl EXTRACT_HIGH_PASS), applied to every tap when params.highPass is set
+  fn highPass(color: vec3f) -> vec3f {
+    let lum = max(max(color.r, color.g), color.b);
+    let soft = clamp((lum - params.threshold + params.knee) / max(2.0 * params.knee, 1e-4), 0.0, 1.0);
+    let contribution = max(lum - params.threshold, 0.0) + soft * soft * params.knee;
+    return color * contribution / max(lum, 1e-4);
+  }
+
+  fn tap(tex: texture_2d<f32>, samp: sampler, uv: vec2f) -> vec4f {
+    let c = textureSample(tex, samp, uv);
+    if (params.highPass != 0) {
+      return vec4f(highPass(c.rgb), c.a);
+    }
+    return c;
+  }
+
   fn downsampleBilinear2x2(tex: texture_2d<f32>, samp: sampler, uv: vec2f) -> vec4f {
     // relies on the sampler already being linear-filtered
-    return textureSample(tex, samp, uv);
+    return tap(tex, samp, uv);
   }
 
   fn downsampleBilinear4x4(tex: texture_2d<f32>, samp: sampler, uv: vec2f, texelSize: vec2f) -> vec4f {
     var sum: vec4f = vec4f(0.0);
-    sum += textureSample(tex, samp, uv + vec2f(-1.0,-1.0) * texelSize);
-    sum += textureSample(tex, samp, uv + vec2f( 1.0,-1.0) * texelSize);
-    sum += textureSample(tex, samp, uv + vec2f(-1.0, 1.0) * texelSize);
-    sum += textureSample(tex, samp, uv + vec2f( 1.0, 1.0) * texelSize);
+    sum += tap(tex, samp, uv + vec2f(-1.0,-1.0) * texelSize);
+    sum += tap(tex, samp, uv + vec2f( 1.0,-1.0) * texelSize);
+    sum += tap(tex, samp, uv + vec2f(-1.0, 1.0) * texelSize);
+    sum += tap(tex, samp, uv + vec2f( 1.0, 1.0) * texelSize);
     return sum * 0.25;
   }
 
   fn downsampleKawase(tex: texture_2d<f32>, samp: sampler, uv: vec2f, texelSize: vec2f) -> vec4f {
     var sum: vec4f = vec4f(0.0);
-    sum += textureSample(tex, samp, uv) * 4.0;
-    sum += textureSample(tex, samp, uv + vec2f(-1.0,-1.0) * texelSize);
-    sum += textureSample(tex, samp, uv + vec2f( 1.0,-1.0) * texelSize);
-    sum += textureSample(tex, samp, uv + vec2f(-1.0, 1.0) * texelSize);
-    sum += textureSample(tex, samp, uv + vec2f( 1.0, 1.0) * texelSize);
+    sum += tap(tex, samp, uv) * 4.0;
+    sum += tap(tex, samp, uv + vec2f(-1.0,-1.0) * texelSize);
+    sum += tap(tex, samp, uv + vec2f( 1.0,-1.0) * texelSize);
+    sum += tap(tex, samp, uv + vec2f(-1.0, 1.0) * texelSize);
+    sum += tap(tex, samp, uv + vec2f( 1.0, 1.0) * texelSize);
     return sum * 0.125;
   }
 
@@ -36,23 +52,23 @@ export const DOWNSAMPLE_WGSL_FS = /* wgsl */ `
   // "Next Generation Post Processing in Call of Duty: Advanced Warfare"
   // https://www.iryoku.com/next-generation-post-processing-in-call-of-duty-advanced-warfare/
   fn downsampleJimenez13Tap(tex: texture_2d<f32>, samp: sampler, uv: vec2f, texelSize: vec2f) -> vec4f {
-    let a = textureSample(tex, samp, uv + vec2f(-1.0,-1.0) * texelSize);
-    let b = textureSample(tex, samp, uv + vec2f( 0.0,-1.0) * texelSize);
-    let c = textureSample(tex, samp, uv + vec2f( 1.0,-1.0) * texelSize);
+    let a = tap(tex, samp, uv + vec2f(-1.0,-1.0) * texelSize);
+    let b = tap(tex, samp, uv + vec2f( 0.0,-1.0) * texelSize);
+    let c = tap(tex, samp, uv + vec2f( 1.0,-1.0) * texelSize);
 
-    let d = textureSample(tex, samp, uv + vec2f(-0.5,-0.5) * texelSize);
-    let e = textureSample(tex, samp, uv + vec2f( 0.5,-0.5) * texelSize);
+    let d = tap(tex, samp, uv + vec2f(-0.5,-0.5) * texelSize);
+    let e = tap(tex, samp, uv + vec2f( 0.5,-0.5) * texelSize);
 
-    let f = textureSample(tex, samp, uv + vec2f(-1.0, 0.0) * texelSize);
-    let g = textureSample(tex, samp, uv);
-    let h = textureSample(tex, samp, uv + vec2f( 1.0, 0.0) * texelSize);
+    let f = tap(tex, samp, uv + vec2f(-1.0, 0.0) * texelSize);
+    let g = tap(tex, samp, uv);
+    let h = tap(tex, samp, uv + vec2f( 1.0, 0.0) * texelSize);
 
-    let i = textureSample(tex, samp, uv + vec2f(-0.5, 0.5) * texelSize);
-    let j = textureSample(tex, samp, uv + vec2f( 0.5, 0.5) * texelSize);
+    let i = tap(tex, samp, uv + vec2f(-0.5, 0.5) * texelSize);
+    let j = tap(tex, samp, uv + vec2f( 0.5, 0.5) * texelSize);
 
-    let k = textureSample(tex, samp, uv + vec2f(-1.0, 1.0) * texelSize);
-    let l = textureSample(tex, samp, uv + vec2f( 0.0, 1.0) * texelSize);
-    let m = textureSample(tex, samp, uv + vec2f( 1.0, 1.0) * texelSize);
+    let k = tap(tex, samp, uv + vec2f(-1.0, 1.0) * texelSize);
+    let l = tap(tex, samp, uv + vec2f( 0.0, 1.0) * texelSize);
+    let m = tap(tex, samp, uv + vec2f( 1.0, 1.0) * texelSize);
 
     let center      = (d + e + i + j) * 0.5;
     let topLeft     = (a + b + f + g) * 0.125;
@@ -91,19 +107,19 @@ export const DOWNSAMPLE_WGSL_FS = /* wgsl */ `
   }
 
   fn downsampleJimenez13TapKaris(tex: texture_2d<f32>, samp: sampler, uv: vec2f, texelSize: vec2f) -> vec4f {
-    let a = textureSample(tex, samp, uv + vec2f(-1.0,-1.0) * texelSize);
-    let b = textureSample(tex, samp, uv + vec2f( 0.0,-1.0) * texelSize);
-    let c = textureSample(tex, samp, uv + vec2f( 1.0,-1.0) * texelSize);
-    let d = textureSample(tex, samp, uv + vec2f(-0.5,-0.5) * texelSize);
-    let e = textureSample(tex, samp, uv + vec2f( 0.5,-0.5) * texelSize);
-    let f = textureSample(tex, samp, uv + vec2f(-1.0, 0.0) * texelSize);
-    let g = textureSample(tex, samp, uv);
-    let h = textureSample(tex, samp, uv + vec2f( 1.0, 0.0) * texelSize);
-    let i = textureSample(tex, samp, uv + vec2f(-0.5, 0.5) * texelSize);
-    let j = textureSample(tex, samp, uv + vec2f( 0.5, 0.5) * texelSize);
-    let k = textureSample(tex, samp, uv + vec2f(-1.0, 1.0) * texelSize);
-    let l = textureSample(tex, samp, uv + vec2f( 0.0, 1.0) * texelSize);
-    let m = textureSample(tex, samp, uv + vec2f( 1.0, 1.0) * texelSize);
+    let a = tap(tex, samp, uv + vec2f(-1.0,-1.0) * texelSize);
+    let b = tap(tex, samp, uv + vec2f( 0.0,-1.0) * texelSize);
+    let c = tap(tex, samp, uv + vec2f( 1.0,-1.0) * texelSize);
+    let d = tap(tex, samp, uv + vec2f(-0.5,-0.5) * texelSize);
+    let e = tap(tex, samp, uv + vec2f( 0.5,-0.5) * texelSize);
+    let f = tap(tex, samp, uv + vec2f(-1.0, 0.0) * texelSize);
+    let g = tap(tex, samp, uv);
+    let h = tap(tex, samp, uv + vec2f( 1.0, 0.0) * texelSize);
+    let i = tap(tex, samp, uv + vec2f(-0.5, 0.5) * texelSize);
+    let j = tap(tex, samp, uv + vec2f( 0.5, 0.5) * texelSize);
+    let k = tap(tex, samp, uv + vec2f(-1.0, 1.0) * texelSize);
+    let l = tap(tex, samp, uv + vec2f( 0.0, 1.0) * texelSize);
+    let m = tap(tex, samp, uv + vec2f( 1.0, 1.0) * texelSize);
 
     // let center      = karisAverage4(d, e, i, j);
     // let topLeft     = karisAverage4(a, b, f, g);
@@ -143,6 +159,9 @@ export const DOWNSAMPLE_WGSL_FS = /* wgsl */ `
 
   struct Uniforms {
     operatorId: i32,
+    highPass: i32,
+    threshold: f32,
+    knee: f32,
   };
 
   // @block params

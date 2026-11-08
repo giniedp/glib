@@ -70,6 +70,16 @@ export class RenderPipeline implements Ownable {
 
     this.graph.compile()
 
+    // the exports of the previous frame were presented already, so their targets can serve this frame
+    const viewExports = ctx.view.exports
+    for (const key in viewExports) {
+      const oldTexture = viewExports[key as keyof typeof viewExports]
+      if (oldTexture) {
+        ctx.resources.release(oldTexture)
+        viewExports[key as keyof typeof viewExports] = null
+      }
+    }
+
     for (const node of this.graph.nodes) {
       for (const resource of node.acquire) {
         resource.texture = ctx.resources.acquire(resource.desc, `v${resource.version}`)
@@ -97,12 +107,7 @@ export class RenderPipeline implements Ownable {
     }
 
     for (const resource of this.exports) {
-      const oldTexture = ctx.view.exports[resource.channel]
-      const newTexture = resource.texture
-      if (oldTexture && oldTexture !== newTexture) {
-        ctx.resources.release(oldTexture)
-      }
-      ctx.view.exports[resource.channel] = newTexture
+      ctx.view.exports[resource.channel] = resource.texture
     }
   }
 
