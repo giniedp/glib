@@ -25,6 +25,30 @@ describe('WebGpuProgram', () => {
     device.dispose()
   })
 
+  describe('bind groups', () => {
+    it('reuses the bind group of a previously bound resource combination', async () => {
+      const shader = device.createShaderModule({
+        wgsl: /* wgsl */ `
+          ${SHADER_BASE}
+          @group(0) @binding(0) var textureMap: texture_2d<f32>;
+        `,
+      })
+      await shader.compiled
+      const program = shader.program
+      const a = device.createTexture({ width: 4, height: 4 })
+      const b = device.createTexture({ width: 4, height: 4 })
+      program.set('textureMap', a)
+      const groupA = program.bindGroups[0]
+      program.set('textureMap', b)
+      const groupB = program.bindGroups[0]
+      program.set('textureMap', a)
+      expect(groupB).not.toBe(groupA)
+      expect(program.bindGroups[0]).toBe(groupA)
+      program.set('textureMap', b)
+      expect(program.bindGroups[0]).toBe(groupB)
+    })
+  })
+
   describe('resolution failures', () => {
     let shader: WebGpuShaderModule
 

@@ -42,14 +42,7 @@ export class WebGpuMipmaps {
     const pass = this.renderPass
     for (let level = 1; level < texture.mipLevelCount; level++) {
       program.program.mustGet('textureMapSampler').set(SamplerState.LinearClampNoMipMap)
-      program.program.mustGet('textureMap').set(
-        texture.gpuObject.createView({
-          dimension,
-          baseMipLevel: level - 1,
-          mipLevelCount: 1,
-          usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_DST,
-        }) as any,
-      )
+      program.program.mustGet('textureMap').set(texture.getMipLevelView(dimension, level - 1) as any)
 
       for (let layer = startLayer; layer < endLayer; layer++) {
         pass.setRenderTarget(0, texture, level, layer)

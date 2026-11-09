@@ -59,9 +59,41 @@ export class WebGpuShaderModule extends ShaderModule implements GpuResource<GPUS
    */
   public readonly source: string
   /**
-   * The compiled GPU shader module handle
+   * The descriptive name of this shader module
    */
-  public readonly gpuObject: GPUShaderModule
+  public readonly name: string
+  /**
+   * The GPU shader module handle. Created on access and released after {@link GPU_MODULE_IDLE_MS} without access.
+   *
+   * @remarks
+   * Chrome charges ~100 bytes of V8 external memory per source character to every live `GPUShaderModule`.
+   * Large shaders with many variants exhaust V8's global GC limit and cause long GC pauses. Pipelines don't need
+   * the module after creation, so only pipeline creation accesses it, and a recreated module hits the browser's
+   * shader cache.
+   */
+  public get gpuObject(): GPUShaderModule {
+    if (!this.gpuModule && !this.isFinalized) {
+      this.gpuModule = this.device.gpu.createShaderModule({ label: this.name, code: this.source })
+    }
+    this.lastAccess = performance.now()
+    if (!this.releaseTimer && this.gpuModule) {
+      this.releaseTimer = setTimeout(this.releaseIfIdle, GPU_MODULE_IDLE_MS)
+    }
+    return this.gpuModule
+  }
+  private gpuModule: GPUShaderModule | null = null
+  private isFinalized = false
+  private lastAccess = 0
+  private releaseTimer: ReturnType<typeof setTimeout> | null = null
+  private releaseIfIdle = () => {
+    const idle = performance.now() - this.lastAccess
+    if (idle < GPU_MODULE_IDLE_MS) {
+      this.releaseTimer = setTimeout(this.releaseIfIdle, GPU_MODULE_IDLE_MS - idle)
+    } else {
+      this.releaseTimer = null
+      this.gpuModule = null
+    }
+  }
   /**
    * The default program bindings for this shader module.
    */
@@ -113,10 +145,7 @@ export class WebGpuShaderModule extends ShaderModule implements GpuResource<GPUS
     this.vertexConstants = options.vertexConstants
     this.fragmentConstants = options.fragmentConstants
     this.computeConstants = options.computeConstants
-    this.gpuObject = device.gpu.createShaderModule({
-      label: options.name,
-      code: options.code,
-    })
+    this.name = options.name
 
     this.ownership = new ResourceOwnership(this)
     this.ownership.onFinalize(() => this.finalize())
@@ -266,7 +295,10 @@ export class WebGpuShaderModule extends ShaderModule implements GpuResource<GPUS
 
   private finalize(): void {
     const self = this as Mutable<this>
-    self.gpuObject = null
+    clearTimeout(this.releaseTimer)
+    this.releaseTimer = null
+    this.gpuModule = null
+    this.isFinalized = true
     self.program.dispose()
     self.program = null
   }
@@ -275,6 +307,11 @@ export class WebGpuShaderModule extends ShaderModule implements GpuResource<GPUS
 /**
  * Finds the entry point of a stage by name, or the first one of that stage when no name is given
  */
+/**
+ * Time without access after which a {@link WebGpuShaderModule} releases its `GPUShaderModule`
+ */
+export const GPU_MODULE_IDLE_MS = 5000
+
 function findEntryPoint(
   info: WgslProgramInfo,
   stage: WgslShaderStage,

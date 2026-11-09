@@ -443,14 +443,7 @@ export class WebGpuDevice extends Device<GPUCanvasContext> {
     const pass = this.mipmapPass
     for (let level = 1; level < texture.mipLevelCount; level++) {
       program.program.get('textureMapSampler').set(SamplerState.LinearClampNoMipMap)
-      program.program.get('textureMap').set(
-        texture.gpuObject.createView({
-          dimension,
-          baseMipLevel: level - 1,
-          mipLevelCount: 1,
-          usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_DST,
-        }),
-      )
+      program.program.get('textureMap').set(texture.getMipLevelView(dimension, level - 1))
 
       for (let layer = startLayer; layer < endLayer; layer++) {
         pass.setRenderTarget(0, texture, level, layer)

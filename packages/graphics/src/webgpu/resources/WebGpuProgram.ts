@@ -57,7 +57,7 @@ export class WebGpuProgram extends Program {
     this.ownedResources = resources.owned
 
     this.bindGroupLayouts =
-      options?.layouts || createBindGroupLayouts(this.device, shader.gpuObject.label, this.resources)
+      options?.layouts || createBindGroupLayouts(this.device, shader.name, this.resources)
     this.createBindGroupDescriptors()
   }
 
@@ -139,6 +139,7 @@ export class WebGpuProgram extends Program {
     this.ownedResources = []
     this.resources = []
     this.inputMap = {}
+    this.bindGroupCache = []
   }
 
   private createBindGroupDescriptors() {
@@ -173,10 +174,58 @@ export class WebGpuProgram extends Program {
     for (let groupId = 0; groupId < this.gpuBindGroupDescriptors.length; groupId++) {
       data = this.gpuBindGroupDescriptors[groupId]
       if (data && !this.gpuBindGroups[groupId]) {
-        this.gpuBindGroups[groupId] = this.device.gpu.createBindGroup(data)
+        this.gpuBindGroups[groupId] = this.getOrCreateBindGroup(groupId, data)
       }
     }
   }
+
+  /**
+   * Recently used bind groups per group, keyed by the identity of their entry resources
+   *
+   * @remarks
+   * Effects that rebind per draw (e.g. a mip chain with alternating inputs) would otherwise create new bind groups
+   * every frame. Those are freed only when the GC collects their wrappers, and pile up in the GPU process meanwhile.
+   */
+  private bindGroupCache: Array<Array<{ keys: GPUBindingResource[]; group: GPUBindGroup }>> = []
+  private bindGroupCacheNext: number[] = []
+
+  private getOrCreateBindGroup(groupId: number, data: GPUBindGroupDescriptor): GPUBindGroup {
+    const entries = data.entries as GPUBindGroupEntry[]
+    const cache = (this.bindGroupCache[groupId] ||= [])
+    for (const item of cache) {
+      if (sameResources(item.keys, entries)) {
+        return item.group
+      }
+    }
+    const group = this.device.gpu.createBindGroup(data)
+    const keys = entries.map((it) => it.resource)
+    if (cache.length < BIND_GROUP_CACHE_SIZE) {
+      cache.push({ keys, group })
+    } else {
+      // replace round robin
+      const next = this.bindGroupCacheNext[groupId] ?? 0
+      cache[next] = { keys, group }
+      this.bindGroupCacheNext[groupId] = (next + 1) % BIND_GROUP_CACHE_SIZE
+    }
+    return group
+  }
+}
+
+/**
+ * Bind groups kept per group of a program, see {@link WebGpuProgram} bindGroupCache
+ */
+const BIND_GROUP_CACHE_SIZE = 16
+
+function sameResources(keys: GPUBindingResource[], entries: GPUBindGroupEntry[]) {
+  if (keys.length !== entries.length) {
+    return false
+  }
+  for (let i = 0; i < entries.length; i++) {
+    if (keys[i] !== entries[i].resource) {
+      return false
+    }
+  }
+  return true
 }
 
 function createResources(

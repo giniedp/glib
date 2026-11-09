@@ -63,6 +63,36 @@ describe('FrameGraph', () => {
     expect(() => graph.addPass('C')).toThrow()
   })
 
+  it('resets reused resources of a previous frame', () => {
+    // frame 1: Color is exported, Depth holds a texture
+    graph.begin([channels.Color], 1, 1)
+    graph.addPass('A')
+    graph.write(channels.Depth).texture = {} as any
+    graph.write(channels.Color)
+    graph.addPass('B')
+    graph.read(channels.Depth)
+    graph.modify(channels.Color)
+    graph.export(channels.Color)
+    graph.compile()
+
+    // frame 2: same passes, nothing exported, so every resource is released by its last user
+    graph.begin([channels.Color], 1, 1)
+    graph.addPass('A')
+    const depth = graph.write(channels.Depth)
+    const color = graph.write(channels.Color)
+    graph.addPass('B')
+    graph.read(channels.Depth)
+    graph.modify(channels.Color)
+    graph.compile()
+
+    expect(depth.texture).toBe(null)
+    expect(color.exported).toBe(false)
+    expect(graph.collectExports()).toEqual([])
+    const released = graph.nodes.flatMap((it) => it.release)
+    expect(released).toContain(depth)
+    expect(released).toContain(color)
+  })
+
   it('culls passes that do not write to any output', () => {
     graph.begin([channels.Color], 1, 1)
 

@@ -322,13 +322,16 @@ export class WebGpuRenderEncoder extends RenderEncoder {
     let gpuTargetView: GPUTexture | GPUTextureView | null = gpuTarget
     if (gpuTarget) {
       if (mipLevel != null || arrayLayer != null || gpuTarget.mipLevelCount > 1 || gpuTarget.depthOrArrayLayers > 1) {
-        gpuTargetView = gpuTarget.createView({
-          dimension: '2d',
-          baseMipLevel: mipLevel ?? 0,
-          mipLevelCount: 1,
-          baseArrayLayer: arrayLayer ?? 0,
-          arrayLayerCount: 1,
-        })
+        gpuTargetView =
+          texture instanceof WebGpuTexture
+            ? texture.getAttachmentView(mipLevel ?? 0, arrayLayer ?? 0)
+            : gpuTarget.createView({
+                dimension: '2d',
+                baseMipLevel: mipLevel ?? 0,
+                mipLevelCount: 1,
+                baseArrayLayer: arrayLayer ?? 0,
+                arrayLayerCount: 1,
+              })
       }
 
       const sampleCount = gpuTarget.sampleCount || 1

@@ -160,7 +160,7 @@ export class WebGpuTexture extends Texture implements GpuResource<GPUTexture> {
     self.gpuObject = null
     self.gpuView = null
     self.gpuDepthView = null
-    this.gpuSubViews.clear()
+    this.clearSubViews()
   }
 
   private gpuSubViews = new Map<TextureView, GPUTextureView>()
@@ -183,6 +183,57 @@ export class WebGpuTexture extends Texture implements GpuResource<GPUTexture> {
       this.gpuSubViews.set(view, gpuView)
     }
     return gpuView
+  }
+
+  private gpuAttachmentViews: GPUTextureView[] = []
+
+  /**
+   * Gets a 2d view of one mip level and one array layer, for use as a render attachment.
+   * Views are cached until the GPU texture is recreated.
+   */
+  public getAttachmentView(mipLevel: number, arrayLayer: number): GPUTextureView {
+    const index = mipLevel * this.gpuObject.depthOrArrayLayers + arrayLayer
+    let gpuView = this.gpuAttachmentViews[index]
+    if (!gpuView) {
+      gpuView = this.gpuObject.createView({
+        label: `${this.name || `Texture_${this.uid}`} mip ${mipLevel} layer ${arrayLayer}`,
+        dimension: '2d',
+        baseMipLevel: mipLevel,
+        mipLevelCount: 1,
+        baseArrayLayer: arrayLayer,
+        arrayLayerCount: 1,
+      })
+      this.gpuAttachmentViews[index] = gpuView
+    }
+    return gpuView
+  }
+
+  private gpuMipLevelViews: Partial<Record<GPUTextureViewDimension, GPUTextureView[]>> = {}
+
+  /**
+   * Gets a view of one mip level (all layers) with the given dimension, used as the source when generating mipmaps.
+   * Views are cached until the GPU texture is recreated.
+   */
+  public getMipLevelView(dimension: GPUTextureViewDimension, mipLevel: number): GPUTextureView {
+    const views = (this.gpuMipLevelViews[dimension] ??= [])
+    let gpuView = views[mipLevel]
+    if (!gpuView) {
+      gpuView = this.gpuObject.createView({
+        label: `${this.name || `Texture_${this.uid}`} ${dimension} mip ${mipLevel}`,
+        dimension,
+        baseMipLevel: mipLevel,
+        mipLevelCount: 1,
+        usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_DST,
+      })
+      views[mipLevel] = gpuView
+    }
+    return gpuView
+  }
+
+  private clearSubViews() {
+    this.gpuSubViews.clear()
+    this.gpuAttachmentViews.length = 0
+    this.gpuMipLevelViews = {}
   }
 
   private createResource(): void {
@@ -218,7 +269,7 @@ export class WebGpuTexture extends Texture implements GpuResource<GPUTexture> {
       : this.gpuFormat.startsWith('depth')
         ? self.gpuView
         : null
-    this.gpuSubViews.clear()
+    this.clearSubViews()
 
     self.sizeInBytes = this.estimateSize()
   }
