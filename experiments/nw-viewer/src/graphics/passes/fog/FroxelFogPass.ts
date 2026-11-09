@@ -7,15 +7,18 @@ import {
   type Texture,
   type WebGpuDevice,
 } from '@gglib/graphics'
-import { vec4 } from '@gglib/math'
+import { mat4Multiply, vec4, type Mat4 } from '@gglib/math'
 import { FrameGraph, type FrameResource, type RenderChannel, type RenderContext, type RenderPass } from '@gglib/render'
 import { InputSlots } from '../../../material/common'
 import {
+  FROXEL_BLUR_H_WGSL,
+  FROXEL_BLUR_V_WGSL,
   FROXEL_DEBUG_WGSL,
   FROXEL_DEPTH,
   FROXEL_INJECT_WGSL,
   FROXEL_MAX_DEPTH_WGSL,
   FROXEL_RAYMARCH_WGSL,
+  FROXEL_REPROJECT_WGSL,
   FROXEL_TILE_SIZE,
   FROXEL_WORKGROUP_2D,
   FROXEL_WORKGROUP_3D,
@@ -40,15 +43,24 @@ const VOLUME_USAGE = TextureUsage.TextureBinding | TextureUsage.StorageBinding
  * Size of the random texture of the density noise (vfNoiseTex)
  */
 const NOISE_SIZE = 64
+/**
+ * Weight of the history in the temporal reprojection (r_VolumetricFogReprojectionBlendFactor)
+ */
+const REPROJECTION_BLEND_FACTOR = 0.9
+/**
+ * NDC to texture coordinate scale-bias (m_pScaleBias of the game's PrevViewProjMatrix), column major
+ */
+const NDC_TO_TEXCOORD: Mat4 = new Float32Array([0.5, 0, 0, 0, 0, -0.5, 0, 0, 0, 0, 1, 0, 0.5, 0.5, 0, 1])
 
 /**
  * Froxel volumetric fog (plan phase 8, tmp/render-pipeline/froxel-fog.md): a view frustum aligned volume of
  * screen / {@link tileSize} × {@link slices} slices up to the time of day ray-marching range (config `froxelTileSize`
  * and `froxelSlices`, the game uses 10 and 32).
  *
- * Per frame: max depth per froxel column → injection of density and in-scattering (global height fog, fog volumes,
- * sun, global probe) → front-to-back integration. The FogPass samples {@link integratedVolume}. The volume textures
- * are owned by the pass and persist across frames (the temporal reprojection of 8.6 reads the previous frame).
+ * Per frame: max depth per froxel column → injection of density and in-scattering at a jittered position (global
+ * height fog, fog volumes, sun, global probe, lights) → blur H/V → temporal reprojection against the history →
+ * front-to-back integration. The FogPass samples {@link integratedVolume}. The volume textures are owned by the pass
+ * and persist across frames: two history volumes ping-pong, the horizontal blur target holds the integration.
  */
 export class FroxelFogPass implements RenderPass {
   public name: string = 'Froxel Fog'
@@ -72,6 +84,9 @@ export class FroxelFogPass implements RenderPass {
   private maxDepthProgram: Program
   private injectProgram: Program
   private raymarchProgram: Program
+  private blurHProgram: Program
+  private blurVProgram: Program
+  private reprojectProgram: Program
   private debugProgram: Program
   private depthInput: FrameResource
   private colorOutput: FrameResource | null = null
@@ -81,15 +96,23 @@ export class FroxelFogPass implements RenderPass {
 
   private maxDepth: Texture | null = null
   private injected: Texture | null = null
+  // target of the horizontal blur, then of the integration
   private integrated: Texture | null = null
+  // reprojected volumes, written alternately: this frame's output is the next frame's history
+  private history: [Texture | null, Texture | null] = [null, null]
+  private historyIndex = 0
+  private historyValid = false
+  private prevViewProj = new Float32Array(16)
   private noise: Texture | null = null
   private emptyVolume: Texture | null = null
   private publishEnabled = vec4(0)
   private publishDepth = vec4(0)
-  private params = new Float32Array(12)
+  private params = new Float32Array(32)
   private paramSize = this.params.subarray(0, 4)
   private paramDepth = this.params.subarray(4, 8)
   private paramDebug = this.params.subarray(8, 12)
+  private paramTemporal = this.params.subarray(12, 16)
+  private paramPrevViewProj = this.params.subarray(16, 32)
 
   public constructor(device: Device, options: FroxelFogPassOptions) {
     this.options = options
@@ -97,6 +120,9 @@ export class FroxelFogPass implements RenderPass {
       this.maxDepthProgram = createProgram(device, 'Froxel Max Depth', FROXEL_MAX_DEPTH_WGSL)
       this.injectProgram = createProgram(device, 'Froxel Inject', FROXEL_INJECT_WGSL)
       this.raymarchProgram = createProgram(device, 'Froxel Raymarch', FROXEL_RAYMARCH_WGSL)
+      this.blurHProgram = createProgram(device, 'Froxel Blur H', FROXEL_BLUR_H_WGSL)
+      this.blurVProgram = createProgram(device, 'Froxel Blur V', FROXEL_BLUR_V_WGSL)
+      this.reprojectProgram = createProgram(device, 'Froxel Reproject', FROXEL_REPROJECT_WGSL)
       this.debugProgram = createProgram(device, 'Froxel Debug', FROXEL_DEBUG_WGSL)
     })
   }
@@ -106,6 +132,9 @@ export class FroxelFogPass implements RenderPass {
       !!this.maxDepthProgram?.isCompiled &&
       !!this.injectProgram?.isCompiled &&
       !!this.raymarchProgram?.isCompiled &&
+      !!this.blurHProgram?.isCompiled &&
+      !!this.blurVProgram?.isCompiled &&
+      !!this.reprojectProgram?.isCompiled &&
       !!this.debugProgram?.isCompiled
     )
   }
@@ -139,6 +168,8 @@ export class FroxelFogPass implements RenderPass {
   public setup(frame: FrameGraph<RenderPass>, ctx: RenderContext): void {
     this.rendered = false
     if (!this.enabled || !this.isReady) {
+      // the history is stale once frames were skipped
+      this.historyValid = false
       this.publish(ctx, null)
       return
     }
@@ -199,11 +230,48 @@ export class FroxelFogPass implements RenderPass {
     pass.setProgram(program)
     pass.dispatch(groups3d[0], groups3d[1], groups3d[2])
 
+    // blur against the jitter noise (BlurInscatterVolume): injected → integrated (as scratch) → injected
+    program = this.blurHProgram
+    program.applyBlocks(blocks)
+    this.setParams(program)
+    program.mustSet('source', this.injected)
+    program.mustSet('outVolume', this.integrated)
+    program.commit()
+    pass.setProgram(program)
+    pass.dispatch(groups2d[0], groups2d[1], this.currentSlices)
+
+    program = this.blurVProgram
+    program.applyBlocks(blocks)
+    this.setParams(program)
+    program.mustSet('source', this.integrated)
+    program.mustSet('outVolume', this.injected)
+    program.mustSet('sourceSampler', SamplerState.LinearClamp)
+    program.commit()
+    pass.setProgram(program)
+    pass.dispatch(groups2d[0], groups2d[1], this.currentSlices)
+
+    // temporal reprojection (ReprojectVolumetricFog): blurred + previous history → this frame's history
+    const previous = this.history[this.historyIndex]
+    const reprojected = this.history[1 - this.historyIndex]
+    program = this.reprojectProgram
+    program.applyBlocks(blocks)
+    this.setParams(program)
+    program.mustSet('current', this.injected)
+    program.mustSet('previous', previous)
+    program.mustSet('maxDepthMap', this.maxDepth)
+    program.mustSet('outVolume', reprojected)
+    program.mustSet('previousSampler', SamplerState.LinearClamp)
+    program.commit()
+    pass.setProgram(program)
+    pass.dispatch(groups3d[0], groups3d[1], groups3d[2])
+    this.historyIndex = 1 - this.historyIndex
+    this.historyValid = true
+
     // front-to-back integration (RaymarchVolumetricFog)
     program = this.raymarchProgram
     program.applyBlocks(blocks)
     this.setParams(program)
-    program.mustSet('injected', this.injected)
+    program.mustSet('injected', reprojected)
     program.mustSet('outVolume', this.integrated)
     program.commit()
     pass.setProgram(program)
@@ -215,7 +283,7 @@ export class FroxelFogPass implements RenderPass {
       program.applyBlocks(blocks)
       this.setParams(program)
       program.mustSet('maxDepthMap', this.maxDepth)
-      program.mustSet('injected', this.injected)
+      program.mustSet('injected', reprojected)
       program.mustSet('integrated', this.integrated)
       program.mustSet('outColor', color)
       program.commit()
@@ -227,6 +295,7 @@ export class FroxelFogPass implements RenderPass {
     }
     pass.flush()
     this.rendered = true
+    this.storeViewProjection(ctx)
     // transparent materials sample the volume in getSceneFog
     this.publish(ctx, this.integrated)
   }
@@ -265,15 +334,32 @@ export class FroxelFogPass implements RenderPass {
     this.maxDepth?.dispose()
     this.injected?.dispose()
     this.integrated?.dispose()
+    this.history[0]?.dispose()
+    this.history[1]?.dispose()
     this.maxDepth = null
     this.injected = null
     this.integrated = null
+    this.history[0] = null
+    this.history[1] = null
+    this.historyValid = false
   }
 
   private setParams(program: Program) {
     program.mustSet('froxel.size', this.paramSize)
     program.mustSet('froxel.depth', this.paramDepth)
     program.mustSet('froxel.debug', this.paramDebug)
+    program.mustSet('froxel.temporal', this.paramTemporal)
+    program.mustSet('froxel.prevViewProj', this.paramPrevViewProj)
+  }
+
+  /**
+   * Keeps the view projection of this frame for the reprojection of the next one, with the NDC to texture coordinate
+   * scale-bias applied (CVolumetricFog::UpdateFrame)
+   */
+  private storeViewProjection(ctx: RenderContext) {
+    const camera = ctx.view.camera
+    mat4Multiply(camera.projection, camera.view, this.prevViewProj)
+    mat4Multiply(NDC_TO_TEXCOORD, this.prevViewProj, this.prevViewProj)
   }
 
   private ensureTargets(device: Device, width: number, height: number, depth: number) {
@@ -296,17 +382,20 @@ export class FroxelFogPass implements RenderPass {
     })
     this.injected = createVolume(device, 'Froxel Injected', width, height, depth)
     this.integrated = createVolume(device, 'Froxel Integrated', width, height, depth)
+    this.history[0] = createVolume(device, 'Froxel History 0', width, height, depth)
+    this.history[1] = createVolume(device, 'Froxel History 1', width, height, depth)
+    this.historyValid = false
   }
 
   /**
-   * Bytes of the volume textures (max depth r32float, injected and integrated rgba16float)
+   * Bytes of the volume textures (max depth r32float, injected, integrated and 2 history volumes rgba16float)
    */
   public get memoryBytes(): number {
     const v = this.integrated
     if (!v) {
       return 0
     }
-    return v.width * v.height * 4 + 2 * v.width * v.height * v.depth * 8
+    return v.width * v.height * 4 + 4 * v.width * v.height * v.depth * 8
   }
 
   private updateParams(ctx: RenderContext, width: number, height: number) {
@@ -326,6 +415,9 @@ export class FroxelFogPass implements RenderPass {
     p[7] = 1 / (range - near)
     p[8] = FroxelDebugModes.indexOf(this.debug)
     p[9] = Math.min(Math.max(Math.round(this.debugSlice), 0), this.currentSlices - 1)
+    // no reprojection without a history (first frame, resize, after being disabled)
+    p[12] = this.historyValid ? REPROJECTION_BLEND_FACTOR : 0
+    this.paramPrevViewProj.set(this.prevViewProj)
   }
 }
 

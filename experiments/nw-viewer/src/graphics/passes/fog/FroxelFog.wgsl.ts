@@ -46,6 +46,10 @@ struct FroxelParams {
   depth: vec4f,
   // x = debug mode (FroxelDebugModes), y = debug slice
   debug: vec4f,
+  // x = reprojection blend factor (r_VolumetricFogReprojectionBlendFactor, 0 without a history)
+  temporal: vec4f,
+  // view projection of the previous frame times the NDC to texture coordinate scale-bias (PrevViewProjMatrix)
+  prevViewProj: mat4x4f,
 };
 
 const FROXEL_SAMPLE_COEFFICIENT = 2.0;
@@ -66,6 +70,12 @@ fn froxelDepthTexcoord(linearDepth: f32) -> f32 {
 // screen pixel position of a froxel center
 fn froxelScreenPos(xy: vec2f) -> vec2f {
   return (xy + 0.5) * froxel.size.w;
+}
+
+// camera vector of a froxel column with unit linear depth: d * eyeRay is the point at linear depth d
+fn froxelEyeRay(xy: vec2u) -> vec3f {
+  let camVec = farPlaneWorldPos(froxelScreenPos(vec2f(xy))) - view.cameraPosition;
+  return camVec / dot(view.cameraDirection, camVec);
 }
 `
 
@@ -105,11 +115,24 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
  * InjectVolumetricInscatteringCS (volumelighting.cfi), the RGBA16F path: rgb = in-scattering times the fog colors
  * (inscatterByFogColor), a = density of the global height fog plus the fog volumes.
  *
- * Step 8.4: global height fog, fog volumes, sun (unshadowed until phase 9) and the global probe. Local probes and
- * lights follow in 8.5, the jitter + temporal reprojection in 8.6 (until then the jitter is fixed at 0.5).
+ * Global height fog, fog volumes, sun (unshadowed until phase 9), the global probe and the cluster lights. The sample
+ * position inside a froxel is jittered per frame, the blur and the temporal reprojection average it out.
  */
 export const FROXEL_INJECT_WGSL = /* wgsl */ `
 ${FROXEL_COMMON_WGSL}
+
+// @private
+@group(0) @binding(2) var<uniform> frame : FrameBlock;
+
+// the octave of the jitter while the reprojection is on (InjectFogDensityParams.z, SunColor.w)
+const FROXEL_JITTER_OCTAVE = -1.7;
+
+// GetJitterInternal with the temporal offset octave * PerView_AnimGenParams.z (time) * (1, 0.5): interleaved
+// gradient noise per froxel column, shifted every frame
+fn froxelJitter(xy: vec2u) -> f32 {
+  let n = vec2f(xy) + FROXEL_JITTER_OCTAVE * frame.elapsedTime * vec2f(1.0, 0.5);
+  return fract(52.9829189 * fract(dot(n, vec2f(0.06711056, 0.00583715))));
+}
 
 // @block global
 // @private
@@ -367,18 +390,14 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
   if (any(id >= size)) {
     return;
   }
-  // camera vector with unit linear depth: d * eyeRay is the point at linear depth d
-  let farPos = farPlaneWorldPos(froxelScreenPos(vec2f(id.xy)));
-  let camVec = farPos - view.cameraPosition;
-  let eyeRay = camVec / dot(view.cameraDirection, camVec);
-  let normalizedEyeRay = normalize(camVec);
+  let eyeRay = froxelEyeRay(id.xy);
+  let normalizedEyeRay = normalize(eyeRay);
 
   let depthIndex = f32(id.z);
   var depth = froxelLinearDepth(depthIndex);
   let depthFront = froxelLinearDepth(depthIndex - 1.0);
   let maxDepth = textureLoad(maxDepthMap, vec2i(id.xy), 0).r;
-  // fixed until the temporal reprojection (8.6)
-  let jitter = 0.5;
+  let jitter = froxelJitter(id.xy);
 
   var density = 0.0;
   var inscatter = vec3f(0.0);
@@ -453,6 +472,172 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
     transmittance *= trns;
     textureStore(outVolume, vec3i(vec2i(id.xy), i32(step)), vec4f(inscatter, transmittance));
   }
+}
+`
+
+// 9 tap binomial weights of BlurHorizontal/VerticalInscatteringVolumeCS
+const FROXEL_BLUR_WEIGHTS_WGSL = /* wgsl */ `
+const FROXEL_BLUR_WEIGHTS = array<f32, 9>(
+  1.0 / 256.0, 8.0 / 256.0, 28.0 / 256.0, 56.0 / 256.0, 70.0 / 256.0, 56.0 / 256.0, 28.0 / 256.0, 8.0 / 256.0, 1.0 / 256.0,
+);
+`
+
+/**
+ * Horizontal blur of the injected volume (BlurHorizontalInscatteringVolumeCS, the RGBA16F path without the max depth
+ * aware filtering, which the game has off): 9 taps in x within the slice, clamped at the volume border
+ */
+export const FROXEL_BLUR_H_WGSL = /* wgsl */ `
+${FROXEL_COMMON_WGSL}
+${FROXEL_BLUR_WEIGHTS_WGSL}
+
+@group(1) @binding(0) var<uniform> froxel : FroxelParams;
+@group(1) @binding(1) var source : texture_3d<f32>;
+@group(1) @binding(2) var outVolume : texture_storage_3d<rgba16float, write>;
+
+@compute @workgroup_size(${FROXEL_WORKGROUP_2D}, ${FROXEL_WORKGROUP_2D})
+fn main(@builtin(global_invocation_id) id: vec3u) {
+  let size = vec3i(froxel.size.xyz);
+  let p = vec3i(id);
+  if (any(p >= size)) {
+    return;
+  }
+  var value = vec4f(0.0);
+  for (var i = -4; i <= 4; i++) {
+    let x = clamp(p.x + i, 0, size.x - 1);
+    value += FROXEL_BLUR_WEIGHTS[i + 4] * textureLoad(source, vec3i(x, p.y, p.z), 0);
+  }
+  textureStore(outVolume, p, value);
+}
+`
+
+/**
+ * Vertical blur (BlurVerticalInscatteringVolumeCS): 9 taps in y, sampled trilinearly at the depth texcoord
+ * slice / slices, which blends the slice with the one in front of it like the game ("set offset to zero to blend
+ * two slices")
+ */
+export const FROXEL_BLUR_V_WGSL = /* wgsl */ `
+${FROXEL_COMMON_WGSL}
+${FROXEL_BLUR_WEIGHTS_WGSL}
+
+@group(1) @binding(0) var<uniform> froxel : FroxelParams;
+@group(1) @binding(1) var source : texture_3d<f32>;
+@group(1) @binding(2) var outVolume : texture_storage_3d<rgba16float, write>;
+@group(1) @binding(3) var sourceSampler : sampler;
+
+@compute @workgroup_size(${FROXEL_WORKGROUP_2D}, ${FROXEL_WORKGROUP_2D})
+fn main(@builtin(global_invocation_id) id: vec3u) {
+  let size = vec3i(froxel.size.xyz);
+  let p = vec3i(id);
+  if (any(p >= size)) {
+    return;
+  }
+  let invSize = 1.0 / froxel.size.xy;
+  let z = f32(p.z) / froxel.size.z;
+  var value = vec4f(0.0);
+  for (var i = -4; i <= 4; i++) {
+    // the clamp sampler holds the border texel like the clamped load of the game
+    let tc = vec3f((vec2f(f32(p.x), f32(p.y + i)) + 0.5) * invSize, z);
+    value += FROXEL_BLUR_WEIGHTS[i + 4] * textureSampleLevel(source, sourceSampler, tc, 0.0);
+  }
+  textureStore(outVolume, p, value);
+}
+`
+
+/**
+ * Temporal reprojection (ReprojectVolumetricFogCS, r_VolumetricFogReprojectionMode 1 = %_RT_SAMPLE5 with
+ * ENABLE_5X5_NEIGHBOR_VOXEL_SEARCH): blends the blurred volume of this frame with the history at the position the
+ * froxel had in the previous frame. The history is rejected outside the previous frustum, faded at its borders,
+ * reduced with the depth velocity and when its luminance leaves the 5x5 neighborhood range of this frame.
+ * The output is the history of the next frame.
+ */
+export const FROXEL_REPROJECT_WGSL = /* wgsl */ `
+${FROXEL_COMMON_WGSL}
+
+@group(1) @binding(0) var<uniform> froxel : FroxelParams;
+@group(1) @binding(1) var current : texture_3d<f32>;
+@group(1) @binding(2) var previous : texture_3d<f32>;
+@group(1) @binding(3) var maxDepthMap : texture_2d<f32>;
+@group(1) @binding(4) var outVolume : texture_storage_3d<rgba16float, write>;
+@group(1) @binding(5) var previousSampler : sampler;
+
+fn froxelLuminance(color: vec3f) -> f32 {
+  return dot(color, vec3f(0.2126, 0.7152, 0.0722));
+}
+
+@compute @workgroup_size(${FROXEL_WORKGROUP_3D}, ${FROXEL_WORKGROUP_3D}, ${FROXEL_WORKGROUP_3D})
+fn main(@builtin(global_invocation_id) id: vec3u) {
+  let size = vec3i(froxel.size.xyz);
+  let p = vec3i(id);
+  if (any(p >= size)) {
+    return;
+  }
+  var value = textureLoad(current, p, 0);
+  var blendFactor = froxel.temporal.x;
+  if (blendFactor <= 0.0) {
+    textureStore(outVolume, p, value);
+    return;
+  }
+
+  // luminance range of the 5x5 neighborhood within the slice
+  var minl = 65504.0;
+  var maxl = 0.0;
+  for (var y = -2; y <= 2; y++) {
+    for (var x = -2; x <= 2; x++) {
+      let q = vec3i(clamp(p.xy + vec2i(x, y), vec2i(0), size.xy - 1), p.z);
+      let l = froxelLuminance(textureLoad(current, q, 0).rgb);
+      minl = min(minl, l);
+      maxl = max(maxl, l);
+    }
+  }
+
+  // the froxel position, restricted to the front of the max depth to reduce light leaking
+  let depthIndex = f32(p.z);
+  var depth = froxelLinearDepth(depthIndex);
+  let depthFront = froxelLinearDepth(depthIndex - 1.0);
+  let maxDepth = textureLoad(maxDepthMap, p.xy, 0).r;
+  if (depthFront < maxDepth && maxDepth <= depth) {
+    depth = maxDepth;
+  }
+  let worldPos = view.cameraPosition + depth * froxelEyeRay(id.xy);
+
+  // texture coordinate in the previous volume, w of the projection is the linear depth
+  let reprojPos = froxel.prevViewProj * vec4f(worldPos, 1.0);
+  let tc = vec3f(reprojPos.xy / reprojPos.w, froxelDepthTexcoord(reprojPos.w));
+
+  const halfSizeTC = 0.5;
+  const endFadeTC = 0.6;
+  const startFadeTC = 0.49;
+  const borderLength = endFadeTC - halfSizeTC;
+  if (any(tc <= vec3f(-borderLength)) || any(tc >= vec3f(1.0 + borderLength)) || reprojPos.w <= froxel.depth.x) {
+    textureStore(outVolume, p, value);
+    return;
+  }
+  // screen uv to volume texcoord: the volume covers ceil(screen / tile) * tile pixels
+  let prevTc = vec3f(tc.xy * view.viewportSize / (froxel.size.xy * froxel.size.w), tc.z);
+  let prev = textureSampleLevel(previous, previousSampler, prevTc, 0.0);
+
+  // fade towards the borders of the previous volume against smearing at the screen edges
+  var f = 1.0 - saturate((abs(tc - halfSizeTC) - startFadeTC) / (endFadeTC - startFadeTC));
+  f = f * f * (-2.0 * f + 3.0);
+  blendFactor *= saturate(f.x * f.y * f.z);
+
+  // depth velocity in volume texture space
+  let dt = tc.z - (depthIndex + 0.5) / froxel.size.z;
+  let velocityFactor = saturate(exp2(-abs(dt) * 80.0));
+  blendFactor *= mix(0.5, 1.0, velocityFactor);
+
+  // luminance similarity among the neighbors: a previous value outside their range is rejected, brighter ones less
+  let pl = froxelLuminance(prev.rgb);
+  let diff = pl - clamp(pl, minl, maxl);
+  let w = select(48.0, -24.0, diff > 0.0);
+  var similarityFactor = saturate(exp2(w * diff));
+  // and between the current and the previous froxel
+  let cl = froxelLuminance(value.rgb);
+  similarityFactor = min(similarityFactor, mix(0.6, 1.0, saturate(exp2(-8.0 * abs(pl - cl)))));
+  blendFactor *= mix(similarityFactor, 1.0, 0.1);
+
+  value = mix(value, prev, blendFactor);
+  textureStore(outVolume, p, value);
 }
 `
 
