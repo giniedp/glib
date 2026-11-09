@@ -466,7 +466,10 @@ export class Renderer implements Ownable {
       ctx.renderInputs.set(invViewProjKey, invViewProj)
 
       const cameraPosition = ctx.renderInputs.get(CommonInputs.View.CameraPosition) || vec3()
-      mat4GetTranslation(ctx.view.camera.world, cameraPosition)
+      // from the view matrix, not camera.world: a controller may move the camera after its view was computed this
+      // frame, then the world transform is ahead of the matrices the frame is rendered with, and positions
+      // reconstructed from depth (camera position + ray × depth) shift with the camera motion
+      mat4GetTranslation(inverseViewMatrix, cameraPosition)
       ctx.renderInputs.set(CommonInputs.View.CameraPosition, cameraPosition)
 
       const cameraDirection = ctx.renderInputs.get(CommonInputs.View.CameraDirection) || vec3()

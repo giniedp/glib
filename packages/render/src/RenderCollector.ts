@@ -81,7 +81,7 @@ export class ModelRenderCollector implements RenderCollector<ModelRenderItem> {
         }
 
         const state = this.list.getState(effect.blendState, effect.depthState, effect.offsetState, effect.cullState)
-        const sortKey = this.list.getKey(depth, item.layer, getMaterialId(material), state, getGeometryId(geometry))
+        const sortKey = this.list.getKey(depth, item.layer, getMaterialId(material), state, getGeometryId(geometry), item.order)
         this.list.add(sortKey, geometry, effect, material.inputBlocks, item.transform, item.instance)
       }
     }
@@ -124,7 +124,7 @@ export class MeshRenderCollector implements RenderCollector<MeshRenderItem> {
       }
 
       const state = this.list.getState(effect.blendState, effect.depthState, effect.offsetState, effect.cullState)
-      const sortKey = this.list.getKey(depth, item.layer, getMaterialId(material), state, getGeometryId(geometry))
+      const sortKey = this.list.getKey(depth, item.layer, getMaterialId(material), state, getGeometryId(geometry), item.order)
       this.list.add(sortKey, geometry, effect, material.inputBlocks, item.transform, item.instance)
     }
   }
@@ -185,7 +185,7 @@ export class MeshPartRenderCollector implements RenderCollector<MeshPartRenderIt
     }
 
     const state = this.list.getState(effect.blendState, effect.depthState, effect.offsetState, effect.cullState)
-    const sortKey = this.list.getKey(depth, item.layer, getMaterialId(material), state, getGeometryId(geometry))
+    const sortKey = this.list.getKey(depth, item.layer, getMaterialId(material), state, getGeometryId(geometry), item.order)
     this.list.add(sortKey, geometry, effect, material.inputBlocks, item.transform, item.instance)
   }
 
@@ -229,7 +229,7 @@ export class InstanceBatchRenderCollector implements RenderCollector<InstanceBat
     }
     const state = this.list.getState(effect.blendState, effect.depthState, effect.offsetState, effect.cullState)
     // the instances have no common position, depth is left out of the key
-    const sortKey = this.list.getKey(0, item.layer, getMaterialId(material), state, getGeometryId(geometry))
+    const sortKey = this.list.getKey(0, item.layer, getMaterialId(material), state, getGeometryId(geometry), item.order)
     this.list.addInstanced(sortKey, geometry, effect, material.inputBlocks, batch.instanceOffset, batch.instanceCount)
   }
 

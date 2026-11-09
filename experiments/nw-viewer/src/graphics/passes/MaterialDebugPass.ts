@@ -1,6 +1,21 @@
-import { RenderChannel, RenderListMode, type FrameGraph, type RenderContext, type RenderPass } from '@gglib/render'
-import { InputSlots, NwRenderVariant } from '../../material/common'
+import {
+  RenderChannel,
+  RenderItemFlags,
+  RenderListMode,
+  RenderSortPriority,
+  type FrameGraph,
+  type RenderContext,
+  type RenderPass,
+} from '@gglib/render'
+import { InputSlots, NON_PROJECTED_DECAL_LAYERS, NwRenderVariant } from '../../material/common'
 import { GeometryPass } from './GeometryPass'
+
+/**
+ * Opaque surfaces without the decal boxes, shared by the EmissivePass and the MaterialDebugPass (one list collection)
+ */
+export const OPAQUE_SURFACE_LIST = new RenderListMode(RenderSortPriority.State, RenderItemFlags.Opaque, {
+  includeLayers: NON_PROJECTED_DECAL_LAYERS,
+})
 
 /**
  * Draws the material debug views (`global.debug`, the "Output" select) of opaque surfaces over the lit color, with
@@ -11,7 +26,7 @@ export class MaterialDebugPass extends GeometryPass {
   public constructor() {
     super({
       name: 'MaterialDebugPass',
-      list: RenderListMode.Opaque,
+      list: OPAQUE_SURFACE_LIST,
       variant: NwRenderVariant.Debug,
       depth: RenderChannel.Depth,
       clearDepth: false,

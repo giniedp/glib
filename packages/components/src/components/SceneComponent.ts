@@ -348,6 +348,7 @@ export class SceneComponent implements GameComponent, InitializableComponent, Re
       item.data.material = material
       item.transform = transform
       item.layer = layer
+      item.order = entity.renderOrder
       item.instance = instance
 
       if (material.isTransparent) {

@@ -1,12 +1,5 @@
 import { inputSlot } from '@gglib/graphics'
 export default {
-  ModelMatrix: inputSlot('object', 'modelmatrix', 'mat4x4'),
-  ViewDistance: inputSlot('instancedata', 'viewdistance', 'scalar'),
-  DissolveAmount: inputSlot('instancedata', 'dissolveamount', 'scalar'),
-  Pad0: inputSlot('instancedata', '_pad0', 'vec2'),
-  Pad10: inputSlot('instancedata', '_pad1[0]', 'vec4'),
-  Pad11: inputSlot('instancedata', '_pad1[1]', 'vec4'),
-  Pad12: inputSlot('instancedata', '_pad1[2]', 'vec4'),
   DiffuseColor: inputSlot('material', 'diffusecolor', 'vec4'),
   SpecularColor: inputSlot('material', 'specularcolor', 'vec4'),
   EmissiveColor: inputSlot('material', 'emissivecolor', 'vec4'),
@@ -97,4 +90,12 @@ export default {
   EmittanceMap: inputSlot('', 'emittanceMap', 'texture'),
   OcclusionMap: inputSlot('', 'occlusionMap', 'texture'),
   SpecularMap2: inputSlot('', 'specularMap2', 'texture'),
+  ModelMatrix: inputSlot('object', 'modelmatrix', 'mat4x4'),
+  ViewDistance: inputSlot('instancedata', 'viewdistance', 'scalar'),
+  DissolveAmount: inputSlot('instancedata', 'dissolveamount', 'scalar'),
+  DecalOpacity: inputSlot('instancedata', 'decalopacity', 'scalar'),
+  Pad0: inputSlot('instancedata', '_pad0', 'scalar'),
+  Pad10: inputSlot('instancedata', '_pad1[0]', 'vec4'),
+  Pad11: inputSlot('instancedata', '_pad1[1]', 'vec4'),
+  Pad12: inputSlot('instancedata', '_pad1[2]', 'vec4'),
 }

@@ -55,6 +55,7 @@ import { ParticleSystem } from './game/particles'
 import { PlayerMovementComponent } from './game/player/PlayerMovementComponent'
 import { RegionSystem } from './game/region/RegionSystem'
 import { RoadSystem } from './game/road/RoadSystem'
+import { DecalSystem } from './game/decal/DecalSystem'
 import { RangeActivationSystem } from './game/slice/RangeActivationSystem'
 import { SliceSystem } from './game/slice/SliceSystem'
 import { TerrainSystem } from './game/terrain/TerrainSystem'
@@ -170,6 +171,7 @@ export class NwViewer extends EcsGame {
     this.world.addSystem(new InstancedRenderSystem())
     this.world.addSystem(new SliceSystem())
     this.world.addSystem(new RoadSystem())
+    this.world.addSystem(new DecalSystem())
     this.world.addSystem(new CollisionSystem())
     this.world.addSystem(new CullingSystem())
     this.world.addSystem(new RangeActivationSystem())

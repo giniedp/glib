@@ -15,12 +15,18 @@ import {
   type RenderContext,
   type RenderPass,
 } from '@gglib/render'
+import type { IVec4 } from '@gglib/math'
+
+function clearValue(clear: GeometryPassChannel['clear'], ctx: RenderContext): IVec4 {
+  return typeof clear === 'function' ? clear(ctx) : clear
+}
 
 // Fork of the gglib GeometryPass (packages/render/src/passes/GeometryPass.ts) for the viewer pipeline.
 // Differences:
 // - `channels` may be empty: a depth only pass (e.g. shadow maps). The viewport then follows the depth target.
 // - `variant` selects the material effect variant (RenderVariant) the list is collected and drawn with.
 //   Render lists are cached per (mode, variant), so passes with the same mode and variant share one list.
+// - `clear` may be a function of the render context (e.g. the far plane for the linear depth)
 // - single sample only, no MSAA resolve (the viewer pipeline has no MSAA, plan phase 6)
 
 /**
@@ -32,10 +38,11 @@ export interface GeometryPassChannel {
    */
   render: RenderChannel
   /**
-   * Clear color. If set, the channel is cleared and written as a new resource.
+   * Clear color, or a function that returns it per frame (e.g. the camera far plane for a linear depth channel).
+   * If set, the channel is cleared and written as a new resource.
    * Otherwise the geometry is rendered on top of the existing content (modified in place).
    */
-  clear: Color | null
+  clear: Color | ((ctx: RenderContext) => IVec4) | null
   /**
    * Blend state of the channel. Defaults to opaque.
    */
@@ -196,7 +203,7 @@ export class GeometryPass implements RenderPass {
       pass.setDiscard(i, this.isLastUse(targets[i]))
       pass.setRenderBlend(i, this.channels[i].blend ?? BlendState.Opaque)
       if (this.channels[i].clear) {
-        pass.setClearColor(i, this.channels[i].clear)
+        pass.setClearColor(i, clearValue(this.channels[i].clear, ctx))
       }
     }
     if (this.hasClear) {
@@ -229,7 +236,7 @@ export class GeometryPass implements RenderPass {
         const clear = this.channels[i].clear
         if (clear) {
           pass.setRenderTarget(i, targets[i].texture)
-          pass.setClearColor(i, clear)
+          pass.setClearColor(i, clearValue(clear, ctx))
         } else {
           pass.setRenderTarget(i, null)
         }

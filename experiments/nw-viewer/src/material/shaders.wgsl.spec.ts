@@ -2,6 +2,7 @@
 import { beforeAll, describe, expect, it } from 'vitest'
 import FX_MESH_ADVANCED_WGSL from './FxMeshAdvancedMaterial.wgsl'
 import ILLUM_WGSL from './IllumMaterial.wgsl'
+import ILLUM_PROJECTED_DECAL_WGSL from './IllumProjectedDecal.wgsl'
 import { TERRAIN_PATCH_SHADER } from './TerrainPatchMaterial.wgsl'
 import VEGETATION_WGSL from './VegetationMaterial.wgsl'
 import { LIGHTING_WGSL } from '../graphics/passes/lighting/LightingPass.wgsl'
@@ -12,6 +13,12 @@ import { CMAA2_WGSL } from '../graphics/passes/cmaa2/Cmaa2Pass.wgsl'
 // compiles material shader sources on the GPU and checks the entry points the render variants use
 const SHADERS: Array<{ name: string; source: string; fragmentEntries: string[] }> = [
   { name: 'Illum', source: ILLUM_WGSL, fragmentEntries: ['fs_main', 'fs_gbuffer', 'fs_gbuffer_decal', 'fs_emissive', 'fs_debug'] },
+  // projected decal boxes with the Illum material block (plan 7.7)
+  {
+    name: 'IllumProjectedDecal',
+    source: ILLUM_PROJECTED_DECAL_WGSL,
+    fragmentEntries: ['fs_decal', 'fs_decal_emissive'],
+  },
   // opaque only: no forward entry
   { name: 'TerrainPatch', source: TERRAIN_PATCH_SHADER, fragmentEntries: ['fs_gbuffer', 'fs_debug'] },
   { name: 'Vegetation', source: VEGETATION_WGSL, fragmentEntries: ['fs_gbuffer', 'fs_debug'] },

@@ -15,18 +15,34 @@ export const NwCopyChannel = {
    * when they render into the same color target (no MSAA)
    */
   SceneColor: renderChannel('nw_scene_color'),
+  /**
+   * Copy of GBuffer A after the mesh decals, the receiver normals of the projected decals (angle fade), which blend
+   * into GBuffer A themselves
+   */
+  GBufferA: renderChannel('nw_gbuffer_a_copy'),
 }
 
-const SCENE_COLOR_DESC: Readonly<TextureDescriptor> = {
-  name: 'NwCopyChannel.SceneColor',
-  type: '2d',
-  format: 'rgba16float',
-  width: 1,
-  height: 1,
-  depth: 1,
-  sampleCount: 1,
-  mipLevelCount: 1,
-  usage: TextureUsage.RenderTarget | TextureUsage.TextureBinding,
+function copyDescriptor(name: string, format: TextureDescriptor['format']): Readonly<TextureDescriptor> {
+  return {
+    name,
+    type: '2d',
+    format,
+    width: 1,
+    height: 1,
+    depth: 1,
+    sampleCount: 1,
+    mipLevelCount: 1,
+    usage: TextureUsage.RenderTarget | TextureUsage.TextureBinding,
+  }
+}
+
+/**
+ * Descriptors of the copy channels, the format matches the source channel
+ */
+const COPY_DESCRIPTORS: Record<RenderChannel, Readonly<TextureDescriptor>> = {
+  [NwCopyChannel.SceneColor]: copyDescriptor('NwCopyChannel.SceneColor', 'rgba16float'),
+  // GBuffer A (GBufferChannels.ts)
+  [NwCopyChannel.GBufferA]: copyDescriptor('NwCopyChannel.GBufferA', 'rgb10a2unorm'),
 }
 
 const COPY_WGSL = /* wgsl */ `
@@ -47,7 +63,7 @@ export interface CopyPassOptions {
    */
   input: RenderChannel
   /**
-   * Channel to copy into. {@link NwCopyChannel.SceneColor} is registered by this pass.
+   * Channel to copy into. The {@link NwCopyChannel} channels are registered by this pass.
    */
   output?: RenderChannel
 }
@@ -80,8 +96,9 @@ export class CopyPass implements RenderPass {
     // the output is always declared, later passes read it. Until the program is compiled (or when disabled)
     // the copy is skipped and the target keeps undefined content
     this.isActive = this.enabled && !!this.program?.isCompiled
-    if (this.output === NwCopyChannel.SceneColor) {
-      frame.setDescriptors({ [this.output]: SCENE_COLOR_DESC })
+    const descriptor = COPY_DESCRIPTORS[this.output]
+    if (descriptor) {
+      frame.setDescriptors({ [this.output]: descriptor })
     }
     frame.addPass(this)
     this.source = frame.read(this.input)

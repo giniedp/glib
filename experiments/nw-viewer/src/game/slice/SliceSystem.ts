@@ -15,6 +15,7 @@ import {
   mat4CreateScaleXYZ,
   mat4CreateTranslation,
   mat4GetTranslation,
+  mat4Identity,
   mat4Invert,
   mat4Multiply,
   spherePointIntersects,
@@ -30,6 +31,7 @@ import {
   isViewerAudioAreaComponent,
   isViewerAudioTriggerComponent,
   isViewerColliderComponent,
+  isViewerDecalComponent,
   isViewerLightComponent,
   isViewerMeshComponent,
   isViewerParticleComponent,
@@ -43,11 +45,19 @@ import {
 } from '../../api'
 import { AudioEmitterComponent, AudioScriptComponent } from '../../audio/AudioEmitterComponent'
 import { CHUNK_MESH_RANGE, IMPOSTOR_HOLD_CHUNK_SIZES, ROAD_VIEW_DISTANCE } from '../../constants'
+
+/**
+ * View distance of decals without one (LmbrCentral DecalConfiguration m_maxViewDist default is 8000, nwbt delivers
+ * the automatic or override distance, so this is only a fallback)
+ */
+const DECAL_VIEW_DISTANCE = 100
 import { ContentService } from '../../content'
 import { MaterialLayerMasks } from '../../material'
 import { CollisionComponent } from '../collision/CollisionComponent'
 import { CollisionSystem } from '../collision/CollisionSystem'
 import { DebugLayer, DebugShapeComponent, type DebugShapeOptions } from '../debug/DebugShapeComponent'
+import { DecalComponent, decalMatrix } from '../decal/DecalComponent'
+import { DECAL_BOX_FROM_UNIT_BOX } from '../decal/DecalSystem'
 import { TimeOfDayComponent } from '../level/TimeOfDayComponent'
 import { LightComponent } from '../light/LightComponent'
 import { ParticleComponent, particleRange } from '../particles/ParticleComponent'
@@ -391,6 +401,18 @@ export function executeSpawner(spawner: SliceSpawnerComponent) {
         range = Math.max(range, roadRange(comp))
         continue
       }
+      if (isViewerDecalComponent(comp)) {
+        components.push(new DecalComponent(comp))
+        debug.add({
+          type: 'box',
+          color: vec3(Color.Orange),
+          layer: DebugLayer.Decals,
+          // in entity space, the decal matrix of an identity entity transform
+          instances: [mat4Multiply(decalMatrix(mat4Identity(), comp), DECAL_BOX_FROM_UNIT_BOX)],
+        })
+        range = Math.max(range, (comp.maxViewDistance || DECAL_VIEW_DISTANCE) * (comp.viewDistanceMultiplier || 1))
+        continue
+      }
       if (isViewerAudioTriggerComponent(comp)) {
         // like lights, inactive entities would play without being visible
         if (!inactive) {
@@ -441,10 +463,24 @@ export function executeSpawner(spawner: SliceSpawnerComponent) {
       impostorCell = spawner.impostor
     }
 
+    // Lumberyard entities may hold several components of one type (e.g. two decals), a gglib entity holds one per
+    // type. The repeats go onto satellite child entities at the same transform, which activate with the entity.
+    const unique: GameComponent[] = []
+    const satellites: GameComponent[] = []
+    const types = new Set<unknown>()
+    for (const component of components) {
+      if (types.has(component.constructor)) {
+        satellites.push(component)
+      } else {
+        types.add(component.constructor)
+        unique.push(component)
+      }
+    }
+
     const entity = spawner.entity.world.createEntity({
       parent: spawner.entity,
       name: item.name,
-      components,
+      components: unique,
       transform: new TransformComponent({
         keepWorld: true,
         world,
@@ -457,6 +493,16 @@ export function executeSpawner(spawner: SliceSpawnerComponent) {
     if (inactive) {
       // shown only when the Inactive layer is enabled on the camera
       entity.layer = MaterialLayerMasks.Inactive
+    }
+    for (const component of satellites) {
+      const satellite = spawner.entity.world.createEntity({
+        name: `${item.name} (${component.constructor.name})`,
+        components: [component],
+        transform: new TransformComponent({ local: mat4Identity() }),
+      })
+      // the layer before the parent: attaching to an active entity activates the satellite
+      satellite.layer = entity.layer
+      satellite.getTransform<TransformComponent>().setParent(entity.getTransform())
     }
 
     if (impostorCell) {

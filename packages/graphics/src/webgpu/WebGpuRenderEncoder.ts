@@ -910,18 +910,21 @@ export class WebGpuRenderEncoder extends RenderEncoder {
       this.pass = this.getEncoder().beginRenderPass(descriptor)
       this.resetBoundState()
 
+      // state that does not depend on the pipeline is applied right away, also while the pipeline of this draw is
+      // still compiling: later draws of this pass only re-apply what changed, an index buffer that equals the cached
+      // one would never be bound ("Index buffer was not set"), nor the stencil reference
+      this.applyIndexBuffer()
+      this.applyStencilReference(this.pass)
+      this.applyBlendConstants(this.pass)
+      this.applyViewportState(this.pass)
+      this.applyScissorState(this.pass)
+
       if (!this.applyPipeline(this.pass)) {
         // still loading
         return null
       }
       this.applyBindGroups()
       this.applyVertexBuffer()
-      this.applyIndexBuffer()
-
-      this.applyStencilReference(this.pass)
-      this.applyBlendConstants(this.pass)
-      this.applyViewportState(this.pass)
-      this.applyScissorState(this.pass)
     }
     if (this.vertexBufferChanged && this.pipelineParams.vertexLayout !== this.getVertexLayout()) {
       this.pipelineParamsChanged = true

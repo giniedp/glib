@@ -17,6 +17,7 @@ import { IMPOSTOR_FADE_RANGE, IMPOSTOR_VISIBILITY_START } from '../constants'
 import { type NwMaterialProps } from './GltfExtension'
 import SCHEMA from './IllumMaterial.meta'
 import WGSL from './IllumMaterial.wgsl'
+import PROJECTED_DECAL_WGSL from './IllumProjectedDecal.wgsl'
 import { TextureModifier } from './TexMod'
 import {
   createDebugEffect,
@@ -75,6 +76,40 @@ export function illumEffectOptions(constants: Record<string, number>, fragmentEn
     program: {
       shader: illumShaderOptions(constants, fragmentEntry),
       sharedBlocks: [InputBlocks.Global, InputBlocks.View, InputBlocks.Frame, InputBlocks.Lights],
+      perInstanceTransformBlock: 'object',
+      perInstanceDataBlock: 'instanceData',
+    },
+  }
+}
+
+/**
+ * Fragment entry points of the projected decal shader (IllumProjectedDecal.wgsl.ts)
+ */
+const PROJECTED_DECAL_FRAGMENT_ENTRY = {
+  gbuffer: 'fs_decal',
+  emissive: 'fs_decal_emissive',
+} as const
+
+/**
+ * Effect of a projected decal box (DecalComponent) with the material block of the Illum shader
+ */
+function projectedDecalEffectOptions(constants: Record<string, number>, fragmentEntry: string): EffectOptions {
+  return {
+    name: 'Illum Projected Decal Effect',
+    meta: {},
+    program: {
+      shader: {
+        name: `Illum Projected Decal Shader (${fragmentEntry})`,
+        wgsl: {
+          source: PROJECTED_DECAL_WGSL,
+          fragmentConstants: ShaderConstants.get(constants),
+          vertexConstants: ShaderConstants.get(constants),
+          vertexEntry: 'vs_decal',
+          fragmentEntry,
+        },
+        glsl: null,
+      },
+      sharedBlocks: [InputBlocks.Global, InputBlocks.View],
       perInstanceTransformBlock: 'object',
       perInstanceDataBlock: 'instanceData',
     },
@@ -217,6 +252,8 @@ export class IllumMaterial extends MaterialWithSchema(SCHEMA) {
   declare private modDetail: TextureModifier | null
   declare private modEmittance: TextureModifier | null
   declare private modDecalEmissive: TextureModifier | null
+  // shader constants of the feature flags, for effects created on demand (ensureProjectedDecalEffects)
+  declare private shaderConstants: Record<string, number>
 
   protected override configure(options: Partial<MaterialOptions>): void {
     super.configure({
@@ -291,6 +328,7 @@ export class IllumMaterial extends MaterialWithSchema(SCHEMA) {
     }
 
     const shaderConst = getShaderConstants(shaderFlags)
+    this.shaderConstants = shaderConst
     if (shaderFlags.has('IS_POI_IMPOSTOR')) {
       setDitherFadeConstants(shaderConst, {
         mode: 'in',
@@ -359,6 +397,44 @@ export class IllumMaterial extends MaterialWithSchema(SCHEMA) {
       // shadow proxy
       // https://www.cryengine.com/docs/static/engines/cryengine-3/categories/1114113/pages/21268752
       this.noRender = true
+    }
+  }
+
+  /**
+   * Registers the effects of a projected decal box (DecalComponent, plan 7.7) on first use. The game's deferred decal
+   * pass takes any material, not only %DECAL ones (e.g. the ruin destruction decals are plain Illum materials), so
+   * they are created on demand instead of for every Illum material.
+   *
+   * - {@link NwRenderVariant.ProjectedDecal}: blended into the GBuffer by the DecalPass with the per target alpha of
+   *   the mesh decals, stencil tested on the decal receivers by the pass
+   * - {@link NwRenderVariant.ProjectedDecalEmissive}: with emittance, ONE / ONE onto the lit color
+   *   (FX_DeferredDecalsEmissive, no stencil test)
+   *
+   * Back faces with a reversed-z less-equal test: the scene lies in front of the far side of the box, also with the
+   * camera inside the box (the game draws front faces and switches to back faces with GREATER when the near plane
+   * cuts the box).
+   */
+  public ensureProjectedDecalEffects() {
+    if (this.getEffect(NwRenderVariant.ProjectedDecal)) {
+      return
+    }
+    const projected = new Effect(this.device, {
+      ...projectedDecalEffectOptions(this.shaderConstants, PROJECTED_DECAL_FRAGMENT_ENTRY.gbuffer),
+      renderBlends: [BlendState.Alpha, BlendState.Alpha, BlendState.Alpha],
+      renderMasks: [DECAL_WRITE_MASK, DECAL_WRITE_MASK, DECAL_WRITE_MASK],
+    })
+    projected.cullState = CullState.CullFront
+    projected.depthState = DepthState.LessEqualNoWrite
+    this.setEffect(NwRenderVariant.ProjectedDecal, projected)
+    if (hasEmittance(this.EmissiveColor)) {
+      const emissive = new Effect(
+        this.device,
+        projectedDecalEffectOptions(this.shaderConstants, PROJECTED_DECAL_FRAGMENT_ENTRY.emissive),
+      )
+      emissive.cullState = CullState.CullFront
+      emissive.depthState = DepthState.LessEqualNoWrite
+      emissive.blendState = BlendState.AdditivePure
+      this.setEffect(NwRenderVariant.ProjectedDecalEmissive, emissive)
     }
   }
 

@@ -5,6 +5,10 @@ export type RenderSortPriority = Brand<string, 'RenderSortPriority'>
 export const RenderSortPriority = {
   State: brand<RenderSortPriority>('state'),
   Depth: brand<RenderSortPriority>('depth'),
+  /**
+   * By the item order (ascending, see {@link Sortable.order}), then by state. The layer is not part of the key.
+   */
+  Order: brand<RenderSortPriority>('order'),
 }
 
 export type RenderItemFlags = Brand<number, 'RenderItemFlags'>
@@ -62,9 +66,13 @@ export interface Sortable {
    */
   material: number
   /**
-   * The material ID
+   * The geometry ID
    */
   geometry: number
+  /**
+   * Explicit draw order, lower first. Only lists with {@link RenderSortPriority.Order} sort by it.
+   */
+  order: number
 }
 
 /**
@@ -182,6 +190,9 @@ export class RenderListMode {
   }
 
   protected buildKeyFn(mask: RenderItemFlags, priority: RenderSortPriority): (item: Sortable, out: SortKey) => SortKey {
+    if (priority === RenderSortPriority.Order) {
+      return sortOrderFirst
+    }
     if (mask & RenderItemFlags.Transparent) {
       return priority === RenderSortPriority.Depth ? sortTransparentBackToFront : sortStateFirst
     }
@@ -206,6 +217,15 @@ function sortStateFirst(item: Sortable, out: SortKey): SortKey {
   // lo: [ material (20) | geometry (25) | depth (8) ]
   const depthBits = (item.depth * 255) | 0 // low-resolution depth
   out.hi = (item.layer % 2 ** 21) * P32 + (item.state >>> 0)
+  out.lo = (item.material % P20) * P33 + (item.geometry % P25) * P8 + depthBits
+  return out
+}
+
+function sortOrderFirst(item: Sortable, out: SortKey): SortKey {
+  // hi: [ order (21) | state (32) ]
+  // lo: [ material (20) | geometry (25) | depth (8) ]
+  const depthBits = (item.depth * 255) | 0 // low-resolution depth
+  out.hi = (item.order % 2 ** 21) * P32 + (item.state >>> 0)
   out.lo = (item.material % P20) * P33 + (item.geometry % P25) * P8 + depthBits
   return out
 }

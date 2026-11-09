@@ -34,6 +34,10 @@ interface BatchEntry {
   material: Material
   layer: number
   /**
+   * Draw order of the items (entity render order)
+   */
+  order: number
+  /**
    * Number of registered parts that use this batch, the batch is not drawn when it drops to 0
    */
   refs: number
@@ -253,6 +257,7 @@ export class CullingSystem extends GameSystem implements SceneSource {
       item.data.instanceCount = batches[i * 3 + 1]
       item.data.instanceOffset = offset + batches[i * 3 + 2]
       item.layer = batch.layer
+      item.order = batch.order
       result.push(item)
     }
     if (this.stats) {
@@ -353,6 +358,7 @@ export class CullingSystem extends GameSystem implements SceneSource {
   private createLevel(entry: RecordEntry, model: Model): CullLevel {
     const layer = entry.component.entity.layer
     const layerFlags = entry.component.entity.layerFlags
+    const order = entry.component.entity.renderOrder
     const matrices: number[] = []
     const boxes: number[] = []
     const batchStart: number[] = [0]
@@ -371,8 +377,14 @@ export class CullingSystem extends GameSystem implements SceneSource {
         if (!material || !geometry || material.noRender) {
           continue
         }
-        // batches are keyed by layer, so they split by the entity layer flags (e.g. decal receivers)
-        const batch = this.getBatch(geometry, material, addLayerFlags(layer ?? material.layer ?? LayerMask.All, layerFlags))
+        // batches are keyed by layer and order, so they split by the entity layer flags (e.g. decal receivers) and
+        // render order (e.g. decal sort priority)
+        const batch = this.getBatch(
+          geometry,
+          material,
+          addLayerFlags(layer ?? material.layer ?? LayerMask.All, layerFlags),
+          order,
+        )
         this.batches[batch].refs++
         entry.batches.push(batch)
         batches.push(batch)
@@ -387,12 +399,12 @@ export class CullingSystem extends GameSystem implements SceneSource {
     }
   }
 
-  private getBatch(geometry: Geometry, material: Material, layer: number) {
-    const key = `${objectId(geometry)}:${objectId(material)}:${layer}`
+  private getBatch(geometry: Geometry, material: Material, layer: number, order: number) {
+    const key = `${objectId(geometry)}:${objectId(material)}:${layer}:${order}`
     let id = this.batchIds.get(key)
     if (id === undefined) {
       id = this.batches.length
-      this.batches.push({ geometry, material, layer, refs: 0 })
+      this.batches.push({ geometry, material, layer, order, refs: 0 })
       this.batchIds.set(key, id)
       this.pendingBatches.push({ id, layer })
     }

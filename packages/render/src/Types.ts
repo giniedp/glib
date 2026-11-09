@@ -124,6 +124,10 @@ export type RenderItem<T = unknown> = {
    */
   layer: LayerMask
   /**
+   * Explicit draw order, lower first. Only lists sorted by {@link RenderSortPriority.Order} use it. Defaults to 0.
+   */
+  order?: number
+  /**
    * The render flags of this item, used for filtering. Can be a combination of {@link RenderItemFlags}.
    */
   flags: RenderItemFlags

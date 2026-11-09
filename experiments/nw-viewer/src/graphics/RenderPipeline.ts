@@ -13,6 +13,7 @@ import {
 } from '@gglib/graphics'
 import {
   bloomPass,
+  FunctionPass,
   FxaaPass,
   groupPass,
   RenderChannel,
@@ -22,10 +23,12 @@ import {
   RenderListMode,
   RenderSortPriority,
   tonemapPass,
+  type RenderContext,
   type RenderPass,
   type RenderPipelineOptions,
 } from '@gglib/render'
-import { InputSlots, MaterialLayerMasks, NwRenderVariant } from '../material'
+import { InputSlots, MaterialLayerMasks, NON_PROJECTED_DECAL_LAYERS, NwRenderVariant } from '../material'
+import { getWhiteTexture } from '../material/utils'
 import { GBUFFER_DESCRIPTORS, GBufferChannel } from './GBufferChannels'
 import { describePass, optionalPass } from './PassInfo'
 import { DecalReceiverDebugPass } from './passes/gbuffer/DecalReceiverDebugPass'
@@ -33,7 +36,7 @@ import { GBufferDebugPass } from './passes/gbuffer/GBufferDebugPass'
 import { CopyPass, NwCopyChannel } from './passes/CopyPass'
 import { GeometryPass } from './passes/GeometryPass'
 import { LightingPass } from './passes/lighting/LightingPass'
-import { MaterialDebugPass } from './passes/MaterialDebugPass'
+import { MaterialDebugPass, OPAQUE_SURFACE_LIST } from './passes/MaterialDebugPass'
 import { SmaaPass } from './passes/smaa/SmaaPass'
 import { Cmaa2Pass } from './passes/cmaa2/Cmaa2Pass'
 import { FilmMappingPass } from './passes/filmmapping/FilmMappingPass'
@@ -46,6 +49,7 @@ const WATER_VOLUME_LIST = new RenderListMode(RenderSortPriority.Depth, RenderIte
   includeLayers: MaterialLayerMasks.WaterVolume,
 })
 const TRANSPARENT_LIST = new RenderListMode(RenderSortPriority.Depth, RenderItemFlags.Transparent, {
+  includeLayers: NON_PROJECTED_DECAL_LAYERS,
   excludeLayers: MaterialLayerMasks.WaterVolume,
 })
 
@@ -62,7 +66,9 @@ export const DECAL_RECEIVER_STENCIL = 1
  * Opaque items of the GBuffer pass, each draw sets the receiver stencil reference from its layer
  */
 const GBUFFER_LIST = new RenderListMode(RenderSortPriority.State, RenderItemFlags.Opaque, {
-  excludeLayers: MaterialLayerMasks.MeshDecal,
+  // the decal boxes have Illum materials with a GBuffer effect. Unlayered items (LayerMask.All) were excluded by the
+  // MeshDecal bit already, the ProjectedDecal bit changes nothing for them.
+  excludeLayers: MaterialLayerMasks.MeshDecal | MaterialLayerMasks.ProjectedDecal,
   stencilReference: (layer) => (layer & DECAL_RECEIVER_LAYERS ? DECAL_RECEIVER_STENCIL : 0),
 })
 
@@ -71,7 +77,36 @@ const GBUFFER_LIST = new RenderListMode(RenderSortPriority.State, RenderItemFlag
  * The game sorts that list by object sort priority, then state; the viewer has no sort priority yet, so by state.
  */
 const MESH_DECAL_LIST = new RenderListMode(RenderSortPriority.State, RenderItemFlags.Opaque, {
+  // the boxes of projected decals have the same %DECAL materials, but their entity layer is ProjectedDecal alone
   includeLayers: MaterialLayerMasks.MeshDecal,
+})
+
+/**
+ * Boxes of projected decals (DecalComponent), blended into the GBuffer by the DecalPass and their emittance added by
+ * the DecalEmissivePass, like the game's FX_DeferredDecals / FX_DeferredDecalsEmissive.
+ * Sorted like the game: by the entity render order (normal map flag + sort priority, see decalRenderOrder), then state.
+ * Both flags: a decal material with an opacity below 1 makes a transparent item.
+ */
+const PROJECTED_DECAL_LIST = new RenderListMode(
+  RenderSortPriority.Order,
+  (RenderItemFlags.Opaque | RenderItemFlags.Transparent) as RenderItemFlags,
+  {
+    includeLayers: MaterialLayerMasks.ProjectedDecal,
+    stencilReference: () => DECAL_RECEIVER_STENCIL,
+  },
+)
+
+/**
+ * Projected decals blend only into decal receivers (game: stencil EQUAL on BIT_STENCIL_RESERVED)
+ */
+const DECAL_RECEIVER_TEST = StencilState.get({
+  enable: true,
+  readMask: DECAL_RECEIVER_STENCIL,
+  writeMask: 0,
+  frontFunction: 'equal',
+  frontDepthPass: 'keep',
+  backFunction: 'equal',
+  backDepthPass: 'keep',
 })
 
 /**
@@ -87,9 +122,40 @@ const DECAL_RECEIVER_WRITE = StencilState.get({
 })
 
 /**
- * Opaque items without a GBuffer effect (sky, unlit, debug), drawn forward after the deferred lighting
+ * LinearDepth is cleared to the camera far plane, the value the sky writes where it covers. Pixels without geometry
+ * then read as far away everywhere, also where the sky dome does not cover (below the horizon): materials that fade
+ * against the scene depth (fog planes, particles, beams, water) would vanish against 0. Passes before the sky
+ * (lighting, AO, decals) treat depth >= far as "no geometry".
+ */
+const LINEAR_DEPTH_CLEAR = { x: 0, y: 0, z: 0, w: 0 }
+function linearDepthClear(ctx: RenderContext) {
+  LINEAR_DEPTH_CLEAR.x = ctx.view.camera.far
+  return LINEAR_DEPTH_CLEAR
+}
+
+/**
+ * Binds a neutral texture as the scene depth input. Programs whose module declares `sceneDepthMap` bind it in every
+ * variant (e.g. the FxMeshAdvanced GBuffer effect), and the view block keeps the last value, which is the pooled
+ * LinearDepth texture of the previous frame. A pass that renders into LinearDepth (GBuffer, forward opaque) must not
+ * have it bound: WebGPU rejects a texture used as attachment and binding in one render pass.
+ */
+function neutralSceneDepthPass(name: string): RenderPass {
+  return describePass(
+    new FunctionPass({
+      name,
+      render: (ctx) => ctx.renderInputs.set(CommonInputs.View.SceneDepthMap, getWhiteTexture(ctx.device)),
+    }),
+    { note: 'unbinds LinearDepth as scene depth input while passes render into it' },
+  )
+}
+
+/**
+ * Opaque items without a GBuffer effect (sky, unlit, debug), drawn forward after the deferred lighting.
+ * No exclude layers: unlayered items (the sky) have LayerMask.All, which any excludeLayers would drop. The decal boxes
+ * are skipped by the include mask (and by the variant, their opaque Illum materials have a GBuffer effect).
  */
 const FORWARD_OPAQUE_LIST = new RenderListMode(RenderSortPriority.State, RenderItemFlags.Opaque, {
+  includeLayers: NON_PROJECTED_DECAL_LAYERS,
   excludeVariant: RenderVariant.GBuffer,
 })
 
@@ -193,7 +259,7 @@ export function createRenderPipeline(device: Device): RenderPipelineOptions {
 
 /**
  * Deferred opaque stage, in the game's order:
- * 1. GBuffer pass, writes GBuffer A/B/C, LinearDepth (0 without geometry) and Depth
+ * 1. GBuffer pass, writes GBuffer A/B/C, LinearDepth (the far plane without geometry) and Depth
  * 2. AO from the depth and the GBuffer normals
  * 3. lighting: lights the GBuffer, applies the AO, writes Color
  * 4. emissive variant
@@ -201,6 +267,7 @@ export function createRenderPipeline(device: Device): RenderPipelineOptions {
  */
 function createOpaquePasses(device: Device): RenderPass[] {
   return [
+    neutralSceneDepthPass('OpaqueSceneDepthReset'),
     new GeometryPass({
       name: 'GBufferPass',
       list: GBUFFER_LIST,
@@ -213,7 +280,7 @@ function createOpaquePasses(device: Device): RenderPass[] {
         { clear: Color.TransparentBlack, render: GBufferChannel.A },
         { clear: Color.TransparentBlack, render: GBufferChannel.B },
         { clear: Color.TransparentBlack, render: GBufferChannel.C },
-        { clear: Color.TransparentBlack, render: RenderChannel.LinearDepth },
+        { clear: linearDepthClear, render: RenderChannel.LinearDepth },
       ],
     }),
     // %DECAL meshes blend into A/B/C (their effects set the blend and the RGB mask), no stencil test, depth not written
@@ -232,6 +299,43 @@ function createOpaquePasses(device: Device): RenderPass[] {
       }),
       { note: 'mesh decals (%DECAL) blended into the GBuffer, like the ZPass decal list of the game' },
     ),
+    // projected decals (DecalComponent boxes) blend into A/B/C on the decal receivers (plan 7.7)
+    optionalPass(
+      groupPass({
+        name: 'Projected Decals',
+        enabled: true,
+        passes: [
+          describePass(new CopyPass(device, { name: 'DecalNormalCopy', input: GBufferChannel.A, output: NwCopyChannel.GBufferA }), {
+            note: 'copy of GBuffer A, the receiver normals of the decal angle fade',
+          }),
+          describePass(
+            renderInputsPass({
+              name: 'DecalInputs',
+              textures: [
+                [CommonInputs.View.SceneDepthMap, RenderChannel.LinearDepth],
+                [InputSlots.View.DecalNormalMap, NwCopyChannel.GBufferA],
+              ],
+            }),
+            { note: 'binds LinearDepth and the GBuffer A copy for the decal shader' },
+          ),
+          new GeometryPass({
+            name: 'DecalPass',
+            list: PROJECTED_DECAL_LIST,
+            variant: NwRenderVariant.ProjectedDecal,
+            depth: RenderChannel.Depth,
+            clearDepth: false,
+            stencil: DECAL_RECEIVER_TEST,
+            inputs: [RenderChannel.LinearDepth, NwCopyChannel.GBufferA],
+            channels: [
+              { clear: null, render: GBufferChannel.A, blend: BlendState.Alpha },
+              { clear: null, render: GBufferChannel.B, blend: BlendState.Alpha },
+              { clear: null, render: GBufferChannel.C, blend: BlendState.Alpha },
+            ],
+          }),
+          neutralSceneDepthPass('DecalInputsReset'),
+        ],
+      }),
+    ),
     // AO before the lighting (plan phase 5), from the depth and the GBuffer normals
     optionalPass(new XeGtaoPass(device, { normals: GBufferChannel.A })),
     new LightingPass(device, {
@@ -246,11 +350,41 @@ function createOpaquePasses(device: Device): RenderPass[] {
     optionalPass(
       new GeometryPass({
         name: 'EmissivePass',
-        list: RenderListMode.Opaque,
+        list: OPAQUE_SURFACE_LIST,
         variant: NwRenderVariant.Emissive,
         depth: RenderChannel.Depth,
         clearDepth: false,
         channels: [{ clear: null, render: RenderChannel.Color, blend: BlendState.AdditivePure }],
+      }),
+    ),
+    // emittance of the projected decals, the angle fade reads GBuffer A (no pass writes it after the decals)
+    optionalPass(
+      groupPass({
+        name: 'Projected Decal Emittance',
+        enabled: true,
+        passes: [
+          describePass(
+            renderInputsPass({
+              name: 'DecalEmissiveInputs',
+              textures: [
+                [CommonInputs.View.SceneDepthMap, RenderChannel.LinearDepth],
+                [InputSlots.View.DecalNormalMap, GBufferChannel.A],
+              ],
+            }),
+            { note: 'binds LinearDepth and GBuffer A for the decal shader' },
+          ),
+          new GeometryPass({
+            name: 'DecalEmissivePass',
+            list: PROJECTED_DECAL_LIST,
+            variant: NwRenderVariant.ProjectedDecalEmissive,
+            depth: RenderChannel.Depth,
+            clearDepth: false,
+            inputs: [RenderChannel.LinearDepth, GBufferChannel.A],
+            channels: [{ clear: null, render: RenderChannel.Color, blend: BlendState.AdditivePure }],
+          }),
+          // the forward opaque pass renders into LinearDepth next
+          neutralSceneDepthPass('DecalEmissiveInputsReset'),
+        ],
       }),
     ),
     optionalPass(

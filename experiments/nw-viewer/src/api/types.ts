@@ -416,6 +416,7 @@ export const AudioTriggerComponentName = 'AudioTrigger' as const
 export const AudioAmbienceComponentName = 'AudioAmbience' as const
 export const AudioAreaComponentName = 'AudioArea' as const
 export const ParticleComponentName = 'Particle' as const
+export const DecalComponentName = 'Decal' as const
 
 export const ComponentTypes = {
   MeshComponentName,
@@ -436,6 +437,7 @@ export const ComponentTypes = {
   AudioAmbienceComponentName,
   AudioAreaComponentName,
   ParticleComponentName,
+  DecalComponentName,
 }
 
 export type ComponentType =
@@ -455,6 +457,7 @@ export type ComponentType =
   | typeof ParticleComponentName
   | typeof AudioAmbienceComponentName
   | typeof AudioAreaComponentName
+  | typeof DecalComponentName
 
 export interface ViewerBaseComponent {
   type: ComponentType
@@ -611,6 +614,31 @@ export interface ViewerUnknownComponent {
  * Road or river of the RoadsAndRivers gem: a strip of geometry along the entity spline,
  * rendered with the material (Illum decal for roads). Spline data is in entity space.
  */
+/**
+ * A projected decal (LmbrCentral DecalComponent, nwbt `game/level/load_decal.go`).
+ *
+ * The decal box is the entity transform (rotation and scale = decal size, unit box ±1), scaled by `depth` along its
+ * local z and moved by `offset`; the projection runs along the box's local z.
+ */
+export interface ViewerDecalComponent extends ViewerBaseComponent {
+  type: typeof DecalComponentName
+  material: string
+  /** deferred decals are drawn into the GBuffer as boxes (99% in the game, projection type 2) */
+  deferred?: boolean
+  projectionType: number
+  /** box depth along the projection axis */
+  depth?: number
+  /** box offset in entity space */
+  offset?: [number, number, number]
+  opacity?: number
+  sortPriority?: number
+  color?: [number, number, number, number]
+  /** Max_View_Distance with the override flag, else the automatic distance */
+  maxViewDistance?: number
+  viewDistanceMultiplier?: number
+  minSpec?: number
+}
+
 export interface ViewerRoadComponent extends ViewerBaseComponent {
   type: typeof RoadComponentName | typeof RiverComponentName
   material: string
@@ -665,7 +693,12 @@ export type ViewerComponent =
   | ViewerAreaSpawnerComponent
   | ViewerLightComponent
   | ViewerTimeOfDayComponent
+  | ViewerDecalComponent
   | ViewerUnknownComponent
+
+export function isViewerDecalComponent(component: any): component is ViewerDecalComponent {
+  return component?.type === DecalComponentName
+}
 
 export function isViewerRoadComponent(component: any): component is ViewerRoadComponent {
   return component.type === ComponentTypes.RoadComponentName || component.type === ComponentTypes.RiverComponentName

@@ -270,7 +270,9 @@ struct InstanceDataBlock {
   viewDistance: f32,
   // dissolve amount of the distance fade, 0 = fully visible, 1 = fully dissolved (see ditherFade)
   dissolveAmount: f32,
-  _pad0: vec2f,
+  // opacity of a projected decal (DecalComponent Opacity), 1 otherwise
+  decalOpacity: f32,
+  _pad0: f32,
   _pad1: array<vec4f, 3>,
 };
 

@@ -104,6 +104,7 @@ export class RenderList {
     layer: 0,
     state: 0,
     geometry: 0,
+    order: 0,
   }
 
   protected drawIndices: number[] = []
@@ -180,12 +181,13 @@ export class RenderList {
     return this.mode.getEffect(material, variant)
   }
 
-  public getKey(depth: number, layer: number, material: number, state: number, geometry: number) {
+  public getKey(depth: number, layer: number, material: number, state: number, geometry: number, order = 0) {
     this.item.depth = depth
     this.item.layer = layer
     this.item.material = material
     this.item.state = state
     this.item.geometry = geometry
+    this.item.order = order
     // the returned key is reused, it must be passed to add() before the next call
     return this.mode.getKey(this.item, this.key)
   }

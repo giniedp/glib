@@ -113,6 +113,12 @@ export class GameEntity {
   public layerFlags: number = 0
 
   /**
+   * Draw order of the render items of this entity, lower first. Only lists sorted by order use it (e.g. projected
+   * decals by their sort priority). Read when the render items are created.
+   */
+  public renderOrder: number = 0
+
+  /**
    * The world this entity has been initialized in
    */
   public readonly world: GameWorld

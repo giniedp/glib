@@ -32,7 +32,8 @@ struct GtaoParams {
 `
 
 /**
- * Converts linear depth into the first depth mip. Pixels without depth (cleared to 0) are pushed to the far range.
+ * Converts linear depth into the first depth mip. Pixels without depth (cleared to the far plane, or 0) are pushed to
+ * the far range.
  */
 export const XE_GTAO_PREFILTER_MIP0_WGSL = /* wgsl */ `
 ${FULLSCREEN_WGSL_VS}

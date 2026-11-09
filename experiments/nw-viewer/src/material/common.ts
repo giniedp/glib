@@ -30,6 +30,16 @@ export const NwRenderVariant = {
    * (`fs_debug`). Modes without a material view draw nothing.
    */
   Debug: brand<RenderVariant>('debug'),
+  /**
+   * Projected (deferred) decal box, blended into the GBuffer by the DecalPass (`fs_decal`, plan 7.7).
+   * %DECAL materials register it, the box entities of DecalComponents render it.
+   */
+  ProjectedDecal: brand<RenderVariant>('projectedDecal'),
+  /**
+   * Emittance of a projected decal, added to the lit color after the deferred lighting (`fs_decal_emissive`),
+   * like the game's FX_DeferredDecalsEmissive. Only %DECAL materials with emittance register it.
+   */
+  ProjectedDecalEmissive: brand<RenderVariant>('projectedDecalEmissive'),
 }
 
 export const InputBlocks = {
@@ -109,6 +119,10 @@ export const InputSlots = {
     ViewMatrix: CommonInputs.View.ViewMatrix,
     ProjectionMatrix: CommonInputs.View.ProjectionMatrix,
     CameraPosition: CommonInputs.View.CameraPosition,
+    /**
+     * GBuffer A as the receiver normal of the projected decals (angle fade), a copy made before the DecalPass
+     */
+    DecalNormalMap: inputSlotTexture('view', 'decalNormalMap'),
   },
   Global: {
     SunColor: inputSlotVec4('global', 'sunColor'),
@@ -273,7 +287,22 @@ export const MaterialLayerMasks = {
    * %DECAL materials, blended into the GBuffer by the MeshDecalPass after the GBufferPass (plan 7.5)
    */
   MeshDecal: 1 << 15,
+  /**
+   * Box entities of projected decals (DecalComponent), as the entity layer (replaces the material layer), so the
+   * DecalPass renders them and the MeshDecalPass skips them (plan 7.7). The GBuffer list excludes it, the other lists
+   * include {@link NON_PROJECTED_DECAL_LAYERS}. Lists must not exclude it by layer: unlayered items (LayerMask.All)
+   * intersect any exclude mask and would drop.
+   */
+  ProjectedDecal: 1 << 16,
 }
+
+/**
+ * Include mask that skips the decal boxes in general lists (emissive, debug, forward, transparent): the box layer is
+ * exactly {@link MaterialLayerMasks.ProjectedDecal}, so it is the only layer that does not intersect this mask, while
+ * unlayered items (LayerMask.All) and all other layers do. Without it a decal material with emittance or opacity
+ * draws its box as a mesh, with the decal texture on the box faces.
+ */
+export const NON_PROJECTED_DECAL_LAYERS = ~MaterialLayerMasks.ProjectedDecal
 
 const FLAGS_ARRAY = [
   'ADVANCED',
@@ -501,7 +530,14 @@ export function setInstanceDissolveAmount(instance: Float32Array, value: number)
   instance[1] = value
 }
 
-export function createInstanceData(options: { maxViewDistance?: number; dissolveAmount?: number }) {
+/**
+ * Opacity of a projected decal (DecalComponent Opacity), multiplied with the material opacity
+ */
+export function setInstanceDecalOpacity(instance: Float32Array, value: number) {
+  instance[2] = value
+}
+
+export function createInstanceData(options: { maxViewDistance?: number; dissolveAmount?: number; decalOpacity?: number }) {
   const data = new Float32Array(16)
   if (options.maxViewDistance != null) {
     setInstanceMaxViewDistance(data, options.maxViewDistance)
@@ -509,5 +545,6 @@ export function createInstanceData(options: { maxViewDistance?: number; dissolve
   if (options.dissolveAmount != null) {
     setInstanceDissolveAmount(data, options.dissolveAmount)
   }
+  setInstanceDecalOpacity(data, options.decalOpacity ?? 1)
   return data
 }

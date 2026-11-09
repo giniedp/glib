@@ -149,8 +149,8 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
   }
   let p = vec2i(id.xy);
   let depth = textureLoad(linearDepth, p, 0).r;
-  // no geometry, the sky is drawn after the lighting
-  if (depth <= 0.0) {
+  // no geometry (cleared to the far plane), the sky is drawn after the lighting
+  if (depth <= 0.0 || depth >= view.far) {
     textureStore(outColor, p, vec4f(0.0, 0.0, 0.0, 1.0));
     return;
   }

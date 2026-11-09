@@ -19,7 +19,7 @@ import {
   vec3Subtract,
 } from '@gglib/math'
 import { LayerMask, type CameraData } from '@gglib/render'
-import { BehaviorComponent } from '../systems/BehaviorSystem'
+import { BehaviorComponent, BehaviorOrder } from '../systems/BehaviorSystem'
 import { TransformComponent } from './TransformComponent'
 
 export type CameraType = 'perspective' | 'orthographic' | 'custom'
@@ -84,6 +84,12 @@ export interface CameraOptions {
 }
 
 export class CameraComponent implements CameraData, GameComponent, BehaviorComponent {
+  /**
+   * Runs after the behaviors that move the camera (controllers, constraints), so the view matrices of a frame match
+   * the camera transform of that frame
+   */
+  public readonly behaviorOrder = BehaviorOrder.Late
+
   /**
    *
    */

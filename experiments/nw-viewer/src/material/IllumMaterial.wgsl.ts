@@ -2,8 +2,11 @@ import { COMMON_WGSL } from './common.wgsl'
 import { GBUFFER_WGSL } from './gbuffer.wgsl'
 import { PROBES_WGSL } from './probes.wgsl'
 
-export default /* wgsl */ `
-
+/**
+ * Material block, samplers and texture maps of the Illum material (groups 2 and 3).
+ * Shared with the projected decal shader (IllumProjectedDecal.wgsl.ts), whose effects the IllumMaterial binds.
+ */
+export const ILLUM_MATERIAL_WGSL = /* wgsl */ `
 struct MaterialBlock {
   // --- Base material color slots (c0–c2) ------------------
   diffuseColor     : vec4f,   // PerMaterial_DiffuseColor  .xyz=tint .w=opacity
@@ -134,20 +137,6 @@ struct MaterialBlock {
   deformWave1                    : vec4f,
 };
 
-// @private
-@group(0) @binding(0) var<uniform>       global  : GlobalBlock;
-// @private
-@group(0) @binding(1) var<uniform>       view    : ViewBlock;
-// @private
-@group(0) @binding(2) var<uniform>       frame   : FrameBlock;
-// @private
-@group(0) @binding(3) var<uniform>       lights  : LightBlock;
-// @block global
-// @private
-@group(0) @binding(4) var envMap                 : texture_cube<f32>;
-
-@group(1) @binding(0) var<storage, read> object       : array<ObjectBlock>; // per instance data
-@group(1) @binding(1) var<storage, read> instanceData : array<InstanceDataBlock>; // per instance data
 @group(2) @binding(0) var<uniform>       material: MaterialBlock;
 
 @group(2) @binding(1) var samplerLinear      : sampler;
@@ -170,6 +159,25 @@ struct MaterialBlock {
 @group(3) @binding(13) var emittanceMap      : texture_2d<f32>; // $Emittance    (emittanceMap)
 @group(3) @binding(14) var occlusionMap      : texture_2d<f32>; // $Occlusion    (OcclusionMap)
 @group(3) @binding(15) var specularMap2      : texture_2d<f32>; // $Specular2    (SpecularMap2)
+`
+
+export default /* wgsl */ `
+${ILLUM_MATERIAL_WGSL}
+
+// @private
+@group(0) @binding(0) var<uniform>       global  : GlobalBlock;
+// @private
+@group(0) @binding(1) var<uniform>       view    : ViewBlock;
+// @private
+@group(0) @binding(2) var<uniform>       frame   : FrameBlock;
+// @private
+@group(0) @binding(3) var<uniform>       lights  : LightBlock;
+// @block global
+// @private
+@group(0) @binding(4) var envMap                 : texture_cube<f32>;
+
+@group(1) @binding(0) var<storage, read> object       : array<ObjectBlock>; // per instance data
+@group(1) @binding(1) var<storage, read> instanceData : array<InstanceDataBlock>; // per instance data
 
 struct VertexInput {
   @builtin(instance_index) id: u32,
