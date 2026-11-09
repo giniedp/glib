@@ -10,7 +10,7 @@ import { BehaviorSystem } from './BehaviorSystem'
 import { BoundsUpdateSystem } from './BoundsUpdateSystem'
 import { SceneSystem } from './SceneSystem'
 import { SpriteSystem } from './SpriteSystem'
-import { TimeSystem } from './TimeSystem'
+import { TimeSystem, type Clock } from './TimeSystem'
 import { TweenSystem } from './TweenSystem'
 
 export interface EcsGameStats {
@@ -75,6 +75,12 @@ export class EcsGame {
    * A convenience property for applications to access the main scene.
    */
   public scene: SceneComponent
+
+  /**
+   * Opt in: the clock that drives time dependent rendering (ElapsedTime, material updates), e.g. the game clock of a
+   * {@link TimeSystem}, so pausing or fixing it freezes shader animations. `null` uses the loop time.
+   */
+  public renderClock: Clock | null = null
 
   /**
    * Resolves once the game has fully booted and the loop is running
@@ -253,7 +259,12 @@ export class EcsGame {
     this.world.render(time, dt)
 
     const renderer = this.world.getSystem(Renderer)
-    renderer.update(time)
+    const clock = this.renderClock
+    if (clock) {
+      renderer.update(clock.total, clock.delta)
+    } else {
+      renderer.update(time, dt)
+    }
 
     if (this.scene) {
       for (const view of this.scene.views) {

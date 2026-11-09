@@ -1,4 +1,4 @@
-import { EcsGame } from '@gglib/components'
+import { EcsGame, TimeSystem } from '@gglib/components'
 import { GameSystem, type GameWorld } from '@gglib/ecs'
 import type { ResourceScope, Texture } from '@gglib/graphics'
 import { mat4GetTranslation, vec3, type IVec3 } from '@gglib/math'
@@ -61,6 +61,7 @@ export class ParticleSystem extends GameSystem {
   public readonly stats = { components: 0, emitters: 0, particles: 0, time: 0 }
 
   private game: EcsGame
+  private time: TimeSystem
   private content: ContentService
   private libraries = new Map<string, Promise<ParticleLibraryDocument | null>>()
   private effects = new Map<string, Promise<ParticleEffect | null>>()
@@ -72,6 +73,7 @@ export class ParticleSystem extends GameSystem {
 
   public initialize(world: GameWorld): void {
     this.game = world.getSystem(EcsGame)
+    this.time = world.getSystem(TimeSystem)
     this.content = world.getSystem(ContentService)
   }
 
@@ -93,7 +95,8 @@ export class ParticleSystem extends GameSystem {
     if (view?.camera) {
       mat4GetTranslation(view.camera.world, this.camera.position)
     }
-    const step = this.paused ? 0 : Math.min(dt, MAX_STEP)
+    // the game clock, so a paused or fixed time freezes the particles
+    const step = this.paused ? 0 : Math.min(this.time.game.delta, MAX_STEP)
     let emitters = 0
     let particles = 0
     for (const item of this.active) {

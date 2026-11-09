@@ -258,15 +258,18 @@ export class Renderer implements Ownable {
   /**
    * Simply updates the internal frame info.
    * Should be called once per frame before rendering.
+   *
+   * @param time - the time in seconds that drives time dependent rendering (ElapsedTime, material updates)
+   * @param delta - the seconds since the last frame, derived from the time when omitted
    */
-  public update(time: number) {
+  public update(time: number, delta?: number) {
     this.lastInstanceCount = this.instances.count
     const times = this.listTimes
     this.listTimes = this.lastListTimes
     this.lastListTimes = times
     Object.assign(this.listTimes, renderListTimes())
     this.frameInfo.time ||= time
-    this.frameInfo.delta = time - this.frameInfo.time
+    this.frameInfo.delta = delta ?? time - this.frameInfo.time
     this.frameInfo.time = time
     this.frameInfo.id++
     this.resources.update()

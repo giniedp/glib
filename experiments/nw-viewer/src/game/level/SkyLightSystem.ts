@@ -1,4 +1,4 @@
-import { EcsGame } from '@gglib/components'
+import { EcsGame, TimeSystem } from '@gglib/components'
 import { GameQuery, GameSystem, GameWorld } from '@gglib/ecs'
 import { IblSampler, NishitaSkyEffect } from '@gglib/effects'
 import { Device, getMipmapCount, Texture, TextureUsage } from '@gglib/graphics'
@@ -13,6 +13,7 @@ import { TimeOfDayComponent } from './TimeOfDayComponent'
 
 export class SkyLightSystem extends GameSystem {
   private game: EcsGame
+  private time: TimeSystem
   private renderer: Renderer
   private todQuery: GameQuery
   private config: ViewerConfig
@@ -49,6 +50,7 @@ export class SkyLightSystem extends GameSystem {
 
   public initialize(world: GameWorld): void {
     this.game = world.getSystem(EcsGame)
+    this.time = world.getSystem(TimeSystem)
     this.todQuery = world.query({ scope: 'active', required: [TimeOfDayComponent] })
     this.device = world.getSystem(Device)
     this.renderer = world.getSystem(Renderer)
@@ -91,7 +93,7 @@ export class SkyLightSystem extends GameSystem {
     }
     this.activeSky = sky?.config.sky ?? null
 
-    this.timeOfDay.update(time, dt, view)
+    this.timeOfDay.update(dt, this.time.game.delta, view)
   }
 
   public override render(time: number, dt: number): void {

@@ -39,6 +39,15 @@ export interface GameTime extends Clock {
    * The scale factor of this clock
    */
   factor: number
+  /**
+   * Whether the clock is paused. A paused clock keeps its total, and its delta is `0`
+   */
+  paused: boolean
+  /**
+   * A fixed total in seconds, `null` lets the clock run. A fixed clock reports this total and a delta of `0` on each
+   * tick, e.g. to compare frames of time dependent effects. When released, the clock continues from the fixed value.
+   */
+  fixed: number | null
 }
 
 function resetClock(clock: Clock) {
@@ -89,6 +98,8 @@ export class TimeSystem extends GameSystem {
   public readonly game: GameTime = {
     name: 'game',
     factor: 1,
+    paused: false,
+    fixed: null,
     delta: 0,
     total: 0,
     renderedAt: 0,
@@ -151,6 +162,31 @@ export class TimeSystem extends GameSystem {
   }
 
   /**
+   * Pauses a clock, the game clock by default. Its total stays, its delta is `0` until {@link TimeSystem.resume}
+   */
+  public pause(clock: GameTime = this.game) {
+    clock.paused = true
+  }
+
+  /**
+   * Resumes a paused clock, the game clock by default
+   */
+  public resume(clock: GameTime = this.game) {
+    clock.paused = false
+  }
+
+  /**
+   * Fixes the total of a clock (the game clock by default) to the given seconds, or lets it run again with `null`.
+   *
+   * @remarks
+   * Everything that is driven by the clock shows the same state on every frame, e.g. for before/after comparisons of
+   * time dependent effects. The clock applies the value on its next tick.
+   */
+  public setFixed(seconds: number | null, clock: GameTime = this.game) {
+    clock.fixed = seconds
+  }
+
+  /**
    * Updates all clocks
    */
   public override update(time: number, dt: number) {
@@ -160,10 +196,9 @@ export class TimeSystem extends GameSystem {
     this.wall.total = time - this.resetAt
     this.wall.updatedAt = time
 
-    this.tickUpdateClick(this.game, dt * this.game.factor)
+    tickUpdateClock(this.game, dt)
     for (const key in this.clocks) {
-      const clock = this.clocks[key]
-      this.tickUpdateClick(clock, dt * clock.factor)
+      tickUpdateClock(this.clocks[key], dt)
     }
   }
 
@@ -175,22 +210,31 @@ export class TimeSystem extends GameSystem {
     this.wall.total = time - this.resetAt
     this.wall.renderedAt = time
 
-    this.tickRenderClock(this.game, dt * this.game.factor)
+    tickRenderClock(this.game, dt)
     for (const key in this.clocks) {
-      const clock = this.clocks[key]
-      this.tickRenderClock(clock, dt * clock.factor)
+      tickRenderClock(this.clocks[key], dt)
     }
   }
+}
 
-  private tickUpdateClick(clock: Clock, delta: number) {
-    clock.delta = delta
-    clock.total = clock.updatedAt + delta
-    clock.updatedAt = clock.total
+function tickUpdateClock(clock: GameTime, dt: number) {
+  if (clock.fixed != null) {
+    clock.updatedAt = clock.renderedAt = clock.fixed
   }
+  clock.delta = clockDelta(clock, dt)
+  clock.total = clock.updatedAt + clock.delta
+  clock.updatedAt = clock.total
+}
 
-  private tickRenderClock(clock: Clock, delta: number) {
-    clock.delta = delta
-    clock.total = clock.renderedAt + delta
-    clock.renderedAt = clock.total
+function tickRenderClock(clock: GameTime, dt: number) {
+  if (clock.fixed != null) {
+    clock.updatedAt = clock.renderedAt = clock.fixed
   }
+  clock.delta = clockDelta(clock, dt)
+  clock.total = clock.renderedAt + clock.delta
+  clock.renderedAt = clock.total
+}
+
+function clockDelta(clock: GameTime, dt: number) {
+  return clock.paused || clock.fixed != null ? 0 : dt * clock.factor
 }

@@ -45,6 +45,37 @@ describe('TimeSystem', () => {
     expect(time.game.total).toBeCloseTo(0.048)
   })
 
+  it('pauses the game clock', () => {
+    time.render(realTime, 0.016)
+    time.pause()
+    time.render(realTime, 0.016)
+    expect(time.game.delta).toBe(0)
+    expect(time.game.total).toBeCloseTo(0.016)
+
+    time.resume()
+    time.render(realTime, 0.016)
+    expect(time.game.delta).toBeCloseTo(0.016)
+    expect(time.game.total).toBeCloseTo(0.032)
+  })
+
+  it('fixes the game clock and continues from the fixed value', () => {
+    time.render(realTime, 0.016)
+    time.setFixed(10)
+    time.update(realTime, 0.016)
+    time.render(realTime, 0.016)
+    expect(time.game.delta).toBe(0)
+    expect(time.game.total).toBe(10)
+    time.render(realTime, 0.5)
+    expect(time.game.total).toBe(10)
+
+    time.setFixed(null)
+    time.update(realTime, 0.016)
+    expect(time.game.total).toBeCloseTo(10.016)
+    time.render(realTime, 0.016)
+    expect(time.game.delta).toBeCloseTo(0.016)
+    expect(time.game.total).toBeCloseTo(10.016)
+  })
+
   it('accumulates real time', () => {
     realTime = 0.016
     time.update(realTime, 0)

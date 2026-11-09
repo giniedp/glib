@@ -5,6 +5,7 @@ import {
   MouseInputSystem,
   SchedulerSystem,
   SpatialSystem,
+  TimeSystem,
   TransformComponent,
   WASDComponent,
   type SceneStats,
@@ -151,11 +152,26 @@ export class NwViewer extends EcsGame {
     return this.world.getSystem(ViewerConfig)
   }
 
+  /**
+   * The clocks. The game clock drives everything that animates: shaders (ElapsedTime), material updates, particles,
+   * fog volume noise and the animated time of day. Scripts pin it for comparable shots:
+   * `nwViewer.clock.setFixed(10)`, `nwViewer.clock.pause()`, `nwViewer.clock.resume()`, or the url `?clock=10`.
+   * Camera movement, eye adaptation, POI blends, audio and loading budgets stay on the wall clock.
+   */
+  public get clock(): TimeSystem {
+    return this.world.getSystem(TimeSystem)
+  }
+
   protected override onCreate(): void {
     // first, so systems and components can read the settings when they initialize
     const config = new ViewerConfig()
     config.load()
     this.world.addSystem(config)
+    // the viewer's clock: its game clock drives rendering, particles, fog volumes and the animated time of day, see
+    // `clock`. Registered here, the overlay (attached below) reads it.
+    const time = new TimeSystem()
+    this.world.addSystem(time)
+    this.renderClock = time.game
     this.world.addSystem(new RenderSizeSystem())
     this.world.addSystem(SpaceBasis.Z_UP_POS_Y)
     // instances are cached per url. Of the containers (file data) only the small material libraries stay cached,
@@ -307,6 +323,11 @@ export class NwViewer extends EcsGame {
 
   override onBeginRun() {
     this.world.initialize()
+    // ?clock=<seconds> fixes the game clock from the start, for comparable shots of time dependent effects
+    const clock = new URLSearchParams(location.search).get('clock')
+    if (clock != null && Number.isFinite(Number(clock))) {
+      this.clock.setFixed(Number(clock))
+    }
     this.world.getSystem(ContentService).whenLoaded.then(() => {
       this.scene.entity.activate()
       this.loadLevelLoadOptions()

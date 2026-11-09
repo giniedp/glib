@@ -321,11 +321,16 @@ export class TimeOfDay {
     }
   }
 
-  public update(time: number, dt: number, camera: CameraData) {
+  /**
+   * @param blendDt - wall clock seconds for the POI blends, they converge to their target even while the game clock
+   *   is paused or fixed
+   * @param animationDt - game clock seconds for the animated time of day
+   */
+  public update(blendDt: number, animationDt: number, camera: CameraData) {
     this.removeLayers()
-    this.updateWeights(dt)
+    this.updateWeights(blendDt)
     if (this.animate) {
-      this.tickTime(dt)
+      this.tickTime(animationDt)
     }
     this.interpolate()
 

@@ -1,4 +1,4 @@
-import { EcsGame } from '@gglib/components'
+import { EcsGame, TimeSystem } from '@gglib/components'
 import { GameSystem, type GameWorld } from '@gglib/ecs'
 import { BufferUsage, Device, type Buffer, type Texture } from '@gglib/graphics'
 import { mat4Invert, vec4, type Mat4 } from '@gglib/math'
@@ -47,10 +47,11 @@ export class FogVolumeSystem extends GameSystem {
   private state = new WeakMap<FogVolumeComponent, VolumeState>()
   private matrix = new Float32Array(16) as unknown as Mat4
   private inverse = new Float32Array(16) as unknown as Mat4
-  private lastTime = 0
+  private time: TimeSystem
 
   public initialize(world: GameWorld): void {
     this.game = world.getSystem(EcsGame)
+    this.time = world.getSystem(TimeSystem)
     this.renderer = world.getSystem(Renderer)
     this.world = world
     const device = world.getSystem(Device)
@@ -92,9 +93,8 @@ export class FogVolumeSystem extends GameSystem {
     if (!this.buffer || !camera) {
       return
     }
-    const now = performance.now() / 1000
-    const dt = this.lastTime ? Math.min(now - this.lastTime, 0.25) : 0
-    this.lastTime = now
+    // the game clock, so a paused or fixed time freezes the density noise
+    const dt = Math.min(this.time.game.delta, 0.25)
 
     // looked up late, the sky system may be added after this one
     this.sky ??= this.world.getSystem(SkyLightSystem, { optional: true })
