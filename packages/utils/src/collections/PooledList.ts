@@ -1,8 +1,15 @@
+/**
+ * A list that keeps its items when it is cleared, so they can be reused without allocation
+ *
+ * @remarks
+ * {@link clear} only resets the size. {@link next} (with a factory) or {@link nextAvailable} hand out the item
+ * that was at the next position before, a new one is created only when the list grows beyond its previous size.
+ */
 export class PooledList<T> {
   private pools: T[] = []
   private count = 0
-  private factory: () => T
-  public constructor(factory: () => T) {
+  private factory: (() => T) | undefined
+  public constructor(factory?: () => T) {
     this.factory = factory
   }
 
@@ -38,8 +45,12 @@ export class PooledList<T> {
     return item
   }
 
+  /**
+   * The item at the next position from before the last {@link clear}, null if there is none. Does not add it,
+   * pass it to {@link push}.
+   */
   public nextAvailable(): T | null {
-    return this.item(this.count)
+    return this.count < this.pools.length ? this.pools[this.count] : null
   }
 
   public toArray(target: T[] = []): T[] {

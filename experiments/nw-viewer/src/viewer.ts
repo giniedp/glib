@@ -10,6 +10,7 @@ import {
   type SceneStats,
   type SchedulerStats,
 } from '@gglib/components'
+import { ContentLoader } from '@gglib/content'
 import { type GameEntity } from '@gglib/ecs'
 import { MouseListener } from '@gglib/game'
 import { Color, type DeviceStats } from '@gglib/graphics'
@@ -38,7 +39,7 @@ import { REGION_SIZE } from './constants'
 import { ContentService } from './content'
 import { ProbeCubeLoader } from './content/ProbeCubeLoader'
 import { registerCgf } from './formats/cgf'
-import { registerMtl } from './formats/mtl'
+import { MtlContainer, registerMtl } from './formats/mtl'
 import { CollisionSystem } from './game/collision/CollisionSystem'
 import { CullingSystem } from './game/culling/CullingSystem'
 import { DebugLayer, DebugShapeComponent } from './game/debug/DebugShapeComponent'
@@ -157,6 +158,13 @@ export class NwViewer extends EcsGame {
     this.world.addSystem(config)
     this.world.addSystem(new RenderSizeSystem())
     this.world.addSystem(SpaceBasis.Z_UP_POS_Y)
+    // instances are cached per url. Of the containers (file data) only the small material libraries stay cached,
+    // models create several sub materials from them. Texture and geometry data is dropped after the GPU upload.
+    this.world.addSystem(
+      new ContentLoader(this.device, {
+        cacheContainers: (container) => container instanceof MtlContainer,
+      }),
+    )
     this.world.addSystem(new ContentService())
     this.world.addSystem(new KeyboardInputSystem())
     this.world.addSystem(

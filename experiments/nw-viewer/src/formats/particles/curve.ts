@@ -96,6 +96,53 @@ export class ParticleCurve {
   }
 
   /**
+   * Evaluates one component for many times at once, same result as {@link component}
+   *
+   * @remarks
+   * Allocation free for per-frame use: no number crosses a function boundary per element.
+   *
+   * @param out - receives the values, index 0 to count - 1
+   * @param ts - the times
+   */
+  public evaluateMany(out: Float32Array, ts: Float32Array, count: number, c = 0): void {
+    const keys = this.keys
+    const keyCount = keys.length
+    if (keyCount === 0) {
+      out.fill(1, 0, count)
+      return
+    }
+    const first = keys[0]
+    const firstT = first.t
+    const firstV = first.v[c] ?? 0
+    const lastV = keys[keyCount - 1].v[c] ?? 0
+    const segments = this.segments
+    const stride = this.stride
+    const segmentCount = keyCount - 1
+    for (let n = 0; n < count; n++) {
+      const t = ts[n]
+      if (t <= firstT) {
+        out[n] = firstV
+        continue
+      }
+      let value = lastV
+      for (let i = 0; i < segmentCount; i++) {
+        const o = i * stride
+        const t1 = segments[o + 1]
+        if (t <= t1) {
+          const t0 = segments[o]
+          const x = t1 > t0 ? (t - t0) / (t1 - t0) : 1
+          const u = 1 - x
+          const p = o + 2 + c * 4
+          value = segments[p] * u + segments[p + 1] * x + (segments[p + 2] * u + segments[p + 3] * x) * x * u
+          value = value < 0 ? 0 : value > 1 ? 1 : value
+          break
+        }
+      }
+      out[n] = value
+    }
+  }
+
+  /**
    * Minimum value over all keys, used for bounds
    */
   public minValue(c = 0): number {

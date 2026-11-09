@@ -2,13 +2,14 @@ import { AssetType, BoundedAsyncExecutor, ContentLoader } from '@gglib/content'
 import { GameEntity, GameSystem, GameWorld, GetComponent } from '@gglib/ecs'
 import { Device, Texture, type ResourceScope, type TextureSource } from '@gglib/graphics'
 import { Model } from '@gglib/model'
-import { fetchTypedRequest, type TypedRequest, type ViewerSlice } from '../api'
+import { fetchTypedRequest, type TypedRequest } from '../api'
 import { ViewerConfig, type ViewerConfigValues } from '../config'
 import { ENABLE_MODEL_LOD, LOD_PROBE_MIN_TRIANGLES, PARTIAL_TEXTURE_SIZE, PARTIAL_TEXTURES } from '../constants'
 import { CgfGeometryAssetType, isAssetIdRef, type CgfGeometry } from '../formats/cgf'
 import { MtlLoader } from '../formats/mtl'
 import { createAssetIdResolver, normalizeAssetPath, type AssetIdResolver } from './assetIds'
 import { ResourceScopeComponent } from './ResourceScopeComponent'
+import { SliceLibrary } from './SliceLibrary'
 
 /**
  * Highest level of detail the engine supports (MAX_STATOBJ_LODS_NUM - 1), the upper bound for probing sibling files
@@ -65,7 +66,10 @@ export class ContentService extends GameSystem {
     return `${this.nwbtUrl}/files/`
   }
 
-  public slices = new Map<string, ViewerSlice>()
+  /**
+   * Slice data of the loaded regions and the level
+   */
+  public readonly slices = new SliceLibrary()
 
   public whitePixel: Texture
   public grayPixel: Texture
@@ -385,8 +389,8 @@ export class ContentService extends GameSystem {
         parts: parts[i],
       })),
     })
-    // the meshes own the geometries and materials. The model also holds the cached geometry container,
-    // so the content loader evicts the container together with its last model.
+    // the meshes own the geometries and materials. The model also holds the cached geometry,
+    // so the content loader evicts the geometry together with its last model.
     result.ownership.adopt(geometry)
     if (override !== material) {
       this.cacheModel(key, Promise.resolve(result))
@@ -395,7 +399,7 @@ export class ContentService extends GameSystem {
   }
 
   /**
-   * Number of sub materials of an `.mtl` file, loads and parses the file (cached by the content loader)
+   * Number of sub materials of an `.mtl` file, loads and parses the file (the content loader caches `.mtl` containers)
    */
   private async materialCount(file: string): Promise<number> {
     const container = await this.loader.loadContainer(file, { baseUrl: this.nwbtFileUrl })
@@ -452,6 +456,7 @@ export class ContentService extends GameSystem {
 
   /**
    * Loads an asset container. Containers hold data only, instances created from them must be owned by the caller.
+   * Only `.mtl` containers are cached (see viewer.ts), the caller holds other data until it drops the container.
    */
   public loadAsset(url: string) {
     return this.loader.loadContainer(url, {
@@ -491,14 +496,6 @@ export class ContentService extends GameSystem {
 
   public destroy(): void {
     //
-  }
-
-  public updateSlices(sliceSet: Record<string, ViewerSlice>) {
-    for (const key in sliceSet) {
-      if (!this.slices.has(key)) {
-        this.slices.set(key, sliceSet[key])
-      }
-    }
   }
 }
 

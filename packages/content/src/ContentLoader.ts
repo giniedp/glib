@@ -134,11 +134,28 @@ export const defaultUriResolver: UriResolver = (assetUri, { parentUri, baseUri }
   return mergeUri(base, assetUri)
 }
 
+/**
+ * Decides whether a loaded container stays cached, see {@link ContentLoaderOptions.cacheContainers}
+ */
+export type ContainerCachePolicy = (container: AssetContainer, url: string) => boolean
+
 export interface ContentLoaderOptions {
   http?: HttpClient
   executor?: AsyncExecutor
   registry?: AssetLoaderRegistry
   disableCache?: boolean
+  /**
+   * Whether loaded containers are cached, default is true
+   *
+   * @remarks
+   * A cached container keeps its data (e.g. texture and vertex data) while instances created from it live,
+   * e.g. to recreate them after a lost device. A container that is not cached is shared only while it loads,
+   * afterwards only the created instances are cached and the container data can be collected.
+   *
+   * A policy function decides per loaded container, e.g. to cache small containers that many instances are
+   * created from (material libraries) but not the large ones (textures). Failed loads are not cached then.
+   */
+  cacheContainers?: boolean | ContainerCachePolicy
   /**
    * Custom cache key for assets, e.g. to share assets with the same content across urls.
    * Default is {@link defaultAssetCacheKey}
@@ -259,6 +276,13 @@ export class ContentLoader {
   }
 
   protected disableCache = false
+  /**
+   * The container cache policy, null caches all containers
+   */
+  protected containerPolicy: ContainerCachePolicy | null = null
+  /**
+   * Cached and pending containers
+   */
   protected containerCache: Map<string, Promise<AssetContainer>> = new Map()
   protected assetCache: Map<string, Map<string, Promise<any>>> = new Map()
   protected cacheKey: AssetCacheKey
@@ -269,6 +293,7 @@ export class ContentLoader {
     this.loaders = options?.registry || new AssetLoaderRegistry()
     this.executor = options?.executor || new NaiveAsyncExecutor()
     this.disableCache = !!options?.disableCache
+    this.containerPolicy = toContainerPolicy(options?.cacheContainers ?? true)
     this.cacheKey = options?.cacheKey || defaultAssetCacheKey
     this.uriResolver = options?.resolveUri || defaultUriResolver
   }
@@ -288,6 +313,7 @@ export class ContentLoader {
    * Loads asset data from URL. Uses the `url` as cache key.
    * First caller always populates the cache. Repeating calls with
    * different `options.type` don't change the result.
+   * Containers that are not cached (see {@link ContentLoaderOptions.cacheContainers}) are shared only while loading.
    */
   public async loadContainer(url: string, options?: LoadOptions): Promise<AssetContainer> {
     url = this.resolveUri(url, { baseUri: options?.baseUrl })
@@ -309,6 +335,15 @@ export class ContentLoader {
 
     if (!this.disableCache) {
       this.containerCache.set(url, promise)
+      const policy = this.containerPolicy
+      if (policy) {
+        const evict = () => {
+          if (this.containerCache.get(url) === promise) {
+            this.containerCache.delete(url)
+          }
+        }
+        promise.then((container) => policy(container, url) || evict(), evict)
+      }
     }
 
     return promise
@@ -509,6 +544,13 @@ export const createModel: AssetCreator<ModelOptions, Model> = (content: ContentL
       }
     }),
   })
+}
+
+function toContainerPolicy(value: boolean | ContainerCachePolicy): ContainerCachePolicy | null {
+  if (typeof value === 'function') {
+    return value
+  }
+  return value ? null : () => false
 }
 
 function ownInstance<T>(instance: T, scope: ResourceScope | null | undefined, device: Device): T {

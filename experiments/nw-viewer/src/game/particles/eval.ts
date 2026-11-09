@@ -1,4 +1,44 @@
-import type { ColorParam, VarParam } from '../../formats/particles'
+import type { ColorParam, ParticleCurve, VarParam } from '../../formats/particles'
+
+/**
+ * The age dependent factor of {@link ageValue} (or one component of {@link colorValue}) for many particles:
+ * the age curve, mixed with the second age curve by the particle lerp (RandLerp params). Allocation free.
+ *
+ * @param out - receives the factors
+ * @param ages - relative particle ages
+ * @param lerps - particle lerp values, null for lerp 0
+ * @param tmp - scratch, same length as out
+ */
+export function ageFactors(
+  out: Float32Array,
+  p: VarParam | ColorParam,
+  c: number,
+  ages: Float32Array,
+  lerps: Float32Array | null,
+  count: number,
+  tmp: Float32Array,
+): void {
+  evaluateCurve(out, p.age, ages, count, c)
+  const age2 = p.randomLerpAge ? p.age2 : null
+  if (!age2 || !lerps) {
+    return
+  }
+  age2.evaluateMany(tmp, ages, count, c)
+  for (let i = 0; i < count; i++) {
+    out[i] += (tmp[i] - out[i]) * lerps[i]
+  }
+}
+
+/**
+ * Evaluates a curve for many times, 1 without a curve
+ */
+export function evaluateCurve(out: Float32Array, curve: ParticleCurve | null, ts: Float32Array, count: number, c = 0) {
+  if (curve) {
+    curve.evaluateMany(out, ts, count, c)
+  } else {
+    out.fill(1, 0, count)
+  }
+}
 
 /**
  * Random modifier of a var param at emission: `(1 - random01 * random) * strengthCurve(strength)`.

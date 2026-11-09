@@ -281,7 +281,6 @@ export function executeSpawner(spawner: SliceSpawnerComponent) {
         continue
       }
       if (isTimeOfDayComponent(comp)) {
-        console.log('TimeOfDayComponent', comp)
         const shape: DebugShapeOptions = {
           type: 'box',
           color: vec3((comp.priority ?? 1) / 10),
@@ -452,7 +451,8 @@ export function executeSpawner(spawner: SliceSpawnerComponent) {
         range = Math.max(range, waterVolumeRange(comp))
         continue
       }
-      console.log('Component not implemented', comp)
+      // the type only: with DevTools attached, the console keeps logged objects (slice data) alive
+      console.log('Component not implemented', (comp as { type?: string }).type)
     }
 
     let parentWorld = spawner.entity.getTransform().world

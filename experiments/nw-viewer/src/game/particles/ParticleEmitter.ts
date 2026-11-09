@@ -24,7 +24,7 @@ import {
   type IVec4,
 } from '@gglib/math'
 import type { ParticleParams, VarParam } from '../../formats/particles'
-import { ageValue, colorMod, colorValue, hasAgeCurve, varMod, varValue } from './eval'
+import { ageFactors, ageValue, colorMod, hasAgeCurve, varMod, varValue } from './eval'
 import {
   AXIS_X,
   AXIS_Y,
@@ -131,7 +131,37 @@ const tmpD = vec3()
 const tmpE = vec3()
 const tmpQ = vec4()
 const tmpQ2 = vec4()
-const tmpColor = [1, 1, 1]
+
+/**
+ * Scratch per particle of one emitter, shared by all emitters (they are updated one after the other)
+ */
+function scratch() {
+  return new Float32Array(PARTICLE_EMITTER_CAPACITY_MAX)
+}
+const sAge = scratch()
+const sLerp = scratch()
+const sTmp = scratch()
+const sAnim = scratch()
+const sFade = scratch()
+const sSizeX = scratch()
+const sSizeY = scratch()
+const sAlpha = scratch()
+const sStretch = scratch()
+const sPivotX = scratch()
+const sPivotY = scratch()
+const sColorR = scratch()
+const sColorG = scratch()
+const sColorB = scratch()
+const sStep = scratch()
+const sVelX = scratch()
+const sVelY = scratch()
+const sVelZ = scratch()
+const sGravity = scratch()
+const sDrag = scratch()
+const sTurbulence = scratch()
+const sRotX = scratch()
+const sRotY = scratch()
+const sRotZ = scratch()
 
 /**
  * Simulates one (sub) effect of a particle effect on the CPU. A port of the CryEngine `CParticleSubEmitter`
@@ -320,7 +350,9 @@ export class ParticleEmitter {
     this.emitIndex++
     this.particles.push(particle)
     if (past > 0) {
-      this.updateParticle(particle, Math.min(past, particle.stopAge))
+      // particles emitted within the frame are aged by the remaining time, at most to the end of their life
+      const index = this.particles.length - 1
+      this.simulate(index, index + 1, past)
     }
     return true
   }
@@ -601,12 +633,13 @@ export class ParticleEmitter {
 
   private updateParticles(dt: number) {
     const list = this.particles
+    const count = list.length
+    this.simulate(0, count, dt)
     let write = 0
-    for (let i = 0; i < list.length; i++) {
+    for (let i = 0; i < count; i++) {
       const pt = list[i]
-      const step = Math.min(dt, Math.max(pt.stopAge - pt.age, 0))
-      this.updateParticle(pt, step)
-      pt.age += dt - step
+      // the part of the frame after the particle life
+      pt.age += dt - sStep[i]
       if (pt.age >= pt.stopAge) {
         this.pool.push(pt)
         continue
@@ -617,14 +650,11 @@ export class ParticleEmitter {
   }
 
   /**
-   * Moves a particle, see `CParticle::Move` and `CParticle::UpdateAlignment`
-   */
-  /**
    * Velocity of the circle and sphere emitters, see `CParticle::Move`. The velocity is polar around the particle center
    * in emitter space: x moves away from the center, y along the (horizontal) circumference, z up (circle) or along the
    * vertical circumference (sphere).
    *
-   * @param step - velocity times the time step
+   * @param step - velocity times the time step, modified
    */
   private moveAroundCenter(pt: Particle, step: IVec3) {
     const loc = this.location
@@ -669,6 +699,138 @@ export class ParticleEmitter {
   }
 
   /**
+   * Moves the particles `start` to `end - 1` by dt, each at most to the end of its life, see `CParticle::Move`.
+   * The step of each particle is left in `sStep`.
+   *
+   * @remarks
+   * No objects are allocated: the curves over the particle age are evaluated in batches into scratch arrays
+   * (see {@link ageFactors}), vectors are written into scratch vectors and the particle's own vectors.
+   */
+  private simulate(start: number, end: number, dt: number) {
+    const p = this.params
+    const list = this.particles
+    const n = end - start
+    if (n <= 0) {
+      return
+    }
+
+    // step and age at the middle of the step
+    for (let k = 0; k < n; k++) {
+      const pt = list[start + k]
+      const step = Math.min(dt, Math.max(pt.stopAge - pt.age, 0))
+      sStep[k] = step
+      sAge[k] = Math.min(1, (pt.age + step * 0.5) / pt.stopAge)
+    }
+
+    // curve factors (ageValue without lerp: base * mod * factor)
+    const shape = p.emitterShape
+    const shapeMove = shape === 'POINT' || shape === 'BOX' || shape === 'CIRCLE' || shape === 'SPHERE'
+    const aroundCenter = shape === 'CIRCLE' || shape === 'SPHERE'
+    let velX = 0
+    let velY = 0
+    let velZ = 0
+    if (shapeMove) {
+      const v = p.velocity
+      ageFactors(sVelX, v[0], 0, sAge, null, n, sTmp)
+      ageFactors(sVelY, v[1], 0, sAge, null, n, sTmp)
+      ageFactors(sVelZ, v[2], 0, sAge, null, n, sTmp)
+      // emitter strength curves over the relative emitter age
+      const rel = this.relativeAge()
+      velX = v[0].base * curveStrength(v[0], rel)
+      velY = v[1].base * curveStrength(v[1], rel)
+      velZ = v[2].base * curveStrength(v[2], rel)
+    }
+    ageFactors(sGravity, p.gravityScale, 0, sAge, null, n, sTmp)
+    ageFactors(sDrag, p.airResistance, 0, sAge, null, n, sTmp)
+    const turbulenceBase = p.turbulence3DSpeed.base
+    if (turbulenceBase) {
+      ageFactors(sTurbulence, p.turbulence3DSpeed, 0, sAge, null, n, sTmp)
+    }
+    const is3D = this.is3DRotation
+    // animated rotation rates are re-evaluated
+    const animRotation3D =
+      is3D && (hasAgeCurve(p.rotationRateX) || hasAgeCurve(p.rotationRateY) || hasAgeCurve(p.rotationRateZ))
+    const animRotation2D = !is3D && hasAgeCurve(p.rotationRateY)
+    if (animRotation3D) {
+      ageFactors(sRotX, p.rotationRateX, 0, sAge, null, n, sTmp)
+    }
+    if (animRotation3D || animRotation2D) {
+      ageFactors(sRotY, p.rotationRateY, 0, sAge, null, n, sTmp)
+    }
+    if (animRotation3D) {
+      ageFactors(sRotZ, p.rotationRateZ, 0, sAge, null, n, sTmp)
+    }
+
+    const loc = this.location
+    const accel = tmpB
+    for (let k = 0; k < n; k++) {
+      const step = sStep[k]
+      if (step <= 0) {
+        continue
+      }
+      const pt = list[start + k]
+
+      // shape velocity (point, box …), in emitter space when moving relative to the emitter
+      if (shapeMove) {
+        const move = vec3$init(
+          tmpA,
+          velX * sVelX[k] + pt.userVel.x,
+          velY * sVelY[k] + pt.userVel.y,
+          velZ * sVelZ[k] + pt.userVel.z,
+        )
+        if (aroundCenter) {
+          this.moveAroundCenter(pt, vec3$multiplyScalar(move, step))
+        } else {
+          if (p.moveRelEmitter) {
+            vec3$multiplyScalar(vec3$applyQuat(move, loc.rotation), loc.scale)
+          }
+          vec3$addScaled(pt.pos, move, step)
+        }
+      }
+
+      // forces (ageValue without lerp: base * mod * curve factor)
+      const gravity = p.gravityScale.base * pt.gravity * sGravity[k]
+      vec3$init(accel, p.acceleration[0], p.acceleration[1], p.acceleration[2] + GRAVITY * gravity)
+      const drag = p.airResistance.base * pt.air * sDrag[k]
+      if (turbulenceBase) {
+        const turbulence = (turbulenceBase * pt.turbulence * sTurbulence[k]) / Math.sqrt(step)
+        accel.x += random(-1, 1) * turbulence
+        accel.y += random(-1, 1) * turbulence
+        accel.z += random(-1, 1) * turbulence
+      }
+      travel(pt.pos, pt.vel, step, accel, drag)
+
+      if (drag * p.rotationalDragScale > 0) {
+        const decay = Math.exp(-drag * p.rotationalDragScale * step)
+        vec3$multiplyScalar(pt.rotVel, decay)
+        pt.angleVel *= decay
+      }
+
+      // rotation, animated rates are re-evaluated
+      if (is3D) {
+        if (animRotation3D) {
+          // rates in particle space, rotated to world by the particle rotation
+          vec3$init(
+            pt.rotVel,
+            p.rotationRateX.base * pt.rotateX * sRotX[k] * DEGREE_TO_RAD,
+            p.rotationRateY.base * pt.rotateY * sRotY[k] * DEGREE_TO_RAD,
+            p.rotationRateZ.base * pt.rotateZ * sRotZ[k] * DEGREE_TO_RAD,
+          )
+          vec3$applyQuat(pt.rotVel, pt.rot)
+        }
+        quat$integrate(pt.rot, pt.rotVel, step)
+      } else {
+        if (animRotation2D) {
+          pt.angleVel = p.rotationRateY.base * pt.rotateY * sRotY[k] * DEGREE_TO_RAD
+        }
+        pt.angle += pt.angleVel * step
+      }
+      pt.age += step
+      this.align(pt)
+    }
+  }
+
+  /**
    * Facing "Shape" (`CParticle::GetRenderMatrix`): the sprite faces away from the emitter. Circles keep the up axis
    * of the emitter, points and spheres face along the direction from the emitter.
    *
@@ -697,68 +859,6 @@ export class ParticleEmitter {
       vec3Cross(vX, vY, vZ)
     }
     return true
-  }
-
-  private updateParticle(pt: Particle, dt: number) {
-    if (dt <= 0) {
-      return
-    }
-    const p = this.params
-    const loc = this.location
-    const age = Math.min(1, (pt.age + dt * 0.5) / pt.stopAge)
-    const shape = p.emitterShape
-
-    // shape velocity (point, box …), in emitter space when moving relative to the emitter
-    if (shape === 'POINT' || shape === 'BOX' || shape === 'CIRCLE' || shape === 'SPHERE') {
-      const rel = this.relativeAge()
-      const move = vec3$init(
-        tmpA,
-        ageValue(p.velocity[0], 1, age) * curveStrength(p.velocity[0], rel) + pt.userVel.x,
-        ageValue(p.velocity[1], 1, age) * curveStrength(p.velocity[1], rel) + pt.userVel.y,
-        ageValue(p.velocity[2], 1, age) * curveStrength(p.velocity[2], rel) + pt.userVel.z,
-      )
-      if (shape === 'CIRCLE' || shape === 'SPHERE') {
-        this.moveAroundCenter(pt, vec3$multiplyScalar(move, dt))
-      } else {
-        if (p.moveRelEmitter) {
-          vec3$multiplyScalar(vec3$applyQuat(move, loc.rotation), loc.scale)
-        }
-        vec3$addScaled(pt.pos, move, dt)
-      }
-    }
-
-    // forces
-    const gravity = ageValue(p.gravityScale, pt.gravity, age)
-    const accel = vec3$init(tmpA, p.acceleration[0], p.acceleration[1], p.acceleration[2] + GRAVITY * gravity)
-    const drag = ageValue(p.airResistance, pt.air, age)
-    if (p.turbulence3DSpeed.base) {
-      const turbulence = ageValue(p.turbulence3DSpeed, pt.turbulence, age) / Math.sqrt(dt)
-      accel.x += random(-1, 1) * turbulence
-      accel.y += random(-1, 1) * turbulence
-      accel.z += random(-1, 1) * turbulence
-    }
-    travel(pt.pos, pt.vel, dt, accel, drag)
-
-    if (drag * p.rotationalDragScale > 0) {
-      const decay = Math.exp(-drag * p.rotationalDragScale * dt)
-      vec3$multiplyScalar(pt.rotVel, decay)
-      pt.angleVel *= decay
-    }
-
-    // rotation, animated rates are re-evaluated
-    if (this.is3DRotation) {
-      if (hasAgeCurve(p.rotationRateX) || hasAgeCurve(p.rotationRateY) || hasAgeCurve(p.rotationRateZ)) {
-        vec3$applyQuat(this.rotationRate(pt.rotVel, pt, age), pt.rot)
-      }
-      quat$integrate(pt.rot, pt.rotVel, dt)
-    } else {
-      if (hasAgeCurve(p.rotationRateY)) {
-        pt.angleVel = ageValue(p.rotationRateY, pt.rotateY, age) * DEGREE_TO_RAD
-      }
-      pt.angle += pt.angleVel * dt
-    }
-    pt.age += dt
-    this.align(pt)
   }
 
   /**
@@ -796,30 +896,103 @@ export class ParticleEmitter {
     const list = this.particles
     const count = Math.min(list.length, this.capacity)
     const cam = camera.position
-    const additive = p.blendType === 'Additive'
 
-    if (!additive && count > 1) {
+    // back to front, insertion sort in place: the order barely changes between frames
+    if (p.blendType !== 'Additive' && count > 1) {
       for (let i = 0; i < count; i++) {
         list[i].cameraDistance = vec3DistanceSquared(list[i].pos, cam)
       }
-      list.sort(byDistanceDesc)
+      sortByDistanceDesc(list, count)
     }
 
+    // per particle inputs and curve factors, evaluated in batches into scratch arrays (see ageFactors)
     const tiling = p.textureTiling
     const frames = tiling.animFramesCount
+    for (let i = 0; i < count; i++) {
+      const pt = list[i]
+      const age = Math.min(1, pt.age / pt.stopAge)
+      sAge[i] = age
+      sLerp[i] = pt.lerp
+      if (frames > 1) {
+        let animPos: number
+        if (tiling.animFramerate > 0) {
+          animPos = (pt.age * tiling.animFramerate) / frames
+          if (tiling.animCycle === 'Loop') {
+            animPos = animPos % 1
+          } else if (tiling.animCycle === 'Mirror') {
+            animPos = 1 - Math.abs((animPos % 2) - 1)
+          } else {
+            animPos = Math.min(animPos, 1)
+          }
+        } else {
+          animPos = age
+        }
+        sAnim[i] = animPos
+      }
+    }
+    if (frames > 1 && tiling.animCurve) {
+      tiling.animCurve.evaluateMany(sAnim, sAnim, count, 0)
+    }
+    ageFactors(sSizeX, p.sizeX, 0, sAge, sLerp, count, sTmp)
+    ageFactors(sSizeY, p.sizeY, 0, sAge, sLerp, count, sTmp)
+    ageFactors(sAlpha, p.alpha, 0, sAge, sLerp, count, sTmp)
+    ageFactors(sColorR, p.color, 0, sAge, sLerp, count, sTmp)
+    ageFactors(sColorG, p.color, 1, sAge, sLerp, count, sTmp)
+    ageFactors(sColorB, p.color, 2, sAge, sLerp, count, sTmp)
+    const hasStretch = !!p.stretch.base
+    const hasPivotX = !!p.pivotX.base
+    const hasPivotY = !!p.pivotY.base
+    // stretch and pivot are evaluated without lerp
+    if (hasStretch) {
+      ageFactors(sStretch, p.stretch, 0, sAge, null, count, sTmp)
+    }
+    if (hasPivotX) {
+      ageFactors(sPivotX, p.pivotX, 0, sAge, null, count, sTmp)
+    }
+    if (hasPivotY) {
+      ageFactors(sPivotY, p.pivotY, 0, sAge, null, count, sTmp)
+    }
+
+    const facing = p.facing
+    const fade = p.cameraNonFacingFade && facing !== 'Camera' && facing !== 'Decal'
+    const fadeCurve = fade ? p.cameraNonFacingFadeCurve : null
     const spawn = this.spawn
     const vX = tmpA
     const vY = tmpB
     const vZ = tmpC
     const center = tmpD
+    const alphaScale = spawn.alphaScale
+    const colorR = spawn.color[0]
+    const colorG = spawn.color[1]
+    const colorB = spawn.color[2]
+    const texAspectX = this.texAspectX
+    const texAspectY = this.texAspectY
+    const stretchRatio = p.stretchOffsetRatio
+    const distanceOffset = p.cameraDistanceOffset
+    const animScale = tiling.animCycle !== 'Once' ? frames : tiling.animBlend ? frames - 1 : frames - 0.001
+    // base values, mixed with the second base by the particle lerp (RandLerp params): base + delta * lerp
+    const sizeXBase = p.sizeX.base
+    const sizeXDelta = p.sizeX.randomLerpColor ? p.sizeX.base2 - sizeXBase : 0
+    const sizeYBase = p.sizeY.base
+    const sizeYDelta = p.sizeY.randomLerpColor ? p.sizeY.base2 - sizeYBase : 0
+    const alphaBase = p.alpha.base
+    const alphaDelta = p.alpha.randomLerpColor ? p.alpha.base2 - alphaBase : 0
+    const color = p.color
+    const redBase = color.base[0]
+    const greenBase = color.base[1]
+    const blueBase = color.base[2]
+    const redDelta = color.randomLerpColor ? color.base2[0] - redBase : 0
+    const greenDelta = color.randomLerpColor ? color.base2[1] - greenBase : 0
+    const blueDelta = color.randomLerpColor ? color.base2[2] - blueBase : 0
     let o = 0
     for (let i = 0; i < count; i++) {
       const pt = list[i]
-      const age = Math.min(1, pt.age / pt.stopAge)
+      const age = sAge[i]
+      const lerp = sLerp[i]
       const pos = pt.pos
 
       // axes, vY is the sprite normal, the sprite spans vX (u) and vZ (v)
-      if (p.facing === 'Camera') {
+      if (facing === 'Camera') {
         vec3$normalize(vec3Subtract(cam, pos, vY))
         vec3$normalize(vec3$init(vX, vY.y, -vY.x + 1e-6, 0))
         vec3Cross(vX, vY, vZ)
@@ -832,9 +1005,9 @@ export class ParticleEmitter {
             vec3Cross(vX, vY, vZ)
           }
         }
-      } else if (p.facing === 'Shape' && this.shapeFacing(pt, vX, vY, vZ)) {
+      } else if (facing === 'Shape' && this.shapeFacing(pt, vX, vY, vZ)) {
         // axes written by shapeFacing
-      } else if (p.facing === 'CameraX') {
+      } else if (facing === 'CameraX') {
         vec3ApplyQuat(AXIS_Z, pt.rot, vZ)
         vec3$normalize(vec3Cross(vec3Subtract(pos, cam, vY), vZ, vX))
         vec3Cross(vZ, vX, vY)
@@ -853,52 +1026,55 @@ export class ParticleEmitter {
         vec3$addScaled(vec3$multiplyScalar(vZ, c), tmpE, s)
       }
 
-      // CParticle::ApplyCameraNonFacingFade, vY is the unit sprite normal here
+      // CParticle::ApplyCameraNonFacingFade, vY is the unit sprite normal here. A fade curve is applied below.
       let facingFade = 1
-      if (p.cameraNonFacingFade && p.facing !== 'Camera' && p.facing !== 'Decal') {
+      if (fade) {
         const toCam = vec3$normalize(vec3Subtract(cam, pos, tmpE))
-        const dot = Math.abs(vec3Dot(toCam, vY))
-        facingFade = p.cameraNonFacingFadeCurve ? Math.max(0, p.cameraNonFacingFadeCurve.value(dot)) : dot
+        facingFade = Math.abs(vec3Dot(toCam, vY))
+        if (fadeCurve) {
+          sFade[i] = facingFade
+          facingFade = 1
+        }
       }
 
       // size, the engine stores the y size as particle size and the x size as aspect
-      const sizeY = ageValue(p.sizeY, pt.sizeY, age, pt.lerp)
-      const sizeX = ageValue(p.sizeX, pt.sizeX, age, pt.lerp)
+      const sizeY = (sizeYBase + sizeYDelta * lerp) * pt.sizeY * sSizeY[i]
+      const sizeX = (sizeXBase + sizeXDelta * lerp) * pt.sizeX * sSizeX[i]
       const size = sizeY * pt.sizeScale
       const aspect = Math.abs(sizeY) < 1e-4 ? 0 : sizeX / sizeY
-      const scaleX = size * this.texAspectX * aspect * pt.flipX
-      const scaleZ = size * this.texAspectY * pt.flipY
+      const scaleX = size * texAspectX * aspect * pt.flipX
+      const scaleZ = size * texAspectY * pt.flipY
       vec3$multiplyScalar(vX, scaleX)
       vec3$multiplyScalar(vZ, scaleZ)
 
       vec3$initFrom(center, pos)
 
       // stretch along the velocity
-      if (p.stretch.base) {
-        let stretch = ageValue(p.stretch, pt.stretch, age)
-        if (stretch * (1 - p.stretchOffsetRatio) > pt.age) {
-          stretch = pt.age / (1 - p.stretchOffsetRatio)
+      if (hasStretch) {
+        let stretch = p.stretch.base * pt.stretch * sStretch[i]
+        if (stretch * (1 - stretchRatio) > pt.age) {
+          stretch = pt.age / (1 - stretchRatio)
         }
         const expand = vec3$multiplyScalar(vec3$initFrom(vY, pt.vel), stretch)
         const len = vec3Length(expand)
         if (len > 1e-6) {
           expandAxis(vX, expand, len * Math.abs(scaleX))
           expandAxis(vZ, expand, len * Math.abs(scaleZ))
-          vec3$addScaled(center, expand, p.stretchOffsetRatio)
+          vec3$addScaled(center, expand, stretchRatio)
         }
       }
 
       // pivot (the engine applies the y pivot twice for sprites)
-      if (p.pivotX.base) {
-        vec3$addScaled(center, vX, ageValue(p.pivotX, pt.pivotX, age))
+      if (hasPivotX) {
+        vec3$addScaled(center, vX, p.pivotX.base * pt.pivotX * sPivotX[i])
       }
-      if (p.pivotY.base) {
-        vec3$addScaled(center, vZ, ageValue(p.pivotY, pt.pivotY, age) * 2)
+      if (hasPivotY) {
+        vec3$addScaled(center, vZ, p.pivotY.base * pt.pivotY * sPivotY[i] * 2)
       }
 
       // camera distance offset, positive moves away from the camera
-      if (p.cameraDistanceOffset) {
-        vec3$addScaled(center, vec3$normalize(vec3Subtract(center, cam, vY)), p.cameraDistanceOffset)
+      if (distanceOffset) {
+        vec3$addScaled(center, vec3$normalize(vec3Subtract(center, cam, vY)), distanceOffset)
       }
 
       // texture frame
@@ -906,24 +1082,7 @@ export class ParticleEmitter {
       let tile1 = pt.tile
       let blend = 0
       if (frames > 1) {
-        let animPos: number
-        if (tiling.animFramerate > 0) {
-          animPos = (pt.age * tiling.animFramerate) / frames
-          if (tiling.animCycle === 'Loop') {
-            animPos = animPos % 1
-          } else if (tiling.animCycle === 'Mirror') {
-            animPos = 1 - Math.abs((animPos % 2) - 1)
-          } else {
-            animPos = Math.min(animPos, 1)
-          }
-        } else {
-          animPos = age
-        }
-        if (tiling.animCurve) {
-          animPos = tiling.animCurve.value(animPos)
-        }
-        const scale = tiling.animCycle !== 'Once' ? frames : tiling.animBlend ? frames - 1 : frames - 0.001
-        const local = animPos * scale
+        const local = sAnim[i] * animScale
         let f0 = Math.floor(local)
         blend = local - f0
         let f1 = f0 + 1
@@ -939,8 +1098,8 @@ export class ParticleEmitter {
       }
 
       // color and alpha
-      colorValue(tmpColor, p.color, pt.color, age, pt.lerp)
-      const alpha = ageValue(p.alpha, pt.alpha, age, pt.lerp) * spawn.alphaScale * facingFade
+      const mod = pt.color
+      const alpha = (alphaBase + alphaDelta * lerp) * pt.alpha * sAlpha[i] * alphaScale * facingFade
 
       // soft particle thickness factor (1 - exp(-d * d * k))
       const thickness = Math.max(1e-3, Math.abs(size) * p.softness)
@@ -958,15 +1117,24 @@ export class ParticleEmitter {
       out[o++] = vZ.y
       out[o++] = vZ.z
       out[o++] = soft
-      out[o++] = tmpColor[0] * spawn.color[0]
-      out[o++] = tmpColor[1] * spawn.color[1]
-      out[o++] = tmpColor[2] * spawn.color[2]
-      out[o++] = Math.max(0, Math.min(1, alpha))
+      out[o++] = (redBase + redDelta * lerp) * mod[0] * sColorR[i] * colorR
+      out[o++] = (greenBase + greenDelta * lerp) * mod[1] * sColorG[i] * colorG
+      out[o++] = (blueBase + blueDelta * lerp) * mod[2] * sColorB[i] * colorB
+      // unclamped while a fade curve is pending, clamped below
+      out[o++] = fadeCurve ? alpha : Math.max(0, Math.min(1, alpha))
       // relative particle age (IN.age.x of particles.cfi)
       out[o++] = age
       out[o++] = 0
       out[o++] = 0
       out[o++] = 0
+    }
+
+    // the fade curve over the facing, applied in a batch
+    if (fadeCurve && count > 0) {
+      fadeCurve.evaluateMany(sFade, sFade, count, 0)
+      for (let i = 0, a = 15; i < count; i++, a += PARTICLE_INSTANCE_FLOATS) {
+        out[a] = Math.max(0, Math.min(1, out[a] * Math.max(0, sFade[i])))
+      }
     }
     return count
   }
@@ -984,22 +1152,21 @@ export class ParticleEmitter {
   }
 }
 
-function byDistanceDesc(a: Particle, b: Particle) {
-  return b.cameraDistance - a.cameraDistance
-}
-
 /**
- * Value with random variation in both directions: `value + random * (-1..1)`
+ * Sorts the first `count` particles by camera distance, far to near. Insertion sort in place: allocation free and
+ * close to linear for the almost sorted order of the previous frame.
  */
-function varRandom(value: VarParam, random: VarParam, strength: number) {
-  return varValue(value, strength) + varValue(random, strength) * (Math.random() * 2 - 1)
-}
-
-/**
- * Emitter strength curve value of a vector component (the strength curve of TVarEPParam)
- */
-function curveStrength(p: VarParam, strength: number) {
-  return p.strength ? p.strength.value(strength) : 1
+function sortByDistanceDesc(list: Particle[], count: number) {
+  for (let i = 1; i < count; i++) {
+    const pt = list[i]
+    const d = pt.cameraDistance
+    let j = i - 1
+    while (j >= 0 && list[j].cameraDistance < d) {
+      list[j + 1] = list[j]
+      j--
+    }
+    list[j + 1] = pt
+  }
 }
 
 /**
@@ -1009,6 +1176,13 @@ function expandAxis(axis: IVec3, expand: IVec3, lengths: number) {
   if (lengths > 1e-12) {
     vec3$addScaled(axis, expand, vec3Dot(expand, axis) / lengths)
   }
+}
+
+/**
+ * Emitter strength curve value of a vector component (the strength curve of TVarEPParam)
+ */
+function curveStrength(p: VarParam, strength: number) {
+  return p.strength ? p.strength.value(strength) : 1
 }
 
 const travelTerm = vec3()
@@ -1032,4 +1206,11 @@ function travel(pos: IVec3, vel: IVec3, dt: number, accel: IVec3, drag: number) 
     vec3$addScaled(pos, force, dt * dt * 0.5)
     vec3$addScaled(vel, force, dt)
   }
+}
+
+/**
+ * Value with random variation in both directions: `value + random * (-1..1)`
+ */
+function varRandom(value: VarParam, random: VarParam, strength: number) {
+  return varValue(value, strength) + varValue(random, strength) * (Math.random() * 2 - 1)
 }

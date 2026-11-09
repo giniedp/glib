@@ -308,6 +308,7 @@ export class RegionComponent implements GameComponent {
     this.regionInfoLoaded = false
     this.capitalData = null
     this.capitalDataLoaded = false
+    this.contentService.slices.remove(this)
     // destroys the subtree and disposes the resource scope of the region
     content.destroy()
     content.setParent(null)
@@ -368,7 +369,8 @@ export class RegionComponent implements GameComponent {
       },
       work: (task) => {
         const info = task.context
-        console.log(...this.logTag, 'Info loaded', info)
+        // primitives only: with DevTools attached, the console keeps logged objects alive (the whole region data)
+        console.log(...this.logTag, 'Info loaded', 'impostors', info?.impostors?.length ?? 0, 'poi', info?.poiImpostors?.length ?? 0)
 
         this.regionInfo = info
         this.terrain.component(TerrainRegionComponent).materialData = info.terrainMaterial
@@ -405,8 +407,10 @@ export class RegionComponent implements GameComponent {
       work: (task) => {
         const data = task.context
         this.capitalData = data
-        this.contentService.updateSlices(data.slices)
-        console.log(...this.logTag, 'Capital data loaded', data)
+        // removed again on unload, together with the capital data
+        this.contentService.slices.add(this, data.slices)
+        // primitives only: with DevTools attached, the console keeps logged objects alive (the whole capital data)
+        console.log(...this.logTag, 'Capital data loaded', 'slices', Object.keys(data?.slices ?? {}).length)
         if (ENABLE_CAPITALS) {
           this.createCapitals(data.capitals)
         }

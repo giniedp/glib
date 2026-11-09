@@ -199,7 +199,8 @@ export class LevelSystem extends GameSystem {
     const levelInfo = await fetchTypedRequest(this.content.nwbtUrl, getLevelInfoUrl(name))
     loadSignal.throwIfAborted()
 
-    console.log(...this.logTag, 'Level data loaded', levelInfo)
+    // no data objects: with DevTools attached, the console keeps logged objects alive
+    console.log(...this.logTag, 'Level data loaded', name)
     this.levelInfo = levelInfo
 
     this.entity = this.game.createEntity(levelEntityOptions(this.game.scene.entity, levelInfo))
@@ -207,7 +208,8 @@ export class LevelSystem extends GameSystem {
 
     this.skyEntity = this.game.createEntity(createSkySphere(this.entity, this.renderer.device))
     this.cloudsEntity = this.game.createEntity(createCloudsDome(this.entity))
-    this.content.updateSlices(levelInfo.slices ?? {})
+    // removed again on unload
+    this.content.slices.add(this, levelInfo.slices)
     for (const options of createSkyboxSystem(this.entity, levelInfo.skyboxSystem)) {
       this.game.createEntity(options)
     }
@@ -623,6 +625,7 @@ export class LevelSystem extends GameSystem {
 
   private unload() {
     this.levelInfo = null
+    this.content.slices.remove(this)
     this.skyEntity = null
     this.gizmoEntity = null
     this.cloudsEntity = null
