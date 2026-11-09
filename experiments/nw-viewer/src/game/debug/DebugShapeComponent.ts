@@ -34,6 +34,7 @@ export const DebugLayer = {
   TerrainPages: 1 << 14,
   Roads: 1 << 15,
   Decals: 1 << 16,
+  FogVolumes: 1 << 17,
 }
 
 export interface DebugShapeOptions {

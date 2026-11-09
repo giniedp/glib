@@ -181,6 +181,32 @@ export const InputSlots = {
      */
     VolFog2Zenith: inputSlotVec4('global', 'volFog2Zenith'),
     VolFog2Enabled: inputSlotScalar('global', 'volFog2Enabled'),
+    /**
+     * Integrated froxel fog volume of this frame (FroxelFogPass), rgb = in-scattering, a = transmittance. Transparent
+     * materials sample it in getSceneFog like the game (GetVolumetricFogValueJittered).
+     */
+    FroxelVolume: inputSlotTexture('global', 'froxelVolume'),
+    /**
+     * Slices of the froxel volume: x = near, y = range - near, z = 1 / (slices - 1), w = 1 / (range - near)
+     */
+    FroxelDepth: inputSlotVec4('global', 'froxelDepth'),
+    /**
+     * x = 1 while the froxel volume of this frame is bound, y = slices, z = screen pixels per froxel
+     */
+    FroxelEnabled: inputSlotVec4('global', 'froxelEnabled'),
+    /**
+     * Froxel in-scattering of the entities (ExponentialHeightFogColor, InjectInscatteringParams):
+     * rgb = fog albedo (VOLFOG2_COLOR), w = anisotropy k (VOLFOG2_ANISOTROPIC)
+     */
+    VolFog2Entity: inputSlotVec4('global', 'volFog2Entity'),
+    /**
+     * Number of packed fog volumes in {@link FogVolumes} this frame (FogVolumeSystem)
+     */
+    FogVolumeCount: inputSlotScalar('global', 'fogVolumeCount'),
+    /**
+     * Storage buffer with the packed fog volumes (FogVolumeSystem), read by the froxel injection
+     */
+    FogVolumes: inputSlotBuffer('global', 'fogVolumes'),
 
     Debug: inputSlotScalar('global', 'debug'),
     /**

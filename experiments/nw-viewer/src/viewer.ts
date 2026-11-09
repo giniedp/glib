@@ -56,6 +56,7 @@ import { PlayerMovementComponent } from './game/player/PlayerMovementComponent'
 import { RegionSystem } from './game/region/RegionSystem'
 import { RoadSystem } from './game/road/RoadSystem'
 import { DecalSystem } from './game/decal/DecalSystem'
+import { FogVolumeSystem } from './game/fog/FogVolumeSystem'
 import { RangeActivationSystem } from './game/slice/RangeActivationSystem'
 import { SliceSystem } from './game/slice/SliceSystem'
 import { TerrainSystem } from './game/terrain/TerrainSystem'
@@ -63,6 +64,7 @@ import { VegetationSystem } from './game/vegetation/VegetationSystem'
 import { createRenderPipeline } from './graphics'
 import { LuminancePass } from './graphics/passes/exposure/LuminancePass'
 import { SmaaPass } from './graphics/passes/smaa/SmaaPass'
+import { FroxelFogPass } from './graphics/passes/fog/FroxelFogPass'
 import { Cmaa2Pass } from './graphics/passes/cmaa2/Cmaa2Pass'
 import { RenderSizeSystem } from './graphics/RenderSizeSystem'
 import { InputSlots, MaterialLayerMasks } from './material'
@@ -122,13 +124,14 @@ export class NwViewer extends EcsGame {
     super({
       canvas: options.canvas,
       webgpu: {
-        deviceOptions: () => {
+        deviceOptions: (adapter: GPUAdapter) => {
           return {
             requiredLimits: {
               // terrain virtual texture page cache, see VT_PAGE_CAPACITY
               maxTextureArrayLayers: 1024,
-              // Illum has 16 textures (default limit) plus the two cube arrays of the environment probes
-              maxSampledTexturesPerShaderStage: 18,
+              // Illum has 16 textures (default limit) plus the two cube arrays of the environment probes and the
+              // froxel fog volume
+              maxSampledTexturesPerShaderStage: Math.min(20, adapter.limits.maxSampledTexturesPerShaderStage),
             },
           }
         },
@@ -172,6 +175,7 @@ export class NwViewer extends EcsGame {
     this.world.addSystem(new SliceSystem())
     this.world.addSystem(new RoadSystem())
     this.world.addSystem(new DecalSystem())
+    this.world.addSystem(new FogVolumeSystem())
     this.world.addSystem(new CollisionSystem())
     this.world.addSystem(new CullingSystem())
     this.world.addSystem(new RangeActivationSystem())
@@ -204,6 +208,15 @@ export class NwViewer extends EcsGame {
     }
     applyAntialiasing(config.value.antialiasing)
     config.onChange('antialiasing', applyAntialiasing)
+    const froxelFog = pipeline.passes.find((it): it is FroxelFogPass => it instanceof FroxelFogPass)
+    if (froxelFog) {
+      froxelFog.enabled = config.value.froxelFog
+      froxelFog.tileSize = config.value.froxelTileSize
+      froxelFog.slices = config.value.froxelSlices
+      config.onChange('froxelFog', (value) => (froxelFog.enabled = value))
+      config.onChange('froxelTileSize', (value) => (froxelFog.tileSize = value))
+      config.onChange('froxelSlices', (value) => (froxelFog.slices = value))
+    }
     this.luminance = pipeline.passes.find((it): it is LuminancePass => it instanceof LuminancePass) ?? null
     this.world.addSystem(
       new Renderer(this.device, {

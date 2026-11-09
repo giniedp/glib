@@ -189,6 +189,12 @@ export class WebGpuRenderEncoder extends RenderEncoder {
 
   private colorTargetParams: ColorTargetParams[] = []
   private colorTargetStates: GPUColorTargetState[] = []
+  // the states with a zero write mask, for the targets the shader does not write (WebGPU requires a zero mask there)
+  private colorTargetStatesUnwritten: GPUColorTargetState[] = []
+  // the target states of the next pipeline, one per attachment of the pass, see getColorTargetState
+  private colorTargetList: GPUColorTargetState[] = []
+  // number of color attachments of the pass, the last bound index plus one, see updatePassDescriptor
+  private colorTargetCount = 0
   private colorPassAttachments: GPURenderPassColorAttachment[] = []
   private clearPassAttachments: GPURenderPassColorAttachment[] = []
   // targets whose content is not stored at the end of a pass, see setDiscard
@@ -231,19 +237,34 @@ export class WebGpuRenderEncoder extends RenderEncoder {
     return this.colorTargetParams[index]
   }
 
+  private updateColorTargetState(index: number) {
+    const param = this.colorTargetParam(index)
+    this.colorTargetStates[index] = this.device.colorTargetCache.get(param)
+    this.colorTargetStatesUnwritten[index] = this.device.colorTargetCache.get({
+      format: param.format,
+      blendState: param.blendState,
+      writeMask: 0,
+    })
+  }
+
   private updateColorTargetBlend(index: number, blendState: BlendState) {
     this.colorTargetParam(index).blendState = blendState ?? BlendState.Disabled
-    this.colorTargetStates[index] = this.device.colorTargetCache.get(this.colorTargetParam(index))
+    this.updateColorTargetState(index)
   }
 
   private updateColorTargetMask(index: number, writeMask: number) {
     this.colorTargetParam(index).writeMask = writeMask ?? GPUColorWrite.ALL
-    this.colorTargetStates[index] = this.device.colorTargetCache.get(this.colorTargetParam(index))
+    this.updateColorTargetState(index)
   }
 
   private updateColorTargetFormat(index: number, format: GPUTextureFormat) {
+    if (this.colorTargetParam(index).format === format) {
+      return
+    }
     this.colorTargetParam(index).format = format
-    this.colorTargetStates[index] = this.device.colorTargetCache.get(this.colorTargetParam(index))
+    this.updateColorTargetState(index)
+    // the targets of the pipeline follow the attachments of the pass
+    this.pipelineParamsChanged = true
   }
 
   public setRenderBlend(index: number, blendState: BlendState) {
@@ -759,12 +780,19 @@ export class WebGpuRenderEncoder extends RenderEncoder {
   }
 
   private updatePassDescriptor() {
-    const clearAttachments = this.clearPassDescriptor.colorAttachments as GPURenderPassColorAttachment[]
-    const colorAttachments = this.colorPassDescriptor.colorAttachments as GPURenderPassColorAttachment[]
+    const clearAttachments = this.clearPassDescriptor.colorAttachments as Array<GPURenderPassColorAttachment | null>
+    const colorAttachments = this.colorPassDescriptor.colorAttachments as Array<GPURenderPassColorAttachment | null>
     clearAttachments.length = 0
     colorAttachments.length = 0
 
+    let count = 0
     for (let i = 0; i < this.colorPassAttachments.length; i++) {
+      if (this.colorPassAttachments[i].view) {
+        count = i + 1
+      }
+    }
+    // attachment i is location i of the shaders, unbound indices in between stay as null entries
+    for (let i = 0; i < count; i++) {
       const clear = this.clearPassAttachment(i)
       const color = this.colorPassAttachment(i)
       if (color.view) {
@@ -773,6 +801,9 @@ export class WebGpuRenderEncoder extends RenderEncoder {
         color.storeOp = storeOp
         clearAttachments.push(clear)
         colorAttachments.push(color)
+      } else {
+        clearAttachments.push(null)
+        colorAttachments.push(null)
       }
     }
 
@@ -793,6 +824,11 @@ export class WebGpuRenderEncoder extends RenderEncoder {
       colorAttachments.push(color)
       this.outputWidth = this.device.output.width
       this.outputHeight = this.device.output.height
+    }
+
+    if (this.colorTargetCount !== colorAttachments.length) {
+      this.colorTargetCount = colorAttachments.length
+      this.pipelineParamsChanged = true
     }
 
     if (this.depthBufferAttachment.view) {
@@ -882,10 +918,27 @@ export class WebGpuRenderEncoder extends RenderEncoder {
     return this.pipelineParams.shader.getVertexLayout(this.vertexBuffer)
   }
 
+  /**
+   * One color target per attachment of the pass: WebGPU requires the pipeline targets to match the attachments of the
+   * pass, independent of the locations the shader writes. Targets the shader does not write get a zero write mask,
+   * unbound indices a null target. Shader outputs without an attachment are dropped by WebGPU.
+   */
   private getColorTargetState() {
     const program = this.pipelineParams.shader
-    const count = (program ? program.getMaxOutputLocation() : 0) + 1
-    return this.device.colorTargetListCache.get(this.colorTargetStates, count)
+    const written = program ? program.getOutputLocationMask() : 0
+    const count = this.colorTargetCount
+    const list = this.colorTargetList
+    list.length = count
+    for (let i = 0; i < count; i++) {
+      if (!this.colorPassAttachments[i]?.view) {
+        list[i] = null
+      } else if (written & (1 << i)) {
+        list[i] = this.colorTargetStates[i]
+      } else {
+        list[i] = this.colorTargetStatesUnwritten[i]
+      }
+    }
+    return this.device.colorTargetListCache.get(list, count)
   }
 
   private getPipeline() {

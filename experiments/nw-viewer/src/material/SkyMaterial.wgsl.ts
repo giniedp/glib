@@ -178,9 +178,13 @@ fn fs_main(in: FragmentInput) -> FragmentOutput {
   color = min(color.rgb, vec3f(16384.0));
 
   // ---- fog ----
-  let worldPos = farPlaneWorldPos(in.position.xy);
-  let fog = getSceneFog(worldPos);
-  color = color * fog.a + fog.rgb;
+  // in the scene the deferred FogPass fogs the sky like every other pixel (FogPassPS), so the froxel fog in front
+  // of the sky applies. Without it (skipFog unset, e.g. probe captures and previews) the sky fogs itself.
+  if (global.skipFog == 0u) {
+    let worldPos = farPlaneWorldPos(in.position.xy);
+    let fog = getSceneFog(worldPos);
+    color = color * fog.a + fog.rgb;
+  }
 
 
   var out: FragmentOutput;

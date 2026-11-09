@@ -18,6 +18,9 @@ const LIGHT_TYPE_SPOT = 3
 const LIGHT_TYPE_AREA = 4
 // added to the light type of ambient only lights
 const LIGHT_TYPE_AMBIENT = 8
+// flag bits above the type, see LIGHT_FLAG_* in material/common.wgsl.ts
+const LIGHT_FLAG_FOG = 16
+const LIGHT_FLAG_FOG_ONLY = 32
 const LIGHT_CLUSTER_WORKGROUP_SIZE = 64
 
 export type LightClusterLightType = 'point' | 'spot' | 'area'
@@ -43,6 +46,10 @@ export interface LightClusterLight {
   bulbSize: number
   /** Ambient only light, multiplies the ambient lighting instead of adding direct light */
   ambient?: boolean
+  /** Contributes to the froxel volumetric fog (DLF_VOLUMETRIC_FOG) */
+  fog?: boolean
+  /** Contributes to the froxel volumetric fog only, surfaces skip it */
+  fogOnly?: boolean
   /** Area light width */
   width?: number
   /** Area light height */
@@ -247,6 +254,12 @@ export class LightClusterShader {
     }
     if (light.ambient) {
       type += LIGHT_TYPE_AMBIENT
+    }
+    if (light.fog || light.fogOnly) {
+      type += LIGHT_FLAG_FOG
+    }
+    if (light.fogOnly) {
+      type += LIGHT_FLAG_FOG_ONLY
     }
 
     this.lightData

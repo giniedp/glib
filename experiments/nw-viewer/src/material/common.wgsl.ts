@@ -12,6 +12,9 @@ const LIGHT_TYPE_SPOT:        u32 = 3u;
 const LIGHT_TYPE_AREA:        u32 = 4u;
 // added to the type of ambient only lights, they multiply the ambient lighting (TiledShading.cfi)
 const LIGHT_TYPE_AMBIENT:     u32 = 8u;
+// flag bits above the type: the light contributes to the froxel fog (DLF_VOLUMETRIC_FOG), only to the fog
+const LIGHT_FLAG_FOG:         u32 = 16u;
+const LIGHT_FLAG_FOG_ONLY:    u32 = 32u;
 // gbuffer lighting models (LIGHTINGMODEL_* in the deferred shading)
 const LIGHTINGMODEL_STANDARD:      u32 = 0u;
 const LIGHTINGMODEL_TRANSMITTANCE: u32 = 1u;
@@ -256,7 +259,14 @@ struct GlobalBlock {
   // x = zenith fade factor, y = zenith fade curve (exponent)
   volFog2Zenith        : vec4f,
   volFog2Enabled       : u32,
-
+  // froxel fog volume (FroxelFogPass): x = near, y = range - near, z = 1 / (slices - 1), w = 1 / (range - near)
+  froxelDepth          : vec4f,
+  // x = 1 while the froxel volume of this frame is bound, y = slices, z = screen pixels per froxel
+  froxelEnabled        : vec4f,
+  // froxel in-scattering of the entities: rgb = fog albedo, w = anisotropy k
+  volFog2Entity        : vec4f,
+  // number of fog volumes injected into the froxels this frame
+  fogVolumeCount       : u32,
 };
 
 struct ObjectBlock {
@@ -352,6 +362,10 @@ struct LightIndex {
 // @block global
 // @private
 @group(0) @binding(13) var probeSampler       : sampler;
+// Integrated froxel fog volume (FroxelFogPass), sampled by getSceneFog for transparent surfaces
+// @block global
+// @private
+@group(0) @binding(14) var froxelVolume       : texture_3d<f32>;
 
 struct LightParams {
   Color: vec4f,
@@ -434,6 +448,15 @@ fn closestPointOnRect(p: vec3f, center: vec3f, axisX: vec3f, axisY: vec3f, halfW
   return center + axisX * x + axisY * y;
 }
 
+// base type and flags of a cluster light (direction.w = type + LIGHT_TYPE_AMBIENT + LIGHT_FLAG_*)
+fn lightIsAmbient(light: Light) -> bool {
+  return (u32(light.direction.w) & LIGHT_TYPE_AMBIENT) != 0u;
+}
+
+fn lightHasFlag(light: Light, flag: u32) -> bool {
+  return (u32(light.direction.w) & flag) != 0u;
+}
+
 fn getClusterLight(light: Light, position: vec3f, reflectDir: vec3f) -> LightResult {
   var result: LightResult;
   let lightType = u32(light.direction.w) % LIGHT_TYPE_AMBIENT;
@@ -486,7 +509,7 @@ fn getClusterLight(light: Light, position: vec3f, reflectDir: vec3f) -> LightRes
     let PdotL = dot(-result.direction, dir);
     result.falloff *= 1.0 - pow(saturate(light.params.z / (PdotL + 1e-6)), range);
     // the emitter is lambertian: NdotL * saturate(PdotL) (tiled shading), ambient area lights apply PdotL themselves
-    if (u32(light.direction.w) < LIGHT_TYPE_AMBIENT) {
+    if (!lightIsAmbient(light)) {
       result.falloff *= saturate(PdotL);
     }
 
@@ -612,9 +635,13 @@ fn accumulateLightShade(lights: LightBlock, env: GlobalBlock, surface: SurfacePa
   let reflectDir = reflect(-toEye, surface.Normal.xyz);
   for (var i = 0u; i < cluster.count; i++) {
     let light = lightList[lightIndices[cluster.offset + i].light];
+    // fog only lights light the froxel fog, not surfaces
+    if (lightHasFlag(light, LIGHT_FLAG_FOG_ONLY)) {
+      continue;
+    }
     let result = getClusterLight(light, worldPos, reflectDir);
     if (result.falloff > 0.0) {
-      if (u32(light.direction.w) >= LIGHT_TYPE_AMBIENT) {
+      if (lightIsAmbient(light)) {
         shadeAmbientLight(&output, surface, light, result);
       } else {
         shadeLight(&output, surface, toEye, result);
@@ -1063,10 +1090,37 @@ fn getSceneFog(worldPos: vec3f) -> vec4f {
       probeSpecularCubes, probeSampler, global.probeGlobal.x, global.volFog2Probe, global.volFog2Ambient, cameraToWorldPos,
     );
     // global.sunDirection points away from the light
+    if (global.froxelEnabled.x > 0.5) {
+      // the froxel volume up to the ray-marching range like the opaque surfaces (FogPass), analytical beyond
+      let inscatter = volFog2Inscatter(p, cameraToWorldPos, -global.sunDirection);
+      return volFog2WithNear(p, cameraToWorldPos, inscatter, sampleFroxelFog(worldPos, p.zenith.z));
+    }
     return volFog2Analytical(p, cameraToWorldPos, -global.sunDirection);
   }
   let legacy = getVolumetricFogColor(worldPos);
   return vec4f(legacy.rgb * (1.0 - legacy.w), legacy.w);
+}
+
+// The integrated froxel volume towards a world position (GetVolumetricFogValue), the range rectified to the linear
+// depth (RectifyVolumetricFogTexcoordAndRange): rgb = in-scattering, a = transmittance
+fn sampleFroxelFog(worldPos: vec3f, range: f32) -> vec4f {
+  let viewPos = view.viewMatrix * vec4f(worldPos, 1.0);
+  let clip = view.projectionMatrix * viewPos;
+  let ndc = clip.xy / clip.w;
+  let pixel = vec2f(ndc.x * 0.5 + 0.5, 0.5 - ndc.y * 0.5) * view.viewportSize;
+  let linearDepth = max(-viewPos.z, 1e-4);
+  let len = max(length(worldPos - view.cameraPosition), 1e-4);
+  return sampleFroxelVolume(pixel, linearDepth, range * linearDepth / len);
+}
+
+// froxel volume at a screen pixel and linear depth, clamped to the (rectified) range
+fn sampleFroxelVolume(pixel: vec2f, linearDepth: f32, rangeDepth: f32) -> vec4f {
+  let dims = vec2f(textureDimensions(froxelVolume).xy);
+  // quadratic slices (GetVolumetricFogDepthTexcoord), sampled at the texel center of the slice back
+  let d = sqrt(max(min(rangeDepth, linearDepth) - global.froxelDepth.x, 0.0) * global.froxelDepth.w);
+  let slices = global.froxelEnabled.y;
+  let tc = vec3f(pixel / (dims * global.froxelEnabled.z), ((slices - 1.0) * d + 0.5) / slices);
+  return textureSampleLevel(froxelVolume, probeSampler, tc, 0.0);
 }
 
 // fog transmittance towards a world position

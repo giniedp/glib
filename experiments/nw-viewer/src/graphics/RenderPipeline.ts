@@ -42,6 +42,7 @@ import { Cmaa2Pass } from './passes/cmaa2/Cmaa2Pass'
 import { FilmMappingPass } from './passes/filmmapping/FilmMappingPass'
 import { LuminancePass } from './passes/exposure/LuminancePass'
 import { FogPass } from './passes/fog/FogPass'
+import { FroxelFogPass } from './passes/fog/FroxelFogPass'
 import { SunShaftsPass } from './passes/sunshafts/SunShaftsPass'
 import { NwRenderChannel, XeGtaoPass } from './passes/ssao/XeGtaoPass'
 
@@ -184,6 +185,7 @@ const TRANSPARENT_LINEAR_DEPTH_DESC: Readonly<TextureDescriptor> = {
 export function createRenderPipeline(device: Device): RenderPipelineOptions {
   const sunShafts = new SunShaftsPass(device)
   const luminance = new LuminancePass(device)
+  const froxelFog = new FroxelFogPass(device, { linearDepth: RenderChannel.LinearDepth, color: RenderChannel.Color })
 
   const passes: RenderPass[] = [
     describePass(
@@ -195,6 +197,8 @@ export function createRenderPipeline(device: Device): RenderPipelineOptions {
       { note: 'opaque materials skip fog, the fog pass applies it' },
     ),
     groupPass({ name: 'Opaque', passes: createOpaquePasses(device) }),
+    // froxel volumetric fog (plan phase 8), after the opaque surfaces like the game, before the fog apply
+    optionalPass(froxelFog),
     describePass(
       renderInputsPass({
         name: 'SceneInputs',
@@ -205,7 +209,7 @@ export function createRenderPipeline(device: Device): RenderPipelineOptions {
       }),
       { note: 'binds Color and LinearDepth as scene inputs' },
     ),
-    optionalPass(new FogPass(device)),
+    optionalPass(new FogPass(device, { froxel: froxelFog })),
     describePass(new MaterialDebugPass(), {
       note: 'material debug views of opaque surfaces, runs while a debug output is selected',
     }),

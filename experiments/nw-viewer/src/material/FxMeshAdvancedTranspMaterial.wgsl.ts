@@ -163,6 +163,7 @@ struct FragmentInput {
   @location(4)       color    : vec4f,
   @location(5)       toEye    : vec3f,
   @location(6)       procGrad : vec4f,
+  @location(7)       worldPos : vec3f,
 };
 
 @vertex
@@ -242,6 +243,7 @@ fn vs_main(input: VertexInput) -> FragmentInput {
   output.toEye    = toEye;
   output.color    = input.color;
   output.procGrad = procGrad;
+  output.worldPos = worldPos.xyz;
   return output;
 }
 
@@ -454,6 +456,12 @@ fn fs_main(input: FragmentInput) -> FragmentOutput {
   //   float fadeAmount = saturate((0.398942 / stdDev) * exp(-0.5 * pow(((fadeDistInterpolation - center) / stdDev), 2))); // normal distribution bell shaped curve
   //   OUT.Color*= fadeAmount;
   // #endif
+
+  // fog (FxMeshAdvancedTranspPS: ApplyVolumetricFog), the material blends additively, so only the transmittance
+  // applies like the additive particles
+  if (global.skipFog == 0u) {
+    data = vec4f(data.rgb * getSceneFog(input.worldPos).a, data.a);
+  }
 
   var out: FragmentOutput;
   out.color = data;

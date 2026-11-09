@@ -119,6 +119,35 @@ export const viewerConfigSchema = defineConfig({
     group: 'Lighting',
   }),
 
+  froxelFog: boolean({
+    description:
+      'Volumetric fog in a view frustum volume (froxels) up to the time of day ray-marching range, like the game: ' +
+      'fog volumes, lights in fog, transparent surfaces fogged by the same volume. Off uses the analytical fog only.',
+    editable: true,
+    default: true,
+    group: 'Fog',
+  }),
+
+  froxelTileSize: integer({
+    description: 'Screen pixels per froxel in x and y. The game uses 10. Smaller is sharper and more expensive.',
+    editable: true,
+    min: 4,
+    max: 32,
+    step: 1,
+    default: 10,
+    group: 'Fog',
+  }),
+
+  froxelSlices: integer({
+    description: 'Depth slices of the froxel volume. The game uses 32. More slices reduce banding in depth.',
+    editable: true,
+    min: 8,
+    max: 128,
+    step: 4,
+    default: 32,
+    group: 'Fog',
+  }),
+
   antialiasing: choice({
     description:
       'Post-process anti-aliasing of the final image. smaa is SMAA 1x with depth predication (the game runs SMAA after its tonemap), cmaa2 is Intel CMAA2 (conservative, keeps texture detail), fxaa is FXAA 3.11 (cheaper, softer).',

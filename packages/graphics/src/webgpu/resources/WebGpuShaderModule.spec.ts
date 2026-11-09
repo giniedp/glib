@@ -2,7 +2,8 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { WebGpuDevice } from '../WebGpuDevice'
 import { WebGpuShaderModule } from './WebGpuShaderModule'
 
-// one source with a forward entry (2 outputs), a gbuffer entry (3 outputs) and a depth only entry (no outputs)
+// one source with a forward entry (2 outputs), a gbuffer entry (3 outputs), a depth only entry (no outputs), an entry
+// with gaps between its locations and a builtin output, and an entry that returns a single location
 const SOURCE = /* wgsl */ `
   struct MaterialBlock {
     baseColor: vec4<f32>,
@@ -41,6 +42,22 @@ const SOURCE = /* wgsl */ `
       discard;
     }
   }
+
+  struct SparseOutput {
+    @location(0) color: vec4<f32>,
+    @builtin(frag_depth) depth: f32,
+    @location(3) linearDepth: f32,
+  }
+
+  @fragment
+  fn fs_sparse() -> SparseOutput {
+    return SparseOutput(material.baseColor, 0.5, 1.0);
+  }
+
+  @fragment
+  fn fs_single() -> @location(0) vec4<f32> {
+    return material.baseColor;
+  }
 `
 
 describe('WebGpuShaderModule entry points', () => {
@@ -75,6 +92,30 @@ describe('WebGpuShaderModule entry points', () => {
     await shader.compiled
     expect(shader.fragmentFn).toBe('fs_depth')
     expect(shader.getMaxOutputLocation()).toBe(-1)
+  })
+
+  describe('getOutputLocationMask', () => {
+    it.each([
+      ['fs_main', 0b11],
+      ['fs_gbuffer', 0b111],
+      ['fs_depth', 0],
+      ['fs_sparse', 0b1001],
+      ['fs_single', 0b1],
+    ])('%s writes the locations %i', async (fragmentEntry, mask) => {
+      const shader = device.createShaderModule({ wgsl: { source: SOURCE, fragmentEntry } })
+      await shader.compiled
+      expect(shader.isValid).toBe(true)
+      expect(shader.getOutputLocationMask()).toBe(mask)
+    })
+
+    it('is zero without a fragment entry point', async () => {
+      const shader = device.createShaderModule({
+        wgsl: { source: /* wgsl */ `@compute @workgroup_size(1) fn cs_main() {}` },
+      })
+      await shader.compiled
+      expect(shader.fragmentFn).toBeUndefined()
+      expect(shader.getOutputLocationMask()).toBe(0)
+    })
   })
 
   it('shares bindings between entry points', async () => {

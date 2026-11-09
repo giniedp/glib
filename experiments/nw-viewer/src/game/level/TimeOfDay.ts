@@ -25,7 +25,6 @@ import {
 import type { CameraData } from '@gglib/render'
 import { removeItemUnordered } from '@gglib/utils'
 import type { LevelInfo, TimeOfDay as TimeOfDayData } from '../../api'
-import { FOG_DISTANCE_SCALE } from '../../constants'
 import type { ContentService } from '../../content'
 import { TodParams, type TodParam } from './TimeOfDayParams'
 
@@ -140,6 +139,10 @@ export class TimeOfDay {
    * Fog albedo for entities (E3DPARAM_VOLFOG2_COLOR), tints the global probe in-scattering (D3DVolumetricFog.cpp)
    */
   public volFog2EntityAlbedo = vec3(1)
+  /**
+   * Froxel fog in-scattering of the entities: rgb = fog albedo (VOLFOG2_COLOR), w = anisotropy k (VOLFOG2_ANISOTROPIC)
+   */
+  public volFog2Entity = vec4(1, 1, 1, 0.6)
 
   public fogHeightOffset = 0.5
 
@@ -716,8 +719,6 @@ export class TimeOfDay {
     // sGetVolumetricFogScatteringBlendParams
     this.volFog2Blend.x = this.getParamValue(TodParams.VOLFOG2_BLEND_FACTOR)
     this.volFog2Blend.y = this.getParamValue(TodParams.VOLFOG2_BLEND_MODE)
-    // PerFrame_FogDistanceScale.x, 1 in all GPA captures
-    this.volFog2Blend.z = FOG_DISTANCE_SCALE
 
     // PerFrame_VolumetricFogDistributionParams.xw (New World): zenith fade factor and curve.
     // The engine maps the authored curve to an exponent on the CPU, every GPA capture shows 32.11 for the authored 0.56
@@ -740,6 +741,12 @@ export class TimeOfDay {
     this.volFog2ScatteringSecondaryColor.z = this.sunColor.z * this.volFog2Albedo.z
     this.volFog2ScatteringSecondaryColor.w = 1.0 - k2 * k2
     this.getParamColor(TodParams.VOLFOG2_COLOR, this.volFog2EntityAlbedo)
+    // froxel injection constants (D3DVolumetricFog.cpp): ExponentialHeightFogColor = the entities albedo,
+    // InjectInscatteringParams.x = the entities anisotropy (E3DPARAM_VOLFOG2_SCATTERING_PARAMS.z), clamped
+    this.volFog2Entity.x = this.volFog2EntityAlbedo.x
+    this.volFog2Entity.y = this.volFog2EntityAlbedo.y
+    this.volFog2Entity.z = this.volFog2EntityAlbedo.z
+    this.volFog2Entity.w = clampAnisotropy(this.getParamValue(TodParams.VOLFOG2_ANISOTROPIC))
   }
 
   private updateFogColorGradientParams() {

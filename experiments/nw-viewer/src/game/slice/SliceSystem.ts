@@ -32,6 +32,7 @@ import {
   isViewerAudioTriggerComponent,
   isViewerColliderComponent,
   isViewerDecalComponent,
+  isViewerFogVolumeComponent,
   isViewerLightComponent,
   isViewerMeshComponent,
   isViewerParticleComponent,
@@ -58,6 +59,7 @@ import { CollisionSystem } from '../collision/CollisionSystem'
 import { DebugLayer, DebugShapeComponent, type DebugShapeOptions } from '../debug/DebugShapeComponent'
 import { DecalComponent, decalMatrix } from '../decal/DecalComponent'
 import { DECAL_BOX_FROM_UNIT_BOX } from '../decal/DecalSystem'
+import { FogVolumeComponent, fogVolumeLocalScale } from '../fog/FogVolumeComponent'
 import { TimeOfDayComponent } from '../level/TimeOfDayComponent'
 import { LightComponent } from '../light/LightComponent'
 import { ParticleComponent, particleRange } from '../particles/ParticleComponent'
@@ -411,6 +413,17 @@ export function executeSpawner(spawner: SliceSpawnerComponent) {
           instances: [mat4Multiply(decalMatrix(mat4Identity(), comp), DECAL_BOX_FROM_UNIT_BOX)],
         })
         range = Math.max(range, (comp.maxViewDistance || DECAL_VIEW_DISTANCE) * (comp.viewDistanceMultiplier || 1))
+        continue
+      }
+      if (isViewerFogVolumeComponent(comp)) {
+        components.push(new FogVolumeComponent(comp))
+        const shape = comp.volumeType === 1 ? 'box' : 'sphere'
+        debug.add({
+          type: shape,
+          color: vec3(Color.Cyan),
+          layer: DebugLayer.FogVolumes,
+          instances: [fogVolumeLocalScale(comp, shape)],
+        })
         continue
       }
       if (isViewerAudioTriggerComponent(comp)) {

@@ -196,6 +196,7 @@ export class SkyLightSystem extends GameSystem {
     inputs.set(InputSlots.Global.VolFog2Scattering, tod.volFog2Scattering)
     inputs.set(InputSlots.Global.VolFog2Blend, tod.volFog2Blend)
     inputs.set(InputSlots.Global.VolFog2Zenith, tod.volFog2Zenith)
+    inputs.set(InputSlots.Global.VolFog2Entity, tod.volFog2Entity)
     // fallback without a baked global probe (sky mode, previews), EnvProbeInputs writes the probe in-scattering.
     // Particles still use it as their ambient.
     inputs.set(InputSlots.Global.VolFog2Ambient, tod.fogColGradBase)

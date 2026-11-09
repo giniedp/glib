@@ -152,6 +152,28 @@ export class WebGpuShaderModule extends ShaderModule implements GpuResource<GPUS
     return maxLocation
   }
 
+  private outputLocationMask: number = null
+  /**
+   * Bit mask of the color locations the fragment entry point writes, bit `i` is set for `@location(i)`.
+   * Zero without a fragment entry point or without color outputs.
+   *
+   * @remarks
+   * A pipeline needs one color target per attachment of its pass. Targets the shader does not write must have a
+   * zero write mask, this mask tells which ones.
+   */
+  public getOutputLocationMask() {
+    if (this.outputLocationMask === null) {
+      let mask = 0
+      for (const output of this.fragmentEntry?.outputs ?? []) {
+        if (output.location != null) {
+          mask |= 1 << output.location
+        }
+      }
+      this.outputLocationMask = mask
+    }
+    return this.outputLocationMask
+  }
+
   private vertexLayoutByID = new Map<string, GPUVertexBufferLayout[]>()
   private vertexLayoutByBuffer = new WeakMap<VertexBuffer, GPUVertexBufferLayout[]>()
   public getVertexLayout(vertexBuffer: VertexBuffer): GPUVertexBufferLayout[] {

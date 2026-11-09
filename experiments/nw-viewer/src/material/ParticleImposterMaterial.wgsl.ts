@@ -51,6 +51,7 @@ struct FragmentInput {
   @location(0)       uvBase        : vec4f,
   @location(1)       uvBump        : vec4f,
   @location(2)       uvScreen      : vec4f,
+  @location(3)       worldPos      : vec3f,
 };
 
 
@@ -89,6 +90,7 @@ fn vs_main(input: VertexInput) -> FragmentInput {
   output.uvBase   = uvBase;
   output.uvBump   = uvBump;
   output.uvScreen = clipPosToSceenUv(clipPos);
+  output.worldPos = worldPos.xyz;
 
   return output;
 }
@@ -117,15 +119,11 @@ fn fs_main(input: FragmentInput) -> FragmentOutput {
   var alpha = cDiffuseMap.a * material.diffuseColor.a;
   var albedo = cDiffuseMap.rgb * material.diffuseColor.rgb * material.diffuseRange * material.diffuseRange;
 
-  // #if %_RT_FOG
-  // #if !%_RT_VOLUMETRIC_FOG
-  //   OUT.Color.rgb = lerp( IN.localFogColor.xyz, OUT.Color.rgb, IN.localFogColor.w );
-  // #else
-  //   VolumetricFogTexcoord vtc = GetVolumetricFogTexcoordParamByScreenPos(IN.Position);
-  //   float4 vf = GetVolumetricFogValue(vtc);
-  //   ApplyVolumetricFog(vf, IN.localFogColor, vtc, OUT.Color.rgb);
-  // #endif
-  // #endif
+  // fog (ParticleImposterPS: ApplyVolumetricFog over the straight alpha color)
+  if (global.skipFog == 0u) {
+    let fog = getSceneFog(input.worldPos);
+    albedo = albedo * fog.a + fog.rgb;
+  }
 
   if (SOFT_PARTICLE) {
     let sceneDepth   = sampleSceneDepth(input.uvScreen, sceneDepthMap);

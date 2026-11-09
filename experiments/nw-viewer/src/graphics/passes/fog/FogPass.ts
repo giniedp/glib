@@ -1,9 +1,10 @@
-import { BlendState, SamplerState, type Device, type InputValueType, type Program } from '@gglib/graphics'
+import { BlendState, SamplerState, type Device, type InputValueType, type Program, type Texture } from '@gglib/graphics'
 import { mat4Identity, mat4Invert } from '@gglib/math'
 import { FrameGraph, RenderChannel, type FrameResource, type RenderContext, type RenderPass } from '@gglib/render'
 import { ENABLE_VOLUMETRIC_FOG_2 } from '../../../constants'
 import { InputSlots } from '../../../material/common'
 import { FOG_WGSL } from './FogPass.wgsl'
+import type { FroxelFogPass } from './FroxelFogPass'
 
 export interface FogPassOptions {
   enabled?: boolean
@@ -15,6 +16,11 @@ export interface FogPassOptions {
    * Linear view space depth channel with the size of the color channel. Defaults to {@link RenderChannel.LinearDepth}
    */
   depth?: RenderChannel
+  /**
+   * Froxel volumetric fog, sampled up to the ray-marching range when it rendered this frame (FogPassPS). Without it
+   * the near range is analytical.
+   */
+  froxel?: FroxelFogPass
 }
 
 /**
@@ -35,7 +41,8 @@ const FOG_BLEND = BlendState.get({
  *
  * Opaque materials skip fog while {@link InputSlots.Global.SkipFog} is set, so fog is applied
  * after screen space effects (e.g. ambient occlusion) and before transparent geometry.
- * Pixels without depth or at the far plane (sky) are skipped, the sky applies its own fog.
+ * Like the game's FogPassPS every pixel is fogged: the sky and the background at the far plane (the sky skips its own
+ * fog while SkipFog is set). With the froxel pass, the near range up to the ray-marching range comes from its volume.
  */
 export class FogPass implements RenderPass {
   public name: string = 'Fog'
@@ -48,6 +55,13 @@ export class FogPass implements RenderPass {
 
   private colorResource: FrameResource
   private depthResource: FrameResource
+
+  private froxel: FroxelFogPass | null
+  /**
+   * Bound while the froxel volume is off, the shader does not read it
+   */
+  private emptyVolume: Texture
+  private froxelEnabled = new Float32Array(4)
 
   private ndcToView = new Float32Array(4)
   private cameraWorld = mat4Identity()
@@ -62,7 +76,18 @@ export class FogPass implements RenderPass {
     this.enabled = options?.enabled ?? this.enabled
     this.color = options?.color ?? RenderChannel.Color
     this.depth = options?.depth ?? RenderChannel.LinearDepth
+    this.froxel = options?.froxel ?? null
     device.ready.then(() => {
+      this.emptyVolume = device.createTexture({
+        name: 'Fog empty froxel volume',
+        type: '3d',
+        format: 'rgba16float',
+        width: 1,
+        height: 1,
+        depth: 1,
+        mipLevelCount: 1,
+        generateMipmap: false,
+      })
       this.program = device
         .createShaderModule({
           name: 'NW Fog',
@@ -128,6 +153,7 @@ export class FogPass implements RenderPass {
     this.viewport[3] = 1 / height
 
     this.depthRange[0] = camera.far * 0.99
+    this.depthRange[1] = camera.far
   }
 
   private setParams(ctx: RenderContext, program: Program) {
@@ -178,6 +204,15 @@ export class FogPass implements RenderPass {
     )
     this.volFog2Enabled[0] = ENABLE_VOLUMETRIC_FOG_2 ? 1 : 0
     program.set('params.volFog2Enabled', this.volFog2Enabled)
+    // froxel volume of this frame
+    const volume = this.froxel?.integratedVolume ?? null
+    this.froxelEnabled[0] = volume ? 1 : 0
+    this.froxelEnabled[1] = this.froxel?.volumeSlices ?? 1
+    this.froxelEnabled[2] = this.froxel?.volumeTileSize ?? 1
+    program.set('params.froxelEnabled', this.froxelEnabled)
+    program.set('params.froxelDepth', this.froxel?.depthParams ?? this.froxelEnabled)
+    program.set('froxelVolume', volume ?? this.emptyVolume)
+    program.set('froxelSampler', SamplerState.LinearClamp)
     // global probe in-scattering, see EnvProbeInputs. Without probes the stand-in volFog2Ambient applies
     const cubes = inputs.get(InputSlots.Global.ProbeSpecularCubes)
     const probe = inputs.get(InputSlots.Global.VolFog2Probe)

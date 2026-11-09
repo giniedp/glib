@@ -49,6 +49,8 @@ export class LightSystem extends GameSystem {
     coneAngle: 0,
     coneAngleInner: 0,
     ambient: false,
+    fog: false,
+    fogOnly: false,
   }
 
   public constructor(options?: LightSystemOptions) {
@@ -140,16 +142,18 @@ export class LightSystem extends GameSystem {
     out.coneAngle = 0
     out.coneAngleInner = 0
     out.ambient = ambient
+    out.fog = !!config.volumetricFog
+    out.fogOnly = !!config.volumetricFogOnly
 
     switch (component.type) {
       case 'Point': {
         out.type = 'point'
-        return true
+        break
       }
       case 'Projector': {
         out.type = 'spot'
         out.coneAngle = Math.min(Math.max((config.projectorFOV || 90) * 0.5, 0.1), 89.9) * DEGREE_TO_RAD
-        return true
+        break
       }
       case 'Area': {
         out.type = 'area'
@@ -165,12 +169,21 @@ export class LightSystem extends GameSystem {
         if (out.width && out.height && fov) {
           out.bulbSize = (out.width + out.height) * 0.25
         }
-        return true
+        break
       }
       default: {
         return false
       }
     }
+    if (!ambient) {
+      // D3DTiledShading.cpp PrepareLightList: "Adjust light intensity so that the intended brightness is reached
+      // 1 meter from the light's surface", solves I / (1 + d / bulb)² = 1 at d = 1. The bulb is clamped to 0.001.
+      const intensity = (1 + 1 / Math.max(out.bulbSize, 0.001)) ** 2
+      out.color.x *= intensity
+      out.color.y *= intensity
+      out.color.z *= intensity
+    }
+    return true
   }
 
   public destroy(): void {

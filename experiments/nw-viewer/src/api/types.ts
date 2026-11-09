@@ -417,6 +417,7 @@ export const AudioAmbienceComponentName = 'AudioAmbience' as const
 export const AudioAreaComponentName = 'AudioArea' as const
 export const ParticleComponentName = 'Particle' as const
 export const DecalComponentName = 'Decal' as const
+export const FogVolumeComponentName = 'FogVolume' as const
 
 export const ComponentTypes = {
   MeshComponentName,
@@ -438,6 +439,7 @@ export const ComponentTypes = {
   AudioAreaComponentName,
   ParticleComponentName,
   DecalComponentName,
+  FogVolumeComponentName,
 }
 
 export type ComponentType =
@@ -458,6 +460,7 @@ export type ComponentType =
   | typeof AudioAmbienceComponentName
   | typeof AudioAreaComponentName
   | typeof DecalComponentName
+  | typeof FogVolumeComponentName
 
 export interface ViewerBaseComponent {
   type: ComponentType
@@ -575,7 +578,11 @@ export interface ViewerLightConfig {
   boxLength?: number
   boxHeight?: number
   /**
-   * The probe contributes to volumetric fog only, not to surfaces
+   * The light (any type) contributes to the froxel volumetric fog
+   */
+  volumetricFog?: boolean
+  /**
+   * The light (any type) contributes to volumetric fog only, not to surfaces
    */
   volumetricFogOnly?: boolean
   /**
@@ -639,6 +646,42 @@ export interface ViewerDecalComponent extends ViewerBaseComponent {
   minSpec?: number
 }
 
+/**
+ * A local fog volume (LmbrCentral FogVolumeComponent, nwbt `game/level/load_fog_volume.go`), injected into the froxel
+ * volumetric fog. Centered on the entity, `size` is the full extent along the local axes (box shape dimensions),
+ * scaled by the entity transform. Values as the engine receives them (FogUtils::FogConfigToFogParams).
+ */
+export interface ViewerFogVolumeComponent extends ViewerBaseComponent {
+  type: typeof FogVolumeComponentName
+  /** 0 = ellipsoid, 1 = box */
+  volumeType: number
+  size: [number, number, number]
+  color: [number, number, number, number]
+  useGlobalFogColor?: boolean
+  ignoresVisAreas?: boolean
+  affectsThisAreaOnly?: boolean
+  globalDensity: number
+  densityOffset?: number
+  nearCutoff?: number
+  hdrDynamic?: number
+  softEdges?: number
+  /** height falloff direction in degrees (longitude, latitude), shift and scale */
+  fallOffDirLong?: number
+  fallOffDirLatitude?: number
+  fallOffShift?: number
+  fallOffScale?: number
+  rampStart?: number
+  rampEnd?: number
+  rampInfluence?: number
+  windInfluence?: number
+  densityNoiseScale?: number
+  densityNoiseOffset?: number
+  densityNoiseTimeFrequency?: number
+  densityNoiseFrequency?: [number, number, number]
+  distMult?: number
+  engineSpec?: number
+}
+
 export interface ViewerRoadComponent extends ViewerBaseComponent {
   type: typeof RoadComponentName | typeof RiverComponentName
   material: string
@@ -694,10 +737,15 @@ export type ViewerComponent =
   | ViewerLightComponent
   | ViewerTimeOfDayComponent
   | ViewerDecalComponent
+  | ViewerFogVolumeComponent
   | ViewerUnknownComponent
 
 export function isViewerDecalComponent(component: any): component is ViewerDecalComponent {
   return component?.type === DecalComponentName
+}
+
+export function isViewerFogVolumeComponent(component: any): component is ViewerFogVolumeComponent {
+  return component?.type === FogVolumeComponentName
 }
 
 export function isViewerRoadComponent(component: any): component is ViewerRoadComponent {

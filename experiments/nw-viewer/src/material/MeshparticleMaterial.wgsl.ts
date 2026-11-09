@@ -266,6 +266,12 @@ fn fs_main(input: FragmentInput) -> FragmentOutput {
   // --- Ambience
   outColor = vec4f(outColor.rgb * material.ambStrength, outColor.a);
 
+  // fog (MeshParticlePS: ApplyVolumetricFog over the straight alpha color)
+  if (global.skipFog == 0u) {
+    let fog = getSceneFog(input.worldPos);
+    outColor = vec4f(outColor.rgb * fog.a + fog.rgb, outColor.a);
+  }
+
   // ---- Final alpha shaping ------------------------------------------
   outColor.a *= fadeBeam;
   //outColor.a *= instanceExtra[input.instanceId].opacity;

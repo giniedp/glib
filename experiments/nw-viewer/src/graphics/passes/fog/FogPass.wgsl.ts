@@ -17,7 +17,7 @@ struct FogParams {
   ndcToView                      : vec4f,
   // width, height, 1/width, 1/height
   viewport                       : vec4f,
-  // x = max depth, pixels at or beyond are not fogged (sky)
+  // x = far plane threshold, pixels at or beyond are the sky / background, y = far plane distance they are fogged at
   depthRange                     : vec4f,
   volumetricFogParams            : vec4f,
   volumetricFogRampParams        : vec4f,
@@ -44,6 +44,10 @@ struct FogParams {
   probeGlobal                    : vec4f,
   // rgb = global probe color times the entities fog albedo, w = attenuation
   volFog2Probe                   : vec4f,
+  // froxel volume (FroxelFogPass): x = near, y = range - near, z = 1 / (slices - 1), w = 1 / (range - near)
+  froxelDepth                    : vec4f,
+  // x = 1 when the froxel volume is bound, y = slices, z = screen pixels per froxel
+  froxelEnabled                  : vec4f,
 };
 
 ${VOLUMETRIC_FOG_2_WGSL}
@@ -51,6 +55,25 @@ ${VOLUMETRIC_FOG_2_WGSL}
 @group(0) @binding(0) var<uniform> params: FogParams;
 @group(0) @binding(2) var probeSpecularCubes: texture_cube_array<f32>;
 @group(0) @binding(3) var probeSampler: sampler;
+@group(0) @binding(4) var froxelVolume: texture_3d<f32>;
+@group(0) @binding(5) var froxelSampler: sampler;
+
+// slice texture coordinate of a linear depth (GetVolumetricFogDepthTexcoord, quadratic slices)
+fn froxelDepthTexcoord(linearDepth: f32) -> f32 {
+  let d = sqrt(max(linearDepth - params.froxelDepth.x, 0.0) * params.froxelDepth.w);
+  let slices = params.froxelEnabled.y;
+  return ((slices - 1.0) * d + 0.5) / slices;
+}
+
+// the integrated froxel volume at a pixel (GetVolumetricFogValue), the range rectified to the view depth
+// (RectifyVolumetricFogTexcoordAndRange): rgb = in-scattering, a = transmittance. Same mapping as
+// sampleFroxelVolume of the materials: froxel x covers screen pixels [x, x + 1) × tile size.
+fn froxelFog(pixel: vec2f, linearDepth: f32, len: f32, range: f32) -> vec4f {
+  let rangeDepth = range * linearDepth / len;
+  let dims = vec2f(textureDimensions(froxelVolume).xy);
+  let tc = vec3f(pixel / (dims * params.froxelEnabled.z), froxelDepthTexcoord(min(rangeDepth, linearDepth)));
+  return textureSampleLevel(froxelVolume, froxelSampler, tc, 0.0);
+}
 
 fn computeVolumetricFogInternal(cameraToWorldPos: vec3f) -> f32 {
   let heightScale                 = params.volumetricFogParams.x;
@@ -76,10 +99,13 @@ fn computeVolumetricFogInternal(cameraToWorldPos: vec3f) -> f32 {
   return max(1.0 - f, densityClamp);
 }
 
-fn computeFog(position: vec2f, depth: f32) -> vec4f {
-  if (depth <= 0.0 || depth >= params.depthRange.x) {
+fn computeFog(position: vec2f, sceneDepth: f32) -> vec4f {
+  if (sceneDepth <= 0.0) {
     return vec4f(0.0, 0.0, 0.0, 1.0);
   }
+  // the sky and the background (cleared to the far plane) are fogged at the far plane like FogPassPS, the sky skips
+  // its own fog in the scene
+  let depth = select(sceneDepth, params.depthRange.y, sceneDepth >= params.depthRange.x);
   let uv = (floor(position) + 0.5) * params.viewport.zw;
   let viewPos = vec3f((params.ndcToView.xy * uv + params.ndcToView.zw) * depth, -depth);
   let cameraToWorldPos = (params.cameraWorld * vec4f(viewPos, 0.0)).xyz;
@@ -97,6 +123,12 @@ fn computeFog(position: vec2f, depth: f32) -> vec4f {
     );
     p.zenith        = params.volFog2Zenith;
     // in-scattering and transmittance, matches the blending dst = src.rgb + dst.rgb * src.a
+    if (params.froxelEnabled.x > 0.5) {
+      // FogPassPS: the froxel volume up to the ray-marching range, analytical beyond
+      let near = froxelFog(floor(position) + 0.5, depth, length(cameraToWorldPos), p.zenith.z);
+      let inscatter = volFog2Inscatter(p, cameraToWorldPos, -params.sunDirection.xyz);
+      return volFog2WithNear(p, cameraToWorldPos, inscatter, near);
+    }
     return volFog2Analytical(p, cameraToWorldPos, -params.sunDirection.xyz);
   }
   let factor = computeVolumetricFogInternal(cameraToWorldPos);

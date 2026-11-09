@@ -38,7 +38,7 @@ struct VolFog2Params {
   ramp         : vec4f,
   // x = in-scattering, y = extinction, z = anisotropy k (atmosphere), w = 1 - k * k
   scattering   : vec4f,
-  // x = blend factor of the sun radial lobes, y = blend mode, z = fog distance scale (PerFrame_FogDistanceScale.x)
+  // x = blend factor of the sun radial lobes, y = blend mode
   blend        : vec4f,
   // rgb = sun color * fog albedo (atmosphere), w = anisotropy k (sun radial)
   color1       : vec4f,
@@ -136,29 +136,42 @@ fn volFog2Segment(p: VolFog2Params, LM: f32, d: f32, transitionDistance: f32, de
 // the result towards no fog, and the analytical visibility does not apply.
 fn volFog2Analytical(p: VolFog2Params, cameraToWorldPos: vec3f, sunDir: vec3f) -> vec4f {
   let len = max(length(cameraToWorldPos), 1e-4);
-  // lengthToTarget *= PerFrame_FogDistanceScale.x
-  let distanceScale = p.blend.z;
-  let d = len * distanceScale;
-  let LM = p.heightDensity.x * cameraToWorldPos.z / d;
+  let LM = p.heightDensity.x * cameraToWorldPos.z / len;
   let range = p.zenith.z;
+  let inscatter = volFog2Inscatter(p, cameraToWorldPos, sunDir);
+  // near segment (froxels in the game), view up from the linear depth like the froxels
+  let nearFade = volFog2ZenithFade(p.zenith.x, p.zenith.y, cameraToWorldPos.z / len);
+  let near = volFog2Segment(p, LM, min(len, range), 0.1, 1.0 - nearFade, inscatter);
+  return volFog2WithNear(p, cameraToWorldPos, inscatter, near);
+}
 
-  // sun in-scattering, two Schlick lobes (GetVolumetricFogInscatteringSun)
-  let dotLE = dot(sunDir, cameraToWorldPos / len);
+// Analytical in-scattering along the view ray: sun lobes (GetVolumetricFogInscatteringSun) scaled by in-scattering /
+// extinction, plus the global probe
+fn volFog2Inscatter(p: VolFog2Params, cameraToWorldPos: vec3f, sunDir: vec3f) -> vec3f {
+  let dotLE = dot(sunDir, normalize(cameraToWorldPos));
   let ins0 = volFog2SchlickPhase(dotLE, p.scattering.z, p.scattering.w) * p.color1.rgb;
   let ins1 = volFog2SchlickPhase(dotLE, p.color1.w, p.color2.w) * p.color2.rgb;
   var inscatter = ins0 * (1.0 - p.blend.x * p.blend.y) + ins1 * p.blend.x;
   inscatter *= p.scattering.x / p.scattering.y;
   // global environment probe in-scattering (isotropic, added after the scattering scale as in the original)
-  inscatter += p.ambient.rgb;
+  return inscatter + p.ambient.rgb;
+}
 
-  // near segment (froxels in the game), view up from the linear depth like the froxels
-  let nearFade = volFog2ZenithFade(p.zenith.x, p.zenith.y, cameraToWorldPos.z / len);
-  var fog = volFog2Segment(p, LM, min(len, range) * distanceScale, 0.1, 1.0 - nearFade, inscatter);
+// Fog with a given near segment up to the ray-marching range (the froxel sample in FogPassPS, or the analytical
+// near segment): adds the analytical fog beyond the range (BlendVolumetricFogWithGlobalFog without the overlap,
+// ENABLE_OVERLAP_ANALYTICAL_FOG is off in New World) and the final density clamp.
+// Returns rgb = in-scattered light, a = transmittance, apply as color * fog.a + fog.rgb
+fn volFog2WithNear(p: VolFog2Params, cameraToWorldPos: vec3f, inscatter: vec3f, near: vec4f) -> vec4f {
+  // the original scales lengthToTarget by PerFrame_FogDistanceScale.x, which is 1 in all GPA captures
+  let d = max(length(cameraToWorldPos), 1e-4);
+  let LM = p.heightDensity.x * cameraToWorldPos.z / d;
+  let range = p.zenith.z;
+  var fog = near;
 
-  if (len > range) {
+  if (d > range) {
     // far segment (GetVolumetricFogAnalyticalColor with the ray-marching range as transition distance)
-    var far = volFog2Segment(p, LM, d, range * distanceScale, 1.0, inscatter);
-    // zenith fade (end of GetVolumetricFogAnalyticalColor), view up from the scaled length like the original
+    var far = volFog2Segment(p, LM, d, range, 1.0, inscatter);
+    // zenith fade (end of GetVolumetricFogAnalyticalColor)
     let zenithFade = volFog2ZenithFade(p.zenith.x, p.zenith.y, cameraToWorldPos.z / d);
     far = vec4f(mix(far.rgb, vec3f(0.0), zenithFade), mix(far.a, 1.0, zenithFade));
     // BlendVolumetricFogWithGlobalFog: analytical fog visibility, behind the near segment
