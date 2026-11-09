@@ -26,6 +26,10 @@ Loading happens in two steps.
 
 Splitting both steps makes it possible to swap the instance type without touching the file format, for example to replace the default material.
 
+Containers are cached by URL too. A cached container keeps the file data (texture and vertex data) while instances created from it are alive, so an app could recreate them, for example after a lost device.
+Apps that load a lot of data can turn this off with `new ContentLoader(device, { cacheContainers: false })`. Then a container is shared only while it loads, only the created instances stay cached, and the file data can be garbage collected after the upload.
+A policy function decides per container instead, for example to keep small containers that many instances are created from (material libraries) and drop the large ones (textures): `cacheContainers: (container, url) => url.endsWith('.mtl')`.
+
 ## Loaders
 
 Loaders are registered by file extension or MIME type, either globally on `ContentLoader` or per instance.
