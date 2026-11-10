@@ -22,25 +22,27 @@ export class SchedulerSystem extends GameSystem {
     config ||= {}
     this.instance = new AsyncScheduler({
       frameBudgetMs: 4,
-      maxConcurrent: 12,
+      // Sized for HTTP/2, where the browser multiplexes all requests over one connection.
+      // Over HTTP/1.1 (~6 connections per host) the extra loads only queue up in the browser.
+      maxConcurrent: 64,
       maxReadyTasksPerTick: 10,
-      // Lower lanes start loads only while few loads are in flight, so higher lanes always find a free slot.
-      // Browsers allow ~6 connections per host over HTTP/1.1, lower lanes must not occupy all of them.
+      // Lane limits count only their own lane. Medium + Low stay below the global cap,
+      // so Critical and High always find a free slot.
       lanes: {
         [PriorityLane.Critical]: {
           budgetRatio: 0.5,
         },
         [PriorityLane.High]: {
           budgetRatio: 0.5,
-          maxConcurrent: 6,
+          maxConcurrent: 48,
         },
         [PriorityLane.Medium]: {
           budgetRatio: 0.3,
-          maxConcurrent: 4,
+          maxConcurrent: 16,
         },
         [PriorityLane.Low]: {
           budgetRatio: 0.2,
-          maxConcurrent: 3,
+          maxConcurrent: 32,
         },
       },
       ...config,

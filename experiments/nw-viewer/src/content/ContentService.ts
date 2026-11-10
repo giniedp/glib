@@ -92,7 +92,8 @@ export class ContentService extends GameSystem {
     this.config = world.getSystem(ViewerConfig)
     this.device = world.getSystem(Device)
     this.loader = world.getSystem(ContentLoader)
-    this.loader.executor = new BoundedAsyncExecutor(20)
+    // fetch slots for the scheduler's loads (up to 64 in flight, each fetching cgf, heap, mtl and textures), sized for HTTP/2
+    this.loader.executor = new BoundedAsyncExecutor(128)
     this.resolveAssetId = createAssetIdResolver(this.loader, this.nwbtUrl)
     // textures of .mtl files that only resolve by their asset id
     MtlLoader.resolveAssetId = this.resolveAssetId

@@ -84,8 +84,8 @@ export interface LaneConfig {
    */
   budgetRatio: number
   /**
-   * A load of this lane is started only while fewer than this many loads (of any lane) are in flight.
-   * Lower lanes use smaller values to keep connection slots free for higher lanes.
+   * Maximum number of in-flight loads of this lane. {@link SchedulerConfig.maxConcurrent} caps all lanes together.
+   * Keep the sum of the lower lanes' limits below the global cap, so higher lanes always find a free slot.
    * Defaults to {@link SchedulerConfig.maxConcurrent}.
    */
   maxConcurrent?: number
@@ -133,6 +133,10 @@ export class AsyncScheduler {
   private readonly pendingQueues = new Map<PriorityLane, PriorityQueue<number, ScheduledTask<any>>>()
   private readonly readyQueues = new Map<PriorityLane, PriorityQueue<number, ScheduledTask<any>>>()
   private readonly inFlight = new Map<number, ScheduledTask<any>>()
+  /**
+   * In-flight loads per lane, recounted on every pump (a task may change its lane while loading)
+   */
+  private readonly laneInFlight = new Map<PriorityLane, number>()
   private readonly tasks = new Map<number, ScheduledTask<any>>()
 
   private readonly config: Required<SchedulerConfig>
@@ -150,6 +154,7 @@ export class AsyncScheduler {
     for (const lane of this.laneOrder) {
       this.pendingQueues.set(lane, new PriorityQueue<number, ScheduledTask>())
       this.readyQueues.set(lane, new PriorityQueue<number, ScheduledTask>())
+      this.laneInFlight.set(lane, 0)
     }
   }
 
@@ -302,17 +307,24 @@ export class AsyncScheduler {
   }
 
   protected pumpAsync(): void {
-    // Loads cancelled by flag are aborted right away, so they do not hold a slot until the load settles
+    for (const lane of this.laneOrder) {
+      this.laneInFlight.set(lane, 0)
+    }
     for (const [id, task] of this.inFlight) {
+      // Loads cancelled by flag are aborted right away, so they do not hold a slot until the load settles
       if (task.cancelled) {
         this.inFlight.delete(id)
         this.dropCancelled(task, id)
+        continue
       }
+      this.laneInFlight.set(task.lane, (this.laneInFlight.get(task.lane) ?? 0) + 1)
     }
 
+    const maxConcurrent = this.config.maxConcurrent
     for (const lane of this.laneOrder) {
       const queue = this.pendingQueues.get(lane)!
-      const limit = Math.min(this.config.maxConcurrent, this.config.lanes[lane].maxConcurrent ?? Infinity)
+      const laneLimit = this.config.lanes[lane].maxConcurrent ?? maxConcurrent
+      let laneCount = this.laneInFlight.get(lane) ?? 0
       while (queue.size() > 0) {
         const task = queue.peek()!
         const id = taskIds.get(task)
@@ -331,12 +343,14 @@ export class AsyncScheduler {
           continue
         }
 
-        if (this.inFlight.size >= limit) {
+        if (this.inFlight.size >= maxConcurrent || laneCount >= laneLimit) {
           break
         }
         queue.pop()
         this.startLoad(task, id)
+        laneCount++
       }
+      this.laneInFlight.set(lane, laneCount)
     }
   }
 

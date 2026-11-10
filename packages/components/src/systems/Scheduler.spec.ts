@@ -125,6 +125,40 @@ describe('AsyncScheduler', () => {
     expect(scheduler.getStats().inFlight).toBe(4)
   })
 
+  it('counts lane limits per lane, capped by the global limit', () => {
+    const scheduler = new AsyncScheduler({
+      frameBudgetMs: 100,
+      maxConcurrent: 5,
+      lanes: {
+        [PriorityLane.High]: { budgetRatio: 1, maxConcurrent: 2 },
+        [PriorityLane.Low]: { budgetRatio: 1, maxConcurrent: 2 },
+      },
+    })
+    const never = () => new Promise<void>(() => {})
+    for (let i = 0; i < 5; i++) {
+      scheduler.enqueue({ lane: PriorityLane.High, load: never })
+      scheduler.enqueue({ lane: PriorityLane.Low, load: never })
+    }
+    scheduler.tick()
+    // High 2 + Low 2: the Low limit does not count the High loads
+    expect(scheduler.getStats().inFlight).toBe(4)
+
+    const global = new AsyncScheduler({
+      frameBudgetMs: 100,
+      maxConcurrent: 3,
+      lanes: {
+        [PriorityLane.High]: { budgetRatio: 1, maxConcurrent: 2 },
+        [PriorityLane.Low]: { budgetRatio: 1, maxConcurrent: 2 },
+      },
+    })
+    for (let i = 0; i < 5; i++) {
+      global.enqueue({ lane: PriorityLane.High, load: never })
+      global.enqueue({ lane: PriorityLane.Low, load: never })
+    }
+    global.tick()
+    expect(global.getStats().inFlight).toBe(3)
+  })
+
   it('frees the slot of a load cancelled by flag on the next tick', () => {
     const scheduler = createScheduler()
     const finalize = vi.fn()
