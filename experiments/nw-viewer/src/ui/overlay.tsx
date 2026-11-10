@@ -80,7 +80,7 @@ function Overlay(props: { viewer: NwViewer }) {
             <SettingsButton viewer={viewer} />
             <Button
               square
-              title="Download screenshot (render resolution)"
+              title="Download screenshot (canvas resolution)"
               icon={<Icon svg={svgCamera} />}
               onClick={() => viewer.downloadScreenshot()}
             />

@@ -220,6 +220,15 @@ export interface RenderView {
    */
   viewport: IRect
   /**
+   * Scale of the render resolution relative to the viewport size in output pixels, default `1`.
+   *
+   * @remarks
+   * The pipeline renders at `round(viewport size × renderScale)` ({@link RenderContext.viewWidth}). A pass may upscale
+   * to the output size ({@link RenderContext.outputWidth}), otherwise {@link Renderer.present} stretches the presented
+   * channel into the viewport (bilinear).
+   */
+  renderScale?: number
+  /**
    * The render pipeline to use for rendering this view, if not provided, the default pipeline of the renderer is used
    */
   pipeline: RenderPipeline
@@ -273,13 +282,21 @@ export interface RenderContext {
    */
   view: Readonly<RenderView>
   /**
-   * Absolute width of the current view in pixels
+   * Absolute width of the current view in pixels, the render resolution ({@link RenderView.renderScale} applied)
    */
   viewWidth: number
   /**
-   * Absolute height of the current view in pixels
+   * Absolute height of the current view in pixels, the render resolution ({@link RenderView.renderScale} applied)
    */
   viewHeight: number
+  /**
+   * Width of the view's viewport in output pixels, the size an upscaling pass writes
+   */
+  outputWidth: number
+  /**
+   * Height of the view's viewport in output pixels, the size an upscaling pass writes
+   */
+  outputHeight: number
   /**
    * The frame number and time information for the current frame
    */

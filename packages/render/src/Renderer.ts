@@ -208,6 +208,8 @@ export class Renderer implements Ownable {
       view: null,
       viewWidth: 1,
       viewHeight: 1,
+      outputWidth: 1,
+      outputHeight: 1,
       channelDescriptors: this.channelDescriptors,
       renderLists: this.renderLists,
       renderVariant: RenderVariant.Forward,
@@ -346,8 +348,11 @@ export class Renderer implements Ownable {
     const context = this.context
     context.frame = this.frameInfo
     context.view = view
-    context.viewWidth = getViewWidth(view.viewport.width, this.device.output)
-    context.viewHeight = getViewHeight(view.viewport.height, this.device.output)
+    context.outputWidth = getViewWidth(view.viewport.width, this.device.output)
+    context.outputHeight = getViewHeight(view.viewport.height, this.device.output)
+    const scale = view.renderScale ?? 1
+    context.viewWidth = scale === 1 ? context.outputWidth : Math.max(1, Math.round(context.outputWidth * scale))
+    context.viewHeight = scale === 1 ? context.outputHeight : Math.max(1, Math.round(context.outputHeight * scale))
     this.updateInputs(context)
     this.onContextReady.emit(context)
 

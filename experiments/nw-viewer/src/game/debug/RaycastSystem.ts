@@ -24,6 +24,7 @@ import {
   type Transform,
 } from '@gglib/math'
 import { brand, EventEmitter, type EventType } from '@gglib/utils'
+import { RenderSizeSystem } from '../../graphics/RenderSizeSystem'
 import { CullingSystem } from '../culling/CullingSystem'
 import { InstancedModelComponent } from '../instancing/InstancedModelComponent'
 
@@ -62,7 +63,10 @@ export class RaycastSystem extends GameSystem {
     this.keyboard = world.getSystem(KeyboardInputSystem)
     this.spatialQuery = world.query({ scope: 'active', required: [SpatialComponent] })
     this.culling = world.getSystem(CullingSystem, { optional: true })
+    this.renderSize = world.getSystem(RenderSizeSystem, { optional: true })
   }
+
+  private renderSize: RenderSizeSystem | null = null
 
   public override update() {
     if (!this.camera) {
@@ -116,7 +120,7 @@ export class RaycastSystem extends GameSystem {
     if (!culling) {
       return
     }
-    const ray = this.camera.createRay(this.mouse.xNormalized, this.mouse.yNormalized)
+    const ray = this.mouseRay()
     const hits = await culling.raycast(ray.position, ray.direction, this.maxPickDistance)
     for (const hit of hits) {
       const model = hit.component.model
@@ -137,8 +141,18 @@ export class RaycastSystem extends GameSystem {
 
   private tmpRay = rayCreate()
 
+  /**
+   * The ray under the mouse, mapped into the main view (letterboxed for a fixed resolution + fit)
+   */
+  private mouseRay() {
+    const size = this.renderSize
+    const x = size ? size.toViewX(this.mouse.xNormalized) : this.mouse.xNormalized
+    const y = size ? size.toViewY(this.mouse.yNormalized) : this.mouse.yNormalized
+    return this.camera.createRay(x, y)
+  }
+
   private raycast(output: RaySelection[]) {
-    const ray = this.camera.createRay(this.mouse.xNormalized, this.mouse.yNormalized)
+    const ray = this.mouseRay()
     for (const entity of this.spatialQuery) {
       entity.component(SpatialComponent).index.traverseIntersection(ray, Intersection.rayBox, (node) => {
         for (const item of getSpatialEntries(node).values) {

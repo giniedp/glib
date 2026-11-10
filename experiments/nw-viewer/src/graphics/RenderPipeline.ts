@@ -44,6 +44,7 @@ import { LuminancePass } from './passes/exposure/LuminancePass'
 import { FogPass } from './passes/fog/FogPass'
 import { FroxelFogPass } from './passes/fog/FroxelFogPass'
 import { SunShaftsPass } from './passes/sunshafts/SunShaftsPass'
+import { UpscalePass } from './passes/upscale/UpscalePass'
 import { NwRenderChannel, XeGtaoPass } from './passes/ssao/XeGtaoPass'
 
 const WATER_VOLUME_LIST = new RenderListMode(RenderSortPriority.Depth, RenderItemFlags.Transparent, {
@@ -257,6 +258,10 @@ export function createRenderPipeline(device: Device): RenderPipelineOptions {
     ),
     // tints the decal receivers (stencil bit of the GBuffer pass)
     optionalPass(new DecalReceiverDebugPass(device, { stencilBit: DECAL_RECEIVER_STENCIL })),
+    // last, like the game's final UpscaleImage: render size → output size (config renderScale / upscaler)
+    describePass(new UpscalePass(device), {
+      note: 'upscales to the output size when the render scale is below 1, mode by the config upscaler',
+    }),
   ]
   return { passes }
 }

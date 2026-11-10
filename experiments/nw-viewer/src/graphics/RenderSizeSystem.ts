@@ -1,21 +1,26 @@
+import { EcsGame } from '@gglib/components'
 import { GameSystem, type GameWorld } from '@gglib/ecs'
 import { Device } from '@gglib/graphics'
+import type { IRect } from '@gglib/math'
 import { ViewerConfig } from '../config'
 
 /**
- * Sets the render size of the device and how the canvas is displayed, from the config
- * (renderResolution, renderScaling)
+ * Sets the render size of the device and the main view, from the config (renderResolution, renderScaling,
+ * renderScale)
  *
  * @remarks
  * Replaces the autosize of the device. It observes the element that contains the canvas:
- * - `window`: the render size follows the container size in device pixels, the canvas fills the container (CSS)
- * - fixed size: the render size stays fixed, the canvas is centered in the container and sized by the scaling mode
- *   - `fit`: scaled to fit the container, keeps the aspect ratio
- *   - `none`: one render pixel per device pixel, cropped if larger than the container
+ * - `window`: the canvas fills the container in device pixels, the main view renders at `renderScale` of it and is
+ *   upscaled to the canvas
+ * - fixed size + `fit`: the canvas fills the container, the main view is letterboxed into it (viewport) with the
+ *   aspect ratio of the resolution and renders at the resolution, scaled to the viewport
+ * - fixed size + `none`: the canvas has the resolution, one render pixel per device pixel, centered and cropped if
+ *   larger than the container
  */
 export class RenderSizeSystem extends GameSystem {
   private device: Device
   private config: ViewerConfig
+  private game: EcsGame
   private canvas: HTMLCanvasElement | null = null
   private observer: ResizeObserver | null = null
   private unsubscribe: Array<() => void> = []
@@ -25,9 +30,28 @@ export class RenderSizeSystem extends GameSystem {
    */
   private container = { cssWidth: 0, cssHeight: 0, width: 0, height: 0 }
 
+  /**
+   * The viewport of the main view in normalized canvas coordinates (0-1), letterboxed for a fixed resolution + fit
+   */
+  public readonly viewport: IRect = { x: 0, y: 0, width: 1, height: 1 }
+
+  /**
+   * Render scale of the main view, relative to its viewport in canvas pixels
+   */
+  public renderScale = 1
+
+  /**
+   * Aspect ratio of the main view, for the camera
+   */
+  public get aspectRatio(): number {
+    const output = this.device.output
+    return (output.width * this.viewport.width) / (output.height * this.viewport.height)
+  }
+
   public initialize(world: GameWorld): void {
     this.device = world.getSystem(Device)
     this.config = world.getSystem(ViewerConfig)
+    this.game = world.getSystem(EcsGame)
     const canvas = this.device.canvas
     if (!(canvas instanceof HTMLCanvasElement) || !canvas.parentElement) {
       return
@@ -37,6 +61,7 @@ export class RenderSizeSystem extends GameSystem {
     this.observer.observe(canvas.parentElement)
     this.unsubscribe.push(this.config.onChange('renderResolution', this.apply))
     this.unsubscribe.push(this.config.onChange('renderScaling', this.apply))
+    this.unsubscribe.push(this.config.onChange('renderScale', this.apply))
     // the device sizes the output from the canvas once it is ready, apply the config again after that
     this.device.ready.then(this.apply)
   }
@@ -46,6 +71,20 @@ export class RenderSizeSystem extends GameSystem {
     this.observer = null
     this.unsubscribe.forEach((off) => off())
     this.unsubscribe.length = 0
+  }
+
+  /**
+   * Maps a normalized canvas position (0-1) into the main view (0-1), e.g. the mouse for picking
+   */
+  public toViewX(x: number): number {
+    return (x - this.viewport.x) / this.viewport.width
+  }
+
+  /**
+   * Maps a normalized canvas position (0-1) into the main view (0-1), e.g. the mouse for picking
+   */
+  public toViewY(y: number): number {
+    return (y - this.viewport.y) / this.viewport.height
   }
 
   private handleResize = (entries: ResizeObserverEntry[]) => {
@@ -65,33 +104,54 @@ export class RenderSizeSystem extends GameSystem {
     if (!canvas || !container.width || !container.height) {
       return
     }
+    const viewport = this.viewport
+    viewport.x = viewport.y = 0
+    viewport.width = viewport.height = 1
+    this.renderScale = 1
 
     const resolution = parseResolution(this.config.value.renderResolution)
-    if (!resolution) {
-      // follow the window, the stylesheet sizes the canvas to the container
-      resetCanvasStyle(canvas)
-      this.device.resize(container.width, container.height)
+    if (resolution && this.config.value.renderScaling === 'none') {
+      this.device.resize(resolution.width, resolution.height)
+      // CSS size for one render pixel per device pixel
+      const devicePixelsPerCss = container.width / container.cssWidth
+      Object.assign(canvas.style, {
+        position: 'absolute',
+        left: '50%',
+        top: '50%',
+        width: `${resolution.width / devicePixelsPerCss}px`,
+        height: `${resolution.height / devicePixelsPerCss}px`,
+        transform: 'translate(-50%, -50%)',
+      })
+      this.updateView()
       return
     }
 
-    this.device.resize(resolution.width, resolution.height)
-    // CSS size for one render pixel per device pixel
-    const devicePixelsPerCss = container.width / container.cssWidth
-    let width = resolution.width / devicePixelsPerCss
-    let height = resolution.height / devicePixelsPerCss
-    if (this.config.value.renderScaling === 'fit') {
-      const scale = Math.min(container.cssWidth / width, container.cssHeight / height)
-      width *= scale
-      height *= scale
+    // the canvas fills the container, the stylesheet sizes it
+    resetCanvasStyle(canvas)
+    this.device.resize(container.width, container.height)
+    if (resolution) {
+      // fit: letterbox the resolution into the canvas, render at the resolution
+      const fit = Math.min(container.width / resolution.width, container.height / resolution.height)
+      const width = resolution.width * fit
+      const height = resolution.height * fit
+      viewport.width = width / container.width
+      viewport.height = height / container.height
+      viewport.x = (1 - viewport.width) / 2
+      viewport.y = (1 - viewport.height) / 2
+      this.renderScale = 1 / fit
+    } else {
+      this.renderScale = parseRenderScale(this.config.value.renderScale)
     }
-    Object.assign(canvas.style, {
-      position: 'absolute',
-      left: '50%',
-      top: '50%',
-      width: `${width}px`,
-      height: `${height}px`,
-      transform: 'translate(-50%, -50%)',
-    })
+    this.updateView()
+  }
+
+  private updateView() {
+    const view = this.game.scene?.getView(0)
+    if (!view) {
+      return
+    }
+    view.viewport = this.viewport
+    view.renderScale = this.renderScale
   }
 }
 
@@ -101,6 +161,24 @@ export class RenderSizeSystem extends GameSystem {
 function parseResolution(value: string): { width: number; height: number } | null {
   const match = /^(\d+)x(\d+)$/.exec(value)
   return match ? { width: Number(match[1]), height: Number(match[2]) } : null
+}
+
+/**
+ * The render scale of a preset: `native` is 1, a percentage like `67%` is the FSR ratio it names (1 / 1.5)
+ */
+function parseRenderScale(value: string): number {
+  switch (value) {
+    case '77%':
+      return 1 / 1.3
+    case '67%':
+      return 1 / 1.5
+    case '59%':
+      return 1 / 1.7
+    case '50%':
+      return 1 / 2
+    default:
+      return 1
+  }
 }
 
 function resetCanvasStyle(canvas: HTMLCanvasElement) {

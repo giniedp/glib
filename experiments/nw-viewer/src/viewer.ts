@@ -68,6 +68,7 @@ import { LuminancePass } from './graphics/passes/exposure/LuminancePass'
 import { SmaaPass } from './graphics/passes/smaa/SmaaPass'
 import { FroxelFogPass } from './graphics/passes/fog/FroxelFogPass'
 import { Cmaa2Pass } from './graphics/passes/cmaa2/Cmaa2Pass'
+import { UpscalePass } from './graphics/passes/upscale/UpscalePass'
 import { RenderSizeSystem } from './graphics/RenderSizeSystem'
 import { InputSlots, MaterialLayerMasks } from './material'
 import { createSceneOptions, VIEWER_MODE_PARAMS, type SceneOptions } from './scenes'
@@ -232,6 +233,13 @@ export class NwViewer extends EcsGame {
     }
     applyAntialiasing(config.value.antialiasing)
     config.onChange('antialiasing', applyAntialiasing)
+    const upscale = pipeline.passes.find((it): it is UpscalePass => it instanceof UpscalePass)
+    if (upscale) {
+      upscale.mode = config.value.upscaler
+      upscale.sharpness = config.value.upscaleSharpness
+      config.onChange('upscaler', (value) => (upscale.mode = value))
+      config.onChange('upscaleSharpness', (value) => (upscale.sharpness = value))
+    }
     const froxelFog = pipeline.passes.find((it): it is FroxelFogPass => it instanceof FroxelFogPass)
     if (froxelFog) {
       froxelFog.enabled = config.value.froxelFog
@@ -337,7 +345,8 @@ export class NwViewer extends EcsGame {
 
   override onBeginUpdate(time: number, dt: number): void {
     super.onBeginUpdate(time, dt)
-    this.camera.aspect = this.device.output.aspectRatio
+    // the main view, letterboxed for a fixed resolution + fit
+    this.camera.aspect = this.world.getSystem(RenderSizeSystem).aspectRatio
     this.scheduler.updatePriorities(this.camera, time)
     this.world.getSystem(Renderer).inputs.set(InputSlots.Global.Debug, this.debug)
   }
@@ -356,7 +365,8 @@ export class NwViewer extends EcsGame {
   private screenshotRequests: Array<(image: Blob | null) => void> = []
 
   /**
-   * Captures the next rendered frame as PNG, at the render resolution
+   * Captures the next rendered frame as PNG: the canvas, so the upscaled image at the output resolution (or the
+   * render resolution for a fixed resolution + `none`)
    *
    * @remarks
    * A WebGPU canvas can only be read in the task that renders the frame, so the capture runs after the next draw.

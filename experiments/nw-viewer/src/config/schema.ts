@@ -36,6 +36,36 @@ export const viewerConfigSchema = defineConfig({
     default: 'fit',
     group: 'Display',
   }),
+
+  renderScale: choice({
+    description:
+      'Render resolution relative to the window (renderResolution window), upscaled to the window size. ' +
+      'The presets of FSR: 77% ultra quality (1.3x), 67% quality (1.5x), 59% balanced (1.7x), 50% performance (2x).',
+    editable: true,
+    options: ['native', '77%', '67%', '59%', '50%'],
+    default: 'native',
+    group: 'Display',
+  }),
+
+  upscaler: choice({
+    description:
+      'Upscale of a render scale below native, after the post AA: fsr1 is AMD FSR 1 (edge adaptive upsampling + ' +
+      'RCAS sharpening), bicubic the B-spline of the game (soft, no ringing), bilinear the plain filter.',
+    editable: true,
+    options: ['fsr1', 'bicubic', 'bilinear'],
+    default: 'fsr1',
+    group: 'Display',
+  }),
+
+  upscaleSharpness: number({
+    description: 'RCAS sharpening of fsr1 in stops: 0 is the strongest, each stop halves it (AMD default 0.2).',
+    editable: true,
+    default: 0.2,
+    min: 0,
+    max: 2,
+    step: 0.05,
+    group: 'Display',
+  }),
   /**
    * The engine cvar e_LodFaceAreaTargetSize. The distance between two levels of detail is
    * `sqrt(geometric mean face area) / lodFaceAreaTargetSize / (lodRatio / 100)`, see ContentService.cgfLodInfo and
