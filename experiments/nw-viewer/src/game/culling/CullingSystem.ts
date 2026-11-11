@@ -166,6 +166,7 @@ export class CullingSystem extends GameSystem implements SceneSource {
       lod: lod
         ? {
             distance: lod.distance,
+            spacing: lod.spacing,
             maxLevel: lod.maxLevel,
             hysteresis: lod.hysteresis,
             maxScreenSize: lod.maxScreenSize ? Array.from(lod.maxScreenSize) : null,

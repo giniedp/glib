@@ -26,6 +26,10 @@ export interface CullLod {
    */
   distance: number
   /**
+   * See ModelLod.spacing
+   */
+  spacing: 'linear' | 'doubling'
+  /**
    * See ModelLod.maxLevel
    */
   maxLevel: number

@@ -308,10 +308,7 @@ export class CullingWorld {
     const centerDistance = Math.sqrt(cx * cx + cy * cy + cz * cz)
     const screenSize = centerDistance <= radius ? Number.POSITIVE_INFINITY : (radius * view.projectionScaleY) / centerDistance
 
-    const current = record.selected
-    const relative = distance / lod.distance
-    const stay = relative >= current - lod.hysteresis && relative < current + 1 + lod.hysteresis
-    let level = stay ? current : Math.floor(relative)
+    let level = selectLevel(lod, distance, record.selected)
     level = Math.max(0, Math.min(level, lod.maxLevel))
     while (level > 0) {
       const max = lod.maxScreenSize?.[level]
@@ -384,4 +381,34 @@ function sphereInFrustum(planes: IVec4[], spheres: Float32Array, s: number): boo
     }
   }
   return true
+}
+
+/**
+ * Same as selectLodLevel of @gglib/model (not imported, the worker only depends on @gglib/math)
+ */
+function selectLevel(lod: CullLod, at: number, current: number): number {
+  if (current >= 0) {
+    const start = levelStart(lod, current)
+    const end = levelStart(lod, current + 1)
+    const below = current > 0 ? (start - levelStart(lod, current - 1)) * lod.hysteresis : 0
+    const above = (end - start) * lod.hysteresis
+    if (at >= start - below && at < end + above) {
+      return current
+    }
+  }
+  const position = at / lod.distance
+  if (lod.spacing === 'doubling') {
+    return position < 1 ? 0 : Math.floor(Math.log2(position)) + 1
+  }
+  return Math.floor(position)
+}
+
+function levelStart(lod: CullLod, level: number): number {
+  if (level <= 0) {
+    return 0
+  }
+  if (lod.spacing === 'doubling') {
+    return lod.distance * 2 ** (level - 1)
+  }
+  return lod.distance * level
 }

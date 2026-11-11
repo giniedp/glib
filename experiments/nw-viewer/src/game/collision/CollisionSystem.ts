@@ -1,7 +1,8 @@
 import { EcsGame } from '@gglib/components'
 import { GameSystem, type GameQuery, type GameWorld } from '@gglib/ecs'
 import { mat4GetTranslation, vec3, vec3DistanceSquared } from '@gglib/math'
-import { COLLISION_DEBUG_RANGE, COLLISION_LOAD_CONCURRENCY, COLLISION_NON_BLOCKING_FILTERS } from '../../constants'
+import { COLLISION_DEBUG_RANGE, COLLISION_LOAD_CONCURRENCY } from '../../constants'
+import { PLAYER_NON_BLOCKING_FILTERS } from './playerFilters'
 import { ContentService } from '../../content'
 import type { RnrAsset } from '../../formats/rnr/types'
 import { DebugLayer } from '../debug/DebugShapeComponent'
@@ -275,12 +276,13 @@ export class CollisionSystem extends GameSystem {
 }
 
 /**
- * Whether a collision component blocks the player in grounded movement mode
+ * Whether a collision component blocks the player in grounded movement mode, by the game's `Player` filter, see
+ * {@link PLAYER_NON_BLOCKING_FILTERS}
  */
 function blocksPlayer(component: CollisionComponent) {
   if (component.isVolume || (!component.rnr && !component.primitive)) {
     return false
   }
   const filter = component.data.filter
-  return !filter || !COLLISION_NON_BLOCKING_FILTERS.includes(filter)
+  return !filter || !PLAYER_NON_BLOCKING_FILTERS.has(filter)
 }

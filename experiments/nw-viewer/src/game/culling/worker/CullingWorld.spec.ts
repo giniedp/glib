@@ -80,7 +80,7 @@ describe('CullingWorld', () => {
       { id: 1, layer: 1 },
       { id: 2, layer: 1 },
     ])
-    const lod = { distance: 10, maxLevel: 2, hysteresis: 0.1, maxScreenSize: null as number[] }
+    const lod = { distance: 10, spacing: 'linear' as const, maxLevel: 2, hysteresis: 0.1, maxScreenSize: null as number[] }
     world.add(record(1, 25, level([{ x: 25, batches: [1] }]), lod))
 
     let result = world.cull(view(), null)
@@ -91,6 +91,16 @@ describe('CullingWorld', () => {
     result = world.cull(view(), result)
     expect(result.requests).toEqual([])
     expect(result.batches[0]).toBe(2)
+  })
+
+  it('selects levels with doubling distances', () => {
+    const world = new CullingWorld()
+    world.addBatches([{ id: 1, layer: 1 }])
+    // level 1 from 10, 2 from 20, 3 from 40: 35 is level 2 (linear spacing would select 3)
+    const lod = { distance: 10, spacing: 'doubling' as const, maxLevel: 3, hysteresis: 0.1, maxScreenSize: null as number[] }
+    world.add(record(1, 35, level([{ x: 35, batches: [1] }]), lod))
+    const result = world.cull(view(), null)
+    expect(result.requests).toEqual([1, 2])
   })
 
   it('removes records and keeps the others', () => {

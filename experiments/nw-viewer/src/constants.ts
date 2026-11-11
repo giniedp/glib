@@ -87,9 +87,12 @@ export const LOD_PROBE_MIN_TRIANGLES = 128
 export const ROAD_VIEW_DISTANCE = 256
 
 /**
- * Vegetation is rendered up to this distance. Lumberyard spawns a 13x13 grid of 16m sectors around the camera.
+ * Vegetation is rendered up to this distance. The game keeps `veg_bubbleSize` (16 at high, sys_spec_terrain.cfg) sectors
+ * of 16 m around the camera and draws them up to half the bubble width, 128 m (fadeEnd, openworld ow-vegetation bubble.rs).
+ * The game sinks the grass into the ground from 0.4 of that distance on, the viewer dithers it out over
+ * VEGETATION_FADE_RANGE instead.
  */
-export const VEGETATION_VISIBLE_DISTANCE = 104
+export const VEGETATION_VISIBLE_DISTANCE = 128
 /**
  * Cells within visible distance + margin are uploaded, so they are ready when they become visible
  */
@@ -141,9 +144,11 @@ export const ENABLE_CAPITALS = true
 export const ENABLE_CHUNKS = true
 
 /**
- * Distance from camera to where impostor begin, where game objects fade out and impostor fades in
+ * Distance from camera to where impostor begin, where game objects fade out and impostor fades in.
+ * The game clips impostor pixels inside 185 m (IMPOSTOR_MIN_VIEW_DISTANCE = 185 * g_GDE_ImpostorNearFadeDistanceScale)
+ * and dissolves them over the next 20 m (Illum.cfxb %IS_GDE_IMPOSTOR / %IS_POI_IMPOSTOR, tmp/game-parity).
  */
-export const IMPOSTOR_VISIBILITY_START = SEGMENT_SIZE * 1.5
+export const IMPOSTOR_VISIBILITY_START = 185
 
 /**
  * Distance from camera to maximum distance where impostor are still visible
@@ -166,12 +171,13 @@ export const IMPOSTOR_FADE_RANGE = 20
 export const VEGETATION_FADE_RANGE = 24
 
 /**
- * View distance cap of meshes in chunk slices.
+ * View distance cap of meshes in chunk slices, also the distance where POI impostor cells start loading their content.
  *
- * One impostor cell beyond the hand-over: a POI impostor cell covers many meshes and disappears per pixel
- * at the start of its span, so the meshes of the whole cell must be active by then.
+ * The game builds the geometry of slices and chunks progressively within 225 m * g_GDE_ImpostorNearFadeDistanceScale
+ * (the GDE near sweep, NewWorld+0x695b6c0, tmp/game-parity/view-distance.md), beyond the impostor dissolve band
+ * (IMPOSTOR_VISIBILITY_START + IMPOSTOR_FADE_RANGE = 205 m).
  */
-export const CHUNK_MESH_RANGE = IMPOSTOR_VISIBILITY_START + IMPOSTOR_FADE_RANGE
+export const CHUNK_MESH_RANGE = 225
 /**
  * Mesh chunk sizes whose meshes hold their cell's POI impostor (see RegionImpostorComponent cell state).
  * Chunk meshes have no impostor flag (see ViewerMeshComponent.impostor), the large chunks hold the far visible meshes.
@@ -187,13 +193,14 @@ export const COLLISION_DEBUG_RANGE = 128
  */
 export const COLLISION_LOAD_CONCURRENCY = 32
 /**
- * Player capsule radius in grounded movement mode
+ * Player capsule radius in grounded movement mode. The game's Player capsule has radius 0.41 and a segment of 0.8, its
+ * bottom at the feet (NewWorld+0x1697e20, tmp/game-parity/capsule.md)
  */
-export const PLAYER_RADIUS = 0.4
+export const PLAYER_RADIUS = 0.41
 /**
- * Player capsule height (feet to head) in grounded movement mode
+ * Player capsule height (feet to head) in grounded movement mode: segment 0.8 plus both caps
  */
-export const PLAYER_HEIGHT = 1.8
+export const PLAYER_HEIGHT = 0.8 + 2 * PLAYER_RADIUS
 /**
  * Camera height above the feet in grounded movement mode
  */
@@ -218,10 +225,6 @@ export const COLLISION_PLAYER_LOAD_CONCURRENCY = 16
  * Cell size of the collision worker's spatial grid in meters
  */
 export const COLLISION_GRID_CELL_SIZE = 16
-/**
- * Collider filters that never block the player (e.g. projectile only colliders), compared to `ViewerColliderComponent.filter`
- */
-export const COLLISION_NON_BLOCKING_FILTERS: readonly string[] = []
 /**
  * The culling worker culls with a frustum widened by this fraction (tangent of the half field of view), so objects
  * do not pop in at the screen edges while turning, its results are 1–2 frames late

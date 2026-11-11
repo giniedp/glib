@@ -1,10 +1,23 @@
 import type { Model } from './Model'
 
+/**
+ * How the switch distances of the levels grow, see {@link lodLevelStart}
+ *
+ * - `linear`: level `n` is shown from `n * distance` on
+ * - `doubling`: level 1 from `distance` on, every further level from twice the distance of the previous one
+ *   (`distance * 2^(n - 1)`), like the CryEngine face area LOD (CObjManager::GetObjectLOD)
+ */
+export type LodSpacing = 'linear' | 'doubling'
+
 export interface ModelLodOptions {
   /**
-   * Distance between two levels: level `n` is shown from `n * distance` on
+   * Distance where level 1 begins, the further levels follow from {@link spacing}
    */
   distance: number
+  /**
+   * How the switch distances of the levels grow. Defaults to `linear`
+   */
+  spacing?: LodSpacing
   /**
    * Highest level that may exist. Lowered automatically when a level fails to load.
    */
@@ -15,7 +28,7 @@ export interface ModelLodOptions {
    */
   load: (level: number) => Promise<Model | null>
   /**
-   * Fraction of {@link distance} by which the range of the current level is widened,
+   * Fraction of the neighbouring level's range by which the range of the current level is widened,
    * so that a camera on a level boundary does not switch every frame. Defaults to 0.1
    */
   hysteresis?: number
@@ -32,14 +45,19 @@ export interface ModelLodOptions {
  *
  * @remarks
  * Level 0 is the model itself, higher levels are coarser and loaded on demand.
- * Selection is distance based: level `n` is shown from `n * distance` on, see {@link select}.
+ * Selection is distance based, the levels begin at {@link lodLevelStart}, see {@link select}.
  * While a wanted level is loading, the closest finer level that is loaded is shown, see {@link resolve}.
  */
 export class ModelLod {
   /**
-   * Distance between two levels: level `n` is shown from `n * distance` on
+   * Distance where level 1 begins
    */
   public readonly distance: number
+
+  /**
+   * How the switch distances of the levels grow
+   */
+  public readonly spacing: LodSpacing
 
   /**
    * Highest level that may exist
@@ -47,7 +65,7 @@ export class ModelLod {
   public maxLevel: number
 
   /**
-   * Fraction of {@link distance} by which the range of the current level is widened
+   * Fraction of the neighbouring level's range by which the range of the current level is widened
    */
   public hysteresis: number
 
@@ -64,6 +82,7 @@ export class ModelLod {
   public constructor(base: Model, options: ModelLodOptions) {
     this.base = base
     this.distance = options.distance
+    this.spacing = options.spacing ?? 'linear'
     this.maxLevel = options.maxLevel
     this.hysteresis = options.hysteresis ?? 0.1
     this.maxScreenSize = options.maxScreenSize ?? null
@@ -80,10 +99,7 @@ export class ModelLod {
    * @param current - the level that was selected before
    */
   public select(distance: number, screenSize: number, current: number): number {
-    const position = distance / this.distance
-    // stay on the current level while the distance is within its range, widened by the hysteresis
-    const stay = position >= current - this.hysteresis && position < current + 1 + this.hysteresis
-    let level = stay ? current : Math.floor(position)
+    let level = selectLodLevel(this.spacing, this.distance, this.hysteresis, distance, current)
     level = Math.max(0, Math.min(level, this.maxLevel))
     while (level > 0 && !this.allowsScreenSize(level, screenSize)) {
       level--
@@ -144,4 +160,62 @@ export class ModelLod {
   private markMissing(level: number) {
     this.maxLevel = Math.min(this.maxLevel, level - 1)
   }
+}
+
+/**
+ * Distance where a level of detail begins
+ *
+ * @param spacing - how the distances grow, see {@link LodSpacing}
+ * @param distance - distance where level 1 begins
+ * @param level - the level, 0 begins at 0
+ */
+export function lodLevelStart(spacing: LodSpacing, distance: number, level: number): number {
+  if (level <= 0) {
+    return 0
+  }
+  if (spacing === 'doubling') {
+    return distance * 2 ** (level - 1)
+  }
+  return distance * level
+}
+
+/**
+ * Level of detail that begins at or before a distance, without an upper limit
+ */
+export function lodLevelAt(spacing: LodSpacing, distance: number, at: number): number {
+  const position = at / distance
+  if (spacing === 'doubling') {
+    return position < 1 ? 0 : Math.floor(Math.log2(position)) + 1
+  }
+  return Math.floor(position)
+}
+
+/**
+ * Selects the level of detail at a distance, staying on the current level while the distance is within its range
+ * widened by the hysteresis: below by a fraction of the previous level's range, above by a fraction of its own range.
+ *
+ * @param spacing - how the distances grow, see {@link LodSpacing}
+ * @param distance - distance where level 1 begins
+ * @param hysteresis - fraction of the neighbouring ranges by which the current range is widened
+ * @param at - distance from the camera to the model
+ * @param current - the level that was selected before
+ * @returns the level, not limited to the levels that exist
+ */
+export function selectLodLevel(
+  spacing: LodSpacing,
+  distance: number,
+  hysteresis: number,
+  at: number,
+  current: number,
+): number {
+  if (current >= 0) {
+    const start = lodLevelStart(spacing, distance, current)
+    const end = lodLevelStart(spacing, distance, current + 1)
+    const below = current > 0 ? (start - lodLevelStart(spacing, distance, current - 1)) * hysteresis : 0
+    const above = (end - start) * hysteresis
+    if (at >= start - below && at < end + above) {
+      return current
+    }
+  }
+  return lodLevelAt(spacing, distance, at)
 }

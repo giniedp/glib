@@ -1,5 +1,5 @@
 import { SamplerState } from '@gglib/graphics'
-import { vec4, type IVec3, type IVec4 } from '@gglib/math'
+import { vec4 } from '@gglib/math'
 import type { Renderer } from '@gglib/render'
 import type { ProbeCube, ProbeCubeLoader } from '../../content/ProbeCubeLoader'
 import { InputSlots } from '../../material'
@@ -66,12 +66,6 @@ export class EnvProbeInputs {
     return this.cubes.defaultCube?.state === 'ready' ? this.cubes.defaultCube : null
   }
 
-  /**
-   * Engine part (LightInstance.cpp): diffuse is `color * diffuseMultiplier`, specular is that times `specMultiplier`.
-   *
-   * Time of day part, not verified: New World only, no source available. Scaling by the multipliers and blending them
-   * by `todInfluence` is the simplest reading of the data.
-   */
   private writeColors(probe: EnvProbeComponent, ownCube: boolean) {
     const tod = this.timeOfDay
     const config = probe.config
@@ -80,25 +74,19 @@ export class EnvProbeInputs {
     const specularMultiplier = ownCube ? (config.specMultiplier ?? 1) : 1
     const influence = config.todInfluence ?? 0
 
-    writeColor(
-      this.diffuse,
-      color,
-      diffuseMultiplier * influenced(tod.envProbeDiffuseMultiplier, influence),
-      tod.envProbeMultiplier,
-      influence,
-    )
-    // the engine multiplies the specular multiplier on top of the diffuse scaled color (light.color.rgb * light.color.a
-    // in TiledShading.cfi), the time of day specular multiplier is read the same way: on top of the diffuse one
-    writeColor(
-      this.specular,
-      color,
-      diffuseMultiplier *
-        influenced(tod.envProbeDiffuseMultiplier, influence) *
-        specularMultiplier *
-        influenced(tod.envProbeSpecularMultiplier, influence),
-      tod.envProbeMultiplier,
-      influence,
-    )
+    const tint = tod.envProbeMultiplier
+    const todDiffuse = tod.envProbeDiffuseMultiplier
+    const diffuse = this.diffuse
+    diffuse.x = color[0] * diffuseMultiplier * influenced(tint.x * todDiffuse, influence)
+    diffuse.y = color[1] * diffuseMultiplier * influenced(tint.y * todDiffuse, influence)
+    diffuse.z = color[2] * diffuseMultiplier * influenced(tint.z * todDiffuse, influence)
+    diffuse.w = 1
+
+    const specular = specularMultiplier * influenced(tod.envProbeSpecularMultiplier, influence)
+    this.specular.x = diffuse.x * specular
+    this.specular.y = diffuse.y * specular
+    this.specular.z = diffuse.z * specular
+    this.specular.w = 1
   }
 }
 
@@ -106,11 +94,4 @@ const DEFAULT_COLOR: [number, number, number, number] = [1, 1, 1, 1]
 
 function influenced(value: number, influence: number) {
   return 1 + (value - 1) * influence
-}
-
-function writeColor(out: IVec4, color: ArrayLike<number>, scale: number, tint: IVec3, influence: number) {
-  out.x = color[0] * scale * influenced(tint.x, influence)
-  out.y = color[1] * scale * influenced(tint.y, influence)
-  out.z = color[2] * scale * influenced(tint.z, influence)
-  out.w = 1
 }

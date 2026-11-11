@@ -118,7 +118,7 @@ export class MeshLoaderComponent implements GameComponent {
         if (this.data.instances?.length > 0 && !combineInstances) {
           for (const inst of this.data.instances) {
             const model = instantiateModel(task.context)
-            this.attachLod(model, task.context, instantiateModel)
+            this.attachLod(model, task.context, instantiateModel, scaleZ(this.entity.getTransform().world) * scaleZ(inst))
 
             const child = this.entity.world.createEntity({
               parent: this.entity,
@@ -146,7 +146,8 @@ export class MeshLoaderComponent implements GameComponent {
             instantiate = (source: Model) => createInstanceArrayModel(source, this.data.instances)
           }
           const model = instantiate(task.context)
-          this.attachLod(model, task.context, instantiate)
+          // combined instance arrays select one level for all instances, the entity scale stands for all of them
+          this.attachLod(model, task.context, instantiate, scaleZ(this.entity.getTransform().world))
           const color = { x: 0, y: 0, z: 1 }
           if (this.data.visibilityOccluder) {
             color.x = 1
@@ -230,11 +231,17 @@ export class MeshLoaderComponent implements GameComponent {
   /**
    * Assigns the levels of detail of a source model to an instance of it
    *
+   * Like the engine (CObjManager::GetObjectLOD with e_LodFaceArea): level 1 begins at the distance of the CGF
+   * (sqrt(face area) / e_LodFaceAreaTargetSize), divided by lodRatio / 100 and multiplied by the world z scale, and every
+   * further level at twice the distance of the previous one. New World leaves e_UseScreenPctLOD off, so
+   * Lod_MinScreenPct is not used.
+   *
    * @param instance - the model of this entity
    * @param source - the shared model it was created from
    * @param instantiate - creates the model of a level the same way as the instance was created from the source
+   * @param scale - length of the z axis of the world transform, the engine scales the distances by it
    */
-  private attachLod(instance: Model, source: Model, instantiate: (level: Model) => Model) {
+  private attachLod(instance: Model, source: Model, instantiate: (level: Model) => Model, scale: number) {
     const info = source.meta.lod as CgfLodInfo | null
     // like the engine (GetLodDistances), the distances are divided by lodRatio / 100, a ratio of 0 disables the levels
     const lodRatio = (this.data.lodRatio ?? 100) / 100
@@ -242,10 +249,9 @@ export class MeshLoaderComponent implements GameComponent {
       return
     }
     instance.lod = new ModelLod(instance, {
-      distance: info.distance / lodRatio,
+      distance: (info.distance / lodRatio) * scale,
+      spacing: 'doubling',
       maxLevel: info.maxLevel,
-      // NW specific, interpreted as the maximum screen size per level (the game data is -1, 0.675, 0.55, …, 0.175)
-      maxScreenSize: this.data.lodMinScreenPct,
       load: async (level) => {
         const model = await this.content.loadModelLod(this.data.mesh, this.data.material, level, this.scope)
         return model ? instantiate(model) : null
@@ -355,4 +361,11 @@ function createInstanceArrayModel(source: Model, instances: ArrayLike<number>[])
     scenes: [{ nodes: nodes.map((_, i) => i) }],
     scene: 0,
   })
+}
+
+/**
+ * Length of the z axis of a transform (column major), the scale the engine applies to the LOD distances
+ */
+function scaleZ(m: ArrayLike<number>): number {
+  return Math.hypot(m[8], m[9], m[10])
 }

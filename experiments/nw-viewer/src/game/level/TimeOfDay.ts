@@ -23,7 +23,6 @@ import {
   type IVec3,
 } from '@gglib/math'
 import type { CameraData } from '@gglib/render'
-import { removeItemUnordered } from '@gglib/utils'
 import type { LevelInfo, TimeOfDay as TimeOfDayData } from '../../api'
 import type { ContentService } from '../../content'
 import { TodParams, type TodParam } from './TimeOfDayParams'
@@ -39,10 +38,22 @@ export type TimeOfDayLayer = {
   priority: number
   blendWeight: number
   blendTarget: number
+  /**
+   * Seconds to blend fully in or out, 0 switches at once (TimeOfDayPOIConfig.BlendTime)
+   */
   blendDuration: number
   preset: TimeOfDayPreset
 }
 const MAX_TIME = (24 * 60 - 1) / 60.0
+/**
+ * Hours of a day. New World maps the hour onto the curves as `hour / 24` (CTimeOfDay::UpdateValues), Lumberyard divides
+ * by 23.983334
+ */
+const HOURS_PER_DAY = 24
+/**
+ * Layers below this weight do not take part in the blend (TimeOfDayPOIModifier, MIN_WEIGHT in tmp/game-parity)
+ */
+const MIN_LAYER_WEIGHT = 0.01
 
 export class TimeOfDay {
   public sunColor = vec3(1, 0.71085715, 0.5335781)
@@ -236,26 +247,50 @@ export class TimeOfDay {
   }
 
   private interpolate() {
-    const t = this.time / MAX_TIME
+    const t = this.time / HOURS_PER_DAY
     this.base.interpolate(t)
     for (const layer of this.poiLayers) {
       layer.preset.interpolate(t)
     }
   }
 
+  /**
+   * Value of a variable, blended like the game's TimeOfDayPOIModifier (tmp/game-parity/time-of-day.md): the level keeps
+   * `1 - min(sum of weights, 1)`, every layer adds its value times its weight, the highest priority first, each weight
+   * cut so that the total never passes 1. Values are clamped to their range before the blend, like the curves.
+   */
   public getParamValue(param: TodParam<number>): number {
-    let value = this.base.variables[param.name].value
-    if (!this.enablePoiLayers) {
-      return value
+    const base = clamp(this.base.variables[param.name].value, param.min, param.max)
+    if (!this.enablePoiLayers || !this.poiLayers.length) {
+      return base
     }
+    let total = this.levelShare()
+    let value = base * total
     for (const layer of this.poiLayers) {
-      const lValue = layer.preset.variables[param.name].value
-      if (layer.blendWeight > 0) {
-        value = lerp(value, lValue, layer.blendWeight)
+      if (total >= 1) {
+        break
+      }
+      if (layer.blendWeight < MIN_LAYER_WEIGHT) {
+        continue
+      }
+      const weight = cappedWeight(layer.blendWeight, total)
+      total += layer.blendWeight
+      value += clamp(layer.preset.variables[param.name].value, param.min, param.max) * weight
+    }
+    return value
+  }
+
+  /**
+   * Share of the level's own time of day in the blend, see {@link getParamValue}
+   */
+  private levelShare(): number {
+    let sum = 0
+    for (const layer of this.poiLayers) {
+      if (layer.blendWeight >= MIN_LAYER_WEIGHT) {
+        sum += layer.blendWeight
       }
     }
-    value = clamp(value, param.min, param.max)
-    return value
+    return 1 - Math.min(sum, 1)
   }
 
   private updateSunShaftsParams() {
@@ -283,35 +318,58 @@ export class TimeOfDay {
     color.w = 1
   }
 
+  /**
+   * Color of a variable, blended like {@link getParamValue}. Channels are clamped to 0..1 before the blend, like the
+   * curves (CTimeOfDay::UpdateValues).
+   */
   public getParamColor(param: TodParam<IVec3>, out: IVec3) {
     const base = this.base.variables[param.name].value
-    out.x = base.x
-    out.y = base.y
-    out.z = base.z
-    if (!this.enablePoiLayers) {
+    out.x = clamp(base.x, 0, 1)
+    out.y = clamp(base.y, 0, 1)
+    out.z = clamp(base.z, 0, 1)
+    if (!this.enablePoiLayers || !this.poiLayers.length) {
       return
     }
+    let total = this.levelShare()
+    out.x *= total
+    out.y *= total
+    out.z *= total
     for (const layer of this.poiLayers) {
-      const value = layer.preset.variables[param.name].value
-      if (layer.blendWeight > 0) {
-        out.x = lerp(out.x, value.x, layer.blendWeight)
-        out.y = lerp(out.y, value.y, layer.blendWeight)
-        out.z = lerp(out.z, value.z, layer.blendWeight)
+      if (total >= 1) {
+        break
       }
+      if (layer.blendWeight < MIN_LAYER_WEIGHT) {
+        continue
+      }
+      const weight = cappedWeight(layer.blendWeight, total)
+      total += layer.blendWeight
+      const value = layer.preset.variables[param.name].value
+      out.x += clamp(value.x, 0, 1) * weight
+      out.y += clamp(value.y, 0, 1) * weight
+      out.z += clamp(value.z, 0, 1) * weight
     }
   }
 
+  /**
+   * Blends a layer in. Layers are kept the highest priority first, and on equal priority the newest first, like the
+   * game's modifier (new zones join at the front, the priority sort is stable).
+   *
+   * @param duration - seconds to blend fully in or out, 0 switches at once
+   */
   public scheduleAdd(preset: TimeOfDayPreset, priority: number, duration: number) {
-    if (!this.poiLayers.find((it) => it.preset === preset)) {
-      this.poiLayers.push({
-        preset,
-        priority,
-        blendWeight: 0,
-        blendTarget: 1,
-        blendDuration: Math.max(duration ?? 1, 1),
-      })
-      this.poiLayers.sort(prioritySort)
+    const layer = this.poiLayers.find((it) => it.preset === preset)
+    if (layer) {
+      layer.blendTarget = 1
+      return
     }
+    this.poiLayers.unshift({
+      preset,
+      priority,
+      blendWeight: 0,
+      blendTarget: 1,
+      blendDuration: Math.max(duration ?? 0, 0),
+    })
+    this.poiLayers.sort(prioritySort)
   }
 
   public scheduleRemove(preset: TimeOfDayPreset) {
@@ -340,22 +398,31 @@ export class TimeOfDay {
     this.updateVariables(camera)
   }
 
-  private toRemove: TimeOfDayLayer[] = []
+  /**
+   * Removes the layers that blended out, in place and keeping the order
+   */
   private removeLayers() {
-    for (const it of this.poiLayers) {
-      if (it.blendWeight <= 0.001 && it.blendTarget <= 0.001) {
-        this.toRemove.push(it)
+    const layers = this.poiLayers
+    let kept = 0
+    for (let i = 0; i < layers.length; i++) {
+      const it = layers[i]
+      if (it.blendWeight <= 0 && it.blendTarget <= 0) {
+        continue
       }
+      layers[kept++] = it
     }
-    for (const it of this.toRemove) {
-      removeItemUnordered(this.poiLayers, it)
-    }
-    this.toRemove.length = 0
-    this.poiLayers.sort(prioritySort)
+    layers.length = kept
   }
 
+  /**
+   * Moves each weight toward its target, linearly over the blend duration (TransitionBlend::step), at once without one
+   */
   private updateWeights(dt: number) {
     for (const it of this.poiLayers) {
+      if (it.blendDuration <= 0) {
+        it.blendWeight = it.blendTarget
+        continue
+      }
       const rate = dt / it.blendDuration
       const delta = it.blendTarget - it.blendWeight
       const step = Math.sign(delta) * Math.min(Math.abs(delta), rate)
@@ -785,8 +852,18 @@ export class TimeOfDay {
   }
 }
 
+/**
+ * The weight a layer adds when the blend already holds `total`: cut so that the total never passes 1
+ */
+function cappedWeight(weight: number, total: number): number {
+  return Math.max(0, Math.min(weight, 1 - total))
+}
+
+/**
+ * Highest priority first, a stable sort keeps the newest first on equal priority
+ */
 function prioritySort(a: { priority: number }, b: { priority: number }) {
-  return a.priority - b.priority
+  return b.priority - a.priority
 }
 
 export function createTimeOfDay(): TimeOfDay {

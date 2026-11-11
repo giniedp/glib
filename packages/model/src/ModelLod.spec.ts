@@ -42,6 +42,30 @@ describe('ModelLod', () => {
     expect(lod.select(8.5, 0, 1)).toBe(0)
   })
 
+  it('doubles the switch distance per level with doubling spacing', () => {
+    const lod = new ModelLod(base, { distance: 10, maxLevel: 5, spacing: 'doubling', load: async () => null })
+    // level 1 from 10, 2 from 20, 3 from 40, 4 from 80, 5 from 160
+    expect(lod.select(9, 0, 0)).toBe(0)
+    // 10 is still within the hysteresis of level 0 (up to 11)
+    expect(lod.select(10, 0, 0)).toBe(0)
+    expect(lod.select(11.5, 0, 0)).toBe(1)
+    expect(lod.select(19, 0, 0)).toBe(1)
+    expect(lod.select(39, 0, 0)).toBe(2)
+    expect(lod.select(40, 0, 0)).toBe(3)
+    expect(lod.select(159, 0, 0)).toBe(4)
+    expect(lod.select(160, 0, 0)).toBe(5)
+    expect(lod.select(10000, 0, 0)).toBe(5)
+  })
+
+  it('widens the doubling ranges by the hysteresis of the neighbouring levels', () => {
+    const lod = new ModelLod(base, { distance: 10, maxLevel: 5, spacing: 'doubling', load: async () => null })
+    // level 2 covers 20..40, widened below by 0.1 of level 1 (10) and above by 0.1 of its own range (20)
+    expect(lod.select(19.5, 0, 2)).toBe(2)
+    expect(lod.select(18.5, 0, 2)).toBe(1)
+    expect(lod.select(41.5, 0, 2)).toBe(2)
+    expect(lod.select(42.5, 0, 2)).toBe(3)
+  })
+
   it('keeps finer levels while the model is large on screen', () => {
     const { lod } = createLod([])
     lod.maxScreenSize = [-1, 0.6, 0.4, 0.2]
