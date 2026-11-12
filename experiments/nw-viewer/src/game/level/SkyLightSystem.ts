@@ -147,6 +147,8 @@ export class SkyLightSystem extends GameSystem {
     sunColor.w = tod.sunSpecularMultiplier
     inputs.set(InputSlots.Global.SunColor, sunColor)
     inputs.set(InputSlots.Global.SunDirection, tod.sunDirection)
+    inputs.set(InputSlots.Global.WindDirection, tod.windDirection)
+    inputs.set(InputSlots.Global.ParticleBrightness, tod.particleBrightness)
 
     const scaledBottomFogColor = inputs.get(InputSlots.Global.BottomFogColor) || vec3()
     scaledBottomFogColor.x = tod.fogColor.x * tod.fogMultiplier

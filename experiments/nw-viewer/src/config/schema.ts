@@ -182,6 +182,24 @@ export const viewerConfigSchema = defineConfig({
     group: 'Display',
   }),
 
+  reflections: boolean({
+    description:
+      'Screen space reflections (Hi-Z traced, cone traced gloss) on glossy surfaces and water, blended over the probe ' +
+      'and env reflections like the game. Off keeps the probe and env reflections only.',
+    editable: true,
+    default: true,
+    group: 'Lighting',
+  }),
+
+  snow: boolean({
+    description:
+      'Snow and frost of snow volumes (SnowComponent) on the snow receivers (terrain and meshes with acceptSnow), ' +
+      'the deferred snow layer of the game. Off shows the surfaces without snow.',
+    editable: true,
+    default: true,
+    group: 'Lighting',
+  }),
+
   tonemapper: choice({
     description:
       'film uses the tone mapping of the game with the time of day values. aces is the previous generic curve.',

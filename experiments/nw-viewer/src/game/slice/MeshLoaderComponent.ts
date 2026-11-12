@@ -57,10 +57,13 @@ export class MeshLoaderComponent implements GameComponent {
   public readonly data: ViewerMeshComponent
 
   /**
-   * Layer flags of the model entities: decal receivers (acceptDecals) get {@link MaterialLayerMasks.DecalReceiver}
+   * Layer flags of the model entities: decal receivers (acceptDecals) get {@link MaterialLayerMasks.DecalReceiver},
+   * snow receivers (acceptSnow) {@link MaterialLayerMasks.SnowReceiver}
    */
   private get layerFlags() {
-    return this.data.acceptDecals ? MaterialLayerMasks.DecalReceiver : 0
+    const decal = this.data.acceptDecals ? MaterialLayerMasks.DecalReceiver : 0
+    const snow = this.data.acceptSnow ? MaterialLayerMasks.SnowReceiver : 0
+    return decal | snow
   }
 
   private content: ContentService

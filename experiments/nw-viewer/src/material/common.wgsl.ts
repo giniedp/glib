@@ -267,6 +267,16 @@ struct GlobalBlock {
   volFog2Entity        : vec4f,
   // number of fog volumes injected into the froxels this frame
   fogVolumeCount       : u32,
+  // global wind of the time of day (PerFrame_WindDirection): xyz = wind vector, w = its length
+  windDirection        : vec4f,
+  // particle brightness of the time of day (Particle Brightness Multiplier), see ParticleParams3[1] in particlestod.cfi
+  particleBrightness   : f32,
+  // snow volume (g_SnowVolumeParams): xyz = center, w = 1 / radius, 0 without an active volume
+  snowVolumeParams     : vec4f,
+  // g_SnowMultipliers: x = snow amount, y = frost amount, z = saturated surface freezing
+  snowMultipliers      : vec4f,
+  // x = g_SnowBrightness, y = g_FrostBrightness
+  snowBrightness       : vec4f,
 };
 
 struct ObjectBlock {
@@ -305,6 +315,11 @@ struct ViewBlock {
   near:             f32,
   far:              f32,
   viewportSize:     vec2f,
+  // view projection of the previous frame, the current one on the first frame (g_mViewProjPrev, NDC output)
+  previousViewProjectionMatrix: mat4x4f,
+  // screen space reflection inputs of the SsrPass for materials (%SSREFL): x = 1 when view.hiZMap and
+  // view.previousSceneColorMap are valid this frame, y = Hi-Z mip count, z = max ray length (m), w = max iterations
+  ssr: vec4f,
 };
 
 struct FrameBlock {
@@ -958,6 +973,139 @@ fn getOverlayBlend(base: vec3f, top: vec3f) -> vec3f {
   let out0 = 2.0 * base * top;
   let out1 = 1.0 - (2.0 * (1.0 - base) * (1.0 - top));
   return mix(out0, out1, step(vec3f(0.5), base));
+}
+
+// #region Overlay masking (CharacterMasking.cfi, Illum / HumanSkin / Hair %OVERLAY_MASK and %COLOR_SAMPLER_OVERLAY_MASK)
+
+// Material params of %OVERLAY_MASK (public params Mask_*)
+struct OverlayMaskParams {
+  maskR                 : f32,
+  maskRColor            : vec3f,
+  maskROverride         : f32,
+  maskG                 : f32,
+  maskGColor            : vec3f,
+  maskGOverride         : f32,
+  maskB                 : f32,
+  maskBColor            : vec3f,
+  maskBOverride         : f32,
+  maskAGloss            : f32,
+  maskAGlossShift       : f32,
+  maskASpecColor        : vec3f,
+  maskASpecColorOverride: f32,
+};
+
+// Surface attributes changed by the overlay masking
+struct OverlayMaskSurface {
+  albedo  : vec3f,
+  specular: vec3f,
+  gloss   : f32,
+};
+
+// %OVERLAY_MASK: dye colors per mask channel (rgb), gloss and specular color by the alpha channel (AddMasking)
+fn applyOverlayMask(s: OverlayMaskSurface, mask: vec4f, p: OverlayMaskParams) -> OverlayMaskSurface {
+  var r = s;
+  // the game's luminance weights of CharacterMasking.cfi
+  let luminance = vec3f(dot(s.albedo, vec3f(0.2125, 0.7154, 0.0721)));
+  // overrides are squared, the game found them too bright
+  let colorR = mix(getOverlayBlend(luminance, p.maskRColor), p.maskRColor * p.maskRColor, p.maskROverride);
+  let colorG = mix(getOverlayBlend(luminance, p.maskGColor), p.maskGColor * p.maskGColor, p.maskGOverride);
+  let colorB = mix(getOverlayBlend(luminance, p.maskBColor), p.maskBColor * p.maskBColor, p.maskBOverride);
+  r.albedo = mix(r.albedo, colorR, mask.r * p.maskR);
+  r.albedo = mix(r.albedo, colorG, mask.g * p.maskG);
+  r.albedo = mix(r.albedo, colorB, mask.b * p.maskB);
+
+  // gloss shift: 0.5 is neutral, 0 pulls to zero, 1 to full gloss; Mask_A_Gloss is the amount
+  var shifted = s.gloss;
+  shifted = mix(0.0, shifted, saturate(p.maskAGlossShift / 0.5));
+  shifted = mix(shifted, 1.0, saturate((p.maskAGlossShift - 0.5) / 0.5));
+  r.gloss = mix(s.gloss, shifted, mask.a * p.maskAGloss);
+
+  r.specular = mix(s.specular, p.maskASpecColor, mask.a * p.maskASpecColorOverride);
+  return r;
+}
+
+// %COLOR_SAMPLER_OVERLAY_MASK: the mask texture holds the color itself (AddMasking)
+fn applyColorSamplerMask(albedo: vec3f, mask: vec4f, strength: f32, colorOverride: f32, alphaInfluence: f32) -> vec3f {
+  let luminance = vec3f(dot(albedo, vec3f(0.2125, 0.7154, 0.0721)));
+  let color = mix(getOverlayBlend(luminance, mask.rgb), mask.rgb, colorOverride);
+  let alpha = mix(1.0, mask.a, alphaInfluence);
+  return mix(albedo, color, alpha * strength);
+}
+
+// #endregion
+
+// #region Rim lighting (RimLighting.cfi, %RIM_DIFFUSE_LIGHTING / %RIM_SPEC_LIGHTING)
+
+// Material params Rim_*
+struct RimParams {
+  majorColor     : vec3f,
+  majorIntensity : f32,
+  majorWidth     : f32,
+  fillColor      : vec3f,
+  fillIntensity  : f32,
+  fillWidth      : f32,
+  colorBlend     : f32,
+  smoothness     : f32,
+  centerColor    : vec3f,
+  centerIntensity: f32,
+};
+
+// IsRimLightingActive
+fn rimLightingActive(p: RimParams) -> bool {
+  let v = vec3f(p.majorIntensity * p.majorWidth, p.fillIntensity * p.fillWidth, p.centerIntensity);
+  return dot(v, v) > 0.0;
+}
+
+// The fake rim light of GetRimLighting_CustomLighting: a light from the eye with a fresnel shaped NdotL, stronger towards
+// the top right of the screen (major axis). x = rgb light color (times the rim map), w = the NdotL of the light.
+fn rimLight(N: vec3f, toEye: vec3f, p: RimParams, rimMap: f32) -> vec4f {
+  // camera right and up in world space: the rows of the view matrix
+  let right = vec3f(view.viewMatrix[0].x, view.viewMatrix[1].x, view.viewMatrix[2].x);
+  let up    = vec3f(view.viewMatrix[0].y, view.viewMatrix[1].y, view.viewMatrix[2].y);
+  let majorAxis = normalize(0.5 * right + up);
+  let majorAxisIntensity = dot(N, majorAxis) * 0.5 + 0.5;
+
+  let width = mix(p.fillWidth, p.majorWidth, saturate((majorAxisIntensity - 0.45) / 0.10));
+  let colorLerp = saturate((majorAxisIntensity - (0.5 - p.colorBlend * 0.5)) / max(p.colorBlend, 0.00001));
+
+  var fresnel = 1.0 - abs(dot(toEye, N));
+  fresnel = saturate((fresnel - 1.0 + width) / max(0.001, p.smoothness));
+
+  var color = mix(p.fillColor * p.fillIntensity, p.majorColor * p.majorIntensity, colorLerp);
+  let intensity = mix(saturate(abs(p.fillIntensity)), saturate(abs(p.majorIntensity)), majorAxisIntensity);
+  color = mix(color, p.centerColor * p.centerIntensity, saturate(1.0 - fresnel));
+  fresnel = mix(saturate(abs(p.centerIntensity)), intensity, fresnel);
+  return vec4f(color * rimMap, fresnel);
+}
+
+// The rim light shaded with the default per light function (ClusterForward_DefaultLighting.cfi), as it is added to the
+// emittance: diffuse and specular light, not multiplied by the albedo
+fn rimLightingDefault(N: vec3f, toEye: vec3f, smoothness: f32, specular: vec3f, light: vec4f, useDiffuse: bool, useSpecular: bool) -> vec3f {
+  let roughness = smoothnessToRoughness(smoothness);
+  let NdotL = saturate(light.w);
+  var result = vec3f(0.0);
+  if (useDiffuse) {
+    result += light.rgb * diffuseBRDF(roughness, N, toEye, toEye, NdotL);
+  }
+  if (useSpecular) {
+    result += light.rgb * specularBRDF(roughness, N, toEye, toEye, specular, 1.0) * NdotL;
+  }
+  return result;
+}
+
+// #endregion
+
+// %FX_DISSOLVE (BlendAndDissolve.cfi ClipDissolvedFragsImpl): discards where the noise (BlendMap.g, $Opacity) is below
+// the percentage, and returns the edge color inside the edge band. Fragment stage only.
+fn clipDissolve(noise: f32, percentage: f32, edgeThickness: f32, edgeColor: vec3f, color: vec3f) -> vec3f {
+  let threshold = noise - percentage;
+  if (threshold < 0.0) {
+    discard;
+  }
+  if (threshold < edgeThickness && percentage > 0.0 && percentage < 1.0) {
+    return edgeColor;
+  }
+  return color;
 }
 
 fn cryVecToGLTF(v: vec3f) -> vec3f {

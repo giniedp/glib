@@ -107,6 +107,11 @@ export const CommonInputs = {
     InverseProjectionMatrix: inputSlotMat4(View, 'inverseProjectionMatrix'),
     ViewProjectionMatrix: inputSlotMat4(View, 'viewProjectionMatrix'),
     InverseViewProjectionMatrix: inputSlotMat4(View, 'inverseViewProjectionMatrix'),
+    /**
+     * The view projection matrix the view was rendered with in its previous frame (the current one on its first
+     * frame), for reprojection into the previous frame
+     */
+    PreviousViewProjectionMatrix: inputSlotMat4(View, 'previousViewProjectionMatrix'),
     CameraPosition: inputSlotVec3(View, 'cameraPosition'),
     CameraDirection: inputSlotVec3(View, 'cameraDirection'),
     ViewportSize: inputSlotVec2(View, 'viewportSize'),

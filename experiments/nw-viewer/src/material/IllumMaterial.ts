@@ -224,6 +224,9 @@ const illum = new MtlUtil('Illum', {
     'BLENDLAYER',
     'COLOR_SAMPLER_OVERLAY_MASK',
     'DECAL',
+    'FX_DISSOLVE',
+    'RIM_DIFFUSE_LIGHTING',
+    'RIM_SPEC_LIGHTING',
     'DETAIL_MAPPING',
     'EMISSIVE_DECAL',
     'EMITTANCE_MAP',
@@ -254,6 +257,8 @@ export class IllumMaterial extends MaterialWithSchema(SCHEMA) {
   declare private modDecalEmissive: TextureModifier | null
   // shader constants of the feature flags, for effects created on demand (ensureProjectedDecalEffects)
   declare private shaderConstants: Record<string, number>
+  // %RIM_DIFFUSE_LIGHTING or %RIM_SPEC_LIGHTING after the flag validation
+  declare private hasRimLighting: boolean
 
   protected override configure(options: Partial<MaterialOptions>): void {
     super.configure({
@@ -345,6 +350,7 @@ export class IllumMaterial extends MaterialWithSchema(SCHEMA) {
     }
 
     this.layer = MaterialLayerMasks.Illum
+    this.hasRimLighting = shaderFlags.has('RIM_DIFFUSE_LIGHTING') || shaderFlags.has('RIM_SPEC_LIGHTING')
     this.setDefaults()
     this.setTextures(texMaps)
     this.setModifiers(texMods)
@@ -377,7 +383,8 @@ export class IllumMaterial extends MaterialWithSchema(SCHEMA) {
         NwRenderVariant.Debug,
         createDebugEffect(this.device, illumEffectOptions(shaderConst, ILLUM_FRAGMENT_ENTRY.debug), gbuffer),
       )
-      if (hasEmittance(this.EmissiveColor)) {
+      // rim lighting is added to the emittance in the game's additive glow pass
+      if (hasEmittance(this.EmissiveColor) || this.hasRimLighting) {
         this.setEffect(
           NwRenderVariant.Emissive,
           createEmissiveEffect(this.device, illumEffectOptions(shaderConst, ILLUM_FRAGMENT_ENTRY.emissive), gbuffer),
@@ -487,6 +494,9 @@ export class IllumMaterial extends MaterialWithSchema(SCHEMA) {
     this.RimFillWidth = 1
     this.RimFillColor = vec4(1, 1, 1, 1)
     this.RimSmoothness = 1
+    this.RimColorBlend = 0.1
+    this.RimCenterColor = vec4(1, 1, 1, 1)
+    this.RimCenterIntensity = 0
 
     this.UvModDiffuse = mat4Identity()
     this.UvModCustom = mat4Identity()
@@ -501,6 +511,10 @@ export class IllumMaterial extends MaterialWithSchema(SCHEMA) {
   /**
    * Binds the texture maps. Unset slots get the neutral texture of the engine (TextureManager.cpp texSlotSemantics),
    * the device default texture is a checker pattern that would show up in the shading.
+   *
+   * Textures sample in the format of their DDS file like in the game: an sRGB tagged file is created in its sRGB
+   * format (Lumberyard D3DTexture.cpp, m_bIsSRGB), the shader's sRGBLookup only picks a view of typeless textures
+   * (FT_USAGE_ALLOWREADSRGB, render targets), see tmp/material-parity/parity/2.0-openworld.md.
    */
   private setTextures(maps: NwMaterialProps['textures']) {
     maps ||= {}
@@ -551,12 +565,16 @@ export class IllumMaterial extends MaterialWithSchema(SCHEMA) {
     this.SubsurfaceMap = (maps.SubSurface as any) || white
 
     // == EFTT_CUSTOM
-    // - DiffuseMap2
+    // - DiffuseMap2 (BLENDLAYER)
+    // - MaskTex (OVERLAY_MASK / COLOR_SAMPLER_OVERLAY_MASK, CharacterMasking.cfi)
     this.DiffuseMap2 = (maps.Custom as any) || white
 
     // == EFTT_CUSTOM_SECONDARY
     // - BumpMap2
-    this.NormalMap2 = (maps['[1] Custom'] as any) || flatNormal
+    // - RimMapTex (.r), engine default FlatBump. The rim reads the flat normal as unorm (0.5) in the game, the viewer's
+    //   flat normal is snorm (.r = 0), so rim materials get gray (BLENDLAYER, which reads BumpMap2, disables the rim)
+    const rim = this.hasRimLighting
+    this.NormalMap2 = (maps['[1] Custom'] as any) || (rim ? gray : flatNormal)
 
     // == EFTT_OPACITY
     // - opacityMap
@@ -715,13 +733,12 @@ export class IllumMaterial extends MaterialWithSchema(SCHEMA) {
     this.RimMajorColor = paramVec4(params.Rim_Major_Color, this.RimMajorColor)
     this.RimSmoothness = paramValue(params.Rim_Smoothness, this.RimSmoothness)
 
-    // this.RimCenterIntensity = paramValue(para.Rim_Center_Intensity, this.RimCenterIntensity)
+    this.RimCenterIntensity = paramValue(params.Rim_Center_Intensity, this.RimCenterIntensity)
     this.RimFillIntensity = paramValue(params.Rim_Fill_Intensity, this.RimFillIntensity)
-    // this.RimCenterColor = paramColor(para.Rim_Center_Color, this.RimCenterColor)
+    this.RimCenterColor = paramVec4(params.Rim_Center_Color, this.RimCenterColor)
     this.RimFillWidth = paramValue(params.Rim_Fill_Width, this.RimFillWidth)
     this.RimFillColor = paramVec4(params.Rim_Fill_Color, this.RimFillColor)
-
-    // this.RimColorBlend = paramValue(para.Rim_Color_Blend, this.RimColorBlend)
+    this.RimColorBlend = paramValue(params.Rim_Color_Blend, this.RimColorBlend)
     // this.TessellationFactorMax = paramValue(para.TessellationFactorMax, this.TessellationFactorMax)
     // this.TessellationFaceCull = paramValue(para.TessellationFaceCull, this.TessellationFaceCull
     // this.TessellationFactor = paramValue(para.TessellationFactor, this.TessellationFactor)
@@ -759,9 +776,7 @@ export class IllumMaterial extends MaterialWithSchema(SCHEMA) {
     this.MaskB = paramValue(params.Mask_B, this.MaskB)
     this.MaskBOverride = paramValue(params.Mask_B_Override, this.MaskBOverride)
     this.MaskBColor = paramVec3(params.Mask_B_Color, this.MaskBColor)
-    this.MaskA = paramValue(params.Mask_A, this.MaskA)
-    // TODO: Mask_A_Color isn't actually used?
-    this.MaskASpecColor = paramVec3(params.Mask_A_Color, this.MaskASpecColor)
+    // Mask_A and Mask_A_Color are in old mtl files only, CharacterMasking.cfi reads Mask_A_Gloss / Mask_A_SpecColor
     this.MaskAGloss = paramValue(params.Mask_A_Gloss, this.MaskAGloss)
     this.MaskAGlossShift = paramValue(params.Mask_A_GlossShift, this.MaskAGlossShift)
     this.MaskASpecColor = paramVec3(params.Mask_A_SpecColor, this.MaskASpecColor)

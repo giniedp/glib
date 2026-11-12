@@ -120,6 +120,25 @@ export const InputSlots = {
     ProjectionMatrix: CommonInputs.View.ProjectionMatrix,
     CameraPosition: CommonInputs.View.CameraPosition,
     /**
+     * View projection of the previous frame (the game's g_mViewProjPrev without the texture coordinate scale-bias),
+     * maintained by the renderer per view
+     */
+    PreviousViewProjectionMatrix: CommonInputs.View.PreviousViewProjectionMatrix,
+    /**
+     * HDR scene color of the previous frame after the transparents (the game's $HDRTargetPrev), kept by the
+     * PreviousColorPass. Check `PreviousColorPass.isPreviousFrame` before trusting it.
+     */
+    PreviousSceneColorMap: inputSlotTexture('view', 'previousSceneColorMap'),
+    /**
+     * Hi-Z min linear depth pyramid of this frame (SsrPass), mip 0 is half the render size
+     */
+    HiZMap: inputSlotTexture('view', 'hiZMap'),
+    /**
+     * x = 1 when HiZMap and PreviousSceneColorMap are valid this frame, y = Hi-Z mip count, z = max ray length (m),
+     * w = max iterations (SsrPass)
+     */
+    Ssr: inputSlotVec4('view', 'ssr'),
+    /**
      * GBuffer A as the receiver normal of the projected decals (angle fade), a copy made before the DecalPass
      */
     DecalNormalMap: inputSlotTexture('view', 'decalNormalMap'),
@@ -127,6 +146,27 @@ export const InputSlots = {
   Global: {
     SunColor: inputSlotVec4('global', 'sunColor'),
     SunDirection: inputSlotVec3('global', 'sunDirection'),
+    /**
+     * Global wind of the time of day (PerFrame_WindDirection): xyz = wind vector, w = its length
+     */
+    WindDirection: inputSlotVec4('global', 'windDirection'),
+    /**
+     * Particle brightness of the time of day (`Particle Brightness Multiplier`, Engine global parameter 76), scaled per
+     * effect by its TOD brightness influence
+     */
+    ParticleBrightness: inputSlotScalar('global', 'particleBrightness'),
+    /**
+     * The active snow volume (SnowSystem, g_SnowVolumeParams): xyz = center, w = 1 / radius, w = 0 without snow
+     */
+    SnowVolumeParams: inputSlotVec4('global', 'snowVolumeParams'),
+    /**
+     * g_SnowMultipliers: x = snow amount, y = frost amount, z = saturated surface freezing
+     */
+    SnowMultipliers: inputSlotVec4('global', 'snowMultipliers'),
+    /**
+     * x = snow brightness (g_SnowBrightness), y = frost brightness (g_FrostBrightness)
+     */
+    SnowBrightness: inputSlotVec4('global', 'snowBrightness'),
     CloudShadingSunColor: inputSlotVec3('global', 'cloudShadingCustomSunColor'),
     CloudShadingSkyColor: inputSlotVec3('global', 'cloudShadingCustomSkyColor'),
 
@@ -320,6 +360,11 @@ export const MaterialLayerMasks = {
    * intersect any exclude mask and would drop.
    */
   ProjectedDecal: 1 << 16,
+  /**
+   * Snow receivers (mesh components with acceptSnow). Added as entity layer flags like {@link DecalReceiver}, the
+   * GBuffer pass writes the snow receiver stencil bit for them and for terrain (tmp/snow plan 1.3)
+   */
+  SnowReceiver: 1 << 17,
 }
 
 /**

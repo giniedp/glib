@@ -40,10 +40,10 @@ export class WebGpuComputeEncoder {
       this.pipelineParams.shader = module
       this.pipelineParams.constants = module?.computeConstants
     }
-    if (this.programParams !== program) {
-      this.programParams = program as WebGpuProgram
-      this.programParamsChanged = true
-    }
+    // the bind groups of the same program change when inputs change between dispatches (e.g. another mip view),
+    // always check them, like the render encoder
+    this.programParams = program as WebGpuProgram
+    this.programParamsChanged = true
   }
 
   public dispatch(countX: number, countY?: number, countZ?: number) {

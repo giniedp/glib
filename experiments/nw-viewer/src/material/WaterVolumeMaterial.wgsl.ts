@@ -1,4 +1,5 @@
 import { COMMON_WGSL } from './common.wgsl'
+import { SSR_MATERIAL_WGSL } from './ssr.wgsl'
 import { WATER_DDN_WGSL } from './water.wgsl'
 
 /**
@@ -6,7 +7,8 @@ import { WATER_DDN_WGSL } from './water.wgsl'
  *
  * Differences to the game shader:
  * - $WaterVolumeDDN is replaced by waterDDNWaves, like the ocean (see water.wgsl)
- * - no screen space reflections (%SSREFL), the env map is used with EnvCubeReflMul
+ * - %SSREFL is traced inline against the SsrPass pyramids (Hi-Z + cone traced previous frame color) instead of the
+ *   game's half resolution reflection prepass with temporal blend; the env map is the fallback (EnvCubeReflMul)
  * - no tessellation (%WATER_TESSELLATION_DX11), no vertex displacement (VertexWaveScale is 0 on rivers)
  * - no flow map, decal map or specular (gloss) map
  *
@@ -39,6 +41,9 @@ struct MaterialBlock {
   enabledFlow                : u32,
   enabledFoam                : u32,
   enabledSunSpecular         : u32,
+  // %SSREFL: screen space reflections blended over the env reflection by RealtimeReflMul
+  enabledSsrefl              : u32,
+  realtimeReflMul            : f32,
 };
 
 // @private
@@ -57,6 +62,12 @@ struct MaterialBlock {
 @group(1) @binding(4) var sceneDepthMap          : texture_2d<f32>;
 // @block view
 @group(1) @binding(5) var sceneColorMap          : texture_2d<f32>;
+// @block view
+@group(1) @binding(6) var hiZMap                 : texture_2d<f32>;
+// @block view
+@group(1) @binding(7) var previousSceneColorMap  : texture_2d<f32>;
+
+${SSR_MATERIAL_WGSL}
 
 @group(2) @binding(0) var<uniform>       material: MaterialBlock;
 @group(2) @binding(1) var samplerLinear          : sampler;
@@ -159,6 +170,19 @@ fn fsMain(in: Varyings) -> FragmentOutput {
   let vRefl  = reflect(-vView, vReflN);
   let gloss  = mat.specularColor.w * cGlossMap.x;
   var cSpecularAcc = mat.specularColor.rgb * getReflectColor(envMap, samplerLinear, vRefl, gloss) * mat.envCubeReflMul;
+  // %SSREFL: the result replaces the env reflection by its confidence, lerp(env, ssr * RealtimeReflMul, a)
+  // (waterreflectionspass.cfi:976). The game traces the flat normal into a reflection texture and distorts the lookup
+  // of that texture by the bump, so hit shapes and their edges against the env reflection ripple with the waves.
+  // Inline there is no neighbor result to look up: the ray of the bumped reflection normal is traced instead (the env
+  // reflection's vReflN), hit, edge and color all follow the waves.
+  // ReflectionPassPS returns the color premultiplied by its alpha, which the lerp weights again.
+  if (mat.enabledSsrefl == TRUE && side > 0.0) {
+    let hit = ssrWaterTrace(in.worldPos, vRefl, vReflN);
+    if (hit.z > 0.0) {
+      let ssrColor = ssrMaterialColor(in.worldPos, hit, gloss, vec2f(0.0), samplerClamp);
+      cSpecularAcc = mix(cSpecularAcc, ssrColor * hit.z * mat.realtimeReflMul, hit.z);
+    }
+  }
 
   // ── Volume fog ────────────────────────────────────────────
   // cFogColorDensity: fog color, multiplied with the sun color unless the density is negative

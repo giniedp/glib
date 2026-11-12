@@ -70,7 +70,6 @@ struct MaterialBlock {
   maskBColor           : vec3f, // default 0.0,0.0,0.0
   maskBOverride        : f32,   // default 0.0
 
-  maskA                 : f32,  // default 0.0
   maskAGloss            : f32,  // default 0.0
   maskAGlossShift       : f32,  // default 0.5
   maskASpecColor        : vec3f,// default 0.0,0.0,0.0
@@ -101,6 +100,9 @@ struct MaterialBlock {
   rimFillWidth         : f32,   // default 1.0
   rimFillColor         : vec4f, // default 1.0, 1.0, 1.0, 1.0
   rimSmoothness        : f32,   // default 1.0
+  rimColorBlend        : f32,   // default 0.1
+  rimCenterColor       : vec4f, // default 1.0, 1.0, 1.0, 1.0
+  rimCenterIntensity   : f32,   // default 0.0
 
   roughnessBoost       : f32,   // default 2.0
   roughnessMaxFootprint: f32,   // default 0.3
@@ -526,50 +528,16 @@ fn illumSurface(input: FragmentInput) -> IllumSurface {
   }
 
   // --- Overlay mask -----------------------------------------
+  // CharacterMasking.cfi, the mask texture is $CustomMap (MaskTex)
   if (OVERLAY_MASK) {
-    // Map defining the color/intensity of each texel
     let mask = textureSample(diffuseMap2, samplerLinear, uvBase.xy);
-
-    // Diffuse Masking Colors ( use either [the mask color]  or [a blend between the material and the mask color] )
-     let luminance = getLuminance(albedo);
-
-    // For using override, we found the final diffuse albedo to be much too bright - artifically darkening, hence the Mask_R_Color*Mask_R_Color
-    let releveledMaskRColor = material.maskRColor * material.maskRColor;
-    let releveledMaskGColor = material.maskGColor * material.maskGColor;
-    let releveledMaskBColor = material.maskBColor * material.maskBColor;
-    let maskColorR = mix(getOverlayBlend(vec3f(luminance), material.maskRColor), releveledMaskRColor, material.maskROverride);
-    let maskColorG = mix(getOverlayBlend(vec3f(luminance), material.maskGColor), releveledMaskGColor, material.maskGOverride);
-    let maskColorB = mix(getOverlayBlend(vec3f(luminance), material.maskBColor), releveledMaskBColor, material.maskBOverride);
-
-    // Apply the mask colors where its allowed (using each channel of the MaskMap and the Mask activation value)
-    albedo = mix(albedo, maskColorR, mask.r * material.maskR);
-    albedo = mix(albedo, maskColorG, mask.g * material.maskG);
-    albedo = mix(albedo, maskColorB, mask.b * material.maskB);
-
-    // Gloss Masking - modify material gloss based Mask_A_GlossShift, then Mask_A_Gloss determines how far we shift towards the modified gloss value
-    // 0.5 is neutral: unmodified material gloss
-    // 0: pull gloss to zero
-    // 1: full gloss
-    var glossMod = gloss;
-    glossMod     = mix(0, glossMod, saturate(material.maskAGlossShift / 0.5));
-    glossMod     = mix(glossMod, 1.0, saturate((material.maskAGlossShift - 0.5)/ 0.5));
-    gloss        = mix(gloss, glossMod, mask.a * material.maskA);
-
-    // Specular Masking
-    specular = mix(specular, material.maskASpecColor.rgb, mask.a * material.maskASpecColorOverride);
+    let masked = applyOverlayMask(OverlayMaskSurface(albedo, specular, gloss), mask, illumOverlayMaskParams());
+    albedo   = masked.albedo;
+    specular = masked.specular;
+    gloss    = masked.gloss;
   } else if (COLOR_SAMPLER_OVERLAY_MASK) {
-    // Map defining the color/intensity of each texel
     let mask = textureSample(diffuseMap2, samplerLinear, uvBase.xy);
-
-    // Diffuse Masking Colors ( use either [the mask color]  or [a blend between the material and the mask color] )
-    let luminance = getLuminance(albedo);
-
-    // Determine the final mask color based on override strength (diffuse texture detail preserving vs full color override)
-    let maskColor = mix(getOverlayBlend(vec3f(luminance), mask.rgb), mask.rgb, material.colorMaskOverride);
-
-    // Apply the mask color
-    let blend = mix(1.0, mask.a, material.colorMaskAlphaInf);     // ColorMaskAlphaInfluence mutes the alpha channel when at zero
-    albedo    = mix(albedo, maskColor, blend * material.colorMaskAlphaInf);   // ColorMaskStrength controls how strong the final effect is
+    albedo = applyColorSamplerMask(albedo, mask, material.colorMaskStrength, material.colorMaskOverride, material.colorMaskAlphaInf);
   }
 
   // --- Alpha test (%_RT_ALPHATEST) --------------------------
@@ -581,11 +549,12 @@ fn illumSurface(input: FragmentInput) -> IllumSurface {
 
   // --- Dissolve clip ----------------------------------------
   if (FX_DISSOLVE) {
-    // Sample blend mask as dissolve noise. Edge-color fringe omitted for first draft.
-    let noise = textureSampleLevel(opacityMap, samplerLinear, uvBase.xy, 0.0).r;
-    if (noise < material.dissolvePercentage) {
-      discard;
+    // the noise is the green channel of the blend map ($Opacity), %DECAL and %LEAVES use a constant 0.5
+    var noise = 0.5;
+    if (!DECAL && !LEAVES) {
+      noise = textureSampleLevel(opacityMap, samplerLinear, uvBase.xy, 0.0).g;
     }
+    albedo = clipDissolve(noise, material.dissolvePercentage, material.dissolveEdgeThickness, material.dissolveColor.rgb, albedo);
   }
 
 
@@ -701,13 +670,8 @@ fn fs_main(input: FragmentInput) -> FragmentOutput {
   // --- Ambient / Environment --------------------------------
   // TODO:
 
-  // --- Emittance --------------------------------------------
-  let emittance = illumEmittance(s);
-
-  // --- Rim lighting (added to emittance term) ---------------
-  // if (material.enabledRimLighting == TRUE) {
-  //   emittance += ComputeRimLighting(N, V);
-  // }
+  // --- Emittance and rim lighting ---------------------------
+  let emittance = illumEmittance(s) + illumRimLighting(s);
 
   // --- Final composite --------------------------------------
   alpha = select(1.0, alpha, material.enabledAlphaBlend == TRUE);
@@ -751,7 +715,8 @@ fn illumDebugColor(input: FragmentInput, s: IllumSurface) -> vec4f {
       return vec4f(vec3f(0.0), 1.0);
     }
     case DEBUG_MTL_EMISSIVE: {
-      return vec4f(illumEmittance(s), 1.0);
+      // what the additive glow pass adds: emittance and rim lighting
+      return vec4f(illumEmittance(s) + illumRimLighting(s), 1.0);
     }
     case DEBUG_MTL_AO: {
       return vec4f(vec3f(s.ao), 1.0);
@@ -866,7 +831,7 @@ struct EmissiveOutput {
 fn fs_emissive(input: FragmentInput) -> EmissiveOutput {
   let s = illumSurface(input);
   var out: EmissiveOutput;
-  out.color = vec4f(illumEmittance(s), 0.0);
+  out.color = vec4f(illumEmittance(s) + illumRimLighting(s), 0.0);
   return out;
 }
 
@@ -974,15 +939,37 @@ fn ApplyPOM(uv: vec2f, viewTS: vec3f) -> vec2f {
 }
 
 
-fn ComputeRimLighting(N: vec3f, V: vec3f) -> vec3f {
-    let rim = 1.0 - saturate(dot(N, V));
+fn illumRimParams() -> RimParams {
+  return RimParams(
+    material.rimMajorColor.rgb, material.rimMajorIntensity, material.rimMajorWidth,
+    material.rimFillColor.rgb, material.rimFillIntensity, material.rimFillWidth,
+    material.rimColorBlend, material.rimSmoothness,
+    material.rimCenterColor.rgb, material.rimCenterIntensity,
+  );
+}
 
-    let major = material.rimMajorColor.rgb * material.rimMajorIntensity
-              * pow(rim, max(material.rimMajorWidth, EPSILON));
-    let fill  = material.rimFillColor.rgb * material.rimFillIntensity
-              * pow(rim, max(material.rimFillWidth, EPSILON));
+// %RIM_DIFFUSE_LIGHTING / %RIM_SPEC_LIGHTING: added to the emittance (illum.cfx frag_custom_end).
+// The rim map is $CustomSecondaryMap (normalMap2) .r.
+fn illumRimLighting(s: IllumSurface) -> vec3f {
+  if (!(RIM_DIFFUSE_LIGHTING || RIM_SPEC_LIGHTING)) {
+    return vec3f(0.0);
+  }
+  let p = illumRimParams();
+  if (!rimLightingActive(p)) {
+    return vec3f(0.0);
+  }
+  let rimMap = textureSample(normalMap2, samplerLinear, s.uvBase.xy).r;
+  let light = rimLight(s.normal, s.toEye, p, rimMap);
+  return rimLightingDefault(s.normal, s.toEye, s.gloss, s.specular, light, RIM_DIFFUSE_LIGHTING, RIM_SPEC_LIGHTING);
+}
 
-    return (major + fill) * material.rimSmoothness;
+fn illumOverlayMaskParams() -> OverlayMaskParams {
+  return OverlayMaskParams(
+    material.maskR, material.maskRColor, material.maskROverride,
+    material.maskG, material.maskGColor, material.maskGOverride,
+    material.maskB, material.maskBColor, material.maskBOverride,
+    material.maskAGloss, material.maskAGlossShift, material.maskASpecColor, material.maskASpecColorOverride,
+  );
 }
 
 fn getMaterialEmittance() -> vec3f {

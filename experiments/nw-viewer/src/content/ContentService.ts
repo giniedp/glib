@@ -31,6 +31,12 @@ export const WhiteTextureKey = Symbol('WhiteTexture')
 export const GrayTextureKey = Symbol('GrayTexture')
 export const BlackTextureKey = Symbol('BlackTexture')
 export const FlatNormalTextureKey = Symbol('FlatNormalTexture')
+// textures of the deferred snow layer (DeferredSnow.cfx)
+export const SnowArealNoiseKey = Symbol('SnowArealNoise')
+export const SnowDerivativesKey = Symbol('SnowDerivatives')
+export const SnowSpatterKey = Symbol('SnowSpatter')
+export const SnowFrostBumpKey = Symbol('SnowFrostBump')
+export const SnowFrostBubblesKey = Symbol('SnowFrostBubbles')
 
 export class ContentService extends GameSystem {
   public loader: ContentLoader
@@ -81,6 +87,10 @@ export class ContentService extends GameSystem {
   public waterFoamNormalMap: Texture
   public waterGlossMap: Texture
   public nullHeightmapArray: Texture
+  /**
+   * Textures of the deferred snow layer, see the {@link SnowArealNoiseKey} keys
+   */
+  public snowTextures: Texture[] = []
 
   private config: ViewerConfig
   private engineAssets = Promise.withResolvers()
@@ -191,6 +201,20 @@ export class ContentService extends GameSystem {
       this.waterGlossMap = await loadEngineTexture(GlossMapKey, `engineassets/textures/water_gloss.dds`)
     })
 
+    // the deferred snow layer (DeferredSnow.cfx samplers), the areal noise is the one in defaults/
+    const snowTextures: Array<[symbol, string]> = [
+      [SnowArealNoiseKey, 'engineassets/textures/defaults/perlinnoise2d.dds'],
+      [SnowDerivativesKey, 'engineassets/textures/perlinnoisederivatives.dds'],
+      [SnowSpatterKey, 'engineassets/textures/frozen/snow_spatter.dds'],
+      [SnowFrostBumpKey, 'engineassets/textures/frozen/frost_noise3.dds'],
+      [SnowFrostBubblesKey, 'engineassets/textures/frozen/frost_noise4.dds'],
+    ]
+    for (const [key, path] of snowTextures) {
+      loads.push(async () => {
+        this.snowTextures.push(await loadEngineTexture(key, path))
+      })
+    }
+
     await Promise.all(loads.map((it) => it()))
 
     // engine textures live as long as the device, other scopes may share but never take them over
@@ -205,6 +229,7 @@ export class ContentService extends GameSystem {
       this.waterFoamMap,
       this.waterFoamNormalMap,
       this.waterGlossMap,
+      ...this.snowTextures,
     ]) {
       device.scope.adopt(texture)
     }

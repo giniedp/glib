@@ -143,6 +143,16 @@ export class TimeOfDay {
   public volFog2Blend = vec4(0)
   // x = zenith fade factor, y = zenith fade curve (exponent), see VolFog2Params
   public volFog2Zenith = vec4(0)
+  /**
+   * Global wind (PerFrame_WindDirection): xyz = wind vector of the time of day, w = its length (the wind speed)
+   */
+  public windDirection = vec4(-2.5, 2.0, 0.5, 0)
+
+  /**
+   * New World: particle brightness of the time of day (`Particle Brightness Multiplier`), scaled per particle effect by
+   * its TOD brightness influence, see the particle shader
+   */
+  public particleBrightness = 1
   public volFog2ScatteringColor = vec4(0)
   public volFog2ScatteringSecondaryColor = vec4(0)
   private volFog2Albedo = vec3()
@@ -416,6 +426,19 @@ export class TimeOfDay {
     this.updateMoonDirection()
     this.updateSunDirection()
     this.updateVariables(camera)
+    this.updateWind()
+  }
+
+  /**
+   * New World: the time of day sets the global wind (SetWind), PerFrame_WindDirection.w is its length
+   */
+  private updateWind() {
+    const wind = this.windDirection
+    wind.x = this.getParamValue(TodParams.WIND_X)
+    wind.y = this.getParamValue(TodParams.WIND_Y)
+    wind.z = this.getParamValue(TodParams.WIND_Z)
+    wind.w = Math.hypot(wind.x, wind.y, wind.z)
+    this.particleBrightness = this.getParamValue(TodParams.PARTICLE_BRIGHTNESS)
   }
 
   /**

@@ -72,6 +72,11 @@ export interface VegetationGroup {
    * First instance of this group in the output buffer
    */
   outputStart: number
+  /**
+   * Wind strength of the asset (descriptor Bending), the per instance InstBendInfo.w of the baked vegetation records:
+   * the detail bending speed is bending * global wind length (VEGETATION_BENDING in the vegetation shader)
+   */
+  bending: number
 }
 
 /**
@@ -171,6 +176,8 @@ export class VegetationBatch {
       state: asset.model ? 'idle' : 'empty',
       loadedCount: 0,
       outputStart: 0,
+      // the asset table's descriptor Bending byte is Bending * 100 (openworld ow-vegetation AssetEntry)
+      bending: (asset.kind ?? 0) / 100,
     }))
     this.groupData = new Uint32Array(Math.max(1, this.groups.length) * WORDS_PER_GROUP)
     this.groupDataF32 = new Float32Array(this.groupData.buffer)
@@ -327,7 +334,7 @@ export class VegetationBatch {
     this.ensureDrawCapacity()
     this.drawBuffer.setSubData(drawIndex * 4, new Uint32Array([group.index]))
 
-    const proxy = this.indirectMaterials.get(material)
+    const proxy = this.indirectMaterials.get(material, { VEGETATION_BENDING: group.bending })
     if (!this.materialIndex.has(proxy)) {
       this.materialIndex.set(proxy, this.materials.length)
       this.materials.push(proxy)

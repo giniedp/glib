@@ -16,6 +16,8 @@ import { FilmMappingPass } from '../../../graphics/passes/filmmapping/FilmMappin
 import { GBufferDebugModes, GBufferDebugPass } from '../../../graphics/passes/gbuffer/GBufferDebugPass'
 import { LightingPass } from '../../../graphics/passes/lighting/LightingPass'
 import { LightingDebugModes } from '../../../graphics/passes/lighting/LightingPass.wgsl'
+import { SsrPass } from '../../../graphics/passes/ssr/SsrPass'
+import { SsrDebugModes } from '../../../graphics/passes/ssr/Ssr.wgsl'
 import { XeGtaoPass } from '../../../graphics/passes/ssao/XeGtaoPass'
 import { SmaaDebugModes, SmaaPass } from '../../../graphics/passes/smaa/SmaaPass'
 import { Cmaa2DebugModes, Cmaa2Pass } from '../../../graphics/passes/cmaa2/Cmaa2Pass'
@@ -143,6 +145,14 @@ function renderPassFields(panel: UiPanel, pass: RenderPass): JSX.Element {
       <>
         <SelectWidget {...panel.bind(pass, 'debug')} options={[...LightingDebugModes]} />
         <ScalarWidget {...panel.bind(pass, 'aoStrength')} min={0} max={1} step={0.01} range />
+      </>
+    )
+  }
+  if (pass instanceof SsrPass) {
+    return (
+      <>
+        <SelectWidget {...panel.bind(pass, 'debug')} options={[...SsrDebugModes]} />
+        <ScalarWidget {...panel.bind(pass, 'debugMip')} min={0} max={12} step={1} range />
       </>
     )
   }

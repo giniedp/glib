@@ -25,6 +25,16 @@ struct MaterialBlock {
   sdf2     : vec4f,
   // xy = source phase, zw = mask tile
   sdf3     : vec4f,
+  // rgb = material emittance (ParticleEmissiveColor), w = TOD brightness influence (fTodBrightnessInfluence)
+  emissive : vec4f,
+  // %DEFORMATION, x = enabled, y = DeformTile, z = DeformAmount, w = DeformAnimSpeed
+  deform   : vec4f,
+  // %COLOR_LOOKUP x = enabled, y = ColLookupAmplitude, z = ColLookupColPhase; w = %GLOW_MAP uv: 1 = tiled uv
+  // (%_TT_TEXCOORD_MATRIX), 0 = the first texel
+  lookup   : vec4f,
+  // texture modifiers, only with %_TT_TEXCOORD_MATRIX (any modified slot): _ModifyUV_1 and _ModifyDetailUV
+  uvModDiffuse : mat4x4f,
+  uvModDetail  : mat4x4f,
 }
 
 // @private
@@ -43,6 +53,9 @@ struct MaterialBlock {
 @group(3) @binding(0) var diffuseMap    : texture_2d<f32>;
 @group(3) @binding(1) var sdfNoiseMap   : texture_2d<f32>;
 @group(3) @binding(2) var sdfMaskMap    : texture_2d<f32>;
+@group(3) @binding(3) var glowMap       : texture_2d<f32>; // %GLOW_MAP $Detail
+@group(3) @binding(4) var deformMap     : texture_2d<f32>; // %DEFORMATION $CustomMap (normal map)
+@group(3) @binding(5) var lookupMap     : texture_2d<f32>; // %COLOR_LOOKUP $CustomSecondaryMap
 
 struct VertexInput {
   // quad corner in -1..1
@@ -70,6 +83,10 @@ struct FragmentInput {
   @location(5)       worldPos : vec3f,
   // relative particle age 0..1
   @location(6)       age      : f32,
+  // the quad uv before tiling (baseTC.zw)
+  @location(7)       uvQuad   : vec2f,
+  // emittanceTC: uv of the glow map
+  @location(8)       uvGlow   : vec2f,
 };
 
 fn tileUv(uv: vec2f, tile: f32) -> vec2f {
@@ -91,6 +108,14 @@ fn vs_main(input: VertexInput) -> FragmentInput {
   output.position = clipPos;
   output.uv0 = tileUv(uv, frame0);
   output.uv1 = tileUv(uv, input.iAxisX.w);
+  output.uvQuad = uv;
+  output.uvGlow = vec2f(0.0);
+  // Particle_Convert_TC: the modifiers apply to the tiled uv, the glow uv is computed before the diffuse modifier
+  if (material.lookup.w > 0.0) {
+    output.uvGlow = (material.uvModDetail * vec4f(output.uv0, 0.0, 1.0)).xy;
+    output.uv0 = (material.uvModDiffuse * vec4f(output.uv0, 0.0, 1.0)).xy;
+    output.uv1 = (material.uvModDiffuse * vec4f(output.uv1, 0.0, 1.0)).xy;
+  }
   output.color = input.iColor;
   output.params = vec2f(input.iPosition.w - frame0, input.iAxisY.w);
   output.uvScreen = clipPosToSceenUv(clipPos);
@@ -111,16 +136,43 @@ fn sampleSdfDiffuse(uv: vec2f, age: f32) -> vec4f {
   return tex;
 }
 
+// %DEFORMATION (ApplyTexCoordsDeformation): offset of the diffuse uv from two scrolling normal map lookups over the quad
+fn deformOffset(uvQuad: vec2f) -> vec2f {
+  let tcAnim = frame.elapsedTime * material.deform.w * vec4f(0.9, 0.9, 2.0, 2.0) + vec4f(0.5, 0.5, 0.75, 1.0);
+  let tcBump = (uvQuad.xyxy - 0.5) * material.deform.y * vec4f(1.0, 1.0, 2.0, 2.0) + tcAnim;
+  let bump = textureSample(deformMap, samplerWrap, tcBump.xy).xy + textureSample(deformMap, samplerWrap, tcBump.zw).xy;
+  return bump * material.deform.z;
+}
+
+// %COLOR_LOOKUP (ApplyColorLookup): the color from a gradient by the luminance
+fn colorLookup(c: vec4f) -> vec4f {
+  let lum = dot(c.rgb, vec3f(0.333));
+  let lookup = textureSample(lookupMap, samplerWrap, vec2f(material.lookup.z * lum)).rgb;
+  return vec4f(saturate(c.a * material.lookup.y * lookup), c.a);
+}
+
 @fragment
 fn fs_main(input: FragmentInput) -> FragmentOutput {
-  var tex = textureSample(diffuseMap, samplerLinear, input.uv0);
+  // the deformation moves the current tile only, not the blended next tile
+  var uv0 = input.uv0;
+  if (material.deform.x > 0.0) {
+    uv0 += deformOffset(input.uvQuad);
+  }
+  var tex = textureSample(diffuseMap, samplerLinear, uv0);
   let tex1 = textureSample(diffuseMap, samplerLinear, input.uv1);
+  var glow = textureSample(glowMap, samplerWrap, input.uvGlow);
+  let glow1 = textureSample(glowMap, samplerWrap, input.uv1);
   if (material.options.x > 0.0) {
     tex = mix(tex, tex1, input.params.x);
+    glow = mix(glow, glow1, input.params.x);
   }
-  let sdfTex = sampleSdfDiffuse(input.uv0, input.age);
+  let sdfTex = sampleSdfDiffuse(uv0, input.age);
   if (material.sdf0.x > 0.0) {
     tex = sdfTex;
+  }
+  let lookedUp = colorLookup(tex);
+  if (material.lookup.x > 0.0) {
+    tex = lookedUp;
   }
 
   // debug views, options.w: 1 = quad coverage, 2 = texture color, 3 = texture alpha
@@ -146,7 +198,12 @@ fn fs_main(input: FragmentInput) -> FragmentOutput {
   let ambient = globalProbeAmbient(input.worldPos - view.cameraPosition.xyz);
   let sun = global.sunColor.rgb * mix(0.25, 0.5, material.lighting.z);
   let lit = vec3f(material.lighting.x) + (ambient + sun) * material.lighting.y;
-  var color = tex.rgb * material.diffuseColor.rgb * input.color.rgb * lit * material.options.z;
+  let diffuse = tex.rgb * material.diffuseColor.rgb;
+  var color = diffuse * input.color.rgb * lit * material.options.z;
+  // the emission of the material: not tinted by the particle color, the glow map defaults to white
+  color += alpha * diffuse * glow.rgb * material.emissive.rgb;
+  // ParticleTimeOfDay with r_ParticlesTOD 2: lit and emission scale by the TOD particle brightness
+  color *= (global.particleBrightness - 1.0) * material.emissive.w + 1.0;
 
   if (material.options.y > 0.0) {
     let sceneDepth = sampleSceneDepth(input.uvScreen, sceneDepthMap);

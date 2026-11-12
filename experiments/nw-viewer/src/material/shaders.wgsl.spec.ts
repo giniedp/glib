@@ -1,10 +1,14 @@
 /// <reference types="@webgpu/types" />
 import { beforeAll, describe, expect, it } from 'vitest'
 import FX_MESH_ADVANCED_WGSL from './FxMeshAdvancedMaterial.wgsl'
+import HUMAN_SKIN_WGSL from './HumanSkinMaterial.wgsl'
+import HAIR_WGSL from './HairMaterial.wgsl'
 import ILLUM_WGSL from './IllumMaterial.wgsl'
 import ILLUM_PROJECTED_DECAL_WGSL from './IllumProjectedDecal.wgsl'
 import { TERRAIN_PATCH_SHADER } from './TerrainPatchMaterial.wgsl'
 import VEGETATION_WGSL from './VegetationMaterial.wgsl'
+import PARTICLE_WGSL from '../game/particles/ParticleMaterial.wgsl'
+import DISTANCE_CLOUDS_WGSL from './DistanceCloudsMaterial.wgsl'
 import { LIGHTING_WGSL } from '../graphics/passes/lighting/LightingPass.wgsl'
 import { XE_GTAO_MAIN_WGSL } from '../graphics/passes/ssao/XeGtao.wgsl'
 import { SMAA_BLEND_WGSL, SMAA_EDGES_WGSL, SMAA_WEIGHTS_WGSL } from '../graphics/passes/smaa/SmaaPass.wgsl'
@@ -27,6 +31,13 @@ const SHADERS: Array<{ name: string; source: string; fragmentEntries: string[] }
     source: FX_MESH_ADVANCED_WGSL,
     fragmentEntries: ['fs_main', 'fs_gbuffer', 'fs_emissive', 'fs_debug'],
   },
+  { name: 'HumanSkin', source: HUMAN_SKIN_WGSL, fragmentEntries: ['fs_main', 'fs_gbuffer', 'fs_emissive', 'fs_debug'] },
+  // forward opaque only (drawn after the lighting)
+  { name: 'Hair', source: HAIR_WGSL, fragmentEntries: ['fs_main'] },
+  // sky dome clouds (General / %SIMPLE / %ADVANCED by constants)
+  { name: 'DistanceClouds', source: DISTANCE_CLOUDS_WGSL, fragmentEntries: ['fs_main'] },
+  // sprite particles (game/particles)
+  { name: 'Particle', source: PARTICLE_WGSL, fragmentEntries: ['fs_main'] },
 ]
 
 describe('material shaders', () => {

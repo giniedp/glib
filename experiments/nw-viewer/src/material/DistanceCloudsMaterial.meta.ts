@@ -14,6 +14,8 @@ export default {
   MaxShadowDensity: inputSlot('material', 'maxshadowdensity', 'scalar'),
   MinShadowDensity: inputSlot('material', 'minshadowdensity', 'scalar'),
   Opacity: inputSlot('material', 'opacity', 'scalar'),
+  SimpleOpacity: inputSlot('material', 'simpleopacity', 'scalar'),
+  DiffuseColor: inputSlot('material', 'diffusecolor', 'vec4'),
   ShadowFadingInclinationFactor: inputSlot('material', 'shadowfadinginclinationfactor', 'scalar'),
   ShadowFadingRadiusFactor: inputSlot('material', 'shadowfadingradiusfactor', 'scalar'),
   ShadowPower: inputSlot('material', 'shadowpower', 'scalar'),

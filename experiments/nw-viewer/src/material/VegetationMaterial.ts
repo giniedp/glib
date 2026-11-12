@@ -84,7 +84,7 @@ const util = new MtlUtil('Vegetation', {
   knowsDeform: true,
   knownMaps: ['Diffuse', 'Bumpmap', 'Specular', 'Smoothness', 'Opacity', 'Emittance'],
   knownMods: ['Diffuse'],
-  knownFlags: ['LEAVES', 'VERTCOLORS', 'GRASS', 'EMITTANCE_MAP', 'SPECULAR_MAP', 'NORMAL_MAP'],
+  knownFlags: ['LEAVES', 'VERTCOLORS', 'GRASS', 'EMITTANCE_MAP', 'SPECULAR_MAP', 'NORMAL_MAP', 'DETAIL_BENDING'],
 })
 
 export class VegetationMaterial extends MaterialWithSchema(SCHEMA) {
@@ -148,6 +148,10 @@ export class VegetationMaterial extends MaterialWithSchema(SCHEMA) {
   private setDefaults() {
     this.SamplerLinear = SamplerState.LinearWrap
     this.SamplerPoint = SamplerState.PointWrap
+    // ModificatorVT.cfi defaults
+    this.BendDetailFrequency = 1.0
+    this.BendDetailLeafAmplitude = 0.2
+    this.BendDetailBranchAmplitude = -0.5
 
     this.DiffuseColor = vec4(1, 1, 1, 1)
     this.SpecularColor = vec4(0, 0, 0, 1)
@@ -322,9 +326,14 @@ export class VegetationMaterial extends MaterialWithSchema(SCHEMA) {
   private setPublicParams(para: PublicParams) {
     this.BlendTerrainCol = paramValue(para.BlendTerrainCol, this.BlendTerrainCol)
     this.BlendTerrainColDist = paramValue(para.BlendTerrainColDist, this.BlendTerrainColDist)
-    // para.bendDetailBranchAmplitude
-    // para.bendDetailBranchAmplitude
-    // para.bendDetailFrequency
+    this.BendDetailFrequency = paramValue(para.bendDetailFrequency, this.BendDetailFrequency)
+    this.BendDetailLeafAmplitude = paramValue(para.bendDetailLeafAmplitude, this.BendDetailLeafAmplitude)
+    this.BendDetailBranchAmplitude = paramValue(para.bendDetailBranchAmplitude, this.BendDetailBranchAmplitude)
+    // ReceiveWind of mesh components (openworld vegetation-bending.md): authored, nonzero leaf or branch amplitude.
+    // The shader defaults do not count, a material without them gets no wind on ordinary meshes.
+    const authoredLeaf = para.bendDetailLeafAmplitude != null && paramValue(para.bendDetailLeafAmplitude, 0) !== 0
+    const authoredBranch = para.bendDetailBranchAmplitude != null && paramValue(para.bendDetailBranchAmplitude, 0) !== 0
+    this.ReceiveWind = authoredLeaf || authoredBranch ? 1 : 0
     // para.IndirectColor
     this.BackDiffuseMultiplier = paramValue(para.BackDiffuseMultiplier, this.BackDiffuseMultiplier)
     this.TransmittanceColor = paramVec4(para.TransmittanceColor, this.TransmittanceColor)

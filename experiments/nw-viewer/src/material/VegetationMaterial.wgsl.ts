@@ -57,6 +57,13 @@ struct MaterialBlock {
 
   deformWave0                    : vec4f,
   deformWave1                    : vec4f,
+
+  // %DETAIL_BENDING (ModificatorVT.cfi)
+  bendDetailFrequency            : f32,   // default 1.0
+  bendDetailLeafAmplitude        : f32,   // default 0.2
+  bendDetailBranchAmplitude      : f32,   // default -0.5
+  // 1 when the material receives wind on ordinary meshes (authored nonzero leaf or branch amplitude), else 0
+  receiveWind                    : f32,
 };
 
 // @private
@@ -121,6 +128,77 @@ struct FragmentInput {
   @location(12) frontLight      : vec3f,
 };
 
+// --- Wind: detail bending (ModificatorVT.cfi _VTBending / _DetailBending) -------------------------------------------
+
+// beyond this camera distance the bending fades out (IMPOSTOR_MIN_VIEW_DISTANCE = PerFrame_FogDistanceScale.y, 185 in
+// the GPA captures, IMPOSTOR_VISIBILITY_START in constants.ts)
+const BEND_FADE_DISTANCE: f32 = 185.0;
+// PerFrame_VegetationFading.w: wind scale of branches above the player height (2 m), 0.5 in the GPA captures
+const BEND_TREE_WIND_SCALE: f32 = 0.5;
+
+fn triangleWave(x: vec4f) -> vec4f {
+  return abs(fract(x + 0.5) * 2.0 - 1.0);
+}
+
+// SimpleWindNoise: wind gusts over the world
+fn simpleWindNoise(worldPos: vec2f, time: f32) -> f32 {
+  var waves = worldPos.xyxy * vec4f(0.3, 0.2, 0.1, 0.02);
+  waves += time * vec4f(1.0, 0.3, 0.1, 0.1);
+  waves = triangleWave(waves);
+  // the slow layers only contribute 70% and 30% of the time
+  waves = vec4f(waves.xy, saturate(waves.zw - vec2f(0.3, 0.7)) / vec2f(0.7, 0.3));
+  return saturate(dot(waves, vec4f(1.0, 1.0, 6.0, 10.0)) / 14.0);
+}
+
+// Bending strength of the baked vegetation records (region.vegetation, VegetationBatch): the asset's descriptor
+// Bending (byte / 100, mostly 0.1), InstBendInfo.w of the record. Negative for all other meshes.
+override VEGETATION_BENDING: f32 = -1.0;
+
+// SBending::GetShaderConstants w of ordinary meshes (SetupBending, openworld engine/bending.rs): the global wind
+// scaled by 0.25 and soft clamped to 2, times 0.3. The distance attenuation is 1 (the game reads the render object
+// distance before it is written). The small wave term is left out.
+fn meshWindBendSpeed(wind: vec4f) -> f32 {
+  let q = wind.xy * 0.25;
+  let softening = 2.0 / (length(q) + 2.0);
+  return length(q * softening) * 0.3;
+}
+
+// Leaf edge and branch flutter, by the vertex colors: r = edge stiffness, g = branch phase, b = branch bend amount
+// (inverted). Object space (z up). The wind speed is vBendingInfo.w: the baked vegetation records pass
+// Bending * PerFrame_WindDirection.w, ordinary meshes the SBending w when the material receives wind.
+// The main (whole object) bending is not ported.
+fn detailBending(pos: vec3f, normal: vec3f, color: vec3f, instancePos: vec3f, time: f32) -> vec3f {
+  let camDelta = instancePos.xy - view.cameraPosition.xy;
+  let distanceSqr = dot(camDelta, camDelta);
+  let fadeSqr = BEND_FADE_DISTANCE * BEND_FADE_DISTANCE;
+  let distanceScale = 1.0 - saturate((distanceSqr * distanceSqr) / (fadeSqr * fadeSqr));
+
+  var bendSpeed = material.receiveWind * meshWindBendSpeed(global.windDirection);
+  if (VEGETATION_BENDING >= 0.0) {
+    bendSpeed = VEGETATION_BENDING * global.windDirection.w;
+  }
+  var speed = bendSpeed * simpleWindNoise(instancePos.xy, time);
+  if (GRASS) {
+    speed *= saturate(pos.z);
+  }
+  speed *= mix(1.0, BEND_TREE_WIND_SCALE, saturate(pos.z - 2.0));
+
+  let leafAmp = material.bendDetailLeafAmplitude * distanceScale;
+  let branchAmp = material.bendDetailBranchAmplitude * distanceScale;
+  let edgeAtten = color.r;
+  let branchAtten = 1.0 - color.b;
+
+  // phases: object, vertex, branch
+  let branchPhase = color.g + dot(instancePos, vec3f(2.0));
+  let vtxPhase = dot(pos, vec3f(branchPhase));
+  let wavesIn = vec2f(time) + vec2f(vtxPhase, branchPhase);
+  var waves = (fract(wavesIn.xxyy * vec4f(1.2, 0.793, 0.375, 0.193)) * 2.0 - 1.0) * material.bendDetailFrequency * speed;
+  waves = triangleWave(waves);
+  // x: edges, y: branches
+  let sum = waves.xz + waves.yw;
+  return pos + sum.xxy * vec3f(edgeAtten * leafAmp * normal.xy, branchAtten * branchAmp);
+}
+
 @vertex
 fn vs_main(input : VertexInput) -> FragmentInput {
 
@@ -140,6 +218,10 @@ fn vs_main(input : VertexInput) -> FragmentInput {
   }
 
   let modelMatrix = object[input.id].modelMatrix;
+  // vegetation.cfx: %GRASS and %LEAVES always bend
+  if (DETAIL_BENDING || LEAVES || GRASS) {
+    vPos = detailBending(vPos, input.normal, input.color.rgb, modelMatrix[3].xyz, frame.elapsedTime);
+  }
   let worldPos = modelMatrix * vec4f(vPos, 1.0);
   let viewPos  = view.viewMatrix * worldPos;
   var clipPos  = view.projectionMatrix * viewPos;

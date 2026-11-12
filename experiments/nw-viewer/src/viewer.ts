@@ -36,7 +36,16 @@ import {
   vec4,
   type Mat4,
 } from '@gglib/math'
-import { FxaaPass, RenderChannel, Renderer, RenderPipeline, type RendererStats, type RenderView } from '@gglib/render'
+import {
+  FxaaPass,
+  GroupPass,
+  RenderChannel,
+  Renderer,
+  RenderPipeline,
+  type RendererStats,
+  type RenderPass,
+  type RenderView,
+} from '@gglib/render'
 import { brand, lfmt, type EventType } from '@gglib/utils'
 import { isViewerCameraComponent, type LevelInfo, type ViewerSlice } from './api'
 import { AudioSystem } from './audio/AudioSystem'
@@ -64,6 +73,8 @@ import { RegionSystem } from './game/region/RegionSystem'
 import { RoadSystem } from './game/road/RoadSystem'
 import { DecalSystem } from './game/decal/DecalSystem'
 import { FogVolumeSystem } from './game/fog/FogVolumeSystem'
+import { SnowSystem } from './game/snow/SnowSystem'
+import { SnowPass } from './graphics/passes/snow/SnowPass'
 import { RangeActivationSystem } from './game/slice/RangeActivationSystem'
 import { SliceSystem } from './game/slice/SliceSystem'
 import { TerrainSystem } from './game/terrain/TerrainSystem'
@@ -72,6 +83,8 @@ import { createRenderPipeline } from './graphics'
 import { LuminancePass } from './graphics/passes/exposure/LuminancePass'
 import { SmaaPass } from './graphics/passes/smaa/SmaaPass'
 import { FroxelFogPass } from './graphics/passes/fog/FroxelFogPass'
+import { PreviousColorPass } from './graphics/passes/history/PreviousColorPass'
+import { SsrPass } from './graphics/passes/ssr/SsrPass'
 import { Cmaa2Pass } from './graphics/passes/cmaa2/Cmaa2Pass'
 import { UpscalePass } from './graphics/passes/upscale/UpscalePass'
 import { TexturePreview, type TexturePreviewOptions } from './graphics/passes/texture/TexturePreview'
@@ -196,6 +209,7 @@ export class NwViewer extends EcsGame {
     this.world.addSystem(new RoadSystem())
     this.world.addSystem(new DecalSystem())
     this.world.addSystem(new FogVolumeSystem())
+    this.world.addSystem(new SnowSystem())
     this.world.addSystem(new CollisionSystem())
     this.world.addSystem(new CullingSystem())
     this.world.addSystem(new RangeActivationSystem())
@@ -244,6 +258,18 @@ export class NwViewer extends EcsGame {
       config.onChange('froxelTileSize', (value) => (froxelFog.tileSize = value))
       config.onChange('froxelSlices', (value) => (froxelFog.slices = value))
     }
+    // screen space reflections: the trace (in the opaque group) and the previous frame color it reads
+    const reflectionPasses = findPasses(
+      pipeline.passes,
+      (it): it is SsrPass | PreviousColorPass => it instanceof SsrPass || it instanceof PreviousColorPass,
+    )
+    const applyReflections = (value: boolean) => reflectionPasses.forEach((pass) => (pass.enabled = value))
+    applyReflections(config.value.reflections)
+    config.onChange('reflections', applyReflections)
+    const snowPasses = findPasses(pipeline.passes, (it): it is SnowPass => it instanceof SnowPass)
+    const applySnow = (value: boolean) => snowPasses.forEach((pass) => (pass.enabled = value))
+    applySnow(config.value.snow)
+    config.onChange('snow', applySnow)
     this.luminance = pipeline.passes.find((it): it is LuminancePass => it instanceof LuminancePass) ?? null
     this.world.addSystem(
       new Renderer(this.device, {
@@ -799,4 +825,23 @@ function screenshotFileName(width: number, height: number) {
   }
   parts.push(`${width}x${height}`, new Date().toISOString().slice(0, 19).replace(/:/g, '-'))
   return parts.join('_') + '.png'
+}
+
+/**
+ * The passes of a pipeline (including the passes of groups) that match the predicate
+ */
+function findPasses<T extends RenderPass>(
+  passes: RenderPass[],
+  match: (pass: RenderPass) => pass is T,
+  out: T[] = [],
+): T[] {
+  for (const pass of passes) {
+    if (match(pass)) {
+      out.push(pass)
+    }
+    if (pass instanceof GroupPass) {
+      findPasses(pass.passes, match, out)
+    }
+  }
+  return out
 }

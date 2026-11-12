@@ -102,7 +102,6 @@ export class FroxelFogPass implements RenderPass {
   private history: [Texture | null, Texture | null] = [null, null]
   private historyIndex = 0
   private historyValid = false
-  private prevViewProj = new Float32Array(16)
   private noise: Texture | null = null
   private emptyVolume: Texture | null = null
   private publishEnabled = vec4(0)
@@ -295,7 +294,6 @@ export class FroxelFogPass implements RenderPass {
     }
     pass.flush()
     this.rendered = true
-    this.storeViewProjection(ctx)
     // transparent materials sample the volume in getSceneFog
     this.publish(ctx, this.integrated)
   }
@@ -352,15 +350,6 @@ export class FroxelFogPass implements RenderPass {
     program.mustSet('froxel.prevViewProj', this.paramPrevViewProj)
   }
 
-  /**
-   * Keeps the view projection of this frame for the reprojection of the next one, with the NDC to texture coordinate
-   * scale-bias applied (CVolumetricFog::UpdateFrame)
-   */
-  private storeViewProjection(ctx: RenderContext) {
-    const camera = ctx.view.camera
-    mat4Multiply(camera.projection, camera.view, this.prevViewProj)
-    mat4Multiply(NDC_TO_TEXCOORD, this.prevViewProj, this.prevViewProj)
-  }
 
   private ensureTargets(device: Device, width: number, height: number, depth: number) {
     this.noise ??= createNoiseTexture(device)
@@ -417,7 +406,12 @@ export class FroxelFogPass implements RenderPass {
     p[9] = Math.min(Math.max(Math.round(this.debugSlice), 0), this.currentSlices - 1)
     // no reprojection without a history (first frame, resize, after being disabled)
     p[12] = this.historyValid ? REPROJECTION_BLEND_FACTOR : 0
-    this.paramPrevViewProj.set(this.prevViewProj)
+    // the view projection of the previous frame with the NDC to texture coordinate scale-bias applied
+    // (CVolumetricFog::UpdateFrame); the history is only valid when this pass rendered that frame
+    const prevViewProj = ctx.renderInputs.get(InputSlots.View.PreviousViewProjectionMatrix)
+    if (prevViewProj) {
+      mat4Multiply(NDC_TO_TEXCOORD, prevViewProj as Mat4, this.paramPrevViewProj)
+    }
   }
 }
 

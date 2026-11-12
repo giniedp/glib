@@ -19,6 +19,7 @@ import {
 
 import {
   Mat4,
+  mat4Copy,
   mat4GetForward,
   mat4GetTranslation,
   mat4Identity,
@@ -353,6 +354,7 @@ export class Renderer implements Ownable {
     const scale = view.renderScale ?? 1
     context.viewWidth = scale === 1 ? context.outputWidth : Math.max(1, Math.round(context.outputWidth * scale))
     context.viewHeight = scale === 1 ? context.outputHeight : Math.max(1, Math.round(context.outputHeight * scale))
+    view.history ||= { viewProjection: mat4Identity(), previousViewProjection: mat4Identity(), frames: 0 }
     this.updateInputs(context)
     this.onContextReady.emit(context)
 
@@ -467,6 +469,14 @@ export class Renderer implements Ownable {
       const viewProj: Mat4 = (ctx.renderInputs.get(viewProjKey) || mat4Identity()) as Mat4
       mat4Multiply(ctx.view.camera.projection, ctx.view.camera.view, viewProj)
       ctx.renderInputs.set(viewProjKey, viewProj)
+
+      const history = ctx.view.history
+      if (history) {
+        mat4Copy(history.frames > 0 ? history.viewProjection : viewProj, history.previousViewProjection)
+        mat4Copy(viewProj, history.viewProjection)
+        history.frames++
+        ctx.renderInputs.set(CommonInputs.View.PreviousViewProjectionMatrix, history.previousViewProjection)
+      }
 
       const invViewProjKey = CommonInputs.View.InverseViewProjectionMatrix
       const invViewProj: Mat4 = (ctx.renderInputs.get(invViewProjKey) || mat4Identity()) as Mat4

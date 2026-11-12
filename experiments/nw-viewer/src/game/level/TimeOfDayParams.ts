@@ -88,6 +88,12 @@ export const TodParams = {
   // New World: fade the analytical fog towards the zenith (GetZenithFadeAmount in volumetricfog.cfi)
   VOLFOG2_ZENITH_FADE_FACTOR: value("Volumetric fog", "Zenith fade factor", "Volumetric fog 2: Zenith Fade Factor", 0.0, 0.0, 1.0),
   VOLFOG2_ZENITH_FADE_CURVE: value("Volumetric fog", "Zenith fade curve", "Volumetric fog 2: Zenith Fade Curve", 0.5, 0.0, 1.0),
+  // New World: the global wind (SetWind, PerFrame_WindDirection), defaults of libs/timeofday/default.xml
+  WIND_X: value("Environment", "Wind X", "Environment Wind X Vector", -2.5, -100.0, 100.0),
+  WIND_Y: value("Environment", "Wind Y", "Environment Wind Y Vector", 2.0, -100.0, 100.0),
+  WIND_Z: value("Environment", "Wind Z", "Environment Wind Z Vector", 0.5, -100.0, 100.0),
+  // New World: brightness of the particles (Engine global parameter 76, ParticleParams3[1] in particlestod.cfi)
+  PARTICLE_BRIGHTNESS: value("Advanced", "Particle brightness", "Particle Brightness Multiplier", 1.0, 0.0, 2.0),
   VOLFOG2_FINAL_DENSITY_CLAMP: value("Volumetric fog", "Final density clamp", "Volumetric fog 2: Final density clamp", 1.0, 0.0, 1.0),
 
   SKYLIGHT_SUN_INTENSITY: color("Sky Light", "Sun intensity", "Sky light: Sun intensity", vec3(1.0)),

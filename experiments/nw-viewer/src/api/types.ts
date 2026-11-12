@@ -418,6 +418,7 @@ export const AudioAreaComponentName = 'AudioArea' as const
 export const ParticleComponentName = 'Particle' as const
 export const DecalComponentName = 'Decal' as const
 export const FogVolumeComponentName = 'FogVolume' as const
+export const SnowComponentName = 'Snow' as const
 
 export const ComponentTypes = {
   MeshComponentName,
@@ -440,6 +441,7 @@ export const ComponentTypes = {
   ParticleComponentName,
   DecalComponentName,
   FogVolumeComponentName,
+  SnowComponentName,
 }
 
 export type ComponentType =
@@ -461,6 +463,7 @@ export type ComponentType =
   | typeof AudioAreaComponentName
   | typeof DecalComponentName
   | typeof FogVolumeComponentName
+  | typeof SnowComponentName
 
 export interface ViewerBaseComponent {
   type: ComponentType
@@ -682,6 +685,30 @@ export interface ViewerFogVolumeComponent extends ViewerBaseComponent {
   engineSpec?: number
 }
 
+/**
+ * A snow volume (Snow gem SnowComponent, nwbt `game/level/load_snow.go`), centered on the entity. The engine keeps one
+ * global snow volume (SetSnowSurfaceParams / SetSnowFallParams) for the deferred snow layer and the falling snow.
+ */
+export interface ViewerSnowComponent extends ViewerBaseComponent {
+  type: typeof SnowComponentName
+  enabled: boolean
+  /** surface (FX_DeferredSnowLayer), the radius is measured in the xy plane */
+  radius: number
+  snowAmount: number
+  frostAmount: number
+  surfaceFreezing: number
+  snowBrightness: number
+  frostBrightness: number
+  /** falling snow (CSceneSnow) */
+  snowFlakeCount: number
+  snowFlakeSize: number
+  snowFallBrightness: number
+  snowFallGravityScale: number
+  snowFallWindScale: number
+  snowFallTurbulence: number
+  snowFallTurbulenceFreq: number
+}
+
 export interface ViewerRoadComponent extends ViewerBaseComponent {
   type: typeof RoadComponentName | typeof RiverComponentName
   material: string
@@ -756,7 +783,12 @@ export type ViewerComponent =
   | ViewerTimeOfDayComponent
   | ViewerDecalComponent
   | ViewerFogVolumeComponent
+  | ViewerSnowComponent
   | ViewerUnknownComponent
+
+export function isViewerSnowComponent(component: any): component is ViewerSnowComponent {
+  return component?.type === SnowComponentName
+}
 
 export function isViewerDecalComponent(component: any): component is ViewerDecalComponent {
   return component?.type === DecalComponentName

@@ -10,11 +10,12 @@ import {
   type MaterialOptions,
   type Texture,
 } from '@gglib/graphics'
-import { vec4 } from '@gglib/math'
+import { mat4Identity, vec4 } from '@gglib/math'
 import type { ParticleParams } from '../../formats/particles'
 import { InputBlocks, MaterialLayerMasks } from '../../material'
+import { TextureModifier } from '../../material/TexMod'
 import { getWhiteTexture } from '../../material/utils'
-import type { ParticleSdf2D } from './ParticleSystem'
+import type { ParticleSdf2D, ParticleSpriteFeatures } from './ParticleSystem'
 import SCHEMA from './ParticleMaterial.meta'
 import WGSL from './ParticleMaterial.wgsl'
 
@@ -56,18 +57,23 @@ export const PARTICLE_COLOR_SCALE = 1
  * Material of a sprite particle emitter, see {@link ParticleMaterial.wgsl}
  */
 export class ParticleMaterial extends MaterialWithSchema(SCHEMA) {
+  // declared without emit: assigned in configure(), which runs inside the base constructor before field initializers
+  declare private modDiffuse: TextureModifier | null
+  declare private modDetail: TextureModifier | null
+
   public constructor(
     device: Device,
     params: ParticleParams,
     texture: Texture,
     sdf?: ParticleSdf2D | null,
     diffuseColor?: [number, number, number],
+    features?: ParticleSpriteFeatures | null,
   ) {
     super(device, {
       name: 'Particle Material',
       effect: null,
       properties: {},
-      meta: { params, texture, sdf, diffuseColor },
+      meta: { params, texture, sdf, diffuseColor, features },
     })
   }
 
@@ -107,5 +113,44 @@ export class ParticleMaterial extends MaterialWithSchema(SCHEMA) {
     this.Sdf3 = vec4(sdf?.sourcePhase[0] ?? 0, sdf?.sourcePhase[1] ?? 0, sdf?.maskTile[0] ?? 1, sdf?.maskTile[1] ?? 1)
     this.SdfNoiseMap = sdf?.noise ?? getWhiteTexture(this.device)
     this.SdfMaskMap = sdf?.mask ?? getWhiteTexture(this.device)
+
+    const features = options.meta.features as ParticleSpriteFeatures | null
+    const emittance = features?.emittance ?? [0, 0, 0]
+    this.Emissive = vec4(emittance[0], emittance[1], emittance[2], params.todBrightnessInfluence)
+    this.GlowMap = features?.glow ?? getWhiteTexture(this.device)
+    const deform = features?.deformation
+    this.Deform = vec4(deform ? 1 : 0, deform?.tile ?? 0.1, deform?.amount ?? 0, deform?.animSpeed ?? 0)
+    this.DeformMap = deform?.map ?? getWhiteTexture(this.device)
+    const lookup = features?.colorLookup
+    this.Lookup = vec4(lookup ? 1 : 0, lookup?.amplitude ?? 1, lookup?.phase ?? 1, features?.texMods.any ? 1 : 0)
+    this.LookupMap = lookup?.map ?? getWhiteTexture(this.device)
+
+    this.UvModDiffuse = mat4Identity()
+    this.UvModDetail = mat4Identity()
+    this.modDiffuse = features?.texMods.diffuse ? new TextureModifier(features.texMods.diffuse) : null
+    this.modDetail = features?.texMods.detail ? new TextureModifier(features.texMods.detail) : null
+    this.updateModifiers(0)
+  }
+
+  private frame: number
+  public update(time: number, delta: number, frame: number) {
+    if (this.frame === frame) {
+      return
+    }
+    this.frame = frame
+    if (this.modDiffuse?.isAnimated || this.modDetail?.isAnimated) {
+      this.updateModifiers(time)
+    }
+  }
+
+  private updateModifiers(time: number) {
+    if (this.modDiffuse) {
+      this.modDiffuse.update(time)
+      this.UvModDiffuse = this.modDiffuse.matrix
+    }
+    if (this.modDetail) {
+      this.modDetail.update(time)
+      this.UvModDetail = this.modDetail.matrix
+    }
   }
 }

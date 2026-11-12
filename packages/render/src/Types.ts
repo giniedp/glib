@@ -262,6 +262,30 @@ export interface RenderView {
    * @internal
    */
   items: RenderItem[]
+  /**
+   * Matrices of the previous frames of this view, maintained by the renderer.
+   * Should not be manually assigned or modified, but can be read during rendering.
+   * @internal
+   */
+  history?: RenderViewHistory
+}
+
+/**
+ * Per view state of the previous frame, see {@link RenderView.history}
+ */
+export interface RenderViewHistory {
+  /**
+   * The view projection matrix of the latest rendered frame
+   */
+  viewProjection: Mat4
+  /**
+   * The view projection matrix of the frame before the latest one, the current one on the first frame
+   */
+  previousViewProjection: Mat4
+  /**
+   * Number of frames this view was rendered with, 0 before the first one
+   */
+  frames: number
 }
 
 export interface RenderContext {

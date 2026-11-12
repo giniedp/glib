@@ -39,6 +39,7 @@ import {
   isViewerPointSpawnerComponent,
   isViewerPrefabSpawnerComponent,
   isViewerRoadComponent,
+  isViewerSnowComponent,
   isViewerVolumeComponent,
   isViewerWaterVolumeComponent,
   type ViewerRoadComponent,
@@ -60,6 +61,7 @@ import { DebugLayer, DebugShapeComponent, type DebugShapeOptions } from '../debu
 import { DecalComponent, decalMatrix } from '../decal/DecalComponent'
 import { DECAL_BOX_FROM_UNIT_BOX } from '../decal/DecalSystem'
 import { FogVolumeComponent, fogVolumeLocalScale } from '../fog/FogVolumeComponent'
+import { SnowComponent } from '../snow/SnowComponent'
 import { TimeOfDayComponent } from '../level/TimeOfDayComponent'
 import { LightComponent } from '../light/LightComponent'
 import { ParticleComponent, particleRange } from '../particles/ParticleComponent'
@@ -443,6 +445,21 @@ export function executeSpawner(spawner: SliceSpawnerComponent) {
           color: vec3(Color.Cyan),
           layer: DebugLayer.FogVolumes,
           instances: [fogVolumeLocalScale(comp, shape)],
+        })
+        continue
+      }
+      if (isViewerSnowComponent(comp)) {
+        // like lights, an inactive volume would always snow
+        if (inactive) {
+          continue
+        }
+        // active with the slice (its spawn radius covers the snow radius), the SnowSystem picks the global volume
+        components.push(new SnowComponent(comp))
+        debug.add({
+          type: 'sphere',
+          color: vec3(Color.White),
+          layer: DebugLayer.FogVolumes,
+          instances: [mat4CreateScaleUniform(comp.radius)],
         })
         continue
       }

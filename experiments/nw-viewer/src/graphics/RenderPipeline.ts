@@ -43,6 +43,9 @@ import { FilmMappingPass } from './passes/filmmapping/FilmMappingPass'
 import { LuminancePass } from './passes/exposure/LuminancePass'
 import { FogPass } from './passes/fog/FogPass'
 import { FroxelFogPass } from './passes/fog/FroxelFogPass'
+import { PreviousColorPass } from './passes/history/PreviousColorPass'
+import { SnowPass } from './passes/snow/SnowPass'
+import { SsrChannel, SsrPass } from './passes/ssr/SsrPass'
 import { SunShaftsPass } from './passes/sunshafts/SunShaftsPass'
 import { UpscalePass } from './passes/upscale/UpscalePass'
 import { NwRenderChannel, XeGtaoPass } from './passes/ssao/XeGtaoPass'
@@ -65,13 +68,32 @@ const DECAL_RECEIVER_LAYERS = MaterialLayerMasks.DecalReceiver | MaterialLayerMa
 export const DECAL_RECEIVER_STENCIL = 1
 
 /**
+ * Surfaces that receive the snow layer: terrain and mesh components with acceptSnow (tmp/snow plan 1.3, user choice:
+ * NW's own flag instead of the decal receivers, it keeps snow off the corruption props)
+ */
+const SNOW_RECEIVER_LAYERS = MaterialLayerMasks.SnowReceiver | MaterialLayerMasks.Terrain
+/**
+ * Stencil bit of the snow receivers, written by the GBuffer pass, tested by the snow pass
+ */
+export const SNOW_RECEIVER_STENCIL = 2
+
+/**
+ * Stencil reference of a GBuffer draw from its layer: the decal and snow receiver bits
+ */
+function receiverStencil(layer: number): number {
+  const decal = layer & DECAL_RECEIVER_LAYERS ? DECAL_RECEIVER_STENCIL : 0
+  const snow = layer & SNOW_RECEIVER_LAYERS ? SNOW_RECEIVER_STENCIL : 0
+  return decal | snow
+}
+
+/**
  * Opaque items of the GBuffer pass, each draw sets the receiver stencil reference from its layer
  */
 const GBUFFER_LIST = new RenderListMode(RenderSortPriority.State, RenderItemFlags.Opaque, {
   // the decal boxes have Illum materials with a GBuffer effect. Unlayered items (LayerMask.All) were excluded by the
   // MeshDecal bit already, the ProjectedDecal bit changes nothing for them.
   excludeLayers: MaterialLayerMasks.MeshDecal | MaterialLayerMasks.ProjectedDecal,
-  stencilReference: (layer) => (layer & DECAL_RECEIVER_LAYERS ? DECAL_RECEIVER_STENCIL : 0),
+  stencilReference: receiverStencil,
 })
 
 /**
@@ -112,11 +134,11 @@ const DECAL_RECEIVER_TEST = StencilState.get({
 })
 
 /**
- * Writes the stencil reference of each draw (the receiver bit) where the depth test passes
+ * Writes the stencil reference of each draw (the decal and snow receiver bits) where the depth test passes
  */
 const DECAL_RECEIVER_WRITE = StencilState.get({
   enable: true,
-  writeMask: DECAL_RECEIVER_STENCIL,
+  writeMask: DECAL_RECEIVER_STENCIL | SNOW_RECEIVER_STENCIL,
   frontFunction: 'always',
   frontDepthPass: 'replace',
   backFunction: 'always',
@@ -187,6 +209,7 @@ export function createRenderPipeline(device: Device): RenderPipelineOptions {
   const sunShafts = new SunShaftsPass(device)
   const luminance = new LuminancePass(device)
   const froxelFog = new FroxelFogPass(device, { linearDepth: RenderChannel.LinearDepth, color: RenderChannel.Color })
+  const previousColor = new PreviousColorPass(device)
 
   const passes: RenderPass[] = [
     describePass(
@@ -197,7 +220,7 @@ export function createRenderPipeline(device: Device): RenderPipelineOptions {
       }),
       { note: 'opaque materials skip fog, the fog pass applies it' },
     ),
-    groupPass({ name: 'Opaque', passes: createOpaquePasses(device) }),
+    groupPass({ name: 'Opaque', passes: createOpaquePasses(device, previousColor, luminance) }),
     // froxel volumetric fog (plan phase 8), after the opaque surfaces like the game, before the fog apply
     optionalPass(froxelFog),
     describePass(
@@ -215,6 +238,10 @@ export function createRenderPipeline(device: Device): RenderPipelineOptions {
       note: 'material debug views of opaque surfaces, runs while a debug output is selected',
     }),
     groupPass({ name: 'Transparent', passes: createTransparentPasses(device) }),
+    // the HDR color for the next frame ($HDRTargetPrev, copied after the transparents like the game)
+    optionalPass(
+      describePass(previousColor, { note: 'keeps the HDR color for the next frame (screen space reflections)' }),
+    ),
     // mask and blur from the HDR scene
     optionalPass(sunShafts.generate, sunShafts),
     // scene luminance for the exposure of the film mapping, measured before bloom like the game
@@ -258,6 +285,8 @@ export function createRenderPipeline(device: Device): RenderPipelineOptions {
     ),
     // tints the decal receivers (stencil bit of the GBuffer pass)
     optionalPass(new DecalReceiverDebugPass(device, { stencilBit: DECAL_RECEIVER_STENCIL })),
+    // tints the snow receivers (stencil bit of the GBuffer pass, tested by the snow pass)
+    optionalPass(new DecalReceiverDebugPass(device, { name: 'Snow Receivers', stencilBit: SNOW_RECEIVER_STENCIL })),
     // last, like the game's final UpscaleImage: render size → output size (config renderScale / upscaler)
     describePass(new UpscalePass(device), {
       note: 'upscales to the output size when the render scale is below 1, mode by the config upscaler',
@@ -274,7 +303,11 @@ export function createRenderPipeline(device: Device): RenderPipelineOptions {
  * 4. emissive variant
  * 5. forward opaque items: the sky (writes the far plane into LinearDepth where no geometry is), unlit, debug
  */
-function createOpaquePasses(device: Device): RenderPass[] {
+function createOpaquePasses(
+  device: Device,
+  previousColor: PreviousColorPass,
+  luminance: LuminancePass,
+): RenderPass[] {
   return [
     neutralSceneDepthPass('OpaqueSceneDepthReset'),
     new GeometryPass({
@@ -345,14 +378,36 @@ function createOpaquePasses(device: Device): RenderPass[] {
         ],
       }),
     ),
+    // snow layer (tmp/snow plan phase 2) after the decals like the game's FX_DeferredSnowLayer, rewrites A/B/C on the
+    // snow receivers inside the snow sphere
+    optionalPass(
+      describePass(
+        new SnowPass(device, {
+          a: GBufferChannel.A,
+          b: GBufferChannel.B,
+          c: GBufferChannel.C,
+          linearDepth: RenderChannel.LinearDepth,
+          stencilBit: SNOW_RECEIVER_STENCIL,
+        }),
+        { note: 'snow and frost of the active snow volume on the snow receivers, toggled by the config snow' },
+      ),
+    ),
     // AO before the lighting (plan phase 5), from the depth and the GBuffer normals
     optionalPass(new XeGtaoPass(device, { normals: GBufferChannel.A })),
+    // screen space reflections before the lighting like the game's SSR_Raytrace, hit colors from the previous frame
+    optionalPass(
+      describePass(
+        new SsrPass(device, { previousColor, luminance, gbufferA: GBufferChannel.A, gbufferC: GBufferChannel.C }),
+        { note: 'Hi-Z pyramid + screen space reflections, blended into the probe specular by the lighting' },
+      ),
+    ),
     new LightingPass(device, {
       a: GBufferChannel.A,
       b: GBufferChannel.B,
       c: GBufferChannel.C,
       linearDepth: RenderChannel.LinearDepth,
       ao: NwRenderChannel.AmbientOcclusion,
+      reflections: SsrChannel.Reflections,
       output: RenderChannel.Color,
     }),
     // emittance of the opaque surfaces, the materials with emittance register the variant

@@ -18,10 +18,12 @@ struct MaterialBlock {
   fadingNoiseTilingSize         : f32, // default 1000.0
   horizonBendingHeight          : f32, // default 0.2
   skyHeight                     : f32, // default 1000.0
-  exposure                      : f32, // default 1.0
+  exposure                      : f32, // default 1.0 (%SIMPLE)
   maxShadowDensity              : f32, // default 1.0
   minShadowDensity              : f32, // default 0.0
-  opacity                       : f32, // default 1.0, material opacity (GetInstance_Opacity)
+  opacity                       : f32, // default 1.0, material opacity (GetInstance_Opacity), General
+  simpleOpacity                 : f32, // default 1.0, public param Opacity, %SIMPLE
+  diffuseColor                  : vec4f, // PerMaterial_DiffuseColor, %SIMPLE
   shadowFadingInclinationFactor : f32, // default 10
   shadowFadingRadiusFactor      : f32, // default 10
   shadowPower                   : f32, // default 1.0
@@ -109,12 +111,13 @@ fn vs_main(input: VertexInput) -> FragmentInput {
   var clipPos = view.projectionMatrix * viewRot * vec4f(worldDir, 1.0);
   clipPos.z = 0.0; // reversed depth, far plane
 
-  // sun direction in tangent space: objToTangentSpace = (Tangent, Binormal, cross(Tangent, Binormal) * Tangent.w)
-  // computed in world space, so the instance rotation is respected.
-  let n = normalize((modelMatrix * vec4f(input.normal.xyz, 0.0)).xyz);
-  var t = normalize((modelMatrix * vec4f(input.tangent.xyz, 0.0)).xyz);
-  t = normalize(t - n * dot(n, t));
-  let b = cross(n, t) * input.tangent.w;
+  // sun direction in tangent space like the game: objToTangentSpace = (Tangent, Binormal,
+  // normalize(cross(Tangent, Binormal)) * Tangent.w) of the object space streams times the world sun direction. The
+  // instance rotation is not applied (a mismatch of the game, kept, see openworld distance-clouds.md).
+  // the binormal stream is reconstructed from the normal and the tangent (the meshes have no bitangent stream here)
+  let t = input.tangent.xyz;
+  let b = cross(input.normal.xyz, t) * input.tangent.w;
+  let n = normalize(cross(t, b)) * input.tangent.w;
   // PerFrame_SunDirection points towards the sun, global.sunDirection points away from it
   let sunDir = -global.sunDirection;
   let toSun = vec3f(dot(t, sunDir), dot(b, sunDir), dot(n, sunDir));
@@ -139,8 +142,11 @@ fn vs_main(input: VertexInput) -> FragmentInput {
 
 @fragment
 fn fs_main(input: FragmentInput) -> FragmentOutput {
+  // %SIMPLE wins %ADVANCED
   var out: FragmentOutput;
-  if (ADVANCED) {
+  if (SIMPLE) {
+    out = psSimple(input);
+  } else if (ADVANCED) {
     out = psAdvanced(input);
   } else {
     out = psBasic(input);
@@ -160,6 +166,19 @@ fn getCloudTexture(uv: vec2f, scaleOffset: vec4f) -> vec4f {
     return textureSample(diffuseMap, samplerLinear, fract(uv) * scaleOffset.xy + scaleOffset.zw);
   }
   return textureSample(diffuseMap, samplerLinear, uv);
+}
+
+// DistanceCloudsSimplePS: the texture as is, tinted by the material diffuse color and the public Opacity, no lighting
+// and no opacity curve
+fn psSimple(input: FragmentInput) -> FragmentOutput {
+  var col = getCloudTexture(input.uvBase.xy, getSpriteScaleOffset());
+  if (LOCAL_WEATHER) {
+    col *= getLocalWeatherAlpha(input);
+  }
+  var out: FragmentOutput;
+  out.color = vec4f(material.diffuseColor.rgb * col.rgb, col.a * material.simpleOpacity) * input.color;
+  out.color = vec4f(out.color.rgb * material.exposure, out.color.a);
+  return out;
 }
 
 fn psBasic(input: FragmentInput) -> FragmentOutput {

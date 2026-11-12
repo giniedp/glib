@@ -1,7 +1,7 @@
 import type { Device, MaterialProperties, Texture } from '@gglib/graphics'
 import { vec3, vec4, vec4$init, type IVec3, type IVec4 } from '@gglib/math'
 import { lfmt } from '@gglib/utils'
-import { FlatNormalTextureKey, GrayTextureKey, WhiteTextureKey } from '../content'
+import { BlackTextureKey, FlatNormalTextureKey, GrayTextureKey, WhiteTextureKey } from '../content'
 import type { NwMaterialProps } from './GltfExtension'
 import { getShaderFlags } from './common'
 
@@ -165,4 +165,11 @@ export function getFlatNormalTexture(device: Device): Texture {
 
 export function getGrayTexture(device: Device): Texture {
   return device.acquireTexture({ key: GrayTextureKey, throwIfMissing: true })
+}
+
+/**
+ * Black with alpha 0: neutral for layers that blend by their alpha (e.g. the skin decal layers)
+ */
+export function getTransparentTexture(device: Device): Texture {
+  return device.acquireTexture({ key: BlackTextureKey, throwIfMissing: true })
 }

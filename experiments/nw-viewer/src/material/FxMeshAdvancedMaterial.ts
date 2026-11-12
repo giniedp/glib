@@ -28,7 +28,7 @@ import {
   type FeatureFlag,
 } from './common'
 import { MtlFlag } from './types'
-import { MtlUtil, paramValue, paramVec4, getWhiteTexture } from './utils'
+import { getWhiteTexture, MtlUtil, paramValue, paramVec4 } from './utils'
 
 export function fxMeshAdvancedShaderOptions(
   constants: Record<string, number>,
@@ -113,7 +113,18 @@ type PublicParams = {
 }
 
 const util = new MtlUtil('FxMeshAdvanced', {
-  knownMaps: ['Diffuse', 'Bumpmap', 'Specular', 'Detail', 'Smoothness', 'Opacity', 'Heightmap', 'Emittance'],
+  knownMaps: [
+    'Diffuse',
+    'Bumpmap',
+    'Specular',
+    'Detail',
+    'Smoothness',
+    'Opacity',
+    'Heightmap',
+    'Emittance',
+    'Decal',
+    'Custom',
+  ],
   knownMods: ['Diffuse', 'Emittance', 'Decal'],
   knownFlags: [
     'NORMAL_MAP',
@@ -123,6 +134,15 @@ const util = new MtlUtil('FxMeshAdvanced', {
     'SPECULAR_MAP',
     'VERT_DEFORM_SINWAVE',
     'VERTCOLORS',
+    // ZPass only (opaque), see FxMeshAdvancedMaterial.wgsl
+    'USE_FX_NORMAL_PARAMS',
+    'USE_ADVANCED_DISSOLVE',
+    'USE_FRESNEL_DISSOLVE_MASK',
+    'USE_STENCIL_DISSOLVE_MASK',
+    'FX_ADVANCED_SS',
+    'FX_SS_CUSTOM_DIR',
+    // SSS index in the GBuffer, not encoded yet (material parity plan 3.5)
+    'SUBSURFACE_SCATTERING',
   ],
 })
 
@@ -255,7 +275,7 @@ export class FxMeshAdvancedMaterial extends MaterialWithSchema(SCHEMA) {
     this.SubSurfaceDirY = 0.0
     this.SubSurfaceDirZ = 0.0
     this.SubSurfaceFalloff = 2.0
-    // this.SubSurfaceParallax        =-
+    this.SubSurfaceParallax = -0.2
     this.SubSurfaceThreshold = 2.0
     this.SubSurfaceTile = 1.0
   }
@@ -319,7 +339,7 @@ export class FxMeshAdvancedMaterial extends MaterialWithSchema(SCHEMA) {
     }
 
     // == EFTT_CUSTOM
-    // - DiffuseMap2
+    // - maskTex (dissolve stencil)
     if (maps.Custom) {
       this.DiffuseMap2 = maps.Custom as any
     }
@@ -371,24 +391,29 @@ export class FxMeshAdvancedMaterial extends MaterialWithSchema(SCHEMA) {
       this.EnabledUvModDiffuse = TRUE
       this.updateModDiffuse(0)
     }
-    // TODO: Custom maps have modifiers but doesn't look right when applied.
-    // if (TextureModifier.isModified(mod.Custom)) {
-    //   this.modDiffuse = new TextureModifier(mod.Custom)
-    //   this.EnabledUvModDiffuse = TRUE
-    //   this.updateModDiffuse(0)
-    // }
-    // if (TextureModifier.isModified(mod.Heightmap)) {
-    //   this.modDiffuse = new TextureModifier(mod.Heightmap)
-    //   this.EnabledUvModDiffuse = TRUE
-    //   this.updateModDiffuse(0)
-    // }
+    // the emissive map and the emissive intensity map each have their own modifier (_ModifyEmittanceUV,
+    // _ModifyEmissiveMultiplierUV). The shader reads no other modified slot.
+    if (TextureModifier.isModified(mods.Emittance)) {
+      this.modEmittance = new TextureModifier(mods.Emittance)
+      this.EnabledUvModEmittance = TRUE
+      this.updateModEmittance(0)
+    }
+    if (TextureModifier.isModified(mods.Decal)) {
+      this.modDecalEmissive = new TextureModifier(mods.Decal)
+      this.EnabledUvModDecalEmissive = TRUE
+      this.updateModDecalEmissive(0)
+    }
   }
 
   private setAttributes(attrs: NwMaterialProps['attrs'], flags: Set<FeatureFlag>) {
     this.DiffuseColor = paramVec4(attrs.Diffuse, vec4.One)
 
     if (attrs.Specular) {
-      // this.SpecularColor = parseColorParam(attr.Specular)
+      this.SpecularColor = paramVec4(attrs.Specular, vec4.One)
+    }
+    if (attrs.Shininess) {
+      // PerMaterial_SpecularColor.w = smoothness
+      this.SpecularColor.w = attrs.Shininess / 255
     }
 
     if (attrs.Emissive) {
@@ -405,10 +430,6 @@ export class FxMeshAdvancedMaterial extends MaterialWithSchema(SCHEMA) {
 
     if (attrs.Opacity < 1) {
       this.DiffuseColor.w = attrs.Opacity
-    }
-
-    if (attrs.Shininess) {
-      //
     }
   }
 

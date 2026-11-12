@@ -105,6 +105,8 @@ export class WaterVolumeMaterial extends MaterialWithSchema(SCHEMA) {
     this.FoamAmount = 1.0
     this.FoamTiling = 1.0
     this.EnvCubeReflMul = 1.0
+    // watervolume.cfx default
+    this.RealtimeReflMul = 1.0
     this.WaterFlowSpeed = 0.0
 
     this.FoamMap = this.device.acquireTexture({ key: FoamMapKey, throwIfMissing: true })
@@ -125,6 +127,7 @@ export class WaterVolumeMaterial extends MaterialWithSchema(SCHEMA) {
     this.EnabledFlow = flags.has('FLOW') ? TRUE : FALSE
     this.EnabledFoam = flags.has('FOAM') ? TRUE : FALSE
     this.EnabledSunSpecular = flags.has('SUN_SPECULAR') ? TRUE : FALSE
+    this.EnabledSsrefl = flags.has('SSREFL') ? TRUE : FALSE
   }
 
   private setPublicParams(params: PublicParams) {
@@ -139,6 +142,7 @@ export class WaterVolumeMaterial extends MaterialWithSchema(SCHEMA) {
     // without screen space reflections the env cube is the only reflection (the game's !%SSREFL path)
     this.EnvCubeReflMul = paramValue(params.EnvCubeReflMul, this.EnvCubeReflMul)
     this.WaterFlowSpeed = paramValue(params.WaterFlowSpeed, this.WaterFlowSpeed)
+    this.RealtimeReflMul = paramValue(params.RealtimeReflMul, this.RealtimeReflMul)
   }
 
   /**

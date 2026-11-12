@@ -36,6 +36,8 @@ export default {
   GlossMap: inputSlot('material', 'glossMap', 'texture'),
   SceneDepthMap: inputSlot('view', 'sceneDepthMap', 'texture'),
   SceneColorMap: inputSlot('view', 'sceneColorMap', 'texture'),
+  HiZMap: inputSlot('view', 'hiZMap', 'texture'),
+  PreviousSceneColorMap: inputSlot('view', 'previousSceneColorMap', 'texture'),
   Transform: inputSlot('instances', 'transform', 'mat4x4'),
   Params1: inputSlot('instances', 'params1', 'vec4'),
   Params2: inputSlot('instances', 'params2', 'vec4'),

@@ -18,7 +18,8 @@ import Schema from './DistanceCloudsMaterial.meta'
 import DISTANCE_CLOUDS_SHADER from './DistanceCloudsMaterial.wgsl'
 import type { NwMaterialProps } from './GltfExtension'
 import { TextureModifier } from './TexMod'
-import { MtlUtil, paramValue } from './utils'
+import { vec4 } from '@gglib/math'
+import { MtlUtil, paramValue, paramVec4 } from './utils'
 
 export function distanceCloudsOptions(constants: Record<string, number>): ShaderModuleOptions {
   return {
@@ -67,7 +68,7 @@ type PublicParams = {
 const util = new MtlUtil('DistanceClouds', {
   knownMaps: ['Diffuse'],
   knownMods: ['Diffuse'],
-  knownFlags: [],
+  knownFlags: ['SIMPLE', 'ADVANCED', 'SPRITESHEET_MATERIAL', 'LOCAL_WEATHER'],
 })
 
 export class DistanceCloudsMaterial extends MaterialWithSchema(Schema) {
@@ -113,6 +114,8 @@ export class DistanceCloudsMaterial extends MaterialWithSchema(Schema) {
     this.MaxShadowDensity = 1.0
     this.MinShadowDensity = 0.0
     this.Opacity = 1.0
+    this.SimpleOpacity = 1.0
+    this.DiffuseColor = vec4(1, 1, 1, 1)
     this.ShadowFadingInclinationFactor = 10
     this.ShadowFadingRadiusFactor = 10
     this.ShadowPower = 1.0
@@ -156,6 +159,10 @@ export class DistanceCloudsMaterial extends MaterialWithSchema(Schema) {
     if (attrs.Opacity != null) {
       this.Opacity = Number(attrs.Opacity)
     }
+    // PerMaterial_DiffuseColor, read by %SIMPLE only
+    if (attrs.Diffuse) {
+      this.DiffuseColor = paramVec4(attrs.Diffuse, vec4.One)
+    }
   }
 
   private setPublicParams(params: PublicParams) {
@@ -174,7 +181,8 @@ export class DistanceCloudsMaterial extends MaterialWithSchema(Schema) {
     this.MinShadowDensity = paramValue(params.MinShadowDensity, this.MinShadowDensity)
     this.ShadowFadingRadiusFactor = paramValue(params.ShadowFadingRadiusFactor, this.ShadowFadingRadiusFactor)
     this.Exposure = paramValue(params.Exposure, this.Exposure)
-    this.Opacity = paramValue(params.Opacity, this.Opacity)
+    // the public Opacity is the %SIMPLE alpha factor, General uses the material opacity (GetInstance_Opacity)
+    this.SimpleOpacity = paramValue(params.Opacity, this.SimpleOpacity)
     this.SpriteSheetColumns = paramValue(params.SpriteSheet_Columns, this.SpriteSheetColumns)
     this.SpriteSheetNumFrames = paramValue(params.SpriteSheet_NumFrames, this.SpriteSheetNumFrames)
     this.SpriteSheetRows = paramValue(params.SpriteSheet_Rows, this.SpriteSheetRows)

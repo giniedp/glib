@@ -76,8 +76,10 @@ export class IndirectMaterials {
   private device: Device
   private transforms: Buffer
   private fragmentConstants: Record<string, number> | null
-  private effects = new Map<Effect, Effect | null>()
-  private proxies = new Map<Material, Material>()
+  // wrapped effects by source effect and vertex constants key
+  private effects = new Map<Effect, Map<string, Effect | null>>()
+  // proxies by material and vertex constants key
+  private proxies = new Map<Material, Map<string, Material>>()
 
   /**
    * @param fragmentConstants - additional fragment shader constants for the wrapped effects, e.g. the dither fade
@@ -89,46 +91,71 @@ export class IndirectMaterials {
     this.fragmentConstants = fragmentConstants || null
   }
 
-  public get(material: Material): Material {
-    let result = this.proxies.get(material)
+  /**
+   * @param vertexConstants - per draw vertex shader constants (pipeline overrides), e.g. the bending strength of a
+   *   vegetation asset. Each constant only applies to shaders that declare it, each distinct set is its own proxy.
+   */
+  public get(material: Material, vertexConstants?: Record<string, number>): Material {
+    const key = vertexConstants ? JSON.stringify(vertexConstants) : ''
+    let byKey = this.proxies.get(material)
+    if (!byKey) {
+      byKey = new Map()
+      this.proxies.set(material, byKey)
+    }
+    let result = byKey.get(key)
     if (!result) {
       result = Object.create(material) as Material
-      result.getEffect = (variant: RenderVariant) => this.getEffect(material.getEffect(variant))
-      this.proxies.set(material, result)
+      result.getEffect = (variant: RenderVariant) => this.getEffect(material.getEffect(variant), key, vertexConstants)
+      byKey.set(key, result)
     }
     return result
   }
 
-  private getEffect(effect: Effect | null): Effect | null {
+  private getEffect(effect: Effect | null, key: string, vertexConstants?: Record<string, number>): Effect | null {
     if (!effect) {
       return null
     }
-    if (this.effects.has(effect)) {
-      return this.effects.get(effect)
+    let byKey = this.effects.get(effect)
+    if (!byKey) {
+      byKey = new Map()
+      this.effects.set(effect, byKey)
+    }
+    if (byKey.has(key)) {
+      return byKey.get(key)
     }
     const options = effect.cloneOptions()
     const transformBlock = options.program.perInstanceTransformBlock
     if (!transformBlock) {
       // effect does not read instance transforms from a buffer, can't be used for instancing
-      this.effects.set(effect, null)
+      byKey.set(key, null)
       return null
     }
     const clone = new Effect(this.device, {
       ...options,
       program: {
         ...options.program,
-        shader: this.withConstants(options.program.shader as WebGpuShaderModule),
+        shader: this.withConstants(options.program.shader as WebGpuShaderModule, vertexConstants),
         // opt out of render list batching, instance transforms are provided by the transform buffer
         perInstanceTransformBlock: null,
       },
     })
     clone.program.mustGet(transformBlock).setBuffer(this.transforms)
-    this.effects.set(effect, clone)
+    byKey.set(key, clone)
     return clone
   }
 
-  private withConstants(module: WebGpuShaderModule) {
-    if (!this.fragmentConstants || !module.source?.includes('ditherFade(')) {
+  private withConstants(module: WebGpuShaderModule, vertexConstants?: Record<string, number>) {
+    const source = module.source || ''
+    const fragment = this.fragmentConstants && source.includes('ditherFade(') ? this.fragmentConstants : null
+    let vertex: Record<string, number> | null = null
+    for (const name in vertexConstants || {}) {
+      // only constants the shader declares, unknown pipeline overrides are an error
+      if (source.includes(`override ${name}`)) {
+        vertex ||= {}
+        vertex[name] = vertexConstants[name]
+      }
+    }
+    if (!fragment && !vertex) {
       return module
     }
     return {
@@ -137,19 +164,22 @@ export class IndirectMaterials {
         // keep the entry points of the variant (e.g. fs_gbuffer), not the module defaults
         vertexEntry: module.vertexFn,
         fragmentEntry: module.fragmentFn,
-        vertexConstants: module.vertexConstants,
-        fragmentConstants: ShaderConstants.get({
-          ...(module.fragmentConstants?.state || {}),
-          ...this.fragmentConstants,
-        }),
+        vertexConstants: vertex
+          ? ShaderConstants.get({ ...(module.vertexConstants?.state || {}), ...vertex })
+          : module.vertexConstants,
+        fragmentConstants: fragment
+          ? ShaderConstants.get({ ...(module.fragmentConstants?.state || {}), ...fragment })
+          : module.fragmentConstants,
       },
       glsl: null,
     }
   }
 
   public dispose() {
-    for (const effect of this.effects.values()) {
-      effect?.dispose()
+    for (const byKey of this.effects.values()) {
+      for (const effect of byKey.values()) {
+        effect?.dispose()
+      }
     }
     this.effects.clear()
     this.proxies.clear()

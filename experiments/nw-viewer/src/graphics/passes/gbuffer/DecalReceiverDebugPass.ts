@@ -26,17 +26,22 @@ const DEPTH_ALWAYS = DepthState.get({ enabled: true, depthFunction: 'always', de
 export interface DecalReceiverDebugPassOptions {
   enabled?: boolean
   /**
-   * The stencil bit of the decal receivers
+   * Pass name, defaults to 'Decal Receivers'
+   */
+  name?: string
+  /**
+   * The stencil bit of the receivers
    */
   stencilBit: number
 }
 
 /**
- * Debug view of the decal receiver stencil (plan 7.4): tints the final image where the GBuffer pass wrote the
- * receiver bit (terrain, meshes with acceptDecals). Tests the stencil of `Depth`, reads no texture.
+ * Debug view of a receiver stencil bit (plan 7.4): tints the final image where the GBuffer pass wrote the bit, e.g.
+ * the decal receivers (terrain, meshes with acceptDecals) or the snow receivers (terrain, meshes with acceptSnow).
+ * Tests the stencil of `Depth`, reads no texture.
  */
 export class DecalReceiverDebugPass implements RenderPass {
-  public readonly name = 'Decal Receivers'
+  public readonly name: string
   public enabled = false
 
   private program: Program
@@ -46,6 +51,7 @@ export class DecalReceiverDebugPass implements RenderPass {
   private depth: FrameResource
 
   public constructor(device: Device, options: DecalReceiverDebugPassOptions) {
+    this.name = options.name ?? 'Decal Receivers'
     this.enabled = options.enabled ?? this.enabled
     this.stencilBit = options.stencilBit
     this.stencil = StencilState.get({

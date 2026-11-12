@@ -18,7 +18,12 @@ import {
   type ParticleLocation,
 } from './ParticleEmitter'
 import { ParticleMaterial } from './ParticleMaterial'
-import { ParticleSystem, type ParticleSdf2D, type ParticleUpdatable } from './ParticleSystem'
+import {
+  ParticleSystem,
+  type ParticleSdf2D,
+  type ParticleSpriteFeatures,
+  type ParticleUpdatable,
+} from './ParticleSystem'
 
 export type ParticleComponentState = 'idle' | 'loading' | 'ready' | 'skipped' | 'failed'
 
@@ -161,30 +166,22 @@ export class ParticleComponent implements GameComponent, ParticleUpdatable {
     forEachParticleEffect(effect, (it) => {
       const p = it.params
       // phase 1: sprite emitters that spawn from the emitter itself
-      // refraction materials distort the scene behind them, not supported yet (they would show as plain sprites)
-      const isRefraction = /refraction/i.test(p?.material ?? '')
-      if (
-        p &&
-        p.count.base > 0 &&
-        p.spawnIndirection === 'Direct' &&
-        !p.geometry &&
-        !isRefraction &&
-        (p.texture || p.material)
-      ) {
+      if (p && p.count.base > 0 && p.spawnIndirection === 'Direct' && !p.geometry && (p.texture || p.material)) {
         if (p.emitterShape !== 'TRAIL' && p.emitterShape !== 'BEAM') {
           sprites.push(p)
         }
       }
     })
-    const [textures, sdfs, colors] = await Promise.all([
+    const [textures, sdfs, colors, features] = await Promise.all([
       Promise.all(sprites.map((p) => this.system.loadSpriteTexture(p.texture, p.material, this.scope))),
       Promise.all(sprites.map((p) => this.system.loadSpriteSdf(p.material, this.scope))),
       Promise.all(sprites.map((p) => this.system.loadSpriteDiffuseColor(p.material))),
+      Promise.all(sprites.map((p) => this.system.loadSpriteFeatures(p.material, this.scope))),
     ])
     if (!this.entity || this.entity.isDestroyed) {
       return
     }
-    this.build(sprites, textures, sdfs, colors)
+    this.build(sprites, textures, sdfs, colors, features)
     this.state = 'ready'
     if (this.isActive) {
       this.system.register(this)
@@ -196,6 +193,7 @@ export class ParticleComponent implements GameComponent, ParticleUpdatable {
     textures: Array<Texture | null>,
     sdfs: Array<ParticleSdf2D | null>,
     colors: Array<[number, number, number]>,
+    features: ParticleSpriteFeatures[],
   ) {
     const device = this.entity.service(Device)
     this.updateLocation()
@@ -217,7 +215,8 @@ export class ParticleComponent implements GameComponent, ParticleUpdatable {
     const materials: ParticleMaterial[] = []
     for (let i = 0; i < sprites.length; i++) {
       const texture = textures[i]
-      if (!texture) {
+      // refraction materials bend the scene behind them instead of drawing their texture, not ported
+      if (!texture || features[i].refraction) {
         continue
       }
       const emitter = new ParticleEmitter(sprites[i], spawn, this.location)
@@ -248,7 +247,7 @@ export class ParticleComponent implements GameComponent, ParticleUpdatable {
         instanceCount: 0,
       })
       geometries.push(geometry)
-      materials.push(new ParticleMaterial(device, sprites[i], texture, sdfs[i], colors[i]))
+      materials.push(new ParticleMaterial(device, sprites[i], texture, sdfs[i], colors[i], features[i]))
       this.slots.push({ emitter, geometry, data })
     }
     if (!this.slots.length) {

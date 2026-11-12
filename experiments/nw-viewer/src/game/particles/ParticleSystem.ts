@@ -5,6 +5,8 @@ import { mat4GetTranslation, vec3, type IVec3 } from '@gglib/math'
 import { MATERIAL_TEXTURE_SIZE } from '../../constants'
 import { ContentService, normalizeAssetPath } from '../../content'
 import { mtlTextureFile, parseMtl, type MtlMaterial } from '../../formats/mtl'
+import { TextureModifier, type TexMod } from '../../material/TexMod'
+import { paramVec4 } from '../../material/utils'
 import {
   parseParticleLibrary,
   resolveParticleEffect,
@@ -35,6 +37,51 @@ export interface ParticleSdf2D {
   /** SDF_2D_MASK_TILE_X/Y */
   maskTile: [number, number]
 }
+
+/**
+ * Material inputs of a sprite besides the diffuse texture, color and SDF (particles.cfx / particles.cfi ParticlePS)
+ */
+export interface ParticleSpriteFeatures {
+  /**
+   * %REFRACTION: the sprite bends the scene behind it instead of drawing its texture. Not ported, such sprites are
+   * not drawn.
+   */
+  refraction: boolean
+  /**
+   * Emission of the material (ParticleEmissiveColor = GetFinalEmittance: Emittance rgb × intensity × 1000 /
+   * LIGHT_UNIT_SCALE), added as `diffuse.a × diffuse.rgb × glow.rgb × emittance`, not tinted by the particle color
+   */
+  emittance: [number, number, number]
+  /**
+   * %GLOW_MAP: the emission map ($Detail)
+   */
+  glow: Texture | null
+  /**
+   * %DEFORMATION: the diffuse uv is offset by two scrolling lookups of a normal map ($CustomMap)
+   */
+  deformation: { map: Texture; tile: number; amount: number; animSpeed: number } | null
+  /**
+   * %COLOR_LOOKUP: the color comes from a gradient ($CustomSecondaryMap) by the luminance of the diffuse map
+   */
+  colorLookup: { map: Texture; amplitude: number; phase: number } | null
+  /**
+   * Texture modifiers. The shader applies them only when a modifier is set on any slot (%_TT_TEXCOORD_MATRIX): the
+   * diffuse uv gets _ModifyUV_1, the glow uv (emittanceTC) is _ModifyDetailUV of the tiled uv. Without any modifier
+   * the glow uv stays zero, the glow map is read at its first texel.
+   */
+  texMods: { any: boolean; diffuse: TexMod | null; detail: TexMod | null }
+}
+
+type ParticleSpriteFeaturesDef = Omit<ParticleSpriteFeatures, 'glow' | 'deformation' | 'colorLookup'> & {
+  glowFile: string | null
+  deformation: { file: string; tile: number; amount: number; animSpeed: number } | null
+  colorLookup: { file: string; amplitude: number; phase: number } | null
+}
+
+/**
+ * Texture slots whose modifiers set %_TT_TEXCOORD_MATRIX
+ */
+const TEXMOD_MAPS = ['Diffuse', 'Detail', 'Custom', 'Emittance', 'Decal']
 
 /**
  * {@link ParticleSdf2D} with texture files instead of textures, cached per material
@@ -68,6 +115,7 @@ export class ParticleSystem extends GameSystem {
   private textureFiles = new Map<string, Promise<string | null>>()
   private mtls = new Map<string, Promise<MtlMaterial | null>>()
   private sdfDefs = new Map<string, Promise<ParticleSdf2DDef | null>>()
+  private featureDefs = new Map<string, Promise<ParticleSpriteFeaturesDef | null>>()
   private active = new Set<ParticleUpdatable>()
   private camera: ParticleCamera = { position: vec3() }
 
@@ -278,9 +326,103 @@ export class ParticleSystem extends GameSystem {
     }
   }
 
+  /**
+   * Loads the {@link ParticleSpriteFeatures} of a sprite material
+   *
+   * @param scope - owns the textures, see {@link ContentService.scopeOf}
+   */
+  public async loadSpriteFeatures(material: string, scope: ResourceScope): Promise<ParticleSpriteFeatures> {
+    const key = (material || '').toLowerCase()
+    if (!this.featureDefs.has(key)) {
+      this.featureDefs.set(
+        key,
+        this.resolveSpriteFeatures(material).catch((err) => {
+          console.warn('particle material failed', material, err)
+          return null
+        }),
+      )
+    }
+    const def = await this.featureDefs.get(key)
+    if (!def) {
+      return NO_SPRITE_FEATURES
+    }
+    const { glowFile, deformation, colorLookup, ...rest } = def
+    const load = (file: string | null) => (file ? this.loadSpriteFile(file, scope) : Promise.resolve(null))
+    const [glow, deformMap, lookupMap] = await Promise.all([
+      load(glowFile),
+      load(deformation?.file ?? null),
+      load(colorLookup?.file ?? null),
+    ])
+    return {
+      ...rest,
+      glow,
+      deformation: deformation && deformMap ? { ...deformation, map: deformMap } : null,
+      colorLookup: colorLookup && lookupMap ? { ...colorLookup, map: lookupMap } : null,
+    }
+  }
+
+  private async resolveSpriteFeatures(material: string): Promise<ParticleSpriteFeaturesDef | null> {
+    const mtl = await this.loadSpriteMtl(material)
+    if (!mtl) {
+      return null
+    }
+    const flags = new Set((mtl.attrs.StringGenMask ?? '').split('%').filter(Boolean))
+    const textureFile = (map: string) => {
+      const tex = mtl.textures.find((it) => it.Map === map)
+      return tex ? mtlTextureFile(tex) : null
+    }
+    const texMod = (map: string) => {
+      const mod = mtl.textures.find((it) => it.Map === map)?.TexMod
+      return mod && TextureModifier.isModified(mod) ? mod : null
+    }
+    const num = (name: string, fallback: number) => {
+      const value = Number(mtl.params[name])
+      return Number.isFinite(value) ? value : fallback
+    }
+    const emittance = mtl.attrs.Emittance ? paramVec4(mtl.attrs.Emittance) : null
+    // GetFinalEmittance: color × strength (alpha) × 1000 / RENDERER_LIGHT_UNIT_SCALE
+    const scale = emittance ? emittance.w * 0.1 : 0
+    const deformFile = flags.has('DEFORMATION') ? textureFile('Custom') : null
+    const lookupFile = flags.has('COLOR_LOOKUP') ? textureFile('[1] Custom') : null
+    return {
+      refraction: flags.has('REFRACTION'),
+      emittance: emittance ? [emittance.x * scale, emittance.y * scale, emittance.z * scale] : [0, 0, 0],
+      glowFile: flags.has('GLOW_MAP') ? textureFile('Detail') : null,
+      deformation: deformFile
+        ? {
+            file: deformFile,
+            tile: num('DeformTile', 0.1),
+            amount: num('DeformAmount', 0),
+            animSpeed: num('DeformAnimSpeed', 0),
+          }
+        : null,
+      colorLookup: lookupFile
+        ? {
+            file: lookupFile,
+            amplitude: num('ColLookupAmplitude', 1),
+            phase: num('ColLookupColPhase', 1),
+          }
+        : null,
+      texMods: {
+        any: TEXMOD_MAPS.some((map) => !!texMod(map)),
+        diffuse: texMod('Diffuse'),
+        detail: texMod('Detail'),
+      },
+    }
+  }
+
   public destroy(): void {
     this.active.clear()
   }
+}
+
+const NO_SPRITE_FEATURES: ParticleSpriteFeatures = {
+  refraction: false,
+  emittance: [0, 0, 0],
+  glow: null,
+  deformation: null,
+  colorLookup: null,
+  texMods: { any: false, diffuse: null, detail: null },
 }
 
 /**

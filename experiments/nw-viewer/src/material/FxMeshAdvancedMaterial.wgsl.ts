@@ -1,10 +1,23 @@
 import { COMMON_WGSL } from './common.wgsl'
 import { GBUFFER_WGSL } from './gbuffer.wgsl'
+
+/**
+ * FxMeshAdvanced shader (fxmeshadvanced.cfx), full deferred like Illum.
+ *
+ * Opaque materials take their GBuffer from the ZPass (ClusterForward_CommonZPass.cfi), which has FX additions the
+ * General pass lacks: the 2D SDF distorts the base uv, %USE_FX_NORMAL_PARAMS, the advanced dissolve
+ * (%USE_FRESNEL_DISSOLVE_MASK / %USE_STENCIL_DISSOLVE_MASK) and the fake sub surface %FX_ADVANCED_SS.
+ * The additive emissive pass (General, frag_custom_end) reads the GBuffer normal, so it uses the ZPass surface too,
+ * with the General SDF on the emittance uv. The forward entry (transparent materials) is the General pass.
+ *
+ * Not ported: %USE_PALETTE_MAP (not reached on this shader), the SSS index (%SUBSURFACE_SCATTERING, plan 3.5),
+ * ParticleTimeOfDay_Emissive (ParticleParams3, set by particle emitters, 1 for meshes).
+ */
 export default /* wgsl */ `
 
 struct MaterialBlock {
-  diffuseColor            : vec4f,
-  specularColor           : vec4f,
+  diffuseColor            : vec4f, // .w = opacity
+  specularColor           : vec4f, // .w = smoothness
   emissiveColor           : vec4f,
   emittanceMapGamma       : f32,   // default 1.0
 
@@ -70,37 +83,15 @@ struct MaterialBlock {
   subSurfaceDirY            : f32, // default 0.0
   subSurfaceDirZ            : f32, // default 0.0
   subSurfaceFalloff         : f32, // default 2.0
-  subSurfaceParallax        : f32, // default -
+  subSurfaceParallax        : f32, // default -0.2
   subSurfaceThreshold       : f32, // default 2.0
   subSurfaceTile            : f32, // default 1.0
 
-
-  // EMITTANCE_MAP
-  // SPECULAR_MAP
-  // VERTCOLORS
-  // VERT_DEFORM_SINWAVE
-  // NORMAL_MAP
-  // ENABLE_FADEOUT
-  // FX_SS_CUSTOM_DIR
-  // GLOW_FRESNEL
-  // FX_ADVANCED_SS
-  // SIGNED_DISTANCE_FIELD_2D
-  // SUBSURFACE_SCATTERING
-  // USE_ADVANCED_DISSOLVE
-  // USE_FRESNEL_DISSOLVE_MASK
-  // USE_FX_NORMAL_PARAMS
-  // USE_PALETTE_MAP
-  // USE_STENCIL_DISSOLVE_MASK
-
   // -- Texture modifier matrices
   uvModDiffuse                   : mat4x4f,
-  // uvModCustom                 : mat4x4f,
-  // uvModDetail                 : mat4x4f,
   uvModEmittance                 : mat4x4f,
   uvModDecalEmissive             : mat4x4f,
   enabledUvModDiffuse            : u32,     // _ModifyUV_1
-  // enabledUvModCustom          : u32,     // _ModifyBlendLayerUV
-  // enabledUvModDetail          : u32,     // _ModifyDetailUV
   enabledUvModEmittance          : u32,     // _ModifyEmittanceUV
   enabledUvModDecalEmissive      : u32,     // _ModifyEmissiveMultiplierUV
 
@@ -127,22 +118,21 @@ struct MaterialBlock {
 @group(1) @binding(4) var sceneDepthMap      : texture_2d<f32>;
 
 // -- Texture bindings
-@group(3) @binding(0) var diffuseMap         : texture_2d<f32>; // $Diffuse      (diffuseMap, diffuseMap_Decal)
+@group(3) @binding(0) var diffuseMap         : texture_2d<f32>; // $Diffuse      (diffuseMap)
 @group(3) @binding(1) var normalMap          : texture_2d<f32>; // $Normal       (normalMap)
 @group(3) @binding(2) var specularMap        : texture_2d<f32>; // $Specular     (specularMap)
-// @group(3) @binding(3) var envMap          : texture_2d<f32>; // $Env          (envMap)
-@group(3) @binding(4) var detailMap          : texture_2d<f32>; // $Detail       (detailMap) .ag=detail normal, .r=diffuse/gloss tint
-@group(3) @binding(5) var translucencyMap    : texture_2d<f32>; // $SecondSmoothness, $Translucency (translucencyMap)
-@group(3) @binding(6) var heightMap          : texture_2d<f32>; // $Heightmap    (heightMap) Height for offset bump, POM, silhouette POM, and displacement mapping defined by a Grayscale texture
-@group(3) @binding(7) var decalEmissiveMap   : texture_2d<f32>; // $DecalOverlay (decalMap, emissiveIntensity) emittance multiplier or decal
-@group(3) @binding(8) var subsurfaceMap      : texture_2d<f32>; // $Subsurface   (subsurfaceMap, HeightMap2)
-@group(3) @binding(9) var diffuseMap2        : texture_2d<f32>; // $Custom       (DiffuseMap2, MaskTex)
-@group(3) @binding(10) var normalMap2        : texture_2d<f32>; // $CustomSecondaryMap  (BumpMap2)
-@group(3) @binding(11) var opacityMap        : texture_2d<f32>; // $Opacity      (opacityMap, BlendMap, DecalOpacityMap)
+@group(3) @binding(4) var detailMap          : texture_2d<f32>; // $Detail       (paletteMapTex)
+@group(3) @binding(5) var translucencyMap    : texture_2d<f32>; // $SecondSmoothness
+@group(3) @binding(6) var heightMap          : texture_2d<f32>; // $Heightmap    (heightMap) 2D SDF, sub surface depth detail
+@group(3) @binding(7) var decalEmissiveMap   : texture_2d<f32>; // $DecalOverlay (emissiveIntensity)
+@group(3) @binding(8) var subsurfaceMap      : texture_2d<f32>; // $Subsurface
+@group(3) @binding(9) var diffuseMap2        : texture_2d<f32>; // $CustomMap    (maskTex) dissolve stencil
+@group(3) @binding(10) var normalMap2        : texture_2d<f32>; // $CustomSecondaryMap
+@group(3) @binding(11) var opacityMap        : texture_2d<f32>; // $Opacity
 @group(3) @binding(12) var smoothnessMap     : texture_2d<f32>; // $Smoothness   (smoothnessMap)
-@group(3) @binding(13) var emittanceMap      : texture_2d<f32>; // $Emittance    (emittanceMap)
-@group(3) @binding(14) var occlusionMap      : texture_2d<f32>; // $Occlusion    (OcclusionMap)
-@group(3) @binding(15) var specularMap2      : texture_2d<f32>; // $Specular2    (SpecularMap2)
+@group(3) @binding(13) var emittanceMap      : texture_2d<f32>; // $Emittance    (emittanceMapTex)
+@group(3) @binding(14) var occlusionMap      : texture_2d<f32>; // $Occlusion
+@group(3) @binding(15) var specularMap2      : texture_2d<f32>; // $Specular2
 
 struct VertexInput {
   @builtin(instance_index) id: u32,
@@ -158,12 +148,13 @@ struct FragmentInput {
   @location(0) worldPos      : vec3f,
   @location(1) uvBase        : vec4f,
   @location(2) uvEmittance   : vec4f,
-  @location(3) uvScreen      : vec4f,
+  @location(3) uvScreen      : vec4f, // HPosToScreenTC of the position
   @location(4) @interpolate(perspective, centroid) worldTangent  : vec4f,
   @location(5) @interpolate(perspective, centroid) worldNormal   : vec3f,
   @location(6) @interpolate(perspective, centroid) worldBitangent: vec3f,
   @location(7) vertexColor   : vec4f,
   @location(8) toEye         : vec3f,
+  @location(9) objScreenPos  : vec4f, // HPosToScreenTC of the object pivot (stencil dissolve mask)
 };
 
 @vertex
@@ -201,7 +192,6 @@ fn vs_main(input: VertexInput) -> FragmentInput {
   let viewPos     = view.viewMatrix * worldPos;
   var clipPos     = view.projectionMatrix * viewPos;
   let toEye       = normalize(view.cameraPosition - worldPos.xyz);
-  let view        = -toEye;
 
   // --- UV
   var uvBase = vec4f(input.texture, 0.0, 1.0);
@@ -209,7 +199,7 @@ fn vs_main(input: VertexInput) -> FragmentInput {
   if (material.enabledUvModDiffuse != 0u) {
     uvBaseMod = material.uvModDiffuse * uvBase;
   }
-  // --- UV MOD EMITTANCE/EMISSIVE --
+  // --- UV MOD EMITTANCE/EMISSIVE: the emissive map and the emissive intensity map have independent modifiers
   var uvEmittance = vec4f(0.0);
   if (EMITTANCE_MAP) {
     var uv1 = uvBase;
@@ -223,31 +213,17 @@ fn vs_main(input: VertexInput) -> FragmentInput {
     uvEmittance = vec4f(uv1.xy, uv2.xy);
   }
 
-
-  // --- TBN
+  // --- TBN: tangent gets the object scale, normal the inverse scale, bitangent reconstructed from the two
   let rotScaleMat = mat3x3f(
     modelMatrix[0].xyz,
     modelMatrix[1].xyz,
     modelMatrix[2].xyz
   );
   let normalMat = inverseScaleMatrix(rotScaleMat);
-  let vNormal   = input.normal.xyz;
-  let vTangent  = input.tangent.xyz;
-  // let vBitangent = cross(vNormal, vTangent) * input.tangent.w;
-
   let handedness = input.tangent.w;
-  let tangent    = normalize(rotScaleMat  * vTangent);
-  let normal     = normalize(normalMat    * vNormal);
+  let tangent    = normalize(rotScaleMat * input.tangent.xyz);
+  let normal     = normalize(normalMat   * input.normal.xyz);
   let bitangent  = cross(normal, tangent) * handedness;
-
-  // --- Fog
-  // #if %_RT_FOG && !%_RT_DECAL_TEXGEN_2D
-
-  // --- Ambient TODO:
-  // #if %_RT_FOG || %_RT_DECAL_TEXGEN_2D || %DECAL
-  //   // Output ambient color - for alpha blending, recursive rendering passes, decals also require ambient.w (opacity parameter)
-  //   OUT.Ambient = GetInstance_AmbientOpacity(vertPassPos);
-  // #endif
 
   var output: FragmentInput;
   output.position       = clipPos;
@@ -260,22 +236,31 @@ fn vs_main(input: VertexInput) -> FragmentInput {
   output.uvBase         = uvBaseMod;
   output.uvEmittance    = uvEmittance;
   output.uvScreen       = clipPosToSceenUv(clipPos);
-
-  // --- Dissolve
-  // #if %USE_ADVANCED_DISSOLVE && %USE_STENCIL_DISSOLVE_MASK
-  //   // screen position
-  //   OUT.screenPos = HPosToScreenTC(v2FG.HPosition);
-
-  //     // object position ws to screen space position
-  //   float4 inst = float4(vertPassPos.InstMatrix[0].w, vertPassPos.InstMatrix[1].w, vertPassPos.InstMatrix[2].w, 1.0f);
-  //   inst.xyz += PerView_WorldViewPos.xyz;
-  //   OUT.objScreenPos = HPosToScreenTC(mul(PerView_ViewProjMatr, inst));
-  // #endif
-
+  output.objScreenPos   = vec4f(0.0, 0.0, 0.0, 1.0);
+  if (USE_ADVANCED_DISSOLVE && USE_STENCIL_DISSOLVE_MASK) {
+    // object pivot in screen space
+    output.objScreenPos = clipPosToSceenUv(view.projectionMatrix * view.viewMatrix * vec4f(modelMatrix[3].xyz, 1.0));
+  }
   return output;
 }
 
-// Surface attributes of a fragment, shared by the forward (fs_main) and gbuffer (fs_gbuffer) entry points
+// FXSDFFloatDomain (FxLib.cfi): a scalar noise from the height map, scrolled over the domain
+fn fxSdf2d(domain: vec2f, time: f32) -> f32 {
+  let uv = domain * vec2f(material.sdf2dTileX, material.sdf2dTileY)
+    + time * vec2f(material.sdf2dSpeedX, material.sdf2dSpeedY)
+    + vec2f(material.sdf2dPhaseX, material.sdf2dPhaseY);
+  return textureSample(heightMap, samplerLinear, uv).x * material.sdf2dStrength;
+}
+
+// The source domain distorted by the SDF (pPass.IN.emittanceTC in General, IN.baseTC in the ZPass)
+fn fxSdfSourceDomain(domain: vec2f, sdf: f32, time: f32) -> vec2f {
+  return domain * vec2f(material.source2dTileX, material.source2dTileY)
+    + vec2f(sdf)
+    + time * vec2f(material.source2dSpeedX, material.source2dSpeedY)
+    + vec2f(material.source2dPhaseX, material.source2dPhaseY);
+}
+
+// Surface attributes of a fragment, shared by all entry points
 struct FxSurface {
   toEye       : vec3f,
   normal      : vec3f,
@@ -289,7 +274,9 @@ struct FxSurface {
   sdf2d       : f32,
 };
 
-fn fxSurface(input: FragmentInput) -> FxSurface {
+// zpass = true: the ZPass attributes (GBuffer, ClusterForward_CommonZPass.cfi), false: the General pass (forward).
+// May discard (advanced dissolve).
+fn fxSurface(input: FragmentInput, zpass: bool) -> FxSurface {
   let time = frame.elapsedTime;
 
   let toEye = normalize(input.toEye);
@@ -298,170 +285,69 @@ fn fxSurface(input: FragmentInput) -> FxSurface {
     normalize(input.worldBitangent.xyz),
     normalize(input.worldNormal.xyz),
   );
-  let invTBN = transpose(tbn);
-  let viewTS = invTBN * toEye;
-  let viewVec = -toEye;
 
-  // --- UV
-  var uvBase              = input.uvBase;
-  var uvBlendMap          = input.uvBase.xy; // input.uvBlend.xy * material.blendMaskTiling;
-  var uvBlendLayer        = input.uvBase.xy; // input.uvBlend.zw * material.blendLayer2Tiling;
-  var uvEmittance         = input.uvEmittance.xy;
-  var uvEmissiveIntensity = input.uvEmittance.zw;
-  var uvBump              = input.uvBase.xy;
-  var uvDetail            = input.uvBase.xy; // input.uvDetail.xy;
+  var uvBase      = input.uvBase;
+  var uvEmittance = input.uvEmittance.xy;
 
-  // --- SDF / Source 2D
+  // --- 2D SDF: General distorts the emittance uv, the ZPass the base uv of all GBuffer maps
   var sdf2d = 0.0;
-  if (EMITTANCE_MAP) {
-    if (SIGNED_DISTANCE_FIELD_2D) {
-      var uvSdf  = uvEmittance.xy;
-          uvSdf *= vec2f(material.sdf2dTileX, material.sdf2dTileY);
-          uvSdf += vec2f(
-            material.sdf2dSpeedX * time + material.sdf2dPhaseX,
-            material.sdf2dSpeedY * time + material.sdf2dPhaseY,
-          );
-      sdf2d = textureSample(heightMap, samplerLinear, uvSdf).r;
-
-      uvEmittance *= vec2f(material.source2dTileX, material.source2dTileY);
-      uvEmittance += vec2f(sdf2d);
-      uvEmittance += vec2f(
-        material.source2dSpeedX * time + material.source2dPhaseX,
-        material.source2dSpeedY * time + material.source2dPhaseY,
-      );
+  if (SIGNED_DISTANCE_FIELD_2D) {
+    if (EMITTANCE_MAP) {
+      let sdf = fxSdf2d(uvEmittance, time);
+      uvEmittance = fxSdfSourceDomain(uvEmittance, sdf, time);
+      sdf2d = sdf;
+    }
+    if (zpass) {
+      let sdf = fxSdf2d(uvBase.xy, time);
+      uvBase = vec4f(fxSdfSourceDomain(uvBase.xy, sdf, time), uvBase.zw);
+      sdf2d = sdf;
     }
   }
 
-  // #if %_RT_FOG ||%_RT_DECAL_TEXGEN_2D || %DECAL
-  //   pPass.IN.Ambient = IN.Ambient;
-  // #else
-  //   pPass.IN.Ambient = 1.0;
-  // #endif
+  let cDiffuseMap = textureSample(diffuseMap, samplerLinear, uvBase.xy);
 
-  // pPass.IN.screenProj = IN.screenProj;
-  // pPass.IN.vView = IN.vView;
-  // pPass.IN.Color = IN.Color;
+  // --- normal
+  var normalTS = vec3f(0.0, 0.0, 1.0);
+  if (zpass) {
+    if (NORMAL_MAP) {
+      if (USE_FX_NORMAL_PARAMS) {
+        let tile = vec2f(material.fxNormalTileX, material.fxNormalTileY);
+        normalTS = decodeNormal(textureSample(normalMap, samplerLinear, uvBase.xy * tile).xy);
+        normalTS *= vec3f(material.fxNormalStrength, material.fxNormalStrength, 1.0);
+      } else {
+        normalTS = decodeNormal(textureSample(normalMap, samplerLinear, uvBase.xy).xy);
+      }
+    }
+  } else {
+    // frag_custom_begin re-fetches the normal map with a tile of 2 for transparent draws
+    normalTS = decodeNormal(textureSample(normalMap, samplerLinear, uvBase.xy * 2.0).xy);
+  }
+  let normal = normalize(tbn * normalTS);
 
-  // #if %_RT_DECAL_TEXGEN_2D
-  //   pPass.IN.DistAtten = IN.DistAtten;
-  // #elif %_RT_FOG
-  //   pPass.IN.AvgFogVolumeContrib = IN.AvgFogVolumeContrib;
-  // #endif
-
-  // === frag_shared_output
-  // let microDetailBaseTC = pPass.IN.baseTC.xy;
-  // const float dispAmount = pPass.fBumpHeightScale;
-
-  // --- Blend layer -- factor
-  var blendFac = 0.0;
-  // if (BLENDLAYER) {
-  //   let blendMapColor  = textureSample(opacityMap, samplerLinear, uvBlendMap.xy).r;
-  //   blendFac = input.vertexColor.a * blendMapColor * (1 + material.blendFactor);
-  //   blendFac = saturate(pow(abs(blendFac), material.blendFalloff));
-  // }
-
-  // ---
-
-  var cDiffuseMap = vec4f(0.0, 0.0, 0.0, 1.0);
-  var cBumpMap = vec3f(0.0, 0.0, 1.0);
-
-  // TODO: port POM
-  cDiffuseMap = textureSample(diffuseMap, samplerLinear, uvBase.xy);
-  cBumpMap = decodeNormal(textureSample(normalMap, samplerLinear, uvBump.xy).xy);
-
-  if (BLENDLAYER) {
-    let cBumpMap2 = decodeNormal(textureSample(normalMap2, samplerLinear, uvBlendLayer.xy).xy);
-    cBumpMap = mix(cBumpMap, cBumpMap2, blendFac);
+  // --- albedo, alpha
+  var albedo = cDiffuseMap.rgb * material.diffuseColor.rgb;
+  var alpha  = cDiffuseMap.a * material.diffuseColor.a;
+  if (VERTCOLORS) {
+    albedo *= input.vertexColor.rgb;
+    alpha  *= input.vertexColor.a;
   }
 
-  // --- Detail map (never enabled)
-  var cDetailMap = vec4f(0.0);
-  // if (material.enabledDetailMapping != 0u) {
-  //   // detail tiling not applied in original
-  //   // .ga = normal.xy, .rb = diffuse/gloss
-  //   cDetailMap = textureSample(detailMap, samplerLinear, uvDetail).garb * vec4f(2.0) - vec4f(1.0);
-  //   cDetailMap = cDetailMap * vec4f(
-  //     material.detailBumpScale,
-  //     material.detailBumpScale,
-  //     material.detailDiffuseScale,
-  //     material.detailGlossScale,
-  //   );
-
-  //   if (material.enabledDetailMapAlphaMasking != 0u) {
-  //     cDetailMap *= cDiffuseMap.a;
-  //   }
-
-  //   cBumpMap += vec3f(cDetailMap.xy, 0.0);
-  // }
-
-
-
-
-  var albedo   = cDiffuseMap.rgb;
-  var alpha    = cDiffuseMap.a; // * pPass.IN.Ambient.w;
-  var normal   = normalize(tbn * normalize(cBumpMap));
-  var specular = vec3f(0.0);
-  var gloss    = material.specularColor.a;
-  // let fNdotE   = (dot(pPass.vView.xyz, pPass.vNormal.xyz));
-  // let vReflVec = (2.0 * pPass.fNdotE * pPass.vNormal.xyz) - pPass.vView.xyz;
-
-  // #region frag_custom_begin(pPass);
-  albedo *= material.diffuseColor.rgb;
-
-  var cShadingBack = vec3f(0.0);
-  // if (TRANSMITTANCE) {
-  //   let cBackDiffuseMap = textureSample(opacityMap, samplerLinear, uvBase.xy).r;
-  //   cShadingBack = material.backDiffuseMultiplier * cBackDiffuseMap * material.transmittanceColor.rgb;
-  // }
-
+  // --- reflectance: the ZPass starts from the material color, General from the (optional) map
+  var specular = select(vec3f(0.0), vec3f(1.0), zpass);
   if (SPECULAR_MAP) {
     specular = textureSample(specularMap, samplerLinear, uvBase.xy).rgb;
   }
   specular *= material.specularColor.rgb;
-  gloss    *= textureSample(smoothnessMap, samplerLinear, uvBase.xy).r;
+  let gloss = material.specularColor.a * textureSample(smoothnessMap, samplerLinear, uvBase.xy).r;
 
-  // TODO: for transparent, the normal is re-fetched with a bump tile scale
-  // // Normal Map
-  // const BumpMapTile = 2.0;
-  // pPass.cBumpMap = GetNormalMap(normalMap, samplerLinear, uvBump.xy * BumpMapTile);
-  // // Transparent
-  // if(GetInstance_Opacity() < 1.0) {
-  //   pPass.vNormal = normalize(mul(pPass.cBumpMap.xyz, pPass.mTangentToWS));
-  // }
-
-
-  if (VERTCOLORS) {
-    alpha *= input.vertexColor.a;
+  if (zpass) {
+    if (USE_ADVANCED_DISSOLVE) {
+      fxAdvancedDissolve(input, normal, toEye);
+    }
+    if (FX_ADVANCED_SS) {
+      albedo = fxAdvancedSubSurface(albedo, normal, toEye, tbn, uvBase.xy);
+    }
   }
-  // pPass.fAlpha = fAlpha * pPass.IN.Ambient.w;
-
-
-  // --- Detail mapping
-  // if (DETAIL_MAPPING) {
-  //   albedo += albedo * cDetailMap.z;
-  //   gloss  += gloss * cDetailMap.w;
-  // }
-
-
-  // --- Environment mapping
-  // if (ENVIRONMENT_MAP) {
-  //   if (pPass.nReflectionMapping > 0) {
-  //     if (pPass.nReflectionMapping == REFLECT_CUBE) {
-  //       pPass.cEnvironment = GetEnvironmentCMap(envMapCUBE, envMapCUBESampler, pPass.vReflVec.xyz, pPass.fGloss).xyz;
-  //     } else if (pPass.nReflectionMapping == REFLECT_SPHERE) {
-  //       // should be transformed to view space - but adds quite a lot instructions
-  //       pPass.cEnvironment = GetEnvironment2DMap(envMap, envMapSampler, pPass.vReflVec.xy);
-  //     }
-  //   }
-  // }
-
-
-
-  // --- Ambient occlusion ------------------------------------
-  var ao = 1.0;
-  // if (material.enabledOcclusionMap != 0u) {
-  //   ao = textureSample(occlusionMap, samplerLinear, uvBase.xy).r;
-  // }
 
   var s: FxSurface;
   s.toEye       = toEye;
@@ -470,49 +356,81 @@ fn fxSurface(input: FragmentInput) -> FxSurface {
   s.alpha       = alpha;
   s.specular    = specular;
   s.gloss       = gloss;
-  s.ao          = ao;
+  s.ao          = 1.0;
   s.uvBase      = uvBase;
   s.uvEmittance = uvEmittance;
   s.sdf2d       = sdf2d;
   return s;
 }
 
+// %USE_ADVANCED_DISSOLVE of the ZPass: clips by a fresnel mask and / or a screen space stencil centered on the
+// object pivot (scaled by its distance, so it keeps its size in the world)
+fn fxAdvancedDissolve(input: FragmentInput, normal: vec3f, toEye: vec3f) {
+  if (!(USE_FRESNEL_DISSOLVE_MASK || USE_STENCIL_DISSOLVE_MASK)) {
+    return;
+  }
+  var stencil = 0.0;
+  if (USE_STENCIL_DISSOLVE_MASK) {
+    let aspect = view.viewportSize.x / view.viewportSize.y;
+    let screenPos = input.uvScreen.xy / input.uvScreen.w * vec2f(aspect, 1.0);
+    let osp = input.objScreenPos;
+    var centered = (screenPos - vec2f(osp.x / osp.w * aspect, osp.y / osp.w)) * (osp.w / 10.0);
+    centered += normal.xy * material.stencilNormalInfluence;
+    let uv = centered + vec2f(material.stencilOffsetX, material.stencilOffsetY);
+    stencil = textureSample(diffuseMap2, samplerLinear, uv).x;
+    stencil = mix(stencil, 1.0 - stencil, material.stencilInvert) * 0.99;
+  }
+  var fresnel = 0.0;
+  if (USE_FRESNEL_DISSOLVE_MASK) {
+    fresnel = fxFresnelApprox(toEye, normal, material.dissolveFresnelInvert, material.dissolveFresnelFalloff, 1.0) * 0.99;
+  }
+  var mask = fresnel + stencil;
+  if (USE_FRESNEL_DISSOLVE_MASK && USE_STENCIL_DISSOLVE_MASK) {
+    mask = saturate(fresnel / 2.0 + stencil / 2.0);
+  }
+  if (mask - material.dissolvePercent < 0.0) {
+    discard;
+  }
+}
+
+// %FX_ADVANCED_SS of the ZPass: a fake sub surface color away from the light, with a parallax shifted depth detail
+// from the height map, replaces the albedo
+fn fxAdvancedSubSurface(albedo: vec3f, normal: vec3f, toEye: vec3f, tbn: mat3x3f, uv: vec2f) -> vec3f {
+  var L = -global.sunDirection; // PerFrame_SunDirection, towards the sun
+  if (FX_SS_CUSTOM_DIR) {
+    L = vec3f(material.subSurfaceDirX, material.subSurfaceDirY, material.subSurfaceDirZ);
+  }
+  let outScatterDir = saturate(material.subSurfaceThreshold * dot(normal, L));
+
+  // the eye vector in tangent space (toEyeTangent of the ZPass vertex shader)
+  let toEyeTangent = toEye * tbn;
+  let depthDetailUv = uv * material.subSurfaceTile + toEyeTangent.xy * material.subSurfaceParallax;
+  let depthDetail = textureSample(heightMap, samplerLinear, depthDetailUv).x;
+  let depthMask = fxFresnelApprox(toEye, normal, 0.0, material.subSurfaceFalloff, 1.0);
+
+  let ssColor = material.subSurfaceColor.rgb;
+  var scatter = ssColor + depthDetail * mix(ssColor, material.diffuseColor.rgb, material.subSurfaceDetailBlend) * material.subSurfaceDetailPow;
+  scatter *= depthMask;
+  return mix(scatter * material.subSurfaceDetailPow, albedo, saturate(outScatterDir + (1.0 - material.subSurfaceClarity)));
+}
+
+// forward shading (General pass), used by transparent materials
 @fragment
 fn fs_main(input: FragmentInput) -> FragmentOutput {
-  let s = fxSurface(input);
-  let toEye       = s.toEye;
-  let normal      = s.normal;
-  let albedo      = s.albedo;
-  let alpha       = s.alpha;
-  let specular    = s.specular;
-  let gloss       = s.gloss;
-  let ao          = s.ao;
-  let uvBase      = s.uvBase;
-  let uvEmittance = s.uvEmittance;
-  let sdf2d       = s.sdf2d;
+  let s = fxSurface(input, false);
 
   var surface: SurfaceParams;
-  // surface.Transmittance = vec4f(cShadingBack.rgb, material.normalViewDependency);
-  surface.Diffuse = albedo;
-  surface.Alpha = alpha;
-  surface.Specular  = specular;
-  surface.Roughness = smoothnessToRoughness(gloss);
-  surface.Normal    = vec4f(normal, 1.0);
+  surface.Diffuse   = s.albedo;
+  surface.Alpha     = s.alpha;
+  surface.Specular  = s.specular;
+  surface.Roughness = smoothnessToRoughness(s.gloss);
+  surface.Normal    = vec4f(s.normal, 1.0);
 
-  var color = accumulateLight(lights, global, surface, toEye, input.worldPos);
-
-  // --- Ambient / Environment
-  // TODO:
-  // --- frag_final_composition
-  // TODO:
-
-  // --- Emittance (frag_custom_end()
-  let emittance = fxEmittance(s);
-
-  color = color + emittance;
+  var color = accumulateLight(lights, global, surface, s.toEye, input.worldPos);
+  color = color + fxEmittance(s);
 
   var out: FragmentOutput;
-  out.color = applyFog(color, alpha, input.worldPos, view.cameraPosition);
+  out.color = applyFog(color, s.alpha, input.worldPos, view.cameraPosition);
   out.depth = linearizeDepthReversedZ(input.position.z, view.near, view.far);
 
   let debugColor = fxDebugColor(input, s);
@@ -604,7 +522,7 @@ struct DebugOutput {
 // material view draw nothing, the lighting pass shows the shading modes.
 @fragment
 fn fs_debug(input: FragmentInput) -> DebugOutput {
-  let s = fxSurface(input);
+  let s = fxSurface(input, true);
   let color = fxDebugColor(input, s);
   if (color.a < 0.0) {
     discard;
@@ -614,31 +532,21 @@ fn fs_debug(input: FragmentInput) -> DebugOutput {
   return out;
 }
 
-// Emitted light of a surface, zero without emittance
+// GetEmittance + frag_custom_end: emitted light, zero without an emissive color. Without %EMITTANCE_MAP only the
+// fresnel glow emits.
 fn fxEmittance(s: FxSurface) -> vec3f {
-  var emittance = vec3f(0.0);
-  let emissiveLum = getLuminance(material.emissiveColor.xyz);
-  if (emissiveLum > 0.0) {
-    if (EMITTANCE_MAP) {
-      let sample = textureSample(emittanceMap, samplerLinear, s.uvEmittance.xy);
-      emittance  = sample.rgb;
-      emittance *= sample.a; // DEPRECATED
-    }
-
-    if (GLOW_FRESNEL) {
-      let fresnelApprox = fxFresnelApprox(
-        s.toEye.xyz,
-        s.normal.xyz,
-        material.fresnelInvert,
-        material.fresnelExponent,
-        material.fresnelStrength
-      );
-      emittance += vec3f(fresnelApprox);
-    }
-
-    emittance *= getMaterialEmittance();
+  if (getLuminance(material.emissiveColor.xyz) <= 0.0) {
+    return vec3f(0.0);
   }
-  return emittance;
+  var emittance = vec3f(0.0);
+  if (EMITTANCE_MAP) {
+    let sample = textureSample(emittanceMap, samplerLinear, s.uvEmittance.xy);
+    emittance = sample.rgb * sample.a; // DEPRECATED: backwards compatibility (up to 3.8.3)
+  }
+  if (GLOW_FRESNEL) {
+    emittance += vec3f(fxFresnelApprox(s.toEye, s.normal, material.fresnelInvert, material.fresnelExponent, material.fresnelStrength));
+  }
+  return emittance * getMaterialEmittance() * material.emissivescaleintensity;
 }
 
 struct EmissiveOutput {
@@ -648,17 +556,16 @@ struct EmissiveOutput {
 // Emittance added to the deferred lit color (additive, after the lighting pass), see NwRenderVariant.Emissive
 @fragment
 fn fs_emissive(input: FragmentInput) -> EmissiveOutput {
-  let s = fxSurface(input);
+  let s = fxSurface(input, true); // also the dissolve clip of the ZPass
   var out: EmissiveOutput;
   out.color = vec4f(fxEmittance(s), 0.0);
   return out;
 }
 
-// GBuffer attributes of opaque surfaces (fxmeshadvanced.cfx ZPass). The emittance is added after the lighting by
-// the emissive variant (fs_emissive).
+// GBuffer attributes of opaque surfaces (ZPass). The emittance is added after the lighting by fs_emissive.
 @fragment
 fn fs_gbuffer(input: FragmentInput) -> GBufferOutput {
-  let s = fxSurface(input);
+  let s = fxSurface(input, true);
   var g: GBufferSurface;
   g.normal        = s.normal;
   g.albedo        = s.albedo;
@@ -711,6 +618,7 @@ fn fxSinWave( pos: vec3f, amp: f32, freq: f32, speed: f32, phase: f32, axis: f32
   return pos + newPos;
 }
 
+// FXFresnelApprox (FxLib.cfi)
 fn fxFresnelApprox(view: vec3f, normal: vec3f, invert: f32, exponent: f32, power: f32) -> f32 {
   let approx = pow(saturate(dot(normalize(view), normalize(normal))), exponent) * power;
   let s = step(1.0 - 1e-7, invert);

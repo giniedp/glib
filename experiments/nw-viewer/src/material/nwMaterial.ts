@@ -6,6 +6,8 @@ import { GeometryBeamMaterial } from './GeometryBeamMaterial'
 import { GeometryBeamSimpleMaterial } from './GeometryBeamSimpleMaterial'
 import { GeometryFogMaterial } from './GeometryfogMaterial'
 import { GlassMaterial } from './GlassMaterial'
+import { HairMaterial } from './HairMaterial'
+import { HumanSkinMaterial } from './HumanSkinMaterial'
 import { IllumMaterial } from './IllumMaterial'
 import { MeshparticleMaterial } from './MeshparticleMaterial'
 import { NowDrawMaterial } from './NoDrawMaterial'
@@ -47,9 +49,15 @@ function shaderMaterialFactory(shader: string, stringGenMask?: string): Material
     case 'terraintilecomposite':
       return (device, asset) => new TerrainCompositeMaterial(device, asset)
     case 'illum':
+    // illum_oceansplash.cfx is an older fork of illum.cfx (fewer features, no SSS cutoff), Illum covers it
+    case 'illum_oceansplash':
       return (device, asset) => new IllumMaterial(device, asset)
     case 'glass':
       return (device, asset) => new GlassMaterial(device, asset)
+    case 'humanskin':
+      return (device, asset) => new HumanSkinMaterial(device, asset)
+    case 'hair':
+      return (device, asset) => new HairMaterial(device, asset)
     case 'nodraw':
       return (device) => new NowDrawMaterial(device)
     case 'fxmeshadvanced':

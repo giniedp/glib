@@ -127,6 +127,10 @@ export interface ParticleParams {
   diffuseLighting: number
   diffuseBacklighting: number
   emissiveLighting: number
+  /**
+   * How much the time of day particle brightness applies, `(brightness - 1) * influence + 1` (fTodBrightnessInfluence)
+   */
+  todBrightnessInfluence: number
 
   // Size
   sizeX: VarParam
@@ -410,6 +414,7 @@ export function readParticleParams(attrs: Record<string, string>, group: Particl
     diffuseLighting: parseNumber(a.DiffuseLighting, 1),
     diffuseBacklighting: parseNumber(a.DiffuseBacklighting, 0),
     emissiveLighting: parseNumber(a.EmissiveLighting, 0),
+    todBrightnessInfluence: parseNumber(a.TodBrightnessInfluence, 1),
 
     sizeX: parseVarParam(a.SizeX, 1),
     sizeY: parseVarParam(a.SizeY, 1),

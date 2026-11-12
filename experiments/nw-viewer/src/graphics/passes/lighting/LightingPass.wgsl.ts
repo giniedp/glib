@@ -7,7 +7,7 @@ export const LIGHTING_WORKGROUP_SIZE = 8
 /**
  * Debug modes of the lighting pass (params.x)
  */
-export const LightingDebugModes = ['off', 'ao'] as const
+export const LightingDebugModes = ['off', 'ao', 'reflections', 'reflection confidence'] as const
 export type LightingDebugMode = (typeof LightingDebugModes)[number]
 
 /**
@@ -39,7 +39,7 @@ ${PROBES_WGSL}
 ${GBUFFER_WGSL}
 
 struct LightingParams {
-  values: vec4f, // x = debug mode, y = 1 when the AO map is bound, z = AO strength
+  values: vec4f, // x = debug mode, y = 1 when the AO map is bound, z = AO strength, w = 1 when SSR is bound
 };
 
 @group(1) @binding(0) var gbufferA    : texture_2d<f32>;
@@ -50,6 +50,8 @@ struct LightingParams {
 @group(1) @binding(5) var outColor    : texture_storage_2d<rgba16float, write>;
 @group(1) @binding(6) var aoMap       : texture_2d<f32>;
 @group(1) @binding(7) var<uniform> params : LightingParams;
+// screen space reflections (SsrPass): rgb = color, a = confidence
+@group(1) @binding(8) var reflectionMap : texture_2d<f32>;
 
 // world position of a pixel at a linear view depth
 fn lightingWorldPos(fragCoord: vec2f, viewDepth: f32) -> vec3f {
@@ -67,7 +69,7 @@ fn loadAo(p: vec2i) -> f32 {
 }
 
 // same composition as the forward Illum and TerrainPatch materials (fs_main), with the occlusion of the game
-fn shadeGBuffer(g: GBufferSurface, worldPos: vec3f, ssao: f32) -> vec3f {
+fn shadeGBuffer(g: GBufferSurface, worldPos: vec3f, ssao: f32, ssr: vec4f) -> vec3f {
   let toEye = normalize(view.cameraPosition - worldPos);
   let normal = g.normal;
   let gloss = g.smoothness;
@@ -94,7 +96,9 @@ fn shadeGBuffer(g: GBufferSurface, worldPos: vec3f, ssao: f32) -> vec3f {
   let NdotV = dot(normal, toEye);
   let envFresnel = environmentFresnel(surface.Specular.rgb, gloss, NdotV);
   let occlSpec = deriveSpecularOcclusion(NdotV, max(occlusion, 0.3), gloss);
-  let reflection = reflectColor * occlSpec * envFresnel * shade.ambientScale;
+  // screen space reflections replace the occluded probe specular before the fresnel (tiledshading.cfi:1326)
+  let probeReflection = reflectColor * occlSpec * shade.ambientScale;
+  let reflection = mix(probeReflection, ssr.rgb, ssr.a) * envFresnel;
   shade.specular += reflection;
 
   // shading debug views (the material views are drawn by the material debug pass)
@@ -148,6 +152,13 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
     return;
   }
   let p = vec2i(id.xy);
+  // the reflection channel as is, also over the sky (pyramid debug views of the SsrPass)
+  if (u32(params.values.x) == 2u || u32(params.values.x) == 3u) {
+    let reflection = select(vec4f(0.0), textureLoad(reflectionMap, p, 0), params.values.w > 0.5);
+    let shown = select(reflection.rgb * reflection.a, vec3f(reflection.a), u32(params.values.x) == 3u);
+    textureStore(outColor, p, vec4f(shown, 1.0));
+    return;
+  }
   let depth = textureLoad(linearDepth, p, 0).r;
   // no geometry (cleared to the far plane), the sky is drawn after the lighting
   if (depth <= 0.0 || depth >= view.far) {
@@ -156,7 +167,8 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
   }
   let ssao = loadAo(p);
   let g = decodeGBuffer(textureLoad(gbufferA, p, 0), textureLoad(gbufferB, p, 0), textureLoad(gbufferC, p, 0));
-  var color = shadeGBuffer(g, lightingWorldPos(vec2f(p) + 0.5, depth), ssao);
+  let ssr = select(vec4f(0.0), textureLoad(reflectionMap, p, 0), params.values.w > 0.5);
+  var color = shadeGBuffer(g, lightingWorldPos(vec2f(p) + 0.5, depth), ssao, ssr);
   if (u32(params.values.x) == 1u) {
     color = vec3f(ssao);
   }
