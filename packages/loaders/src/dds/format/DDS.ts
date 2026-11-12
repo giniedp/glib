@@ -165,10 +165,41 @@ export enum DXGI_FORMAT {
   DXGI_FORMAT_FORCE_UINT = 0xffffffff,
 }
 
-export function parse(buffer: ArrayBuffer) {
+/**
+ * The header of a DDS file and the layout it describes
+ */
+export interface DdsInfo {
+  header: Header
+  /**
+   * Bytes before the image data: the magic, the header and the DX10 extension
+   */
+  headerSize: number
+  format: DXGI_FORMAT
+  width: number
+  height: number
+  /**
+   * Depth of a volume texture, 1 otherwise
+   */
+  depth: number
+  /**
+   * Mip levels the header declares, at least 1
+   */
+  mipCount: number
+  /**
+   * Images per mip level: 6 for a cubemap, 1 otherwise
+   */
+  arraySize: number
+  isVolume: boolean
+  isCubemap: boolean
+  is1D: boolean
+}
+
+/**
+ * Reads the header of a DDS file without its image data, e.g. to lay out data that is stored elsewhere
+ */
+export function parseHeader(buffer: ArrayBuffer): DdsInfo {
   const reader = new BinaryReader(buffer)
   const header = readHeader(reader)
-  const data = reader.slice(reader.remaining)
 
   const isDx10 = header.PixelFormat.FourCC === 'DX10'
   const format = isDx10 ? header.DxgiFormat : getDXGIFormat(header.PixelFormat)
@@ -188,24 +219,43 @@ export function parse(buffer: ArrayBuffer) {
     isCubemap = (header.Caps2 & DDSCAPS2_CUBEMAP) !== 0
   }
 
-  const { images, residentMipLevel } = readImages({
-    width: header.Width,
-    height: header.Height,
-    depth: Math.max(1, header.Depth),
-    data: data,
-    arraySize: isCubemap ? 6 : 1,
-    mipCount: Math.max(1, header.MipMapCount),
-    format: format,
-  })
   return {
     header,
+    headerSize: reader.position,
+    format,
     width: header.Width,
     height: header.Height,
     depth: Math.max(1, header.Depth),
-    format,
+    mipCount: Math.max(1, header.MipMapCount),
+    arraySize: isCubemap ? 6 : 1,
     isVolume,
     isCubemap,
     is1D,
+  }
+}
+
+export function parse(buffer: ArrayBuffer) {
+  const info = parseHeader(buffer)
+  const data = buffer.slice(info.headerSize)
+
+  const { images, residentMipLevel } = readImages({
+    width: info.width,
+    height: info.height,
+    depth: info.depth,
+    data: data,
+    arraySize: info.arraySize,
+    mipCount: info.mipCount,
+    format: info.format,
+  })
+  return {
+    header: info.header,
+    width: info.width,
+    height: info.height,
+    depth: info.depth,
+    format: info.format,
+    isVolume: info.isVolume,
+    isCubemap: info.isCubemap,
+    is1D: info.is1D,
     images,
     residentMipLevel,
   }
@@ -271,7 +321,11 @@ function readHeader(reader: BinaryReader): Header {
   return header
 }
 
-function getSurfaceInfo(width: number, height: number, fmt: DXGI_FORMAT) {
+/**
+ * Size of one image (one face, one depth slice) of the given extent: bytes in total, per row of pixels or blocks,
+ * and the number of rows
+ */
+export function getSurfaceInfo(width: number, height: number, fmt: DXGI_FORMAT) {
   let numBytes = 0
   let rowBytes = 0
   let numRows = 0

@@ -74,6 +74,12 @@ export class ModelLod {
    */
   public maxScreenSize: ArrayLike<number> | null
 
+  /**
+   * A level to show regardless of the distance, e.g. to inspect the levels in a preview. `null` selects by distance.
+   * Clamped to {@link maxLevel}, so a missing level shows the coarsest one that exists.
+   */
+  public forcedLevel: number | null = null
+
   private readonly levels: Array<Model | null> = []
   private readonly requested: boolean[] = []
   private readonly load: (level: number) => Promise<Model | null>
@@ -99,6 +105,9 @@ export class ModelLod {
    * @param current - the level that was selected before
    */
   public select(distance: number, screenSize: number, current: number): number {
+    if (this.forcedLevel != null) {
+      return Math.max(0, Math.min(this.forcedLevel, this.maxLevel))
+    }
     let level = selectLodLevel(this.spacing, this.distance, this.hysteresis, distance, current)
     level = Math.max(0, Math.min(level, this.maxLevel))
     while (level > 0 && !this.allowsScreenSize(level, screenSize)) {

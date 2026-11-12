@@ -33,6 +33,17 @@ describe('ModelLod', () => {
     expect(lod.select(1000, 0, 0)).toBe(5)
   })
 
+  it('selects the forced level regardless of the distance, within the max level', () => {
+    const { lod } = createLod([])
+    lod.forcedLevel = 2
+    expect(lod.select(0, 1, 0)).toBe(2)
+    expect(lod.select(1000, 0, 5)).toBe(2)
+    lod.forcedLevel = 9
+    expect(lod.select(0, 0, 0)).toBe(5)
+    lod.forcedLevel = null
+    expect(lod.select(1000, 0, 0)).toBe(5)
+  })
+
   it('keeps the current level within the hysteresis band', () => {
     const { lod } = createLod([])
     // level 1 covers 10..20, widened by 1 on both sides

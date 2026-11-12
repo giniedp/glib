@@ -158,4 +158,46 @@ describe('GameLoop', () => {
       expect(loop.isRunningSlowly).toBe(false) // reduced to 0 lagging frames
     })
   })
+
+  describe('stop and run again', () => {
+    beforeEach(() => {
+      mockedRealTime = 0
+      loop = new GameLoop({
+        autostart: false,
+        getTime: () => mockedRealTime,
+        requestAnimationFrame: (cb: any) => {
+          mockedAnimationFrame = cb
+          return 0
+        },
+        cancelAnimationFrame: () => {
+          mockedAnimationFrame = null
+        },
+      })
+    })
+
+    it('continues the total time and skips the time while stopped', () => {
+      const updates: Array<{ total: number; delta: number }> = []
+      loop.onUpdate.add((time) => updates.push({ total: time.totalTimeMs, delta: time.deltaTimeMs }))
+
+      loop.run()
+      mockedRealTime = 16
+      mockedAnimationFrame()
+      mockedRealTime = 32
+      mockedAnimationFrame()
+      loop.stop()
+
+      // stopped for a while
+      mockedRealTime = 10000
+      loop.run()
+      mockedRealTime = 10016
+      mockedAnimationFrame()
+
+      expect(updates).toEqual([
+        { total: 16, delta: 16 },
+        { total: 32, delta: 16 },
+        { total: 48, delta: 16 },
+      ])
+      loop.stop()
+    })
+  })
 })

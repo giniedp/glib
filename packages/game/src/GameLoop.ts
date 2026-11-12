@@ -245,11 +245,13 @@ export class GameLoop {
   }
 
   /**
-   * Starts the loop if it is not already running.
+   * Starts the loop if it is not already running. After {@link GameLoop.stop} it continues where it
+   * stopped: the time while stopped is not counted, the total time goes on and the first delta is
+   * one frame.
    */
   public run() {
     if (!this.isRunning) {
-      this.timeStartMs = this.getTime()
+      this.timeStartMs = this.getTime() - this.timeTotalMs
       this.schedule()
     }
   }

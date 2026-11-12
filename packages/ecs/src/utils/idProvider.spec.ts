@@ -31,6 +31,20 @@ describe('idProvider', () => {
     expect(id1).toBe(id2)
   })
 
+  it('gives a subclass its own id, not the id of its base class', () => {
+    class Base {}
+    class SubA extends Base {}
+    class SubB extends Base {}
+
+    const base = provider.getOrCreate(Base)
+    expect(provider.get(SubA)).toBeNull()
+    const a = provider.getOrCreate(SubA)
+    const b = provider.getOrCreate(SubB)
+
+    expect(new Set([base, a, b]).size).toBe(3)
+    expect(provider.getOrCreate(Base)).toBe(base)
+  })
+
   it('should return null for unknown types', () => {
     const type = {}
 
