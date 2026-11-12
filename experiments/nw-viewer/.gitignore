@@ -9,6 +9,8 @@ lerna-debug.log*
 
 tmp
 node_modules
+# Font Awesome Pro package, installed by scripts/fa-icon.mjs
+.fontawesome
 dist
 dist-ssr
 *.local

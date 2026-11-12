@@ -1,4 +1,4 @@
-import { QuadTree, QuadTreeNode, type ScheduledTask } from '@gglib/components'
+import { QuadTree, QuadTreeNode, SchedulerSystem, type ScheduledTask } from '@gglib/components'
 import type { GameComponent, GameEntity } from '@gglib/ecs'
 import type { Texture } from '@gglib/graphics'
 import { BoundingFrustum, mat4GetTranslation, vec3, type IVec2 } from '@gglib/math'
@@ -144,6 +144,12 @@ export class TerrainRegionComponent implements GameComponent {
     console.log(...lfmt.merge(this.logTag, lfmt.red('Deactivated')))
   }
   public destroy(): void {
+    // the loads go into the region scope, which is disposed with the region: a load still in flight would fail on it.
+    // The TerrainSystem only sees the region gone on its next update.
+    const scheduler = this.entity.service(SchedulerSystem)
+    scheduler.cancel(this.heightmapTask)
+    scheduler.cancel(this.baseMaterialTask)
+    scheduler.cancel(this.layerMaterialsTask)
     // splat and macro maps are owned by the region scope
     this.layers = null
     this.macroMaps = null

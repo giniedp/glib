@@ -1,0 +1,207 @@
+/* The browser tool, see ui/browser/BrowserTool.tsx */
+
+/* the page: app bar, then the split; no gaps or insets of the tweak-ui panel */
+.tweak-ui.nw-browser {
+  gap: 0;
+  padding: 0;
+}
+
+.nw-browser-split {
+  flex: 1;
+  min-height: 0;
+}
+.nw-browser-split > .twk-split-gutter {
+  border-left: 1px solid var(--nw-line);
+}
+
+/* the archive: search, filter, tree and the selection */
+.nw-browser-sidebar {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--nw-bg);
+}
+
+/* search input and type filter above the list */
+.nw-search {
+  display: flex;
+  flex: none;
+  gap: 0.25rem;
+  padding: 0.25rem;
+}
+.nw-search > :first-child {
+  flex: 1;
+}
+
+/* the tree or the search results: fills the rest of the sidebar */
+.nw-browser-list {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+.nw-asset-tree {
+  flex: 1;
+  min-height: 0;
+}
+.nw-search-summary {
+  flex: none;
+}
+
+/* the type filter: a button and its popover (top layer, positioned from the button) */
+.nw-type-filter {
+  flex: none;
+}
+.nw-type-popover {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  width: 20rem;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 0.25rem 0;
+  color: var(--nw-text);
+  background: var(--nw-bg);
+  border: 1px solid var(--nw-line-strong);
+  border-radius: var(--twk-radius-field);
+}
+.nw-type-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 0.25rem;
+}
+.nw-type-group + .nw-type-group {
+  border-top: 1px solid var(--nw-line);
+}
+.nw-type-row {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.0625rem 0.5rem 0.0625rem 1.5rem;
+  cursor: pointer;
+}
+.nw-type-row:hover {
+  background: var(--nw-hover);
+}
+.nw-type-group-head {
+  padding-left: 0.5rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+.nw-type-count {
+  margin-left: auto;
+  font-size: var(--nw-text-sm);
+  color: var(--nw-text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+/* the open files: tab strip and the content of the active tab */
+.nw-browser-main {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--nw-bg);
+}
+
+/* the selected file below the list: path, type, size */
+.nw-selection {
+  flex: none;
+  border-top: 1px solid var(--nw-line);
+}
+/* short labels, the values get the rest of the narrow sidebar */
+.nw-selection .twk-widget:has(> .twk-widget-label) {
+  grid-template-columns: 3rem 1fr;
+}
+
+/* e.g. "Open in viewer", only for what the viewer can show */
+.nw-selection-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 var(--twk-spacing-field, 0.25rem) 0.25rem;
+}
+.nw-selection-actions:empty {
+  display: none;
+}
+
+/* the tabs of the open files (ui/common/TabStrip.tsx), on a sunken strip like tweak-ui tabs */
+.nw-tab-strip {
+  display: flex;
+  flex: none;
+  overflow-x: auto;
+  /* scrolls with the wheel or trackpad, a scrollbar would not fit the row */
+  scrollbar-width: none;
+  background: var(--nw-bg-sunken);
+}
+.nw-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-height: var(--twk-spacing-field);
+  max-width: 16rem;
+  padding: 0 0.125rem 0 0.5rem;
+  color: var(--nw-text-dim);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.nw-tab:hover {
+  color: var(--nw-text);
+}
+/* the active tab has the background of the content, they read as one surface; it stays accent on hover */
+.nw-tab-active,
+.nw-tab-active:hover {
+  color: var(--nw-accent);
+  background: var(--nw-bg);
+}
+.nw-tab .twk-icon {
+  flex: none;
+  width: var(--nw-icon-size);
+  height: var(--nw-icon-size);
+}
+.nw-tab-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* a temporary tab, replaced by the next single click on a file */
+.nw-tab-preview .nw-tab-title {
+  font-style: italic;
+}
+.nw-tab-close {
+  display: flex;
+  padding: 0.125rem;
+  border: 0;
+  border-radius: var(--twk-radius-field);
+  color: inherit;
+  background: none;
+  cursor: pointer;
+  opacity: 0.6;
+}
+.nw-tab-close:hover {
+  opacity: 1;
+  background: var(--nw-hover);
+}
+
+/* the content of the tabs: every pane is mounted, the inactive ones are hidden */
+.nw-tab-panes {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+.nw-tab-pane {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* in place of content, centered */
+.nw-empty {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+}

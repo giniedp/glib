@@ -720,7 +720,25 @@ export interface ViewerRiver {
   lengthEndFadeDist: number
 }
 
+export const CameraComponentName = 'Camera' as const
+
+/**
+ * A camera placed in a level (nwbt `ViewerCameraComponent`), e.g. the main menu's `EstablishingCameraPlacement`.
+ * It looks along the entity's forward axis. Degrees and meters.
+ */
+export interface ViewerCameraComponent {
+  type: typeof CameraComponentName
+  fov: number
+  near: number
+  far: number
+}
+
+export function isViewerCameraComponent(component: any): component is ViewerCameraComponent {
+  return component?.type === CameraComponentName
+}
+
 export type ViewerComponent =
+  | ViewerCameraComponent
   | ViewerMeshComponent
   | ViewerRoadComponent
   | ViewerWaterVolumeComponent

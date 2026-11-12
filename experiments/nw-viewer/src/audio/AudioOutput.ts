@@ -94,6 +94,24 @@ export class AudioOutput {
     return this.context?.state === 'running'
   }
 
+  /**
+   * Pauses all sound, e.g. while the viewer is not shown. {@link AudioOutput.resume} continues.
+   */
+  public suspend() {
+    if (this.context?.state === 'running') {
+      this.context.suspend()
+    }
+  }
+
+  /**
+   * Continues the sound after {@link AudioOutput.suspend}. A context that was never unlocked stays locked.
+   */
+  public resume() {
+    if (this.context?.state === 'suspended') {
+      this.context.resume()
+    }
+  }
+
   public setMasterDb(db: number) {
     this.masterDb = db
     if (this.master && this.context) {

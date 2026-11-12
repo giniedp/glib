@@ -24,7 +24,7 @@ export type ParticleComponentState = 'idle' | 'loading' | 'ready' | 'skipped' | 
 
 export interface ParticleComponentOptions {
   /**
-   * Shows one shot effects regardless of config `particleOneShots`, e.g. in the particle showcase
+   * Shows one shot effects regardless of config `particleOneShots`, e.g. in the particle preview of the browser
    */
   oneShots?: boolean
   /**

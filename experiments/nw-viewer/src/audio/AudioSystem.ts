@@ -201,6 +201,20 @@ export class AudioSystem extends GameSystem {
     }
   }
 
+  /**
+   * Pauses all sound, e.g. while the viewer is not shown
+   */
+  public suspend() {
+    this.output.suspend()
+  }
+
+  /**
+   * Continues the sound after {@link AudioSystem.suspend}
+   */
+  public resume() {
+    this.output.resume()
+  }
+
   public destroy(): void {
     this.offConfig?.()
     this.removeGestureListener()

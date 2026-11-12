@@ -68,8 +68,13 @@ export function getLevelListUrl(): TypedRequest<LevelIndex> {
   return { url: `/levels/list.json`, type: 'json' }
 }
 
-export function getLevelInfoUrl(levelName: string): TypedRequest<LevelInfo> {
-  return { url: `/levels/${levelName}/info.json`, type: 'json' }
+/**
+ * The level info of a coatlicue. `mission` names the level folder (`levels/<mission>`) when it differs from the
+ * coatlicue, e.g. a main menu: coatlicue `nw_frontend_base` with the level `nw_frontend_nighthaven`.
+ */
+export function getLevelInfoUrl(levelName: string, mission?: string | null): TypedRequest<LevelInfo> {
+  const query = mission ? `?level=${encodeURIComponent(mission)}` : ''
+  return { url: `/levels/${levelName}/info.json${query}`, type: 'json' }
 }
 
 export function getRegionInfoUrl(levelName: string, regionName: string): TypedRequest<RegionInfo> {

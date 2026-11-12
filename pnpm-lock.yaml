@@ -9,43 +9,43 @@ importers:
   .:
     devDependencies:
       '@gglib/components':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:packages/components
       '@gglib/content':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:packages/content
       '@gglib/ecs':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:packages/ecs
       '@gglib/effects':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:packages/effects
       '@gglib/game':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:packages/game
       '@gglib/graphics':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:packages/graphics
       '@gglib/loaders':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:packages/loaders
       '@gglib/math':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:packages/math
       '@gglib/model':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:packages/model
       '@gglib/noise':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:packages/noise
       '@gglib/render':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:packages/render
       '@gglib/utils':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:packages/utils
       '@gglib/viewer':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:packages/viewer
       '@types/mithril':
         specifier: ^2.2.9
@@ -137,6 +137,15 @@ importers:
       '@gglib/vite-plugin':
         specifier: workspace:^
         version: link:../../packages/vite-plugin
+      '@solidjs/router':
+        specifier: 0.15.3
+        version: 0.15.3(solid-js@1.9.17)
+      ag-grid-community:
+        specifier: 35.3.1
+        version: 35.3.1
+      monaco-editor:
+        specifier: 0.52.2
+        version: 0.52.2
       solid-js:
         specifier: ^1.9.17
         version: 1.9.17
@@ -157,106 +166,106 @@ importers:
   packages/components:
     devDependencies:
       '@gglib/content':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:../content
       '@gglib/ecs':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:../ecs
       '@gglib/effects':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:../effects
       '@gglib/game':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:../game
       '@gglib/graphics':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:../graphics
       '@gglib/math':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:../math
       '@gglib/model':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:../model
       '@gglib/render':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:../render
       '@gglib/utils':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:../utils
 
   packages/content:
     devDependencies:
       '@gglib/graphics':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:../graphics
       '@gglib/math':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:../math
       '@gglib/model':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:../model
       '@gglib/utils':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:../utils
 
   packages/ecs:
     devDependencies:
       '@gglib/math':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:../math
       '@gglib/utils':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:../utils
 
   packages/effects:
     devDependencies:
       '@gglib/graphics':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:../graphics
       '@gglib/math':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:../math
       '@gglib/utils':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:../utils
 
   packages/game:
     devDependencies:
       '@gglib/graphics':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:../graphics
       '@gglib/math':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:../math
       '@gglib/utils':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:../utils
 
   packages/graphics:
     devDependencies:
       '@gglib/math':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:../math
       '@gglib/utils':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:../utils
 
   packages/loaders:
     devDependencies:
       '@gglib/content':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:../content
       '@gglib/graphics':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:../graphics
       '@gglib/math':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:../math
       '@gglib/model':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:../model
       '@gglib/utils':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:../utils
 
   packages/math: {}
@@ -264,43 +273,43 @@ importers:
   packages/model:
     devDependencies:
       '@gglib/graphics':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:../graphics
       '@gglib/math':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:../math
       '@gglib/utils':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:../utils
 
   packages/noise:
     devDependencies:
       '@gglib/graphics':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:../graphics
       '@gglib/math':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:../math
       '@gglib/utils':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:../utils
 
   packages/render:
     devDependencies:
       '@gglib/effects':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:../effects
       '@gglib/graphics':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:../graphics
       '@gglib/math':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:../math
       '@gglib/model':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:../model
       '@gglib/utils':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:../utils
 
   packages/utils: {}
@@ -308,49 +317,49 @@ importers:
   packages/viewer:
     devDependencies:
       '@gglib/components':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:../components
       '@gglib/content':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:../content
       '@gglib/ecs':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:../ecs
       '@gglib/effects':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:../effects
       '@gglib/game':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:../game
       '@gglib/graphics':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:../graphics
       '@gglib/loaders':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:../loaders
       '@gglib/math':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:../math
       '@gglib/model':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:../model
       '@gglib/render':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:../render
       '@gglib/utils':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:../utils
 
   packages/vite-plugin:
     devDependencies:
       '@gglib/graphics':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:../graphics
       '@gglib/math':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:../math
       '@gglib/utils':
-        specifier: workspace:^0.8.0
+        specifier: workspace:^0.8.1
         version: link:../utils
       vite:
         specifier: ^7
@@ -2163,6 +2172,11 @@ packages:
   '@socket.io/component-emitter@3.1.2':
     resolution: {integrity: sha512-9BCxFwvbGg/RsZK9tjXd8s4UcwR0MWeFQ1XEKIQVVvAGJyINdrqKMcTRyLoK8Rse1GjzLV9cwjWV1olXRWEXVA==}
 
+  '@solidjs/router@0.15.3':
+    resolution: {integrity: sha512-iEbW8UKok2Oio7o6Y4VTzLj+KFCmQPGEpm1fS3xixwFBdclFVBvaQVeibl1jys4cujfAK5Kn6+uG2uBm3lxOMw==}
+    peerDependencies:
+      solid-js: ^1.8.6
+
   '@speed-highlight/core@1.2.24':
     resolution: {integrity: sha512-qeW2e1l78afw8VhRPfPQ1Gjj+KU5XFQ/OFV5ti6eTa9bruO7mJyZtA4vw0ofqmA3tKCkROE9xLk3VZoeRc98nw==}
 
@@ -2538,6 +2552,12 @@ packages:
     resolution: {integrity: sha512-oJlA3XiRm7Cyk6qFD2Jn8ak9B7jSy0qy00ADO3+8dpT0LSjFihQYv4C02LFCSYJV3Q37xYwwRy5m+IpIiUzqWw==}
     engines: {node: '>=0.4.0'}
     hasBin: true
+
+  ag-charts-types@13.3.1:
+    resolution: {integrity: sha512-m37eUe4g//swvGh8PWMlYQH3gknjSsPeW4sQwBhM3/auGAHmN0wvxEWlrdAn98pBPg4HoKbtOy+yf7gPCYsnvQ==}
+
+  ag-grid-community@35.3.1:
+    resolution: {integrity: sha512-Wmkd/xYTCbAApcZZO74nBggZCnd/oX753NY3MJ4zYARVpfBHRWWhIBJ2sFTFKbDWwHZOWsx3YT9+kkyeuyLKlw==}
 
   ajv-draft-04@1.0.0:
     resolution: {integrity: sha512-mv00Te6nmYbRp5DCwclxtt7yV/joXJPGS7nM+97GdxvuttCOfgI3K4U25zboyeX0O+myI8ERluxQe5wljMmVIw==}
@@ -3994,6 +4014,9 @@ packages:
 
   mlly@1.8.2:
     resolution: {integrity: sha512-d+ObxMQFmbt10sretNDytwt85VrbkhhUA/JBGm1MPaWJ65Cl4wOgLaB1NYvJSZ0Ef03MMEU/0xpPMXUIQ29UfA==}
+
+  monaco-editor@0.52.2:
+    resolution: {integrity: sha512-GEQWEZmfkOGLdd3XK8ryrfWz3AIP8YymVXiPHEdewrUq7mh0qrKrfHLNCXcbB6sTnMLnOZ3ztSiKcciFUkIJwQ==}
 
   mrmime@2.0.1:
     resolution: {integrity: sha512-Y3wQdFg2Va6etvQ5I82yUhGdsKrcYox6p7FfL1LbK2J4V01F9TGlepTIhnK24t7koZibmg82KGglhA1XK5IsLQ==}
@@ -6672,6 +6695,10 @@ snapshots:
 
   '@socket.io/component-emitter@3.1.2': {}
 
+  '@solidjs/router@0.15.3(solid-js@1.9.17)':
+    dependencies:
+      solid-js: 1.9.17
+
   '@speed-highlight/core@1.2.24': {}
 
   '@types/argparse@1.0.38': {}
@@ -7022,6 +7049,12 @@ snapshots:
 
   acorn@8.19.0:
     optional: true
+
+  ag-charts-types@13.3.1: {}
+
+  ag-grid-community@35.3.1:
+    dependencies:
+      ag-charts-types: 13.3.1
 
   ajv-draft-04@1.0.0(ajv@8.18.0):
     optionalDependencies:
@@ -8727,6 +8760,8 @@ snapshots:
       pathe: 2.0.3
       pkg-types: 1.3.1
       ufo: 1.6.4
+
+  monaco-editor@0.52.2: {}
 
   mrmime@2.0.1: {}
 

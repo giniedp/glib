@@ -98,6 +98,18 @@ export class SliceSystem extends GameSystem {
    */
   private hasPendingWork = true
   private topLevelCount = 0
+  /**
+   * Spawners outside of regions, e.g. the slice preview of the browser, updated like the slices of a region
+   */
+  private previewSpawners: SliceSpawnerComponent[] = []
+
+  /**
+   * Spawns a slice outside of a region (no impostor cells), until its entity is destroyed
+   */
+  public addPreviewSpawner(spawner: SliceSpawnerComponent) {
+    this.previewSpawners.push(spawner)
+    this.hasPendingWork = true
+  }
 
   public initialize(world: GameWorld): void {
     this.world = world
@@ -115,7 +127,12 @@ export class SliceSystem extends GameSystem {
     const view = this.game.scene.getView(0)
     mat4GetTranslation(view.camera.world, this.camPosition)
 
-    let topLevelCount = 0
+    for (let i = this.previewSpawners.length - 1; i >= 0; i--) {
+      if (this.previewSpawners[i].entity.isDestroyed) {
+        this.previewSpawners.splice(i, 1)
+      }
+    }
+    let topLevelCount = this.previewSpawners.length
     for (const entity of this.activeRegions) {
       topLevelCount += entity.component(RegionComponent).slices.length
     }
@@ -141,6 +158,9 @@ export class SliceSystem extends GameSystem {
     for (const entity of this.activeRegions) {
       const region = entity.$(RegionComponent)
       this.updateSlices(region.slices, this.camPosition)
+    }
+    if (this.previewSpawners.length) {
+      this.updateSlices(this.previewSpawners, this.camPosition)
     }
   }
 
@@ -224,7 +244,8 @@ export function executeSpawner(spawner: SliceSpawnerComponent) {
     return
   }
 
-  const region = spawner.entity.$(RegionComponent.Tag).region
+  // none for a preview spawner (SliceSystem.addPreviewSpawner): no impostor cells
+  const region = spawner.entity.$(RegionComponent.Tag, GetComponent.Optional)?.region ?? null
   const rangeSystem = spawner.entity.world.getSystem(RangeActivationSystem)
 
   for (const item of spawner.data.entities) {
@@ -470,7 +491,7 @@ export function executeSpawner(spawner: SliceSpawnerComponent) {
     let impostorCell: RegionImpostorComponent | null = null
     if (!meshLoaders.length) {
       //
-    } else if (meshLoaders.some((it) => region.isImpostorMesh(it.data))) {
+    } else if (region && meshLoaders.some((it) => region.isImpostorMesh(it.data))) {
       impostorCell = region.poiImpostorAt(world[12], world[13])
     } else if (spawner.impostor && IMPOSTOR_HOLD_CHUNK_SIZES.includes(spawner.chunkSize)) {
       impostorCell = spawner.impostor

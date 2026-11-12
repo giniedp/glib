@@ -1,0 +1,351 @@
+/* The display modes of an open file, see ui/browser/views */
+
+/* the modes of the file on the left, the tools of the mode on the right (ui/common/ModeBar.tsx) */
+.nw-mode-bar {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.125rem 0.25rem;
+  border-bottom: 1px solid var(--nw-line);
+}
+.nw-mode-tools {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+/* one mode, fills the pane below the mode bar */
+.nw-view {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* a row of tools at the top of a view */
+.nw-view-bar {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.125rem 0.25rem;
+}
+
+/* a read-only monaco editor, fills the view (ui/common/CodeEditor.tsx) */
+.nw-code {
+  flex: 1;
+  min-height: 0;
+}
+
+/* an ag-grid table, fills the view (ui/common/grid.tsx) */
+.nw-ag {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+/* the row numbers read as chrome, not data */
+.nw-ag .nw-ag-index {
+  color: var(--nw-text-dim);
+}
+/* measures the width of a mono character at the grid font size */
+.nw-ag-probe {
+  position: absolute;
+  visibility: hidden;
+  font-family: var(--twk-font-mono);
+  font-size: var(--nw-text-md);
+}
+/* a filter input in a view bar, fixed width like the hex go-to */
+.nw-view-bar > .nw-view-filter {
+  flex: 0 0 20rem;
+  width: 20rem;
+}
+
+/* a checkbox with its label in a view bar */
+.nw-view-option {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  cursor: pointer;
+}
+/* pushes an item of a bar to its end */
+.nw-push-end {
+  margin-left: auto;
+}
+
+/* datasheet: the grid and the fields of the selected row (ui/browser/views/SheetMode.tsx) */
+.nw-sheet {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+.nw-sheet-row {
+  display: flex;
+  flex: 0 0 24rem;
+  flex-direction: column;
+  min-height: 0;
+  border-left: 1px solid var(--nw-line);
+}
+.nw-sheet-fields {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 0.25rem;
+  user-select: text;
+}
+.nw-sheet-fields .twk-widget:has(> .twk-widget-label) {
+  grid-template-columns: 10rem 1fr;
+}
+
+/* details: label / value rows, scrolls */
+.nw-details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--twk-spacing-gap);
+  max-width: 48rem;
+  padding: 0.25rem;
+  overflow-y: auto;
+  user-select: text;
+}
+.nw-details .twk-widget:has(> .twk-widget-label) {
+  grid-template-columns: 7rem 1fr;
+}
+
+/* hex: offset, bytes, ascii; only the visible rows exist (ui/common/HexView.tsx) */
+.nw-hex-view {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+/* tweak-ui inputs fill their row, this one has a fixed width */
+.nw-view-bar > .nw-hex-goto {
+  flex: 0 0 16rem;
+  width: 16rem;
+}
+.nw-hex-scroll {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+.nw-hex-window {
+  position: absolute;
+  left: 0;
+  right: 0;
+  overflow: hidden;
+}
+.nw-hex-row {
+  display: flex;
+  gap: 2ch;
+  padding: 0 0.5rem;
+  font-family: var(--twk-font-mono);
+  font-size: var(--nw-text-md);
+  line-height: 1.125rem;
+  white-space: pre;
+  user-select: text;
+}
+.nw-hex-probe {
+  position: absolute;
+  visibility: hidden;
+}
+.nw-hex-offset {
+  color: var(--nw-text-dim);
+}
+.nw-hex-bytes {
+  width: 49ch;
+}
+.nw-hex-bytes > span {
+  display: inline-block;
+  width: 3ch;
+}
+.nw-hex-bytes > .nw-hex-gap {
+  margin-left: 1ch;
+}
+.nw-hex-zero {
+  color: var(--nw-text-dim);
+}
+.nw-hex-bytes > .nw-hex-mark {
+  color: var(--nw-bg);
+  background: var(--nw-accent);
+}
+
+/* inspect: the chunk table and the selected chunk (ui/browser/views/InspectMode.tsx) */
+.nw-inspect {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+.nw-inspect-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+.nw-inspect-chunks {
+  flex: 0 0 34rem;
+  min-height: 0;
+}
+.nw-inspect-detail {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  border-left: 1px solid var(--nw-line);
+  user-select: text;
+}
+.nw-chunk {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+}
+.nw-chunk-head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.nw-chunk-title {
+  font-size: var(--nw-text-lg);
+}
+.nw-field {
+  display: grid;
+  grid-template-columns: 12rem 1fr;
+  gap: 0.75rem;
+  padding: 0.125rem 0;
+}
+.nw-field-name {
+  color: var(--nw-text-dim);
+}
+.nw-field-value {
+  overflow-wrap: anywhere;
+  font-family: var(--twk-font-mono);
+}
+.nw-field-group > summary {
+  cursor: pointer;
+  padding: 0.125rem 0;
+}
+.nw-field-children {
+  padding-left: 1rem;
+  border-left: 1px solid var(--nw-line);
+}
+.nw-link {
+  margin-left: 0.5rem;
+  padding: 0;
+  color: var(--nw-accent);
+  background: none;
+  border: none;
+  font: inherit;
+  cursor: pointer;
+}
+.nw-link:hover {
+  text-decoration: underline;
+}
+.nw-chunk-table {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.nw-chunk-grid {
+  height: 16rem;
+}
+
+/* particles: the effects of the library next to the engine (ui/browser/views/ParticleMode.tsx) */
+.nw-particles {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+.nw-particles-list {
+  display: flex;
+  flex: 0 0 22rem;
+  flex-direction: column;
+  min-height: 0;
+  border-right: 1px solid var(--nw-line);
+}
+.nw-particles-list .nw-view-bar > .nw-view-filter {
+  flex: 1;
+  width: auto;
+}
+.nw-particles-effects {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+.nw-particles-effect {
+  display: block;
+  width: 100%;
+  padding: 0.125rem 0.5rem;
+  overflow: hidden;
+  color: var(--nw-text);
+  text-align: left;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  background: none;
+  border: none;
+  font: inherit;
+  cursor: pointer;
+}
+.nw-particles-effect:hover {
+  background: var(--nw-hover);
+}
+.nw-particles-effect-active,
+.nw-particles-effect-active:hover {
+  color: var(--nw-accent);
+  background: var(--nw-line);
+}
+.nw-particles-count {
+  padding: 0.25rem 0.5rem;
+  border-top: 1px solid var(--nw-line);
+}
+
+/* engine views: a toolbar above the engine surface (ui/browser/views/TextureMode.tsx, ModelMode.tsx) */
+.nw-texture,
+.nw-model {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+.nw-texture-surface,
+.nw-model-surface {
+  flex: 1;
+  min-height: 0;
+  background: var(--nw-bg-sunken);
+}
+.nw-texture-input {
+  position: absolute;
+  inset: 0;
+  cursor: grab;
+  touch-action: none;
+}
+.nw-texture-input:active {
+  cursor: grabbing;
+}
+.nw-texture-error {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.nw-view-bar > .nw-texture-slider {
+  flex: 0 0 14rem;
+  width: 14rem;
+}
+.nw-view-bar > .nw-texture-select {
+  flex: 0 0 8rem;
+  width: 8rem;
+}
+.nw-texture-label,
+.nw-view-label {
+  padding: 0 0.375rem;
+  color: var(--nw-text-dim);
+}
+.nw-texture-info,
+.nw-view-info {
+  overflow: hidden;
+  color: var(--nw-text-dim);
+  font-size: var(--nw-text-sm);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}

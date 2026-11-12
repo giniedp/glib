@@ -37,6 +37,8 @@ export default defineConfig(({ mode }) => {
       proxy: {
         '/levels': 'http://localhost:8000',
         '/files': 'http://localhost:8000',
+        // the asset browser api; a regex, a plain '/browse' prefix would also catch the app route /browser
+        '^/browse/': 'http://localhost:8000',
         '/nwbt': {
           target: 'http://localhost:8000',
           changeOrigin: true,

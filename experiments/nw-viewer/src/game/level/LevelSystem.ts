@@ -2,6 +2,7 @@ import {
   BoundsComponent,
   CameraComponent,
   EcsGame,
+  LifeCycleFlags,
   MeshComponent,
   ModelComponent,
   OccTree,
@@ -12,23 +13,17 @@ import {
 import { AssetType } from '@gglib/content'
 import { GameEntity, GameSystem, GameWorld, GetComponent, type CreateEntityOptions } from '@gglib/ecs'
 import {
-  boxGeometry,
   Color,
-  cylinderGeometry,
-  Geometry,
   Material,
   Mesh,
   planeGeometry,
   sphereGeometry,
   type Device,
   type MaterialOptions,
-  type MeshOptions,
 } from '@gglib/graphics'
 import {
   BoundingSphere,
   DEGREE_TO_RAD,
-  mat4$preTranslateX,
-  mat4$preTranslateZ,
   mat4CreateFromArray,
   mat4CreateRotationX,
   mat4CreateTranslation,
@@ -40,12 +35,15 @@ import { Model } from '@gglib/model'
 import { Renderer } from '@gglib/render'
 import { lfmt } from '@gglib/utils'
 import {
+  assetReferenceKey,
   fetchTypedRequest,
   getLevelInfoUrl,
   isTimeOfDayComponent,
   isViewerLightComponent,
   isViewerMeshComponent,
+  ParticleComponentName,
   type LevelInfo,
+  type ViewerParticleComponent,
   type ViewerEntity,
   type ViewerMeshComponent,
   type ViewerSlice,
@@ -54,28 +52,15 @@ import { ContentService } from '../../content'
 import { InputSlots, SkyMaterial } from '../../material'
 import { ShapeMaterial } from '../../material/ShapeMaterial'
 import { DebugShapeComponent } from '../debug/DebugShapeComponent'
-import {
-  createParticleShowcase,
-  particleShowcaseGrid,
-  resolveParticleShowcase,
-  type ParticleShowcaseOptions,
-} from '../particles/ParticleShowcase'
-import { ParticleSystem } from '../particles/ParticleSystem'
+import { CulledModelComponent } from '../culling/CulledModelComponent'
+import { ParticleComponent } from '../particles/ParticleComponent'
 import { createEnvProbeComponents } from '../probes/EnvProbeComponent'
-import {
-  createGroundGeometry,
-  createShaderBallGeometries,
-  createStageGeometries,
-  MATERIAL_SHOWCASE_SETS,
-  SHOWCASE_STAGE_DEPTH,
-  SHOWCASE_STAGE_MATERIAL,
-  SHOWCASE_STAGE_WIDTH,
-  SHOWCASE_WATER_SHAPE,
-} from '../showcase/MaterialShowcase'
 import { MeshLoaderComponent } from '../slice/MeshLoaderComponent'
+import { SliceSpawnerComponent } from '../slice/SliceSpawnerComponent'
+import { SliceSystem } from '../slice/SliceSystem'
 import { TerrainSystem } from '../terrain/TerrainSystem'
-import { buildWaterVolumeMesh } from '../water/WaterVolumeMesh'
 import { levelEntityOptions } from './LevelComponent'
+import { loadShaderBallGeometries, SHADER_BALL_SIZE } from './ShaderBall'
 import { SkyLightSystem } from './SkyLightSystem'
 import { TimeOfDayComponent } from './TimeOfDayComponent'
 
@@ -185,8 +170,16 @@ export class LevelSystem extends GameSystem {
     this.cloudsEntity = this.game.createEntity(createCloudsDome(this.entity, mesh))
   }
 
-  public async loadLevel(name: string) {
+  /**
+   * Loads a level: the coatlicue `name` and the mission of the level folder `mission`, or of the folder with the
+   * coatlicue's name. Resolves once the level info is loaded and the level entity exists, the regions stream later.
+   */
+  public async loadLevel(name: string, mission?: string | null) {
     this.loadCancel()
+    // a model (e.g. a preview of the browser) left the camera orbiting
+    if (this.camera) {
+      this.camera.entity.component(WASDComponent).orbitMode = false
+    }
 
     if (!name) {
       return
@@ -196,7 +189,7 @@ export class LevelSystem extends GameSystem {
 
     console.log(...lfmt.merge(this.logTag, lfmt.green(`Loading level ${name}`)))
 
-    const levelInfo = await fetchTypedRequest(this.content.nwbtUrl, getLevelInfoUrl(name))
+    const levelInfo = await fetchTypedRequest(this.content.nwbtUrl, getLevelInfoUrl(name, mission))
     loadSignal.throwIfAborted()
 
     // no data objects: with DevTools attached, the console keeps logged objects alive
@@ -208,13 +201,32 @@ export class LevelSystem extends GameSystem {
 
     this.skyEntity = this.game.createEntity(createSkySphere(this.entity, this.renderer.device))
     this.cloudsEntity = this.game.createEntity(createCloudsDome(this.entity))
+    // the mission's own entities (a main menu's whole set) spawn like a slice, the global probes are created below
+    const missionSlice = createMissionSlice(levelInfo.missionEntities)
     // removed again on unload
-    this.content.slices.add(this, levelInfo.slices)
+    this.content.slices.add(
+      this,
+      missionSlice ? { ...levelInfo.slices, [MISSION_SLICE_KEY]: missionSlice } : levelInfo.slices,
+    )
     for (const options of createSkyboxSystem(this.entity, levelInfo.skyboxSystem)) {
       this.game.createEntity(options)
     }
     for (const options of createMissionProbes(this.entity, levelInfo.missionEntities)) {
       this.game.createEntity(options)
+    }
+    if (missionSlice) {
+      const spawner = this.game.createEntity({
+        name: `Mission ${levelInfo.level || levelInfo.name}`,
+        parent: this.entity,
+        transform: new TransformComponent({
+          keepWorld: true,
+          world: mat4Identity(),
+          // initialized and activated by the SliceSystem
+          lifeCycle: LifeCycleFlags.PropagateOnly,
+        }),
+        components: [new BoundsComponent(), new SliceSpawnerComponent({ slice: MISSION_SLICE_REF })],
+      })
+      this.game.world.getSystem(SliceSystem).addPreviewSpawner(spawner.component(SliceSpawnerComponent))
     }
 
     this.oceanLevel = levelInfo.oceanLevel
@@ -280,6 +292,72 @@ export class LevelSystem extends GameSystem {
     this.gizmoEntity = this.game.createEntity(createGizmoGrid(this.entity, this.renderer.device))
   }
 
+  /**
+   * Shows one particle effect of a library at the origin, with the sky, the grid and the orbit camera (a preview of
+   * the browser). One shot effects restart every few seconds.
+   *
+   * @param library - path of the library, `libs/particles/<name>.xml`
+   * @param effect - the full name of the effect, e.g. `ENV_Bonfires.Medium_01`
+   */
+  public loadParticleEffect(library: string, effect: string) {
+    this.loadCancel()
+    this.beginLoad()
+
+    const camera = this.game.scene.getView(0).camera as CameraComponent
+    const wasd = camera.entity.component(WASDComponent)
+    wasd.orbitMode = true
+    wasd.radiusMax = 1000
+    wasd.targetRadius = PARTICLE_PREVIEW_RADIUS
+    wasd.orbitCenter.x = 0
+    wasd.orbitCenter.y = 0
+    wasd.orbitCenter.z = PARTICLE_PREVIEW_HEIGHT
+    // negative is down
+    wasd.setRotation(0, -15 * DEGREE_TO_RAD)
+
+    this.entity = this.game.createEntity({
+      name: `Particle effect: ${effect}`,
+      parent: this.game.scene.entity,
+      transform: new TransformComponent({ keepWorld: true, world: mat4Identity() }),
+    })
+    const data: ViewerParticleComponent = {
+      type: ParticleComponentName,
+      library,
+      emitter: effect,
+      color: [1, 1, 1, 1],
+      alphaScale: 1,
+      countScale: 1,
+      sizeScale: 1,
+      particleSize: [1, 1, 1],
+      speedScale: 1,
+      timeScale: 1,
+      strength: -1,
+      viewDistanceMultiplier: 1,
+    }
+    this.game.createEntity({
+      name: effect,
+      parent: this.entity,
+      transform: new TransformComponent({ keepWorld: true, world: mat4Identity() }),
+      // always active around the origin, one shots loop
+      components: [new ParticleComponent(data, { oneShots: true, loop: PARTICLE_PREVIEW_LOOP, range: 1000 })],
+    })
+    this.skyEntity = this.game.createEntity(createSkySphere(this.entity, this.renderer.device))
+    this.cloudsEntity = this.game.createEntity(createCloudsDome(this.entity))
+    this.gizmoEntity = this.game.createEntity(createGizmoGrid(this.entity, this.renderer.device))
+  }
+
+  /**
+   * The particle effect shown by {@link loadParticleEffect}, null otherwise
+   */
+  public particlePreview(): ParticleComponent | null {
+    for (const child of this.entity?.getTransform().children ?? []) {
+      const particles = child.entity.component(ParticleComponent, GetComponent.Optional)
+      if (particles) {
+        return particles
+      }
+    }
+    return null
+  }
+
   public async loadMaterial(assetUrl: string) {
     this.loadCancel()
 
@@ -293,299 +371,91 @@ export class LevelSystem extends GameSystem {
     const wasd = camera.entity.component(WASDComponent)
     wasd.orbitMode = true
     wasd.radiusMax = 1000
-    wasd.targetRadius = 5
-    wasd.targetVertical = 45 * DEGREE_TO_RAD
-    wasd.orbitCenter.z = 4
+    wasd.targetRadius = 6
+    wasd.orbitCenter.x = 0
+    wasd.orbitCenter.y = 0
+    wasd.orbitCenter.z = SHADER_BALL_SIZE.height / 2
+    wasd.setRotation(0, -15 * DEGREE_TO_RAD)
 
-    const materials = await this.loadMaterialFile(assetUrl, loadSignal)
-
-    const shapes = ['cylinder', 'box', 'sphere'] as const
-    const meshOptions: MeshOptions = {
-      materials,
-      partImports: [],
-    }
-    for (let z = 0; z < shapes.length; z++) {
-      for (let x = 0; x < materials.length; x++) {
-        const transform = mat4CreateRotationX(Math.PI / 2)
-        mat4$preTranslateX(transform, (x - Math.max(0, materials.length - 1) / 2) * 2)
-        mat4$preTranslateZ(transform, (z + 0.5) * 2)
-
-        let geometry: Geometry
-        switch (shapes[z]) {
-          case 'box': {
-            geometry = boxGeometry(this.renderer.device, {
-              vertexLayout: [['position', 'normal', 'tangent', 'bitangent', 'texture', 'color']],
-              vertexTransform: transform,
-              size: 1.8,
-            })
-            break
-          }
-          case 'sphere': {
-            geometry = sphereGeometry(this.renderer.device, {
-              vertexLayout: [['position', 'normal', 'tangent', 'bitangent', 'texture', 'color']],
-              vertexTransform: transform,
-              radius: 0.9,
-            })
-            break
-          }
-          case 'cylinder': {
-            geometry = cylinderGeometry(this.renderer.device, {
-              vertexLayout: [['position', 'normal', 'tangent', 'bitangent', 'texture', 'color']],
-              vertexTransform: transform,
-              closeTop: true,
-              closeBottom: true,
-            })
-            break
-          }
-        }
-        meshOptions.partImports.push({
-          geometry,
-          materialIndex: x,
-        })
-      }
-    }
-
-    const mesh = new Mesh(this.renderer.device, meshOptions)
-    this.entity = this.game.createEntity({
-      components: [
-        new SpatialComponent({
-          index: OccTree.create({
-            min: vec3(-2048),
-            max: vec3(2048),
-            leafLevel: 5,
-            looseFactor: 2,
-          }),
-        }),
-        new BoundsComponent(),
-        new ModelComponent({
-          model: new Model(this.renderer.device, {
-            meshes: [mesh],
-          }),
-        }),
-      ],
-      parent: this.game.scene.entity,
-      transform: new TransformComponent({
-        keepWorld: true,
-        world: mat4Identity(),
-      }),
-    })
-
-    this.skyEntity = this.game.createEntity(createSkySphere(this.entity, this.renderer.device))
-    this.cloudsEntity = this.game.createEntity(createCloudsDome(this.entity))
-    this.gizmoEntity = this.game.createEntity(createGizmoGrid(this.entity, this.renderer.device))
-  }
-
-  /**
-   * Shows particle effects on a grid instead of a level, see {@link resolveParticleShowcase} for the specification
-   */
-  public async loadParticles(
-    spec: string | null,
-    filter?: string | null,
-    options?: ParticleShowcaseOptions & { time?: number; timeOfDayLevel?: string },
-  ) {
-    this.loadCancel()
-    const loadSignal = this.beginLoad()
-    await this.beginShowcase(loadSignal, options)
-
-    const items = await resolveParticleShowcase(this.game.world.getSystem(ParticleSystem), spec, filter)
-    loadSignal.throwIfAborted()
-    console.log(...lfmt.merge(this.logTag, lfmt.green(`Particle showcase: ${items.length} effects`)), items)
-
-    const spacing = options?.spacing ?? 6
-    const { columns, rows } = particleShowcaseGrid(items.length)
-    this.orbitShowcase(0, 0, Math.max(columns, rows) * spacing * 0.6 + 4)
-
-    this.entity = this.game.createEntity({
-      name: `Particles: ${spec || 'preset'}`,
-      parent: this.game.scene.entity,
-      transform: new TransformComponent({
-        keepWorld: true,
-        world: mat4Identity(),
-      }),
-    })
-    for (const entity of createParticleShowcase(this.entity, items, {
-      ...options,
-      spacing,
-      altitude: SHOWCASE_ALTITUDE,
-    })) {
-      this.game.createEntity(entity)
-    }
-
-    this.skyEntity = this.game.createEntity(createSkySphere(this.entity, this.renderer.device))
-    this.cloudsEntity = this.game.createEntity(createCloudsDome(this.entity))
-    this.gizmoEntity = this.game.createEntity(createGizmoGrid(this.entity, this.renderer.device))
-  }
-
-  /**
-   * Shows a set of materials, each on its own shader stage, see {@link MATERIAL_SHOWCASE_SETS}
-   */
-  public async loadMaterials(setName: string | null, options?: { time?: number; timeOfDayLevel?: string }) {
-    this.loadCancel()
-    const loadSignal = this.beginLoad()
-    await this.beginShowcase(loadSignal, options)
-
-    const set = MATERIAL_SHOWCASE_SETS[setName] ?? Object.values(MATERIAL_SHOWCASE_SETS)[0]
-    console.log(...lfmt.merge(this.logTag, lfmt.green(`Material showcase: ${set.label}`)), set)
-    const device = this.renderer.device
-    const [stageMaterial] = await this.loadMaterialFile(SHOWCASE_STAGE_MATERIAL, loadSignal)
-
-    const columns = Math.min(4, set.items.length)
-    const rows = Math.ceil(set.items.length / columns)
-    const cellX = SHOWCASE_STAGE_WIDTH + 1.5
-    const cellY = SHOWCASE_STAGE_DEPTH + 3
-    this.orbitShowcase(0, 0, Math.max(columns * cellX, rows * cellY) * 0.6 + 4)
-
-    this.entity = this.game.createEntity({
-      name: `Materials: ${set.label}`,
+    // the materials are loaded into the scope of the entity, it must exist first
+    const entity = this.game.createEntity({
+      name: `Material: ${assetUrl}`,
       parent: this.game.scene.entity,
       transform: new TransformComponent({ keepWorld: true, world: mat4Identity() }),
     })
-    this.skyEntity = this.game.createEntity(createSkySphere(this.entity, device))
-    this.cloudsEntity = this.game.createEntity(createCloudsDome(this.entity))
-    this.game.createEntity({
-      name: 'Ground',
-      parent: this.entity,
-      transform: new TransformComponent({
-        keepWorld: true,
-        world: mat4CreateTranslation(vec3(0, 0, SHOWCASE_ALTITUDE)),
-      }),
-      components: [
-        new BoundsComponent(),
-        new ModelComponent({
-          model: new Model(device, {
-            meshes: [
-              new Mesh(device, {
-                materials: [stageMaterial],
-                partImports: [{ geometry: createGroundGeometry(device), materialIndex: 0 }],
-              }),
-            ],
-          }),
-        }),
-      ],
-    })
+    this.entity = entity
+    this.skyEntity = this.game.createEntity(createSkySphere(entity, this.renderer.device))
+    this.cloudsEntity = this.game.createEntity(createCloudsDome(entity))
+    this.gizmoEntity = this.game.createEntity(createGizmoGrid(entity, this.renderer.device))
 
-    for (let i = 0; i < set.items.length; i++) {
-      const item = set.items[i]
-      const x = ((i % columns) - (columns - 1) / 2) * cellX
-      const y = (Math.floor(i / columns) - (rows - 1) / 2) * cellY
-      let materials: Material[] = []
-      if (item.material) {
-        materials = await this.loadMaterialFile(item.material, loadSignal).catch((err) => {
-          console.warn(...this.logTag, 'showcase material failed', item.material, err)
-          return []
-        })
-        if (item.index != null) {
-          materials = materials.slice(item.index, item.index + 1)
-        }
-      }
+    const device = this.renderer.device
+    const [allMaterials, [baseMaterial], [coreMaterial]] = await Promise.all([
+      this.loadMaterialFile(assetUrl, loadSignal),
+      this.loadMaterialFile(SHADER_BALL_BASE_MATERIAL, loadSignal),
+      this.loadMaterialFile(SHADER_BALL_CORE_MATERIAL, loadSignal),
+    ])
+    const ball = await loadShaderBallGeometries(device)
+    loadSignal.throwIfAborted()
+    // NoDraw sub materials (collision) are not drawn, there is nothing to show
+    const materials = allMaterials.filter((it) => !it.noRender)
 
-      // the stage, and the material on the shader ball primitives (cycling through the sub materials)
-      const meshOptions: MeshOptions = { materials: [stageMaterial, ...materials], partImports: [] }
-      for (const geometry of createStageGeometries(device)) {
-        meshOptions.partImports.push({ geometry, materialIndex: 0 })
-      }
-      if (item.water) {
-        // the water surface crosses the shader ball in the stage material
-        for (const geometry of createShaderBallGeometries(device).slice(0, 3)) {
-          meshOptions.partImports.push({ geometry, materialIndex: 0 })
-        }
-      } else if (materials.length) {
-        // with a model, the model takes the place of the sphere and the sheet
-        const balls = createShaderBallGeometries(device).filter((_, k) => !item.model || k === 1 || k === 2)
-        balls.forEach((geometry, k) => {
-          meshOptions.partImports.push({ geometry, materialIndex: 1 + (k % materials.length) })
-        })
-      }
-      const cellWorld = mat4CreateTranslation(vec3(x, y, SHOWCASE_ALTITUDE))
-      if (item.water && materials.length) {
-        const builder = buildWaterVolumeMesh(SHOWCASE_WATER_SHAPE, cellWorld, {
-          uScale: 1,
-          vScale: 1,
-          fogColor: [0.05, 0.12, 0.12],
-          fogDensity: 0.8,
-          fogAffectedBySun: true,
-        })
-        if (builder) {
-          // the surface is built in world space
-          this.game.createEntity({
-            name: `${item.label} (water surface)`,
-            parent: this.entity,
-            transform: new TransformComponent({ keepWorld: true, world: mat4Identity() }),
-            components: [
-              new BoundsComponent(),
-              new ModelComponent({
-                model: new Model(device, {
-                  meshes: [
-                    new Mesh(device, {
-                      materials: [materials[0]],
-                      partImports: [
-                        { geometry: builder.buildGeometry(device, { name: 'WaterVolume' }), materialIndex: 0 },
-                      ],
-                    }),
-                  ],
-                }),
-              }),
-            ],
-          })
-        }
-      }
-      const cell = this.game.createEntity({
-        name: item.label,
-        parent: this.entity,
-        transform: new TransformComponent({ keepWorld: true, world: cellWorld }),
+    // one shader ball per sub material, rows of up to SHADER_BALL_COLUMNS along +X, further rows behind (+Y)
+    const columns = Math.min(SHADER_BALL_COLUMNS, Math.max(1, materials.length))
+    const rows = Math.ceil(materials.length / columns)
+    const spacing = SHADER_BALL_SIZE.width + SHADER_BALL_GAP
+    materials.forEach((material, i) => {
+      const x = ((i % columns) - (columns - 1) / 2) * spacing
+      const y = Math.floor(i / columns) * spacing
+      this.game.createEntity({
+        name: `Shader ball ${i}: ${material.name}`,
+        parent: entity,
+        transform: new TransformComponent({ keepWorld: true, world: mat4CreateTranslation(vec3(x, y, 0)) }),
         components: [
           new BoundsComponent(),
-          new ModelComponent({ model: new Model(device, { meshes: [new Mesh(device, meshOptions)] }) }),
+          new ModelComponent({
+            model: new Model(device, {
+              meshes: [
+                new Mesh(device, {
+                  materials: [baseMaterial, material, coreMaterial],
+                  partImports: [
+                    { geometry: ball.base, materialIndex: 0 },
+                    { geometry: ball.shell, materialIndex: 1 },
+                    { geometry: ball.core, materialIndex: 2 },
+                  ],
+                }),
+              ],
+            }),
+          }),
         ],
       })
-      if (item.model) {
-        this.game.createEntity({
-          name: item.model,
-          parent: cell,
-          transform: new TransformComponent({ local: mat4CreateTranslation(vec3(-0.6, 0.2, 0)) }),
-          components: [new MeshLoaderComponent({ type: 'Mesh', mesh: item.model, alwaysRender: true })],
-        })
-      }
-    }
-  }
-
-  /**
-   * Common setup of the showcase scenes: waits for the engine assets and applies the time of day of a level
-   */
-  private async beginShowcase(signal: AbortSignal, options?: { time?: number; timeOfDayLevel?: string }) {
-    // the viewer restores the camera from the url once the engine assets are loaded, set it up afterwards
-    await this.content.whenLoaded
-    signal.throwIfAborted()
-
-    // lighting, fog and sky of a level, the defaults are fogged in
-    const todLevel = options?.timeOfDayLevel ?? 'newworld_vitaeeterna'
-    const levelInfo = await fetchTypedRequest(this.content.nwbtUrl, getLevelInfoUrl(todLevel))
-    signal.throwIfAborted()
-    await this.timeOfDay.setLevelInfo(levelInfo, {
-      content: this.content,
-      scope: this.content.scopeOf(this.entity),
-      signal,
     })
-    if (options?.time != null) {
-      this.timeOfDay.time = options.time
-    }
-    this.oceanLevel = -1000
+
+    this.materialNames = materials.map((it) => it.name)
   }
 
   /**
-   * Orbit camera looking down onto a showcase around the center
+   * The sub materials shown by {@link loadMaterial}, in the order of the shader balls
    */
-  private orbitShowcase(x: number, y: number, radius: number) {
-    const camera = this.game.scene.getView(0).camera as CameraComponent
-    const wasd = camera.entity.component(WASDComponent)
-    wasd.orbitMode = true
-    wasd.radiusMax = 1000
-    wasd.targetRadius = radius
-    wasd.orbitCenter.x = x
-    wasd.orbitCenter.y = y
-    wasd.orbitCenter.z = SHOWCASE_ALTITUDE + 1.5
-    // negative is down
-    wasd.setRotation(0, -25 * DEGREE_TO_RAD)
+  public materialNames: string[] = []
+
+  /**
+   * Points the orbit camera at the shader ball of a sub material, null frames all of them
+   */
+  public frameMaterial(index: number | null) {
+    if (index == null) {
+      this.frameModel()
+      return
+    }
+    const ball = this.entity
+      ?.getTransform()
+      .children.find((it) => it.entity.name?.startsWith(`Shader ball ${index}:`))?.entity
+    const bounds = ball?.component(BoundsComponent, GetComponent.Optional)?.world?.sphere
+    if (!bounds || !this.camera) {
+      return
+    }
+    const wasd = this.camera.entity.component(WASDComponent)
+    vec3Copy(bounds.center, wasd.orbitCenter)
+    wasd.targetRadius = bounds.radius * 2.5
   }
 
   /**
@@ -608,6 +478,14 @@ export class LevelSystem extends GameSystem {
     return result
   }
 
+  /**
+   * Cancels a running load and unloads the level, model or preview, e.g. while the engine shows a preview of the
+   * browser
+   */
+  public clear() {
+    this.loadCancel()
+  }
+
   private loadCtrl: AbortController
   private beginLoad() {
     this.loadCancel()
@@ -625,6 +503,9 @@ export class LevelSystem extends GameSystem {
 
   private unload() {
     this.levelInfo = null
+    this.materialNames = []
+    // loaded into the scope of the level, it is finalized with it
+    this.timeOfDay.moonTexture = null
     this.content.slices.remove(this)
     this.skyEntity = null
     this.gizmoEntity = null
@@ -635,6 +516,110 @@ export class LevelSystem extends GameSystem {
       this.entity.setParent(null)
       this.entity = null
     }
+  }
+
+  /**
+   * Points the orbit camera at the loaded content again (a model, the models of a slice), e.g. after the user moved
+   * away. The bounds of every model below the content count, the sky, the clouds and the grid do not.
+   *
+   * @returns whether a model was found to frame
+   */
+  public frameModel(): boolean {
+    if (!this.entity || !this.camera) {
+      return false
+    }
+    const skip = new Set([this.skyEntity, this.cloudsEntity, this.gizmoEntity])
+    const sphere = BoundingSphere.create()
+    const visit = (entity: GameEntity) => {
+      if (skip.has(entity)) {
+        return
+      }
+      // static models of slices are drawn by the culling worker (CulledModelComponent), the others directly
+      if (
+        entity.component(ModelComponent, GetComponent.Optional) ||
+        entity.component(CulledModelComponent, GetComponent.Optional)
+      ) {
+        const bounds = entity.component(BoundsComponent, GetComponent.Optional)
+        if (bounds?.world?.sphere) {
+          sphere.mergeSphere(bounds.world.sphere)
+        }
+      }
+      for (const child of entity.getTransform().children) {
+        visit(child.entity)
+      }
+    }
+    visit(this.entity)
+    if (sphere.isEmpty) {
+      return false
+    }
+    const wasd = this.camera.entity.component(WASDComponent)
+    vec3Copy(sphere.center, wasd.orbitCenter)
+    wasd.targetRadius = sphere.radius * 2
+    return true
+  }
+
+  /**
+   * Shows a slice of the browser at the origin: the slice and the slices it spawns (`slices`, keyed like the level's
+   * slice data), with the sky, the grid and the orbit camera. Frame it with {@link frameModel} once models loaded.
+   *
+   * @param root - key of the slice in `slices`, `guid_subId`
+   */
+  public loadSlicePreview(root: string, slices: Record<string, ViewerSlice>, name: string) {
+    this.loadCancel()
+    this.beginLoad()
+
+    const camera = this.game.scene.getView(0).camera as CameraComponent
+    const wasd = camera.entity.component(WASDComponent)
+    wasd.orbitMode = true
+    wasd.radiusMax = 2000
+    wasd.targetRadius = 20
+    wasd.orbitCenter.x = 0
+    wasd.orbitCenter.y = 0
+    wasd.orbitCenter.z = 2
+    wasd.setRotation(0, -20 * DEGREE_TO_RAD)
+
+    this.entity = this.game.createEntity({
+      name: `Slice: ${name}`,
+      parent: this.game.scene.entity,
+      transform: new TransformComponent({ keepWorld: true, world: mat4Identity() }),
+    })
+    // removed again on unload
+    this.content.slices.add(this, slices)
+    const separator = root.lastIndexOf('_')
+    const spawner = this.game.createEntity({
+      name,
+      parent: this.entity,
+      transform: new TransformComponent({
+        keepWorld: true,
+        world: mat4Identity(),
+        // initialized and activated by the SliceSystem
+        lifeCycle: LifeCycleFlags.PropagateOnly,
+      }),
+      components: [
+        new BoundsComponent(),
+        new SliceSpawnerComponent({
+          slice: { guid: root.slice(0, separator), subId: Number(root.slice(separator + 1)), hint: name },
+        }),
+      ],
+    })
+    this.game.world.getSystem(SliceSystem).addPreviewSpawner(spawner.component(SliceSpawnerComponent))
+    this.skyEntity = this.game.createEntity(createSkySphere(this.entity, this.renderer.device))
+    this.cloudsEntity = this.game.createEntity(createCloudsDome(this.entity))
+    this.gizmoEntity = this.game.createEntity(createGizmoGrid(this.entity, this.renderer.device))
+  }
+
+  /**
+   * The models of the loaded model (one per instance), to inspect or force their levels of detail
+   */
+  public modelComponents(): ModelComponent[] {
+    const result: ModelComponent[] = []
+    for (const child of this.entity?.getTransform().children ?? []) {
+      const model = child.entity.component(ModelComponent, GetComponent.Optional)
+      if (model) {
+        result.push(model)
+      }
+    }
+    return result
   }
 
   private handleModelLoadeed(entity: GameEntity, wasd: WASDComponent) {
@@ -688,10 +673,21 @@ function createGizmoGrid(parent: GameEntity, device: Device): CreateEntityOption
 }
 
 /**
- * Height of the showcase scenes. The height fog of the open world time of day is dense at sea level,
- * the terrain of the levels is mostly above 100m.
+ * The material preview: game reference materials for the parts of the shader ball that do not show the material.
+ * The balls stand on the grid in rows of up to SHADER_BALL_COLUMNS, SHADER_BALL_GAP meters apart.
  */
-const SHOWCASE_ALTITUDE = 200
+const SHADER_BALL_BASE_MATERIAL = 'materials/references/base_colors/grey_01.mtl'
+const SHADER_BALL_CORE_MATERIAL = 'materials/references/base_colors/black_01.mtl'
+const SHADER_BALL_COLUMNS = 5
+const SHADER_BALL_GAP = 0.8
+
+/**
+ * The particle preview of the browser: orbit distance and height of the camera target, and the restart interval of
+ * one shot effects in seconds
+ */
+const PARTICLE_PREVIEW_RADIUS = 8
+const PARTICLE_PREVIEW_HEIGHT = 1.5
+const PARTICLE_PREVIEW_LOOP = 3
 
 /**
  * Cloud layer of the sky.
@@ -757,6 +753,34 @@ function createSkyboxSystem(parent: GameEntity, slice: ViewerSlice | null | unde
  * Environment probes of mission0.entities_xml. Every level has its global probe here, slices do not reference it.
  * The other mission entities (e.g. lights) are not spawned.
  */
+/**
+ * The slice of the mission's own entities, see {@link createMissionSlice}. Not a catalog asset: the key only joins
+ * the spawner and the slice in the slice library.
+ */
+const MISSION_SLICE_REF = { guid: 'mission', subId: 0 }
+const MISSION_SLICE_KEY = assetReferenceKey(MISSION_SLICE_REF)
+
+/**
+ * The entities of the level's mission (`mission0.entities_xml`) as a slice in world space, without the global
+ * probes ({@link createMissionProbes} creates them). Most levels only have the probes there, a main menu has its whole
+ * set (Nighthaven: 6,464 meshes). Null when nothing is left. The spawn radius is unbounded: the entities stream by
+ * their own view distances.
+ */
+function createMissionSlice(entities: ViewerEntity[] | null | undefined): ViewerSlice | null {
+  const rest = (entities ?? []).filter(
+    (item) => !item.components.some((it) => isViewerLightComponent(it) && it.light.type === 'Probe'),
+  )
+  if (!rest.length) {
+    return null
+  }
+  return { entities: rest, spawnRadius: MISSION_SPAWN_RADIUS, isStaticSlice: true }
+}
+
+/**
+ * Covers every level (the open world is about 14 km wide). Finite: the radius is also the spawner's bounding sphere.
+ */
+const MISSION_SPAWN_RADIUS = 100_000
+
 function createMissionProbes(parent: GameEntity, entities: ViewerEntity[] | null | undefined): CreateEntityOptions[] {
   const result: CreateEntityOptions[] = []
   for (const item of entities ?? []) {

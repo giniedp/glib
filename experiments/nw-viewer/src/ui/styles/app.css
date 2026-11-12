@@ -1,0 +1,44 @@
+/* The app shell: the root of each tool, see ui/app/App.tsx */
+
+/* fills the page; the engine canvas is placed in it (positioned, may be larger than the page) */
+.nw-tool {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* shows the engine canvas (ui/app/EngineSurface.tsx); the canvas is positioned inside it and may be larger */
+.nw-engine-surface {
+  position: relative;
+  overflow: hidden;
+}
+
+/* the bar at the top of every tool (ui/app/AppBar.tsx): the tool switch, then the items of the tool */
+.nw-app-bar {
+  flex: none;
+  padding: 0.125rem;
+}
+/* icons are sized by the font, not by the row height */
+.nw-app-bar .twk-icon {
+  width: var(--nw-icon-size);
+  height: var(--nw-icon-size);
+}
+/*
+ * above the engine canvas: it takes the input the overlay lets through to the canvas. It looks the
+ * same as in the other tools (opaque): over the bright canvas a translucent bar took the color of
+ * the buttons and the tool switch disappeared.
+ */
+.nw-app-bar-overlay {
+  pointer-events: all;
+}
+/* the tool switch is the first item and set apart from the items of the tool */
+.nw-tool-switch {
+  margin-right: 0.5rem;
+}
+
+/* a tool that is an opaque page instead of an overlay above the canvas, e.g. the browser */
+.tweak-ui.nw-tool-page {
+  --twk-width: 100%;
+  border-radius: 0;
+}

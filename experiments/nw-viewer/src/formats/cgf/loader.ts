@@ -66,7 +66,8 @@ export function registerCgf(content: ContentLoader) {
  * Loads `.cgf` files together with their `.cgfheap`
  */
 export class CgfLoader implements AssetLoader {
-  public static extensions = ['.cgf']
+  // `.skin` is the same chunk file format
+  public static extensions = ['.cgf', '.skin']
   public static mimeTypes: string[] = []
   public static create = () => new CgfLoader()
   public static register(registry = ContentLoader.loaders) {

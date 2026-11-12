@@ -13,7 +13,7 @@ import {
 } from '@gglib/components'
 import { ContentLoader } from '@gglib/content'
 import { type GameEntity } from '@gglib/ecs'
-import { MouseListener } from '@gglib/game'
+import { GameLoop, MouseListener } from '@gglib/game'
 import { Color, type DeviceStats } from '@gglib/graphics'
 import { DDS, HDR } from '@gglib/loaders'
 import {
@@ -21,19 +21,24 @@ import {
   mat4,
   mat4$initScaleUniform,
   mat4$premultiply,
+  mat4CreateFromArray,
   mat4CreateFromRTS,
   mat4GetTranslation,
   RAD_TO_DEGREE,
   SpaceBasis,
   vec3,
   vec3Add,
+  vec3ApplyMat4Rotation,
+  vec3Dot,
   vec3MultiplyScalar,
+  vec3Normalize,
   vec3Subtract,
   vec4,
+  type Mat4,
 } from '@gglib/math'
-import { FxaaPass, Renderer, type RendererStats } from '@gglib/render'
+import { FxaaPass, RenderChannel, Renderer, RenderPipeline, type RendererStats, type RenderView } from '@gglib/render'
 import { brand, lfmt, type EventType } from '@gglib/utils'
-import { getLevelListUrl } from './api'
+import { isViewerCameraComponent, type LevelInfo, type ViewerSlice } from './api'
 import { AudioSystem } from './audio/AudioSystem'
 import { ViewerConfig } from './config'
 import { REGION_SIZE } from './constants'
@@ -69,30 +74,28 @@ import { SmaaPass } from './graphics/passes/smaa/SmaaPass'
 import { FroxelFogPass } from './graphics/passes/fog/FroxelFogPass'
 import { Cmaa2Pass } from './graphics/passes/cmaa2/Cmaa2Pass'
 import { UpscalePass } from './graphics/passes/upscale/UpscalePass'
+import { TexturePreview, type TexturePreviewOptions } from './graphics/passes/texture/TexturePreview'
+import { TexturePreviewPass } from './graphics/passes/texture/TexturePreviewPass'
 import { RenderSizeSystem } from './graphics/RenderSizeSystem'
 import { InputSlots, MaterialLayerMasks } from './material'
-import { createSceneOptions, VIEWER_MODE_PARAMS, type SceneOptions } from './scenes'
-import { attachOverlay } from './ui/overlay'
 
 export interface NwViewerOptions {
-  element: HTMLDivElement
+  /**
+   * The canvas to render into. It must be in the document before {@link NwViewer.run}: its parent is
+   * observed for the render size.
+   */
   canvas: HTMLCanvasElement
-}
-
-export interface LevelLoadOption {
-  value: string
-  label: string
-  isOpenWorld: boolean
-  category: string
 }
 
 export class NwViewer extends EcsGame {
   public static readonly onRaySelection = brand<EventType<GameEntity>>(Symbol('raySelection'))
-  public static readonly onLevelOptionsLoaded = brand<EventType<NwViewer>>(Symbol('levelOptions'))
   public static readonly onModeChanged = brand<EventType<NwViewer>>(Symbol('mode'))
 
   public camera: CameraComponent
-  public mode?: 'level' | 'model' | 'image' | 'material' | 'slice' | 'particles' | 'materials' = null
+  /**
+   * What the engine shows. `texture` is a texture preview of the browser, see {@link NwViewer.showTexture}
+   */
+  public mode?: 'level' | 'model' | 'material' | 'slice' | 'particles' | 'texture' = null
 
   public deviceStats: DeviceStats
   public schedulerStats: SchedulerStats
@@ -104,16 +107,10 @@ export class NwViewer extends EcsGame {
    */
   public luminance: LuminancePass | null = null
   public levelSelection: string
-  public levelOptions: Record<string, LevelLoadOption[]> = {}
-  /**
-   * Preview scenes without a level, the particles and materials tabs of the scenes dialog
-   */
-  public sceneOptions: SceneOptions = createSceneOptions()
 
   public logTag = lfmt.badge('#4E79A7', 'NwViewer')
 
   public onRaySelection = this.events.channel(NwViewer.onRaySelection)
-  public onLevelOptionsLoaded = this.events.channel(NwViewer.onLevelOptionsLoaded)
   /**
    * Emitted when a level, model or preview scene was opened, see {@link NwViewer.mode}
    */
@@ -122,7 +119,6 @@ export class NwViewer extends EcsGame {
   public selection: GameEntity
 
   public debug: number = 0
-  private element: HTMLElement
   public constructor(options: NwViewerOptions) {
     super({
       canvas: options.canvas,
@@ -143,7 +139,6 @@ export class NwViewer extends EcsGame {
       // the render size is set by the RenderSizeSystem, from the config
       autosize: false,
     })
-    this.element = options.element
   }
 
   /**
@@ -256,7 +251,6 @@ export class NwViewer extends EcsGame {
         pipeline,
       }),
     )
-    attachOverlay(this.element, this)
   }
 
   protected override onInitialize(): void {
@@ -338,8 +332,7 @@ export class NwViewer extends EcsGame {
     }
     this.world.getSystem(ContentService).whenLoaded.then(() => {
       this.scene.entity.activate()
-      this.loadLevelLoadOptions()
-      this.attachRoutes()
+      this.teleportFromUrl()
     })
   }
 
@@ -351,8 +344,215 @@ export class NwViewer extends EcsGame {
     this.world.getSystem(Renderer).inputs.set(InputSlots.Global.Debug, this.debug)
   }
 
+  /**
+   * The texture view: one pass, no scene. Created with the first texture preview.
+   */
+  private textureView: RenderView | null = null
+  private texturePass: TexturePreviewPass | null = null
+
+  /**
+   * The texture preview shown instead of the scene, see {@link NwViewer.showTexture}
+   */
+  public get texturePreview(): TexturePreview | null {
+    return this.texturePass?.preview ?? null
+  }
+
+  /**
+   * Uploads a texture for {@link NwViewer.showTexture}. The caller owns it and disposes it.
+   */
+  public createTexturePreview(options: TexturePreviewOptions): TexturePreview {
+    return new TexturePreview(this.device, options)
+  }
+
+  /**
+   * Shows a texture preview instead of the scene, or the scene again with null.
+   *
+   * @remarks
+   * The engine shows one content at a time: showing a texture unloads the level (or model). The viewer
+   * opens it again from its url when it is shown again (see ViewerTool).
+   */
+  public showTexture(preview: TexturePreview | null) {
+    if (!preview) {
+      if (this.texturePass) {
+        this.texturePass.preview = null
+      }
+      if (this.mode === 'texture') {
+        this.mode = null
+        this.onModeChanged.emit(this)
+      }
+      return
+    }
+    this.previewing = true
+    this.previewKey = null
+    if (this.mode !== 'texture') {
+      this.world.getSystem(LevelSystem).clear()
+      this.levelSelection = null
+      this.mode = 'texture'
+      this.onModeChanged.emit(this)
+    }
+    if (!this.texturePass) {
+      const renderer = this.world.getSystem(Renderer)
+      this.texturePass = new TexturePreviewPass(this.device)
+      this.textureView = renderer.createView({
+        name: 'Texture Preview',
+        present: RenderChannel.Color,
+        pipeline: new RenderPipeline({ name: 'Texture Preview', passes: [this.texturePass] }),
+        // no scene: the camera only satisfies the renderer
+        camera: this.camera,
+      })
+    }
+    this.texturePass.preview = preview
+  }
+
+  /**
+   * The engine shows content of the browser (a texture or a model preview), not what the viewer opened. The viewer
+   * opens its level again from the url, see {@link NwViewer.endPreview}.
+   */
+  public previewing = false
+
+  /**
+   * What the scene preview of the browser shows: `model:<path>`, `material:<path>`, `particles:<library>|<effect>`
+   * or `slice:<path>`, null for none (or a texture preview)
+   */
+  public previewKey: string | null = null
+
+  /**
+   * Shows content of the browser in the scene: the level (or other content) is unloaded first. Showing the same
+   * content again keeps it and the camera as they are.
+   */
+  private showScenePreview(key: string, mode: NwViewer['mode'], load: () => void) {
+    this.showTexture(null)
+    if (this.previewing && this.previewKey === key) {
+      return
+    }
+    this.previewing = true
+    this.previewKey = key
+    this.levelSelection = null
+    load()
+    this.mode = mode
+    this.onModeChanged.emit(this)
+  }
+
+  /**
+   * Shows a model (`.cgf`, `.skin`) of the browser, the camera orbits it
+   */
+  public showModel(path: string) {
+    this.showScenePreview(`model:${path}`, 'model', () => this.loadModel(path))
+  }
+
+  /**
+   * Shows the sub materials of a `.mtl` of the browser on a cylinder, a box and a sphere each
+   */
+  public showMaterial(path: string) {
+    this.showScenePreview(`material:${path}`, 'material', () => this.loadMaterial(path))
+  }
+
+  /**
+   * The sub materials shown by {@link NwViewer.showMaterial}, in the order of their shader balls. Empty while loading.
+   */
+  public previewMaterialNames(): string[] {
+    return this.previewKey?.startsWith('material:') ? this.world.getSystem(LevelSystem).materialNames : []
+  }
+
+  /**
+   * Points the orbit camera at the shader ball of a sub material, null frames all of them
+   */
+  public framePreviewMaterial(index: number | null) {
+    this.world.getSystem(LevelSystem).frameMaterial(index)
+  }
+
+  /**
+   * Shows one particle effect of a library of the browser
+   */
+  public showParticleEffect(library: string, effect: string) {
+    this.showScenePreview(`particles:${library}|${effect}`, 'particles', () =>
+      this.world.getSystem(LevelSystem).loadParticleEffect(library, effect),
+    )
+  }
+
+  /**
+   * Shows a slice of the browser at the origin: `slices` holds the slice (`root`) and every slice it spawns
+   */
+  public showSlice(path: string, root: string, slices: Record<string, ViewerSlice>) {
+    this.showScenePreview(`slice:${path}`, 'slice', () =>
+      this.world.getSystem(LevelSystem).loadSlicePreview(root, slices, path.split('/').pop() ?? path),
+    )
+  }
+
+  /**
+   * The particle effect shown by {@link NwViewer.showParticleEffect}: emitters and live particles, null if none
+   */
+  public particlePreviewStats(): { state: string; emitters: number; particles: number } | null {
+    const particles = this.world.getSystem(LevelSystem).particlePreview()
+    return particles ? { state: particles.state, emitters: particles.emitterCount, particles: particles.particleCount } : null
+  }
+
+  /**
+   * Ends the preview of the browser: the engine shows the scene again, empty until the viewer opens its content
+   */
+  public endPreview() {
+    this.showTexture(null)
+    this.previewing = false
+    this.previewKey = null
+    this.world.getSystem(LevelSystem).clear()
+    this.camera.entity.component(WASDComponent).orbitMode = false
+    this.mode = null
+  }
+
+  /**
+   * The levels of detail of the shown model: the highest one that may exist (0 without levels) and the one rendered
+   * (of the first instance)
+   */
+  public previewModelLod(): { maxLevel: number; rendered: number; forced: number | null } {
+    const models = this.world.getSystem(LevelSystem).modelComponents()
+    const first = models.find((it) => it.model?.lod) ?? models[0]
+    return {
+      maxLevel: first?.model?.lod?.maxLevel ?? 0,
+      rendered: first?.lodRendered ?? 0,
+      forced: first?.model?.lod?.forcedLevel ?? null,
+    }
+  }
+
+  /**
+   * Shows a level of detail of the shown model regardless of the distance, null selects by distance again
+   */
+  public forcePreviewModelLod(level: number | null) {
+    for (const it of this.world.getSystem(LevelSystem).modelComponents()) {
+      if (it.model?.lod) {
+        it.model.lod.forcedLevel = level
+      }
+    }
+  }
+
+  /**
+   * Points the orbit camera at the shown model (or the models of a shown slice) again
+   *
+   * @returns whether there was a model to frame
+   */
+  public framePreviewModel(): boolean {
+    return this.world.getSystem(LevelSystem).frameModel()
+  }
+
+  /**
+   * The scene, or the texture view while a texture preview is shown
+   */
+  protected override onDraw(time: number, dt: number): void {
+    if (!this.texturePass?.preview) {
+      super.onDraw(time, dt)
+      return
+    }
+    this.world.render(time, dt)
+    const renderer = this.world.getSystem(Renderer)
+    renderer.update(this.renderClock?.total ?? time, this.renderClock?.delta ?? dt)
+    renderer.renderView(this.textureView)
+  }
+
   override onEndDraw(time: number, dt: number): void {
-    super.onEndDraw(time, dt)
+    if (this.texturePass?.preview) {
+      this.world.getSystem(Renderer).present([this.textureView])
+    } else {
+      super.onEndDraw(time, dt)
+    }
     this.deviceStats = this.device.stats(this.deviceStats)
     this.schedulerStats = this.scheduler.instance.getStats(this.schedulerStats)
     this.sceneStats = this.scene.stats(this.sceneStats)
@@ -412,6 +612,35 @@ export class NwViewer extends EcsGame {
     this.stop()
   }
 
+  /**
+   * Stops rendering, updates and sound, e.g. while no tool shows the canvas. {@link NwViewer.resume}
+   * continues, the clocks skip the time in between.
+   */
+  public suspend() {
+    this.stop()
+    this.world.getSystem(AudioSystem, { optional: true })?.suspend()
+  }
+
+  /**
+   * Continues after {@link NwViewer.suspend}. Only call it once the engine runs ({@link NwViewer.run}
+   * resolved), before that the boot starts the loop.
+   */
+  public resume() {
+    this.world.getSystem(GameLoop).run()
+    this.world.getSystem(AudioSystem, { optional: true })?.resume()
+  }
+
+  /**
+   * Moves the canvas into a container, the render size follows that container from then on
+   */
+  public placeCanvas(container: HTMLElement) {
+    const canvas = this.device.canvas as HTMLCanvasElement
+    if (canvas.parentElement !== container) {
+      container.prepend(canvas)
+    }
+    this.world.getSystem(RenderSizeSystem, { optional: true })?.observeContainer()
+  }
+
   private updateSelection(selection: RaySelection) {
     const shape = this.selection.component(DebugShapeComponent).entries[0]
     if (!selection) {
@@ -434,12 +663,46 @@ export class NwViewer extends EcsGame {
     this.onRaySelection.emit(selection.entity)
   }
 
-  public async loadLevel(name: string) {
+  /**
+   * Opens a level: the coatlicue `name`, with the mission of the level folder `options.mission` when it differs from
+   * the coatlicue (main menus). With `levelCamera`, the camera starts at the level's own camera placement once the
+   * level info is loaded (see {@link findLevelCamera}), e.g. when the url names no position.
+   */
+  public async loadLevel(name: string, options?: { mission?: string | null; levelCamera?: boolean }) {
     this.mode = 'level'
     this.levelSelection = name
     await this.world.getSystem(ContentService).whenLoaded
-    this.world.getSystem(LevelSystem).loadLevel(name)
+    const level = this.world.getSystem(LevelSystem)
+    const loading = level.loadLevel(name, options?.mission)
     this.onModeChanged.emit(this)
+    if (!options?.levelCamera) {
+      return
+    }
+    try {
+      await loading
+    } catch {
+      // cancelled by another load, or failed: nothing to place
+      return
+    }
+    const camera = level.levelInfo?.name === name ? findLevelCamera(level.levelInfo) : null
+    if (camera) {
+      this.placeCamera(camera)
+    }
+  }
+
+  /**
+   * Moves the camera to a camera placement of a level, looking where the placement looks
+   */
+  public placeCamera(world: Mat4) {
+    const space = this.world.getSystem(SpaceBasis)
+    const position = mat4GetTranslation(world, vec3())
+    const look = vec3Normalize(vec3ApplyMat4Rotation(space.forward, world, vec3()))
+    // the inverse of WASDComponent.setRotation: rotation about up by the heading, then about right by the pitch
+    const pitch = Math.asin(Math.max(-1, Math.min(1, vec3Dot(look, space.up))))
+    const heading = Math.atan2(-vec3Dot(look, space.right), vec3Dot(look, space.forward))
+    this.teleport(position.x, position.y, position.z, heading)
+    this.camera.entity.component(WASDComponent).setRotation(heading, pitch)
+    this.cameraPlaced = true
   }
 
   public teleport(x: number, y: number, z: number, rot: number = 0) {
@@ -453,76 +716,10 @@ export class NwViewer extends EcsGame {
     this.camera.updateBehavior()
   }
 
-  private async loadLevelLoadOptions() {
-    const levels = await this.world.getSystem(ContentService).fetchTypedRequest(getLevelListUrl())
-    const params = new URLSearchParams()
-    const options: Record<string, LevelLoadOption[]> = {}
-
-    const openWorld = 'newworld_vitaeeterna'
-    function categorize(nameOrId: string, subName?: string) {
-      let result = nameOrId.match(/_(arena|battleroyale|ctf|dungeon|opr|raid|trial|quest)/)?.[1]
-      result ||= nameOrId.match(/^(arena|battleroyale|dungeon|capturetheflag|outpostrush|raid|trial|quest)/i)?.[1]
-      result ||= subName?.match(/(ctf)/i)?.[1]
-      result ||= 'other'
-      result = result.toLowerCase()
-      if (result === 'capturetheflag') {
-        result = 'ctf'
-      }
-      if (result === 'outpostrush') {
-        result = 'opr'
-      }
-      return result
-    }
-
-    for (const level of levels.coatlicues) {
-      if (!!level.maps.length) {
-        continue
-      }
-
-      params.set('level', level.name)
-      params.set('x', '1024')
-      params.set('y', '1024')
-      params.set('z', '256')
-      params.set('w', '0')
-      const category = categorize(level.name)
-      options[category] ||= []
-      options[category].push({
-        value: params.toString(),
-        label: level.name,
-        isOpenWorld: level.level === openWorld,
-        category,
-      })
-    }
-
-    for (const level of levels.coatlicues) {
-      if (!level.maps.length) {
-        continue
-      }
-      for (const map of level.maps) {
-        const position = (map.teamTeleportData.split('+')[0] || '1024,1024,256,0').split(',').map(Number)
-        params.set('level', level.name)
-        params.set('x', String(position[0] || 0))
-        params.set('y', String(position[1] || 0))
-        params.set('z', String(position[2] || 0))
-        params.set('w', String(position[3] || 0))
-        const category = categorize(map.gameModeMapId, level.name)
-        options[category] ||= []
-        options[category].push({
-          value: params.toString(),
-          label: map.gameModeMapId,
-          isOpenWorld: level.level === openWorld,
-          category: category,
-        })
-      }
-    }
-
-    this.levelOptions = options
-    console.log(...this.logTag, 'Loaded level options', this.levelOptions)
-    this.onLevelOptionsLoaded.emit(this)
-  }
-
-  private attachRoutes() {
-    const camera = this.camera
+  /**
+   * Moves the camera to the position of the url parameters `x`, `y`, `z` and the heading `w` (degrees)
+   */
+  public teleportFromUrl() {
     const params = new URL(window.location.href).searchParams
     this.teleport(
       Number(params.get('x') ?? 1024) || 0,
@@ -530,33 +727,31 @@ export class NwViewer extends EcsGame {
       Number(params.get('z') ?? 256) || 0,
       (Number(params.get('w') ?? 0) || 0) * DEGREE_TO_RAD,
     )
-
-    setInterval(() => {
-      const t = mat4GetTranslation(camera.world, vec3.$0)
-      const r = camera.entity.component(WASDComponent).getRotationHorizontal()
-      const params = new URLSearchParams(window.location.search)
-      params.set('x', t.x.toFixed(1))
-      params.set('y', t.y.toFixed(1))
-      params.set('z', t.z.toFixed(1))
-      params.set('w', (r * RAD_TO_DEGREE).toFixed(1))
-      const query = params.toString()
-      window.history.replaceState({}, '', window.location.pathname + '?' + query)
-    }, 1000)
+    this.cameraPlaced = true
   }
 
   /**
-   * Opens a level or preview scene by its url parameters, replacing the parameters of the current one
+   * Whether the camera was placed from the url parameters, before that its position is the default
    */
-  public onLevelSelected(value: string) {
-    const url = new URL(window.location.href)
-    for (const key of VIEWER_MODE_PARAMS) {
-      url.searchParams.delete(key)
+  private cameraPlaced = false
+
+  /**
+   * Writes the camera position (`x`, `y`, `z`) and heading (`w`, degrees) into url parameters,
+   * the inverse of the parameters read at start. Returns false, and writes nothing, until the camera
+   * was placed from the url.
+   */
+  public writeCameraParams(params: URLSearchParams): boolean {
+    if (!this.cameraPlaced) {
+      return false
     }
-    const params = new URLSearchParams(value)
-    params.forEach((value, key) => {
-      url.searchParams.set(key, value)
-    })
-    window.location.href = url.toString()
+    const camera = this.camera
+    const t = mat4GetTranslation(camera.world, vec3.$0)
+    const r = camera.entity.component(WASDComponent).getRotationHorizontal()
+    params.set('x', t.x.toFixed(1))
+    params.set('y', t.y.toFixed(1))
+    params.set('z', t.z.toFixed(1))
+    params.set('w', (r * RAD_TO_DEGREE).toFixed(1))
+    return true
   }
 
   public loadModel(model: string, material?: string, transform?: number[]) {
@@ -572,39 +767,27 @@ export class NwViewer extends EcsGame {
     this.teleport(0, 0, 0)
     this.onModeChanged.emit(this)
   }
-
-  /**
-   * Shows a material showcase set on shader stages, see LevelSystem.loadMaterials
-   */
-  public loadMaterials(set: string | null, options?: { time?: number }) {
-    this.mode = 'materials'
-    this.world.getSystem(LevelSystem).loadMaterials(set, options)
-    this.onModeChanged.emit(this)
-  }
-
-  /**
-   * Shows particle effects on a grid, see LevelSystem.loadParticles
-   */
-  public loadParticles(spec: string | null, filter?: string | null, options?: { spacing?: number; time?: number }) {
-    this.mode = 'particles'
-    this.world.getSystem(LevelSystem).loadParticles(spec, filter, options)
-    this.onModeChanged.emit(this)
-  }
-
-  public loadImage(image: string) {
-    this.mode = 'model'
-    this.onModeChanged.emit(this)
-  }
-
-  public loadSlice(slice: string) {
-    this.mode = 'model'
-    this.onModeChanged.emit(this)
-  }
 }
 
 /**
  * File name of a screenshot: level, position, size and time, e.g. `nw-viewer_newworld_vitaeeterna_5500_600_1920x1080_2026-10-11T12-00-00.png`
  */
+/**
+ * Mission cameras by role, the first found starts the view: the main menu's establishing shot, the menu camera of
+ * older menus, the vista of FTUE levels. Else the first camera of the mission.
+ */
+const LEVEL_CAMERA_NAMES = ['EstablishingCameraPlacement', 'MainCamera', 'VistaCamera']
+
+/**
+ * The camera a level starts with (see {@link LEVEL_CAMERA_NAMES}). Null without one. Returns the world matrix.
+ */
+export function findLevelCamera(info: LevelInfo): Mat4 | null {
+  const cameras = (info.missionEntities ?? []).filter((it) => it.components?.some(isViewerCameraComponent))
+  const named = LEVEL_CAMERA_NAMES.map((name) => cameras.find((it) => it.name === name)).find((it) => !!it)
+  const camera = named ?? cameras[0]
+  return camera?.transform ? mat4CreateFromArray(camera.transform) : null
+}
+
 function screenshotFileName(width: number, height: number) {
   const params = new URLSearchParams(location.search)
   const parts = ['nw-viewer']

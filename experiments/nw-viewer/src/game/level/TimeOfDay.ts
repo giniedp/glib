@@ -211,6 +211,8 @@ export class TimeOfDay {
     // #endregion
 
     // #region set moon
+    // the texture of the previous level went with its scope
+    this.moonTexture = null
     const moon = info.mission?.environment?.moon
     if (moon) {
       this.moonRotationLatitude = moon.latitude
@@ -226,8 +228,12 @@ export class TimeOfDay {
     // #endregion
   }
 
+  /**
+   * Sets the level's own time of day and drops the POI layers: they belong to the zones of the previous level
+   */
   public reset(data?: TimeOfDayData) {
     this.base = new TimeOfDayPreset(data)
+    this.poiLayers.length = 0
     this.time = 12
     this.timeStart = 0
     this.timeEnd = 24
@@ -376,6 +382,20 @@ export class TimeOfDay {
     const layer = this.poiLayers.find((it) => it.preset === preset)
     if (layer) {
       layer.blendTarget = 0
+    }
+  }
+
+  /**
+   * Blends out the layers whose zone is gone (its entity was deactivated or destroyed, e.g. a region or level unloaded
+   * while the camera was inside). Such a zone no longer reports the camera leaving it.
+   *
+   * @param present - the presets of the zones that still exist
+   */
+  public scheduleRemoveMissing(present: ReadonlySet<TimeOfDayPreset>) {
+    for (const layer of this.poiLayers) {
+      if (!present.has(layer.preset)) {
+        layer.blendTarget = 0
+      }
     }
   }
 

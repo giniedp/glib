@@ -211,14 +211,15 @@ export class ContentService extends GameSystem {
   }
 
   /**
-   * Loads a static model (`.cgf`) with its material
+   * Loads a model (`.cgf`, or a `.skin`: the same chunk format) with its material
    *
-   * @param model - path of the `.cgf` file
-   * @param material - path of the `.mtl` file (override), empty to use the material of the `.cgf` file
+   * @param model - path of the `.cgf` or `.skin` file
+   * @param material - path of the `.mtl` file (override), empty to use the material of the model file
    * @param scope - the scope that owns the model, see {@link scopeOf}
    */
   public loadModel(model: string, material: string, scope: ResourceScope): Promise<Model> {
-    if (!model || extName(model) !== '.cgf') {
+    const ext = model ? extName(model) : null
+    if (ext !== '.cgf' && ext !== '.skin') {
       return Promise.reject(new Error(`unsupported model type: ${model}`))
     }
     return this.ownModel(() => this.loadCgfModel(model, material), scope)

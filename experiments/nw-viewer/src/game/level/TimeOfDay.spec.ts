@@ -79,4 +79,27 @@ describe('TimeOfDay layers', () => {
     setWeight(tod, a, 0.005)
     expect(tod.getParamValue(PARAM)).toBe(0)
   })
+
+  it('drops the layers of the previous level on reset', () => {
+    // a zone of the previous level was fully blended in when the level switched (no page load in between)
+    const tod = setup(0)
+    const a = preset(1)
+    tod.scheduleAdd(a, 0, 0)
+    setWeight(tod, a, 1)
+    tod.reset()
+    expect(tod.poiLayers).toEqual([])
+    expect(tod.getParamValue(PARAM)).toBe(tod.base.variables[PARAM.name].value)
+  })
+
+  it('blends out the layers of zones that are gone', () => {
+    const tod = setup(0)
+    const kept = preset(1)
+    const unloaded = preset(2)
+    tod.scheduleAdd(kept, 0, 0)
+    tod.scheduleAdd(unloaded, 0, 0)
+    tod.scheduleRemoveMissing(new Set([kept]))
+    tod['updateWeights'](0.016)
+    tod['removeLayers']()
+    expect(tod.poiLayers.map((it) => it.preset)).toEqual([kept])
+  })
 })

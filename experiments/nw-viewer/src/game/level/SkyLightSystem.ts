@@ -10,12 +10,17 @@ import { ENABLE_VOLUMETRIC_FOG_2 } from '../../constants'
 import { InputSlots } from '../../material'
 import { TimeOfDay } from './TimeOfDay'
 import { TimeOfDayComponent } from './TimeOfDayComponent'
+import type { TimeOfDayPreset } from './TimeOfDayPreset'
 
 export class SkyLightSystem extends GameSystem {
   private game: EcsGame
   private time: TimeSystem
   private renderer: Renderer
   private todQuery: GameQuery
+  /**
+   * The presets of the active time of day zones this frame, reused
+   */
+  private zonePresets = new Set<TimeOfDayPreset>()
   private config: ViewerConfig
   /**
    * x = exposure of the film mapping when the eye adaptation is off (config `exposure: fixed`)
@@ -79,8 +84,11 @@ export class SkyLightSystem extends GameSystem {
     const cam = mat4GetTranslation(view.world)
 
     let sky: TimeOfDayComponent = null
+    const zones = this.zonePresets
+    zones.clear()
     for (const entity of this.todQuery) {
       const it = entity.component(TimeOfDayComponent)
+      zones.add(it.preset)
       if (it.isPointInside(cam)) {
         this.timeOfDay.scheduleAdd(it.preset, it.config.priority, it.config.blendTime)
         // POIs without a skybox keep the sky of a lower priority POI (assumption, not verified against the game)
@@ -92,6 +100,8 @@ export class SkyLightSystem extends GameSystem {
       }
     }
     this.activeSky = sky?.config.sky ?? null
+    // zones that left the query (unloaded) blend out too
+    this.timeOfDay.scheduleRemoveMissing(zones)
 
     this.timeOfDay.update(dt, this.time.game.delta, view)
   }

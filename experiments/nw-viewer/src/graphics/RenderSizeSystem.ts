@@ -58,12 +58,26 @@ export class RenderSizeSystem extends GameSystem {
     }
     this.canvas = canvas
     this.observer = new ResizeObserver(this.handleResize)
-    this.observer.observe(canvas.parentElement)
+    this.observeContainer()
     this.unsubscribe.push(this.config.onChange('renderResolution', this.apply))
     this.unsubscribe.push(this.config.onChange('renderScaling', this.apply))
     this.unsubscribe.push(this.config.onChange('renderScale', this.apply))
     // the device sizes the output from the canvas once it is ready, apply the config again after that
     this.device.ready.then(this.apply)
+  }
+
+  /**
+   * Observes the current parent of the canvas. Call it after the canvas was moved into another
+   * element, the render size follows the new container from then on.
+   */
+  public observeContainer() {
+    const container = this.canvas?.parentElement
+    if (!this.observer || !container) {
+      return
+    }
+    this.observer.disconnect()
+    // reports the current size right away, which applies it
+    this.observer.observe(container)
   }
 
   public destroy(): void {
