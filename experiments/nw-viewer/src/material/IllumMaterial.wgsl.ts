@@ -571,16 +571,12 @@ fn illumSurface(input: FragmentInput) -> IllumSurface {
   // --- Specular antialiasing
   let authoredGloss = gloss;
   let pixelPos  = vec2i(floor(input.position.xy));
-  let viewDepth = linearizeDepthReversedZ(input.position.z, view.near, view.far);
   // only materials with %ALLOW_SPECULAR_ANTIALIASING, see illumvalidations.cfi
   if (SAA_FILTERING) {
     let r = getKaplanyanRoughness(tbn, pixelPos, smoothnessToRoughness(gloss), material.roughnessBoost, material.roughnessMaxFootprint);
     gloss = roughnessToSmoothness(r);
   }
-  // the game filters the gbuffer of all opaque surfaces (FilterGBufferPS)
-  let saa = getNormalVarianceSmoothness(normal, pixelPos, viewDepth, gloss, specular);
-  gloss = saa.smoothness;
-  specular *= saa.specularScale;
+  // the normal variance filter of the game (FilterGBufferPS) runs on the GBuffer, see FilterGBufferPass
 
   // #if %ENVIRONMENT_MAP
   //     if (pPass.nReflectionMapping > 0)

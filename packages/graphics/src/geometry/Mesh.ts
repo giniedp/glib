@@ -194,10 +194,14 @@ export class Mesh implements Ownable {
    * Geometry and Materials instances are kept and shared with the original mesh.
    * Shared parts stay alive as long as either mesh holds them.
    *
-   * To instantiate materials, pass `true` for `options.materials`.
+   * To instantiate materials, pass `true` for `options.materials`, or a function that returns the material of the
+   * new mesh for each material (e.g. an instance with other parameters, see {@link Material.instantiate}).
    */
-  public instantiate(options?: { materials: boolean }) {
+  public instantiate(options?: { materials: boolean | ((material: Material) => Material) }) {
     const materials = this.materials.map((material) => {
+      if (typeof options?.materials === 'function') {
+        return options.materials(material)
+      }
       return options?.materials ? material.instantiate() : material
     })
     return new Mesh(this.device, {

@@ -5,7 +5,8 @@ import { AppBar } from '../app/AppBar'
 import svgCamera from '../icons/camera-viewfinder.svg?raw'
 import svgSidebarR from '../icons/sidebar-right.svg?raw'
 import svgSidebar from '../icons/sidebar.svg?raw'
-import svgTimer from '../icons/timer.svg?raw'
+import svgPause from '../icons/pause.svg?raw'
+import svgPlay from '../icons/play.svg?raw'
 import svgVolume from '../icons/volume-high.svg?raw'
 import svgVolumeOff from '../icons/volume-xmark.svg?raw'
 import { PanelScope } from './panel'
@@ -25,7 +26,7 @@ export function ViewerOverlay(props: { viewer: NwViewer }) {
 }
 
 /**
- * Freezes the game clock at its current time, or lets a paused or fixed clock run again
+ * Pauses the game clock at its current time, or lets a paused or fixed clock run again
  */
 function toggleClock(viewer: NwViewer) {
   const clock = viewer.clock
@@ -53,19 +54,15 @@ function Overlay(props: { viewer: NwViewer }) {
     <div class="nw-overlay-layout">
       <AppBar
         overlay
-        start={
+        end={
           <>
-            <Button
-              square
-              title="Scene tree"
-              icon={<Icon svg={svgSidebar} />}
-              active={left()}
-              onClick={() => setLeft(!left())}
-            />
+            <StatsBar viewer={viewer} />
+            <ScenesButton viewer={viewer} />
+            <SettingsButton viewer={viewer} />
             <Button
               square
               accent={audioEnabled()}
-              title={audioEnabled() ? 'Disable audio' : 'Enable audio'}
+              title={audioEnabled() ? 'Audio is on, click to mute' : 'Audio is off, click to play it'}
               icon={<Icon svg={audioEnabled() ? svgVolume : svgVolumeOff} />}
               // runs in the click, so the audio context can start (autoplay policy)
               onClick={() => viewer.config.set('audioEnabled', !audioEnabled())}
@@ -75,28 +72,29 @@ function Overlay(props: { viewer: NwViewer }) {
               accent={clockFrozen()}
               title={
                 clockFrozen()
-                  ? `Time is frozen at ${viewer.clock.game.total.toFixed(2)} s, click to run`
-                  : 'Freeze the time (shaders, particles, fog volumes), for comparable shots'
+                  ? `Time is paused at ${viewer.clock.game.total.toFixed(2)} s, click to play`
+                  : 'Pause the time (shaders, particles, fog volumes), for comparable shots'
               }
-              icon={<Icon svg={svgTimer} />}
+              icon={<Icon svg={clockFrozen() ? svgPlay : svgPause} />}
               onClick={() => toggleClock(viewer)}
             />
-          </>
-        }
-        end={
-          <>
-            <StatsBar viewer={viewer} />
-            <ScenesButton viewer={viewer} />
-            <SettingsButton viewer={viewer} />
             <Button
               square
-              title="Download screenshot (canvas resolution)"
+              title="Download a screenshot (canvas resolution)"
               icon={<Icon svg={svgCamera} />}
               onClick={() => viewer.downloadScreenshot()}
             />
+            {/* the two sidebar toggles side by side, in the order of the sidebars */}
             <Button
               square
-              title="Stats"
+              title={left() ? 'Hide the scene tree' : 'Show the scene tree (left sidebar)'}
+              icon={<Icon svg={svgSidebar} />}
+              active={left()}
+              onClick={() => setLeft(!left())}
+            />
+            <Button
+              square
+              title={right() ? 'Hide the stats' : 'Show the stats (right sidebar)'}
               icon={<Icon svg={svgSidebarR} />}
               active={right()}
               onClick={() => setRight(!right())}

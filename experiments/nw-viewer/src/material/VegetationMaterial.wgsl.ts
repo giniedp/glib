@@ -545,17 +545,8 @@ fn vegetationSurface(input: FragmentInput) -> VegetationSurface {
     gloss  += gloss  * cDetailMap.w;
   }
 
-  // -- Specular antialiasing, the game filters the gbuffer of all opaque surfaces (FilterGBufferPS)
+  // the normal variance filter of the game (FilterGBufferPS) runs on the GBuffer, see FilterGBufferPass
   let authoredGloss = gloss;
-  let saa = getNormalVarianceSmoothness(
-    normal,
-    vec2i(floor(input.position.xy)),
-    linearizeDepthReversedZ(input.position.z, view.near, view.far),
-    gloss,
-    specular,
-  );
-  gloss = saa.smoothness;
-  specular *= saa.specularScale;
 
   // -- Alpha test (%_RT_ALPHATEST) --------------------------
   if (material.enabledAlphaTest != 0u && alpha < material.alphaTestRef) {

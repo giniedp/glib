@@ -12,7 +12,6 @@ import {
   type TextureDescriptor,
 } from '@gglib/graphics'
 import {
-  bloomPass,
   FunctionPass,
   FxaaPass,
   groupPass,
@@ -32,6 +31,9 @@ import { getWhiteTexture } from '../material/utils'
 import { GBUFFER_DESCRIPTORS, GBufferChannel } from './GBufferChannels'
 import { describePass, optionalPass } from './PassInfo'
 import { DecalReceiverDebugPass } from './passes/gbuffer/DecalReceiverDebugPass'
+import { BloomPass } from './passes/bloom/BloomPass'
+import { Smaa1txPass } from './passes/smaa/Smaa1txPass'
+import { FilterGBufferPass } from './passes/gbuffer/FilterGBufferPass'
 import { GBufferDebugPass } from './passes/gbuffer/GBufferDebugPass'
 import { CopyPass, NwCopyChannel } from './passes/CopyPass'
 import { GeometryPass } from './passes/GeometryPass'
@@ -252,14 +254,10 @@ export function createRenderPipeline(device: Device): RenderPipelineOptions {
     optionalPass(sunShafts.generate, sunShafts),
     // scene luminance for the exposure of the film mapping, measured before bloom like the game
     describePass(luminance, { note: 'scene luminance for the film mapping exposure' }),
+    // bloom of the game (quarter resolution, no threshold), blended in by the film mapping with the time of day amount
     optionalPass(
-      bloomPass(device, {
-        enabled: true,
-        threshold: 1.5,
-        knee: 0.5,
-        intensity: 0.6,
-        steps: 10,
-        mode: 'jimnez',
+      describePass(new BloomPass(device), {
+        note: 'quarter resolution bloom of the game, the film mapping blends it in by the time of day bloom amount',
       }),
     ),
     new FilmMappingPass(
@@ -277,6 +275,8 @@ export function createRenderPipeline(device: Device): RenderPipelineOptions {
     describePass(sunShafts.apply, { note: 'blends the sun shafts into the image, toggled with Sun Shafts' }),
     // post AA on the final image, like the game's SMAA after its tonemap. The config `antialiasing` enables one of them.
     describePass(new SmaaPass(device), { note: 'toggled by the config antialiasing' }),
+    // the temporal resolve of the game's SMAA 1TX after the SMAA blending (config antialiasing smaa1tx)
+    describePass(new Smaa1txPass(device), { note: 'temporal SMAA resolve, toggled by the config antialiasing' }),
     describePass(new FxaaPass(device, { name: 'FXAA', quality: 0.5 }), { note: 'toggled by the config antialiasing' }),
     describePass(new Cmaa2Pass(device), { note: 'toggled by the config antialiasing' }),
     // shows a decoded attribute of the scene GBuffer in place of the image
@@ -396,6 +396,28 @@ function createOpaquePasses(device: Device, previousColor: PreviousColorPass, lu
         }),
         { note: 'snow and frost of the active snow volume on the snow receivers, toggled by the config snow' },
       ),
+    ),
+    // the game's FilterGBuffer after the decals and the snow: normal variance specular antialiasing on GBuffer C
+    optionalPass(
+      groupPass({
+        name: 'Filter GBuffer',
+        enabled: true,
+        passes: [
+          describePass(
+            new CopyPass(device, { name: 'FilterGBufferCopy', input: GBufferChannel.C, output: NwCopyChannel.GBufferC }),
+            { note: 'copy of GBuffer C, the input of the filter which rewrites C' },
+          ),
+          describePass(
+            new FilterGBufferPass(device, {
+              a: GBufferChannel.A,
+              c: GBufferChannel.C,
+              cCopy: NwCopyChannel.GBufferC,
+              linearDepth: RenderChannel.LinearDepth,
+            }),
+            { note: 'widens the roughness of smooth surfaces by the normal variance of the pixel and its neighbours' },
+          ),
+        ],
+      }),
     ),
     // AO before the lighting (plan phase 5), from the depth and the GBuffer normals
     optionalPass(new XeGtaoPass(device, { normals: GBufferChannel.A })),

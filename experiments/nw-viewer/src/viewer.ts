@@ -62,7 +62,7 @@ import { DebugShapeSystem } from './game/debug/DebugShapeSystem'
 import { RaycastSystem, type RaySelection } from './game/debug/RaycastSystem'
 import { DistributionSystem } from './game/distribution/DistributionSystem'
 import { InstancedRenderSystem } from './game/instancing/InstancedRenderSystem'
-import { LevelSystem } from './game/level/LevelSystem'
+import { LevelSystem, type PreviewPart } from './game/level/LevelSystem'
 import { SkyLightSystem } from './game/level/SkyLightSystem'
 import { LightSystem } from './game/light/LightSystem'
 import { EnvProbeDebugSystem } from './game/probes/EnvProbeDebugSystem'
@@ -82,6 +82,8 @@ import { TerrainSystem } from './game/terrain/TerrainSystem'
 import { VegetationSystem } from './game/vegetation/VegetationSystem'
 import { createRenderPipeline } from './graphics'
 import { LuminancePass } from './graphics/passes/exposure/LuminancePass'
+import { Smaa1txPass } from './graphics/passes/smaa/Smaa1txPass'
+import { XeGtaoPass } from './graphics/passes/ssao/XeGtaoPass'
 import { SmaaPass } from './graphics/passes/smaa/SmaaPass'
 import { FroxelFogPass } from './graphics/passes/fog/FroxelFogPass'
 import { PreviousColorPass } from './graphics/passes/history/PreviousColorPass'
@@ -230,9 +232,17 @@ export class NwViewer extends EcsGame {
     const smaa = pipeline.passes.find((it): it is SmaaPass => it instanceof SmaaPass)
     const fxaa = pipeline.passes.find((it): it is FxaaPass => it instanceof FxaaPass)
     const cmaa2 = pipeline.passes.find((it): it is Cmaa2Pass => it instanceof Cmaa2Pass)
+    const smaa1tx = pipeline.passes.find((it): it is Smaa1txPass => it instanceof Smaa1txPass)
     const applyAntialiasing = (value: string) => {
       if (smaa) {
-        smaa.enabled = value === 'smaa'
+        smaa.enabled = value === 'smaa' || value === 'smaa1tx'
+      }
+      if (smaa1tx) {
+        smaa1tx.enabled = value === 'smaa1tx'
+      }
+      // the temporal resolve averages the AO noise when it rotates per frame
+      for (const xeGtao of findPasses(pipeline.passes, (it): it is XeGtaoPass => it instanceof XeGtaoPass)) {
+        xeGtao.temporalNoise = value === 'smaa1tx'
       }
       if (fxaa) {
         fxaa.enabled = value === 'fxaa'
@@ -485,10 +495,30 @@ export class NwViewer extends EcsGame {
   }
 
   /**
-   * The parts of the character shown by {@link NwViewer.showCharacter}: attachment name, mesh, material, load state
+   * Shows models of the Data tool (an appearance row, a mount): `.cgf`, `.skin` and `.cdf` parts with optional
+   * material params, the camera orbits them. `key` names the content: the same key again keeps it and the camera.
+   *
+   * @param materialParams - replace the public params of the parts' materials (the blend masks of an appearance)
+   */
+  public showParts(key: string, parts: PreviewPart[], materialParams?: Record<string, string | number> | null) {
+    this.showScenePreview(`parts:${key}`, 'character', () => {
+      this.world
+        .getSystem(LevelSystem)
+        .loadParts(key, parts, materialParams)
+        .catch((err) => {
+          if (err?.name !== 'AbortError') {
+            console.error('preview not loaded:', key, String(err))
+          }
+        })
+    })
+  }
+
+  /**
+   * The parts shown by {@link NwViewer.showCharacter} or {@link NwViewer.showParts}: attachment name, mesh, material,
+   * load state
    */
   public previewCharacterParts(): Array<{ name: string; mesh: string; material: string; state: 'loading' | 'loaded' | 'failed' }> {
-    if (!this.previewKey?.startsWith('character:')) {
+    if (!this.previewKey?.startsWith('character:') && !this.previewKey?.startsWith('parts:')) {
       return []
     }
     return this.world.getSystem(LevelSystem).characterParts.map((part) => ({

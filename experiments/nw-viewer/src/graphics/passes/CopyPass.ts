@@ -20,6 +20,10 @@ export const NwCopyChannel = {
    * into GBuffer A themselves
    */
   GBufferA: renderChannel('nw_gbuffer_a_copy'),
+  /**
+   * Copy of GBuffer C after the decals and the snow, the input of the FilterGBufferPass which rewrites C
+   */
+  GBufferC: renderChannel('nw_gbuffer_c_copy'),
 }
 
 function copyDescriptor(name: string, format: TextureDescriptor['format']): Readonly<TextureDescriptor> {
@@ -43,6 +47,7 @@ const COPY_DESCRIPTORS: Record<RenderChannel, Readonly<TextureDescriptor>> = {
   [NwCopyChannel.SceneColor]: copyDescriptor('NwCopyChannel.SceneColor', 'rgba16float'),
   // GBuffer A (GBufferChannels.ts)
   [NwCopyChannel.GBufferA]: copyDescriptor('NwCopyChannel.GBufferA', 'rgb10a2unorm'),
+  [NwCopyChannel.GBufferC]: copyDescriptor('NwCopyChannel.GBufferC', 'rgba8unorm'),
 }
 
 const COPY_WGSL = /* wgsl */ `

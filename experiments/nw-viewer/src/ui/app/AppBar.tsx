@@ -2,6 +2,7 @@ import { For, type JSX } from 'solid-js'
 import { Button, ButtonGroup, Icon, Toolbar } from 'tweak-ui'
 import svgFolderTree from '../icons/folder-tree.svg?raw'
 import svgMountainSun from '../icons/mountain-sun.svg?raw'
+import svgTableList from '../icons/table-list.svg?raw'
 import { useTools, type ToolId } from './tools'
 
 /**
@@ -32,6 +33,7 @@ export function AppBar(props: {
 const TOOLS: Array<{ id: ToolId; label: string; icon: string; title: string }> = [
   { id: 'viewer', label: 'Viewer', icon: svgMountainSun, title: 'Levels and models in 3D' },
   { id: 'browser', label: 'Browser', icon: svgFolderTree, title: 'Browse the game files' },
+  { id: 'data', label: 'Data', icon: svgTableList, title: 'Browse the game data tables by row type, with links' },
 ]
 
 /**

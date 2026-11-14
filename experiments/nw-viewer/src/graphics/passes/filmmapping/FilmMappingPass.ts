@@ -1,6 +1,7 @@
-import { TextureUsage, type Device, type Program, type Texture } from '@gglib/graphics'
+import { SamplerState, TextureUsage, type Device, type Program, type Texture } from '@gglib/graphics'
 import { FrameGraph, RenderChannel, type FrameResource, type RenderContext, type RenderPass } from '@gglib/render'
 import { InputSlots } from '../../../material/common'
+import { NwBloomChannel } from '../bloom/BloomPass'
 import type { LuminancePass } from '../exposure/LuminancePass'
 import { FILM_MAPPING_WGSL } from './FilmMappingPass.wgsl'
 
@@ -28,6 +29,8 @@ export class FilmMappingPass implements RenderPass {
   private source: FrameResource
   private target: FrameResource
   private eyeAdaptation = new Float32Array(4)
+  private exposure = new Float32Array(4)
+  private bloom: FrameResource | null = null
   private fallback1x1: Texture
 
   private luminance: LuminancePass | null
@@ -55,6 +58,8 @@ export class FilmMappingPass implements RenderPass {
     }
     frame.addPass(this)
     this.source = frame.read(RenderChannel.Color)
+    // the bloom pass declares its output only once its shaders are compiled (or while it is enabled)
+    this.bloom = frame.has(NwBloomChannel.Bloom) ? frame.read(NwBloomChannel.Bloom) : null
     this.target = frame.write(RenderChannel.Color)
   }
 
@@ -67,7 +72,10 @@ export class FilmMappingPass implements RenderPass {
     const target = this.target.texture
     program.set('params.colorBalance', inputs.get(InputSlots.FilmMapping.ColorBalance))
     program.set('params.filmCurve', inputs.get(InputSlots.FilmMapping.FilmCurve))
-    program.set('params.exposure', inputs.get(InputSlots.FilmMapping.Exposure))
+    const exposure = inputs.get(InputSlots.FilmMapping.Exposure)
+    this.exposure[0] = exposure?.x ?? 1
+    this.exposure[1] = this.bloom ? ((inputs.get(InputSlots.FilmMapping.Bloom) as number | undefined) ?? 0) : 0
+    program.set('params.exposure', this.exposure)
     const lumMap = this.luminance?.adaptedLuminance
     const eye = inputs.get(InputSlots.FilmMapping.EyeAdaptation)
     // fixed exposure until the luminance pass has produced a value
@@ -78,6 +86,9 @@ export class FilmMappingPass implements RenderPass {
     program.set('params.eyeAdaptation', this.eyeAdaptation)
     program.mustSet('lumMap', lumMap ?? this.fallbackLumMap(ctx))
     program.mustSet('sourceMap', this.source.texture)
+    // without bloom any texture is bound, the blend factor is 0
+    program.mustSet('bloomMap', this.bloom?.texture ?? this.fallbackLumMap(ctx))
+    program.mustSet('bloomSampler', SamplerState.LinearClamp)
     program.commit()
 
     const pass = ctx.device.renderPass

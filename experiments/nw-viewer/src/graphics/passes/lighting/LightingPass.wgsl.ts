@@ -7,7 +7,7 @@ export const LIGHTING_WORKGROUP_SIZE = 8
 /**
  * Debug modes of the lighting pass (params.x)
  */
-export const LightingDebugModes = ['off', 'ao', 'reflections', 'reflection confidence'] as const
+export const LightingDebugModes = ['off', 'ao', 'reflections', 'reflection confidence', 'bent normal'] as const
 export type LightingDebugMode = (typeof LightingDebugModes)[number]
 
 /**
@@ -17,8 +17,10 @@ export type LightingDebugMode = (typeof LightingDebugModes)[number]
  * like Illum and TerrainPatch, into the HDR color:
  * - pixels without geometry (linear depth 0, the GBuffer clear) are skipped, the sky is drawn after this pass
  * - screen space AO (XeGTAO, before this pass) occludes the probe lighting like the game's SSDO (tiledshading.cfi):
- *   diffuse by min(material occlusion, ao), specular by DeriveSpecularOcclusion. Direct light is not occluded (the
- *   game only occludes it with SSDO bent normals, which XeGTAO does not produce here).
+ *   diffuse by min(material occlusion, ao), specular by DeriveSpecularOcclusion. Direct light is not occluded: the
+ *   game's SSDO light occlusion (1 - dot(L, occlusion direction) * r_ssdoAmountDirect)² has no equivalent here, a bent
+ *   cone gate on XeGTAO's bent normal turned its noise into grain (tmp/specular-softening). The bent normal is
+ *   available in the AO channel (gba, debug mode 'bent normal').
  *
  * Group 0 repeats the global declarations of the materials, so the render input blocks bind it the same way.
  */
@@ -66,6 +68,14 @@ fn loadAo(p: vec2i) -> f32 {
     return 1.0;
   }
   return mix(1.0, textureLoad(aoMap, p, 0).r, params.values.z);
+}
+
+// bent normal of the AO (gba, world space), the zero vector without AO or where none was computed
+fn loadBentNormal(p: vec2i) -> vec3f {
+  if (params.values.y < 0.5) {
+    return vec3f(0.0);
+  }
+  return textureLoad(aoMap, p, 0).gba * 2.0 - 1.0;
 }
 
 // same composition as the forward Illum and TerrainPatch materials (fs_main), with the occlusion of the game
@@ -171,6 +181,9 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
   var color = shadeGBuffer(g, lightingWorldPos(vec2f(p) + 0.5, depth), ssao, ssr);
   if (u32(params.values.x) == 1u) {
     color = vec3f(ssao);
+  }
+  if (u32(params.values.x) == 4u) {
+    color = loadBentNormal(p) * 0.5 + 0.5;
   }
   textureStore(outColor, p, vec4f(color, 1.0));
 }

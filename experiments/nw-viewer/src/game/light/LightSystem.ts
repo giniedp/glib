@@ -87,6 +87,11 @@ export class LightSystem extends GameSystem {
       return
     }
 
+    // without an explicit range the grid covers the whole view, like the per tile depth bounds of the game's tiled
+    // shading. A shorter range cuts lights off at a view depth plane, a visible edge on distant lit surfaces.
+    if (this.options?.clusterFar == null) {
+      this.shader.clusterFar = camera.far
+    }
     this.shader.begin()
     if (this.enabled) {
       this.addLights()

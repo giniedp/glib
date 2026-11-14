@@ -65,6 +65,29 @@ import { loadShaderBallGeometries, SHADER_BALL_SIZE } from './ShaderBall'
 import { SkyLightSystem } from './SkyLightSystem'
 import { TimeOfDayComponent } from './TimeOfDayComponent'
 
+/**
+ * A model of a preview shown by {@link LevelSystem.loadParts}
+ */
+export interface PreviewPart {
+  /**
+   * `.cgf`, `.skin`, or `.cdf` for its skin and cloth attachments
+   */
+  mesh: string
+  /**
+   * The `.mtl` of the mesh, for a `.cdf` the material of attachments without their own. Empty or omitted: the
+   * mesh's own material.
+   */
+  material?: string
+  /**
+   * Shown in the parts list, the file name when omitted (a `.cdf` lists its attachments)
+   */
+  name?: string
+  /**
+   * `.cdf` only: just its cloth attachments (the cape and skirt of an armor appearance's character)
+   */
+  clothOnly?: boolean
+}
+
 export class LevelSystem extends GameSystem {
   private content: ContentService
   private sky: SkyLightSystem
@@ -299,6 +322,16 @@ export class LevelSystem extends GameSystem {
    * attachments (tmp/browser-features A2). Resolves once the parts are created, their models load later.
    */
   public async loadCharacter(path: string) {
+    return this.loadParts(`Character: ${path}`, [{ mesh: path }])
+  }
+
+  /**
+   * Shows models at the origin, as {@link loadCharacter} shows a character: `.cgf` and `.skin` parts as they are,
+   * `.cdf` parts with their skin and cloth attachments. A preview of the Data tool (an appearance row).
+   *
+   * @param materialParams - replace the public params of the parts' materials (the blend masks of an appearance)
+   */
+  public async loadParts(name: string, parts: PreviewPart[], materialParams?: Record<string, string | number> | null) {
     this.loadCancel()
     const signal = this.beginLoad()
 
@@ -313,22 +346,32 @@ export class LevelSystem extends GameSystem {
       }
       return res
     }
-    const doc = parseCdf(await (await fetchFile(path)).text())
-    // the mesh of a cloth is referenced inside its binary .cloth file
-    const parts = await Promise.all(
-      skinAttachments(doc).map(async (attachment) => {
-        let mesh = attachment.binding
-        if (/\.cloth$/i.test(mesh)) {
-          const bytes = new Uint8Array(await (await fetchFile(mesh)).arrayBuffer())
-          mesh = clothMeshReference(bytes) ?? ''
+    const meshes = await Promise.all(
+      parts.map(async (part) => {
+        if (!/\.cdf$/i.test(part.mesh)) {
+          return [{ name: part.name ?? part.mesh.split('/').pop() ?? '', mesh: part.mesh, material: part.material ?? '' }]
         }
-        return { name: attachment.name, mesh, material: attachmentMaterial(attachment) }
+        const doc = parseCdf(await (await fetchFile(part.mesh)).text())
+        const attachments = skinAttachments(doc).filter((it) => !part.clothOnly || it.type === 'CA_CLOTH')
+        // the mesh of a cloth is referenced inside its binary .cloth file
+        return Promise.all(
+          attachments.map(async (attachment) => {
+            let mesh = attachment.binding
+            if (/\.cloth$/i.test(mesh)) {
+              const bytes = new Uint8Array(await (await fetchFile(mesh)).arrayBuffer())
+              mesh = clothMeshReference(bytes) ?? ''
+            }
+            // the material of the part is the fallback of the attachments (nwbt ResolveCgfAndMtl)
+            return { name: attachment.name, mesh, material: attachmentMaterial(attachment) || part.material || '' }
+          }),
+        )
       }),
     )
+    const meshParts = meshes.flat()
     signal.throwIfAborted()
 
     this.entity = this.game.createEntity({
-      name: `Character: ${path}`,
+      name,
       components: [
         new SpatialComponent({
           index: OccTree.create({
@@ -349,7 +392,7 @@ export class LevelSystem extends GameSystem {
         setTimeout(() => this.frameModel())
       }
     }
-    for (const part of parts) {
+    for (const part of meshParts) {
       if (!part.mesh) {
         console.warn(...this.logTag, 'character part without mesh', part.name)
         continue
@@ -359,7 +402,12 @@ export class LevelSystem extends GameSystem {
         name: part.name,
         parent: this.entity,
         transform: new TransformComponent({ keepWorld: true, world: mat4Identity() }),
-        components: [new MeshLoaderComponent({ type: 'Mesh', mesh: part.mesh, material: part.material, alwaysRender: true })],
+        components: [
+          new MeshLoaderComponent(
+            { type: 'Mesh', mesh: part.mesh, material: part.material, alwaysRender: true },
+            { materialParams },
+          ),
+        ],
       })
       entity.events.on(MeshLoaderComponent.onLoad, settled)
       entity.events.on(MeshLoaderComponent.onError, settled)
@@ -372,7 +420,7 @@ export class LevelSystem extends GameSystem {
   }
 
   /**
-   * The parts of the character shown by {@link loadCharacter}: the attachment name, its mesh and material, the loader
+   * The parts shown by {@link loadCharacter} or {@link loadParts}: the attachment name, its mesh and material, the loader
    */
   public characterParts: Array<{ name: string; mesh: string; material: string; loader: MeshLoaderComponent }> = []
 

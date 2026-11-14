@@ -28,7 +28,8 @@ import {
 
 export const NwRenderChannel = {
   /**
-   * Resolved (single sample) ambient occlusion term, 1 = not occluded
+   * Resolved (single sample) ambient occlusion term (r, 1 = not occluded) and the bent normal (gba, world space,
+   * encoded n * 0.5 + 0.5, the zero vector where nothing was computed)
    */
   AmbientOcclusion: renderChannel('nw_ambient_occlusion'),
 }
@@ -36,7 +37,8 @@ export const NwRenderChannel = {
 const AMBIENT_OCCLUSION_DESC: Readonly<TextureDescriptor> = {
   name: 'NwRenderChannel.AmbientOcclusion',
   type: '2d',
-  format: 'r8unorm',
+  // r = visibility, gba = bent normal (world space, n * 0.5 + 0.5)
+  format: 'rgba8unorm',
   width: 1,
   height: 1,
   depth: 1,
@@ -116,6 +118,13 @@ export class XeGtaoPass implements RenderPass {
   public depthMipSamplingOffset = 3.3
   public denoiseBlurBeta = 1.2
   public maxDistance = Infinity
+  /**
+   * Rotates the sampling noise per frame (64 frame cycle). Only useful while a temporal resolve (SMAA 1TX) averages
+   * the frames, otherwise the noise flickers
+   */
+  public temporalNoise = false
+
+  private noiseFrame = 0
 
   /**
    * Whether the pass has been added to the current frame
@@ -223,7 +232,8 @@ export class XeGtaoPass implements RenderPass {
     this.texDepthMipsDesc.mipLevelCount = mipCount
     this.texDepthMips = ctx.resources.acquire(this.texDepthMipsDesc, 'XeGTAO Depth Mips')
 
-    this.texAoDesc ||= textureDesc('r8unorm')
+    // r = working AO term, gba = bent normal
+    this.texAoDesc ||= textureDesc('rgba8unorm')
     this.texAoDesc.width = width
     this.texAoDesc.height = height
     this.texAo = ctx.resources.acquire(this.texAoDesc, 'XeGTAO AO')
@@ -375,8 +385,9 @@ export class XeGtaoPass implements RenderPass {
     )
 
     const [slices, steps] = QUALITY_PRESETS[this.quality] ?? QUALITY_PRESETS.high
-    // w: noise index, no TAA
-    vec4$init(this.qualityParams, slices, steps, this.finalValuePower, 0)
+    // w: noise index, rotated per frame while a temporal resolve averages the noise (XeGTAO uses frame % 64 with TAA)
+    this.noiseFrame = (this.noiseFrame + 1) % 64
+    vec4$init(this.qualityParams, slices, steps, this.finalValuePower, this.temporalNoise ? this.noiseFrame : 0)
   }
 
   private setParams(program: Program) {

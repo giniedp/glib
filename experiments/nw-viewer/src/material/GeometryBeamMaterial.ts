@@ -19,7 +19,7 @@ import WGSL from './GeometryBeamMaterial.wgsl'
 import type { NwMaterialProps } from './GltfExtension'
 import { TextureModifier } from './TexMod'
 import { getShaderConstants, InputBlocks, MaterialLayerMasks, type FeatureFlag } from './common'
-import { MtlUtil, paramValue, paramVec4 } from './utils'
+import { getTransparentTexture, MtlUtil, paramValue, paramVec4 } from './utils'
 
 export function geometryBeamShaderOptions(constants: Record<string, number>): ShaderModuleOptions {
   return {
@@ -166,9 +166,9 @@ export class GeometryBeamMaterial extends MaterialWithSchema(SCHEMA) {
       this.SpecularMap = maps.Specular as any
     }
 
-    if (maps.Bumpmap) {
-      this.NormalMap = maps.Bumpmap as any
-    }
+    // the turbulence of %NOISE samples the normal map raw. Without one the engine binds FlatBump (TextureManager.cpp),
+    // EngineAssets/Textures/White_ddn.dds: BC5_SNORM with RG = 0, B = 0 when sampled, so the turbulence term is black
+    this.NormalMap = (maps.Bumpmap as any) || getTransparentTexture(this.device)
 
     if (maps.Smoothness) {
       this.SmoothnessMap = maps.Smoothness as any

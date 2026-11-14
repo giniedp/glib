@@ -1,6 +1,6 @@
 import { useLocation, useNavigate } from '@solidjs/router'
 
-export type ToolId = 'viewer' | 'browser'
+export type ToolId = 'viewer' | 'browser' | 'data'
 
 /**
  * The query of each tool when it was left, so switching back returns to the same state

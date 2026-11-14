@@ -26,7 +26,9 @@ export function ScenesButton(props: { viewer: NwViewer }) {
   }
   return (
     <>
-      <Button onClick={() => setOpen(true)}>Scenes</Button>
+      <Button title="Open a level, a mission or a showcase" onClick={() => setOpen(true)}>
+        Scenes
+      </Button>
       <ModalDialog title="Scenes" open={open()} onClose={() => setOpen(false)}>
         <Show when={open()}>
           <SceneList onSelect={select} />

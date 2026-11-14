@@ -13,6 +13,10 @@
   position: relative;
   overflow: hidden;
 }
+/* the surface's height, not the page's (base.css): a surface may be shorter than the page (Data tool preview) */
+.nw-engine-surface > canvas {
+  height: 100%;
+}
 
 /* the bar at the top of every tool (ui/app/AppBar.tsx): the tool switch, then the items of the tool */
 .nw-app-bar {

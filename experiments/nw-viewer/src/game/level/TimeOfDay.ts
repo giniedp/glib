@@ -84,6 +84,10 @@ export class TimeOfDay {
    * x = EV min, y = EV max, z = EV auto compensation (HDREyeAdaptation of the EV mode, the mode of the game)
    */
   public hdrEyeAdaptation = vec4(0)
+  /**
+   * HDR "Bloom amount" (Global_User_HDRBloom), the film mapping blends the bloom by amount * 0.3 / 8
+   */
+  public hdrBloomAmount = 0
   public sunIsMoon = false
 
   public cloudshadingCustomSkyColor = vec3(0)
@@ -624,6 +628,7 @@ export class TimeOfDay {
     this.hdrEyeAdaptation.x = this.getParamValue(TodParams.HDR_EYEADAPTATION_EV_MIN)
     this.hdrEyeAdaptation.y = this.getParamValue(TodParams.HDR_EYEADAPTATION_EV_MAX)
     this.hdrEyeAdaptation.z = this.getParamValue(TodParams.HDR_EYEADAPTATION_EV_AUTO_COMPENSATION)
+    this.hdrBloomAmount = this.getParamValue(TodParams.HDR_BLOOM_AMOUNT)
 
     // HDR sky lighting, independent of the sun light fading at dawn and dusk
     this.getParamColor(TodParams.SKYLIGHT_SUN_INTENSITY, this.skySunIntensity)

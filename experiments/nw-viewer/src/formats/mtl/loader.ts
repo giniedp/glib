@@ -10,6 +10,7 @@ import { MATERIAL_TEXTURE_SIZE } from '../../constants'
 import { isArchivePath, normalizeAssetPath, type AssetIdResolver } from '../../content/assetIds'
 import type { NwMaterialProps, TexMapName } from '../../material/GltfExtension'
 import { nwMaterialFactory } from '../../material/nwMaterial'
+import { resolveStringGenMask } from './genMask'
 import { parseMtl } from './parse'
 import type { MtlDocument, MtlMaterial, MtlTexture } from './types'
 
@@ -81,8 +82,9 @@ export class MtlContainer implements AssetContainer {
 }
 
 async function createMaterialOptions(material: MtlMaterial, context: LoadContext): Promise<MaterialOptions> {
+  const stringGenMask = await resolveStringGenMask(material.attrs, context)
   const props: NwMaterialProps = {
-    attrs: { ...material.attrs },
+    attrs: { ...material.attrs, StringGenMask: stringGenMask },
     params: { ...material.params },
     vertexDeform: material.vertexDeform ? JSON.parse(JSON.stringify(material.vertexDeform)) : undefined,
     textures: {},
@@ -103,7 +105,7 @@ async function createMaterialOptions(material: MtlMaterial, context: LoadContext
   return {
     name: material.attrs.Name,
     properties: props as unknown as MaterialProperties,
-    factory: nwMaterialFactory(material.attrs.Shader, material.attrs.StringGenMask),
+    factory: nwMaterialFactory(material.attrs.Shader, stringGenMask),
   }
 }
 

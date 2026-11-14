@@ -1,7 +1,8 @@
 import { FULLSCREEN_WGSL_VS } from '@gglib/effects'
 
 /**
- * Port of FilmMapping in HDRPostProcess.cfx without bloom and vignetting, bloom is composited by the bloom pass.
+ * Port of FilmMapping in HDRPostProcess.cfx without vignetting. The bloom (BloomPass, quarter resolution) is blended
+ * in before the exposure: lerp(scene, bloom, HDRBloomColor).
  */
 export const FILM_MAPPING_WGSL = /* wgsl */ `
 ${FULLSCREEN_WGSL_VS}
@@ -11,7 +12,7 @@ struct FilmMappingParams {
   colorBalance : vec4f,
   // x = shoulder, y = midtones, z = toe, w = whitepoint (HDRFilmCurve)
   filmCurve    : vec4f,
-  // x = exposure without eye adaptation (HDRTonemapParams.x)
+  // x = exposure without eye adaptation (HDRTonemapParams.x), y = bloom blend factor (HDRBloomColor)
   exposure     : vec4f,
   // x = EV min, y = EV max, z = EV auto compensation, w = 1 uses the adapted luminance (HDREyeAdaptation)
   eyeAdaptation: vec4f,
@@ -20,6 +21,9 @@ struct FilmMappingParams {
 @group(0) @binding(1) var sourceMap: texture_2d<f32>;
 // 1x1 adapted luminance, x = luminance, y = illuminance (LuminancePass)
 @group(0) @binding(2) var lumMap: texture_2d<f32>;
+// quarter resolution bloom (BloomPass), black while there is none
+@group(0) @binding(3) var bloomMap: texture_2d<f32>;
+@group(0) @binding(4) var bloomSampler: sampler;
 
 const LIGHT_UNIT_SCALE: f32 = 10000.0;
 
@@ -61,7 +65,8 @@ fn linearToSrgb(c: vec3f) -> vec3f {
 @fragment
 fn fs(in: FragmentInput) -> @location(0) vec4f {
   let scene = textureLoad(sourceMap, vec2i(in.position.xy), 0);
-  var color = computeExposure() * scene.rgb;
+  let bloom = textureSampleLevel(bloomMap, bloomSampler, in.uv, 0.0).rgb;
+  var color = computeExposure() * mix(scene.rgb, bloom, saturate(params.exposure.y));
 
   let luminance = dot(color, vec3f(0.2126, 0.7152, 0.0722));
   color = mix(vec3f(luminance), color, params.colorBalance.a);

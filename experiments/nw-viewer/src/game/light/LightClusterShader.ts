@@ -67,7 +67,10 @@ export interface LightClusterShaderOptions {
   gridX?: number
   gridY?: number
   gridZ?: number
-  /** Depth range covered by the cluster grid. Fragments beyond {@link clusterFar} receive no local lights */
+  /**
+   * Depth range covered by the cluster grid. Fragments beyond {@link clusterFar} receive no local lights.
+   * The LightSystem follows the camera far plane when no clusterFar is given.
+   */
   clusterNear?: number
   clusterFar?: number
   /** Capacity of the light index list shared by all clusters */

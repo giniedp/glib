@@ -175,10 +175,12 @@ export const viewerConfigSchema = defineConfig({
 
   antialiasing: choice({
     description:
-      'Post-process anti-aliasing of the final image. smaa is SMAA 1x with depth predication (the game runs SMAA after its tonemap), cmaa2 is Intel CMAA2 (conservative, keeps texture detail), fxaa is FXAA 3.11 (cheaper, softer).',
+      'Post-process anti-aliasing of the final image. smaa1tx is the game\'s SMAA 1TX: SMAA 1x plus a temporal resolve ' +
+      'with the reprojected previous frame (calms specular and emissive pixels). smaa is SMAA 1x with depth ' +
+      'predication, cmaa2 is Intel CMAA2 (conservative, keeps texture detail), fxaa is FXAA 3.11 (cheaper, softer).',
     editable: true,
-    options: ['smaa', 'cmaa2', 'fxaa', 'off'],
-    default: 'smaa',
+    options: ['smaa1tx', 'smaa', 'cmaa2', 'fxaa', 'off'],
+    default: 'smaa1tx',
     group: 'Display',
   }),
 

@@ -10,7 +10,8 @@ import { GBUFFER_WGSL } from '../../../material/gbuffer.wgsl'
  * - normals are read from the GBuffer instead of generated from depth (XE_GTAO_GENERATE_NORMALS_INPLACE)
  * - depth is read with textureLoad (point sampling, clamp to edge) instead of samplers
  * - edges are stored unpacked in rgba8unorm instead of 2 bit packed
- * - no bent normals
+ * - bent normals (XE_GTAO_COMPUTE_BENT_NORMALS) in world space, stored unpacked next to the visibility (rgba8unorm:
+ *   r = visibility, gba = bent normal) instead of the packed R32_UINT
  */
 
 export const XE_GTAO_DEPTH_MIP_LEVELS = 5
@@ -214,7 +215,8 @@ fn fs_main(in: FragmentInput) -> MainOutput {
   out.edges = edgesLRTB;
 
   if (viewspaceZ >= params.ndcToViewPx.w) {
-    out.ao = vec4f(1.0 / OCCLUSION_TERM_SCALE);
+    // no bent normal (encoded zero vector): the lighting does not occlude
+    out.ao = vec4f(1.0 / OCCLUSION_TERM_SCALE, 0.5, 0.5, 0.5);
     return out;
   }
 
@@ -256,6 +258,10 @@ fn fs_main(in: FragmentInput) -> MainOutput {
 
   // this is the min distance to start sampling from to avoid sampling from the center pixel
   let minS = pixelTooCloseThreshold / screenspaceRadius;
+
+  // XE_GTAO_COMPUTE_BENT_NORMALS
+  var bentNormal = vec3f(0.0);
+  let bentRotation = rotFromToMatrix(vec3f(0.0, 0.0, -1.0), viewVec);
 
   for (var slice = 0.0; slice < sliceCount; slice += 1.0) {
     let sliceK = (slice + noiseSlice) / sliceCount;
@@ -356,6 +362,13 @@ fn fs_main(in: FragmentInput) -> MainOutput {
     let iarc1 = (cosNorm + 2.0 * h1 * sin(n) - cos(2.0 * h1 - n)) / 4.0;
     let localVisibility = projectedNormalVecLength * (iarc0 + iarc1);
     visibility += localVisibility;
+
+    // "Algorithm 2 Extension that computes bent normals b"
+    let t0 = (6.0 * sin(h0 - n) - sin(3.0 * h0 - n) + 6.0 * sin(h1 - n) - sin(3.0 * h1 - n) + 16.0 * sin(n)
+      - 3.0 * (sin(h0 + n) + sin(h1 + n))) / 12.0;
+    let t1 = (-cos(3.0 * h0 - n) - cos(3.0 * h1 - n) + 8.0 * cos(n) - 3.0 * (cos(h0 + n) + cos(h1 + n))) / 12.0;
+    let localBentNormal = vec3f(directionVec.x * t0, directionVec.y * t0, -t1);
+    bentNormal += (bentRotation * localBentNormal) * projectedNormalVecLength;
   }
 
   visibility /= sliceCount;
@@ -363,8 +376,32 @@ fn fs_main(in: FragmentInput) -> MainOutput {
   // disallow total occlusion
   visibility = max(0.03, visibility);
 
-  out.ao = vec4f(saturate(visibility / OCCLUSION_TERM_SCALE));
+  // the bent normal in world space (inverse of loadViewspaceNormal), encoded like an unsigned normal
+  let bentView = normalize(bentNormal);
+  let bentWorld = normalize((transpose(normalParams.viewMatrix) * vec4f(bentView.x, bentView.y, -bentView.z, 0.0)).xyz);
+  out.ao = vec4f(saturate(visibility / OCCLUSION_TERM_SCALE), bentWorld * 0.5 + 0.5);
   return out;
+}
+
+// XeGTAO_RotFromToMatrix (only used with from = (0, 0, -1)), the reference indexes [row][column]
+fn rotFromToMatrix(fromDir: vec3f, toDir: vec3f) -> mat3x3f {
+  let e = dot(fromDir, toDir);
+  if (abs(e) > 1.0 - 0.0003) {
+    return mat3x3f(1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0);
+  }
+  let v = cross(fromDir, toDir);
+  let h = 1.0 / (1.0 + e);
+  let hvx = h * v.x;
+  let hvz = h * v.z;
+  let hvxy = hvx * v.y;
+  let hvxz = hvx * v.z;
+  let hvyz = hvz * v.y;
+  // columns of the reference matrix (WGSL matrices are column major)
+  return mat3x3f(
+    e + hvx * v.x, hvxy + v.z,       hvxz - v.y,
+    hvxy - v.z,    e + h * v.y * v.y, hvyz + v.x,
+    hvxz + v.y,    hvyz - v.x,       e + hvz * v.z,
+  );
 }
 `
 
@@ -383,9 +420,10 @@ struct DenoiseParams {
 @group(0) @binding(1) var aoTerm: texture_2d<f32>;
 @group(0) @binding(2) var edgesMap: texture_2d<f32>;
 
-fn loadAo(px: vec2i) -> f32 {
+// r = visibility, gba = encoded bent normal, blurred together like XeGTAO with bent normals
+fn loadAo(px: vec2i) -> vec4f {
   let last = vec2i(textureDimensions(aoTerm, 0)) - 1;
-  return textureLoad(aoTerm, clamp(px, vec2i(0), last), 0).r;
+  return textureLoad(aoTerm, clamp(px, vec2i(0), last), 0);
 }
 
 fn loadEdges(px: vec2i) -> vec4f {
@@ -432,7 +470,12 @@ fn fs_main(in: FragmentInput) -> @location(0) vec4f {
   sum += loadAo(px + vec2i(1, 1)) * weightBR;
   sumWeight += dot(edgesC_LRTB, vec4f(1.0)) + weightTL + weightTR + weightBL + weightBR;
 
-  let visibility = saturate((sum / sumWeight) * params.values.y);
-  return vec4f(visibility, 0.0, 0.0, 1.0);
+  let average = sum / sumWeight;
+  let visibility = saturate(average.r * params.values.y);
+  let bent = average.gba * 2.0 - 1.0;
+  let bentLength = length(bent);
+  // pixels without geometry keep the zero vector (no occlusion)
+  let encodedBent = select(vec3f(0.5), (bent / bentLength) * 0.5 + 0.5, bentLength > 1e-3);
+  return vec4f(visibility, encodedBent);
 }
 `

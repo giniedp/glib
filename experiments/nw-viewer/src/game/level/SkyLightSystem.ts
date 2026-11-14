@@ -180,6 +180,8 @@ export class SkyLightSystem extends GameSystem {
     this.eyeAdaptation.z = tod.hdrEyeAdaptation.z
     this.eyeAdaptation.w = this.config.value.exposure === 'auto' ? 1 : 0
     inputs.set(InputSlots.FilmMapping.EyeAdaptation, this.eyeAdaptation)
+    // HDRBloomColor = bloom amount * 0.3 (GetHDRSetupParams) / 8 (D3DHDRRender.cpp)
+    inputs.set(InputSlots.FilmMapping.Bloom, (tod.hdrBloomAmount * 0.3) / 8)
 
     inputs.set(InputSlots.SunShafts.Params, tod.sunShaftsParams)
     inputs.set(InputSlots.SunShafts.Color, tod.sunShaftsColor)

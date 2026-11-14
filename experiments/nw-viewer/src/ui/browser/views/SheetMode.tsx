@@ -214,7 +214,14 @@ export function SheetTableMode(props: { ctx: ViewContext }) {
  * the group number and name, then one column per field of the group.
  */
 export function SheetGroupsMode(props: { ctx: ViewContext }) {
-  const data = props.ctx.sheet
+  return <SheetGroupsView data={props.ctx.sheet} />
+}
+
+/**
+ * The groups view of a wide sheet, also used by the Data tool (ui/data) for wide families such as LootBuckets
+ */
+export function SheetGroupsView(props: { data: SheetData }) {
+  const data = props.data
   const sheet = data.sheet
   const groups = data.groups
   const entries = groups.entries

@@ -179,9 +179,20 @@ export class Material implements Ownable {
 
   /**
    * Creates a new instance of this material with same constructor options.
+   *
+   * @param properties - replaces the {@link MaterialOptions.properties} of the new instance, e.g. to give one
+   *  instance other parameters than the shared material
    */
-  public instantiate(): Material {
-    return new (this.constructor as any)(this.device, this.options)
+  public instantiate(properties?: MaterialProperties): Material {
+    const options = properties ? { ...this.options, properties } : this.options
+    return new (this.constructor as any)(this.device, options)
+  }
+
+  /**
+   * The properties this material was created with, see {@link MaterialOptions.properties}
+   */
+  public get properties(): Readonly<MaterialProperties> {
+    return this.options.properties
   }
 
   public getInput<T extends InputTypeName>(input: InputSlot<T>): InputTypeMap[T] | null {

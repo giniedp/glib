@@ -37,6 +37,10 @@ export function ExportButton(props: {
    * Icon only, e.g. next to a field
    */
   square?: boolean
+  /**
+   * The text of the button, default "Export"
+   */
+  label?: string
 }) {
   const [open, setOpen] = createSignal(false)
   const name = () => props.path.split('/').pop() ?? props.path
@@ -49,7 +53,7 @@ export function ExportButton(props: {
         icon={<Icon svg={svgDownload} />}
         onClick={() => setOpen(true)}
       >
-        {props.square ? null : 'Export'}
+        {props.square ? null : (props.label ?? 'Export')}
       </Button>
       <ModalDialog title={`Export ${name()}`} open={open()} onClose={() => setOpen(false)}>
         {/* created on open: downloads of a closed dialog are aborted */}

@@ -248,24 +248,16 @@ fn terrainSurface(input: VertexOutput) -> TerrainSurface {
   let normal = normalize(tbn * normalize(mix(vtParams.normal, macroNormal, macroWeight)));
   let albedo = mix(vtAlbedo, macroAlbedo, macroWeight);
   let alpha = 1.0;
-  var specular = vec3f(mix(vtParams.specular, instance.params2.w, macroWeight));
+  let specular = vec3f(mix(vtParams.specular, instance.params2.w, macroWeight));
   let authoredRoughness = mix(vtParams.roughness, smoothnessToRoughness(macroGloss), macroWeight);
-  // specular antialiasing, the game filters the gbuffer of all opaque surfaces (FilterGBufferPS)
-  let saa = getNormalVarianceSmoothness(
-    normal,
-    vec2i(floor(input.Position.xy)),
-    linearizeDepthReversedZ(input.Position.z, view.near, view.far),
-    roughnessToSmoothness(authoredRoughness),
-    specular,
-  );
-  specular *= saa.specularScale;
+  // the normal variance filter of the game (FilterGBufferPS) runs on the GBuffer, see FilterGBufferPass
 
   var s: TerrainSurface;
   s.toEye             = toEye;
   s.normal            = normal;
   s.albedo            = albedo;
   s.specular          = specular;
-  s.gloss             = saa.smoothness;
+  s.gloss             = roughnessToSmoothness(authoredRoughness);
   s.authoredRoughness = authoredRoughness;
   s.tangent           = tbn[0];
   s.bitangent         = tbn[1];

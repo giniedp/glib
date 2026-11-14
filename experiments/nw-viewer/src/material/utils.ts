@@ -29,7 +29,8 @@ export function paramVec3(value: number[] | string, fallback: IVec3 = vec3.Zero)
 }
 
 export function paramValue(value: number | string, fallback: number = 0): number {
-  if (value == null || value == '') {
+  // strict: `0 == ''` is true, a number 0 must not fall back
+  if (value == null || value === '') {
     return fallback
   }
   if (typeof value === 'number') {

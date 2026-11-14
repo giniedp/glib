@@ -114,6 +114,10 @@ export const InputSlots = {
      * x = EV min, y = EV max, z = EV auto compensation (HDREyeAdaptation, EV mode), w = 1 enables the eye adaptation
      */
     EyeAdaptation: inputSlotVec4('filmMapping', 'eyeAdaptation'),
+    /**
+     * Blend factor of the bloom (HDRBloomColor): time of day bloom amount * 0.3 / 8 (C3DEngine::GetHDRSetupParams)
+     */
+    Bloom: inputSlotScalar('filmMapping', 'bloom'),
   },
   View: {
     ViewMatrix: CommonInputs.View.ViewMatrix,

@@ -11,13 +11,36 @@ export function StatsBar(props: { viewer: NwViewer }) {
   const sample = (read: () => number) => () => (tick(), read())
   return (
     <div class="nw-stats-bar">
-      <Stat value={sample(() => viewer.schedulerStats?.total || 0)} unit="Tasks" />
-      <Stat value={sample(() => Math.floor(viewer.stats.fps.average))} width={3} unit="FPS" />
-      <Stat value={sample(() => viewer.stats.frameTime.average * 1000)} decimals={2} width={5} unit="ms" />
-      <Stat label="update" value={sample(() => viewer.world.stats.update.average)} decimals={2} width={5} />
-      <Stat label="draw" value={sample(() => viewer.stats.draw.average)} decimals={2} width={5} />
-      <Stat value={sample(() => viewer.renderStats?.drawCount ?? 0)} width={4} unit="Draws" />
-      <Stat value={sample(() => viewer.sceneStats?.visible ?? 0)} width={4} unit="Visible" />
+      <Stat value={sample(() => viewer.schedulerStats?.total || 0)} unit="Tasks" title="Pending loading tasks" />
+      <Stat
+        value={sample(() => Math.floor(viewer.stats.fps.average))}
+        width={3}
+        unit="FPS"
+        title="Frames per second (average)"
+      />
+      <Stat
+        value={sample(() => viewer.stats.frameTime.average * 1000)}
+        decimals={2}
+        width={5}
+        unit="ms"
+        title="Frame time in milliseconds (average)"
+      />
+      <Stat
+        label="update"
+        value={sample(() => viewer.world.stats.update.average)}
+        decimals={2}
+        width={5}
+        title="Update of the game world in milliseconds (average)"
+      />
+      <Stat
+        label="draw"
+        value={sample(() => viewer.stats.draw.average)}
+        decimals={2}
+        width={5}
+        title="Draw on the CPU in milliseconds (average)"
+      />
+      <Stat value={sample(() => viewer.renderStats?.drawCount ?? 0)} width={4} unit="Draws" title="Draw calls per frame" />
+      <Stat value={sample(() => viewer.sceneStats?.visible ?? 0)} width={4} unit="Visible" title="Visible scene objects" />
     </div>
   )
 }
@@ -40,6 +63,10 @@ interface StatProps {
    * Pads the value with zeros to this width, so the bar does not jump
    */
   width?: number
+  /**
+   * Tooltip: what the value is
+   */
+  title?: string
 }
 
 function Stat(props: StatProps) {
@@ -49,7 +76,7 @@ function Stat(props: StatProps) {
     return props.width ? fixed.padStart(props.width, '0') : fixed
   }
   return (
-    <span class="nw-stat">
+    <span class="nw-stat" title={props.title}>
       {props.label && <span class="nw-muted">{props.label} </span>}
       {text()}
       {props.unit && <span class="nw-muted"> {props.unit}</span>}

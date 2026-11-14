@@ -85,8 +85,33 @@ export class MeshLoaderComponent implements GameComponent {
    */
   public lane: PriorityLane = PriorityLane.Low
 
-  public constructor(data: ViewerMeshComponent) {
+  /**
+   * Public material params that replace the ones of the `.mtl` for this model (e.g. the blend mask colors of an
+   * appearance row): the model gets its own material instances. Null shares the materials.
+   */
+  private readonly materialParams: Record<string, string | number> | null
+
+  public constructor(data: ViewerMeshComponent, options?: { materialParams?: Record<string, string | number> | null }) {
     this.data = data
+    this.materialParams = options?.materialParams ?? null
+  }
+
+  /**
+   * Creates the model of this entity from a source model: shared meshes and materials, or own materials with the
+   * {@link materialParams}
+   */
+  private instantiate = (source: Model): Model => {
+    const params = this.materialParams
+    if (!params) {
+      return instantiateModel(source)
+    }
+    return source.instantiate({
+      meshes: true,
+      materials: (material) => {
+        const properties = material.properties as { params?: Record<string, unknown> }
+        return material.instantiate({ ...properties, params: { ...properties.params, ...params } })
+      },
+    })
   }
 
   public initialize(): void {
@@ -120,8 +145,8 @@ export class MeshLoaderComponent implements GameComponent {
         const combineInstances = COMBINE_INSTANCE_ARRAYS && !task.context.skins?.length
         if (this.data.instances?.length > 0 && !combineInstances) {
           for (const inst of this.data.instances) {
-            const model = instantiateModel(task.context)
-            this.attachLod(model, task.context, instantiateModel, scaleZ(this.entity.getTransform().world) * scaleZ(inst))
+            const model = this.instantiate(task.context)
+            this.attachLod(model, task.context, this.instantiate, scaleZ(this.entity.getTransform().world) * scaleZ(inst))
 
             const child = this.entity.world.createEntity({
               parent: this.entity,
@@ -144,7 +169,7 @@ export class MeshLoaderComponent implements GameComponent {
             child.layerFlags = this.layerFlags
           }
         } else {
-          let instantiate = instantiateModel
+          let instantiate = this.instantiate
           if (this.data.instances?.length > 0) {
             instantiate = (source: Model) => createInstanceArrayModel(source, this.data.instances)
           }

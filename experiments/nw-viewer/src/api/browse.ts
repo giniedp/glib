@@ -144,6 +144,11 @@ export interface FileStat extends ListFile {
  */
 const baseUrl: string = import.meta.env.VITE_NWBT_URL ?? ''
 
+/**
+ * The origin of nwbt ('' when the page proxies it), for clients that build their own urls (the audio catalog)
+ */
+export const nwbtBaseUrl = baseUrl
+
 async function fetchJson<T>(url: string, signal?: AbortSignal): Promise<T> {
   const res = await fetch(baseUrl + url, { signal })
   if (!res.ok) {
@@ -204,6 +209,70 @@ export interface BrowseSlice {
  */
 export function getSlice(path: string, signal?: AbortSignal) {
   return fetchJson<BrowseSlice>(`/browse/slice?path=${encodeURIComponent(path)}`, signal)
+}
+
+/**
+ * Mirrors `browse.ColumnKind`: what the cells of a string column hold, inferred by nwbt from their values.
+ * `key` is the first column, `ref` holds keys of other families (`refs`), `loc` localization keys (`@name`),
+ * `asset` file paths (`exts`), `audio` audio trigger names (`Play_*`).
+ */
+export type SheetColumnKind = 'key' | 'ref' | 'loc' | 'asset' | 'audio'
+
+/**
+ * Mirrors `browse.SheetColumn`
+ */
+export interface SheetColumn {
+  name: string
+  /**
+   * 1 string, 2 number, 3 boolean (`ColumnType` of formats/datasheet)
+   */
+  type: number
+  kind?: SheetColumnKind
+  /**
+   * The referenced families, best match first
+   */
+  refs?: string[]
+  /**
+   * File extensions of an asset column, most common first
+   */
+  exts?: string[]
+}
+
+/**
+ * Mirrors `browse.SheetInfo`: one datasheet file
+ */
+export interface SheetInfo {
+  path: string
+  /**
+   * The sheet name of the header, e.g. `HouseItems`
+   */
+  name: string
+  rows: number
+  columns: number
+}
+
+/**
+ * Mirrors `browse.SheetFamily`: the sheets of one row type (the family of the sheet header)
+ */
+export interface SheetFamily {
+  name: string
+  rows: number
+  /**
+   * In asset guid order, the order the game visits them
+   */
+  sheets: SheetInfo[]
+  /**
+   * The union of the sheets' columns by lowercase name, the first spelling
+   */
+  columns: SheetColumn[]
+}
+
+/**
+ * The datasheets by family and the inferred kinds of their columns (`/browse/datasheets`). The first request makes
+ * nwbt read every datasheet (a few seconds), later ones are served from memory.
+ */
+export function getDatasheets(signal?: AbortSignal) {
+  return fetchJson<{ families: SheetFamily[] }>('/browse/datasheets', signal)
 }
 
 /**

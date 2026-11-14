@@ -1,4 +1,4 @@
-import { Device, Mesh, ResourceOwnership, type Ownable } from '@gglib/graphics'
+import { Device, Mesh, ResourceOwnership, type Material, type Ownable } from '@gglib/graphics'
 import {
   BoundingBox,
   BoundingSphere,
@@ -407,9 +407,10 @@ export class Model implements Ownable {
    * Like any other new model, the instance is owned by the global scope until it is given to a scope.
    *
    * To instantiate meshes, pass `true` for `options.meshes`
-   * To also instantiate materials for each mesh, pass `true` for `options.materials`
+   * To also instantiate materials for each mesh, pass `true` for `options.materials`, or a function that returns the
+   * material of the new meshes for each material
    */
-  public instantiate(options?: { meshes: boolean; materials: boolean }) {
+  public instantiate(options?: { meshes: boolean; materials: boolean | ((material: Material) => Material) }) {
     const meshes = this.meshes.map((mesh) => {
       return options?.meshes ? mesh.instantiate(options) : mesh
     })

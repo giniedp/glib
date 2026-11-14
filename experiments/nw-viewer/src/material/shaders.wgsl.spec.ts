@@ -13,6 +13,10 @@ import { LIGHTING_WGSL } from '../graphics/passes/lighting/LightingPass.wgsl'
 import { XE_GTAO_MAIN_WGSL } from '../graphics/passes/ssao/XeGtao.wgsl'
 import { SMAA_BLEND_WGSL, SMAA_EDGES_WGSL, SMAA_WEIGHTS_WGSL } from '../graphics/passes/smaa/SmaaPass.wgsl'
 import { CMAA2_WGSL } from '../graphics/passes/cmaa2/Cmaa2Pass.wgsl'
+import { FILTER_GBUFFER_WGSL } from '../graphics/passes/gbuffer/FilterGBufferPass'
+import { BLOOM_DOWNSAMPLE_WGSL, BLOOM_GAUSSIAN_WGSL } from '../graphics/passes/bloom/BloomPass.wgsl'
+import { FILM_MAPPING_WGSL } from '../graphics/passes/filmmapping/FilmMappingPass.wgsl'
+import { SMAA_1TX_WGSL } from '../graphics/passes/smaa/Smaa1txPass'
 
 // compiles material shader sources on the GPU and checks the entry points the render variants use
 const SHADERS: Array<{ name: string; source: string; fragmentEntries: string[] }> = [
@@ -70,6 +74,11 @@ describe('material shaders', () => {
     ['SMAA weights', SMAA_WEIGHTS_WGSL],
     ['SMAA blend', SMAA_BLEND_WGSL],
     ['CMAA2', CMAA2_WGSL],
+    ['Filter GBuffer', FILTER_GBUFFER_WGSL],
+    ['Bloom downsample', BLOOM_DOWNSAMPLE_WGSL],
+    ['Bloom gaussian', BLOOM_GAUSSIAN_WGSL],
+    ['Film mapping', FILM_MAPPING_WGSL],
+    ['SMAA 1TX', SMAA_1TX_WGSL],
   ]
   for (const [name, code] of PASS_SHADERS) {
     it(`${name} pass compiles`, async () => {
