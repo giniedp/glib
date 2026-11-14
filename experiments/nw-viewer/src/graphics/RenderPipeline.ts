@@ -167,7 +167,9 @@ function neutralSceneDepthPass(name: string): RenderPass {
   return describePass(
     new FunctionPass({
       name,
-      render: (ctx) => ctx.renderInputs.set(CommonInputs.View.SceneDepthMap, getWhiteTexture(ctx.device)),
+      render: (ctx) => {
+        ctx.renderInputs.set(CommonInputs.View.SceneDepthMap, getWhiteTexture(ctx.device))
+      },
     }),
     { note: 'unbinds LinearDepth as scene depth input while passes render into it' },
   )
@@ -215,13 +217,17 @@ export function createRenderPipeline(device: Device): RenderPipelineOptions {
     describePass(
       renderInputsPass({
         name: 'OpaqueInputs',
-        // fog is applied by the FogPass
-        values: [[InputSlots.Global.SkipFog, TRUE]],
+        values: [
+          // fog is applied by the FogPass
+          [InputSlots.Global.SkipFog, TRUE],
+        ],
       }),
-      { note: 'opaque materials skip fog, the fog pass applies it' },
+      { note: 'Sets inputs for opaque pass' },
     ),
-    groupPass({ name: 'Opaque', passes: createOpaquePasses(device, previousColor, luminance) }),
-    // froxel volumetric fog (plan phase 8), after the opaque surfaces like the game, before the fog apply
+    groupPass({
+      name: 'Opaque',
+      passes: createOpaquePasses(device, previousColor, luminance),
+    }),
     optionalPass(froxelFog),
     describePass(
       renderInputsPass({
@@ -303,11 +309,7 @@ export function createRenderPipeline(device: Device): RenderPipelineOptions {
  * 4. emissive variant
  * 5. forward opaque items: the sky (writes the far plane into LinearDepth where no geometry is), unlit, debug
  */
-function createOpaquePasses(
-  device: Device,
-  previousColor: PreviousColorPass,
-  luminance: LuminancePass,
-): RenderPass[] {
+function createOpaquePasses(device: Device, previousColor: PreviousColorPass, luminance: LuminancePass): RenderPass[] {
   return [
     neutralSceneDepthPass('OpaqueSceneDepthReset'),
     new GeometryPass({
@@ -347,9 +349,12 @@ function createOpaquePasses(
         name: 'Projected Decals',
         enabled: true,
         passes: [
-          describePass(new CopyPass(device, { name: 'DecalNormalCopy', input: GBufferChannel.A, output: NwCopyChannel.GBufferA }), {
-            note: 'copy of GBuffer A, the receiver normals of the decal angle fade',
-          }),
+          describePass(
+            new CopyPass(device, { name: 'DecalNormalCopy', input: GBufferChannel.A, output: NwCopyChannel.GBufferA }),
+            {
+              note: 'copy of GBuffer A, the receiver normals of the decal angle fade',
+            },
+          ),
           describePass(
             renderInputsPass({
               name: 'DecalInputs',

@@ -305,6 +305,14 @@ export class IllumMaterial extends MaterialWithSchema(SCHEMA) {
       shaderFlags.delete('COLOR_SAMPLER_OVERLAY_MASK')
     }
 
+    // %SPECULAR_MAP follows the bound Specular texture, not the authored flag (Illum.ext DependencySet/DependencyReset
+    // = $TEX_Specular, applied by CShaderMan::mfModifyGenFlags). Legacy materials name it %SPEC_MAP, which is dropped.
+    if (texMaps.Specular) {
+      shaderFlags.add('SPECULAR_MAP')
+    } else {
+      shaderFlags.delete('SPECULAR_MAP')
+    }
+
     // #if %DECAL
     //   #if %SUBSURFACE_SCATTERING
     //     #undefine %SUBSURFACE_SCATTERING

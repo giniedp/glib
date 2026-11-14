@@ -1,7 +1,12 @@
 import { BlendState, Color, DepthState, TextureUsage, type Device, type Program, type Texture } from '@gglib/graphics'
 import { FrameGraph, RenderChannel, type FrameResource, type RenderContext, type RenderPass } from '@gglib/render'
 import type { TexturePreview } from './TexturePreview'
-import { texturePreviewWgsl, TexturePreviewChannels, TexturePreviewProjection } from './TexturePreview.wgsl'
+import {
+  TEXTURE_PREVIEW_3D_WGSL,
+  TEXTURE_PREVIEW_WGSL,
+  TexturePreviewChannels,
+  TexturePreviewProjection,
+} from './TexturePreview.wgsl'
 
 /**
  * Draws a {@link TexturePreview} into `RenderChannel.Color` at the output size: the only pass of the texture view
@@ -30,10 +35,10 @@ export class TexturePreviewPass implements RenderPass {
 
   public constructor(device: Device) {
     device.ready.then(() => {
-      const create = (name: string, volume: boolean) =>
-        device.createShaderModule({ name, wgsl: { source: texturePreviewWgsl(volume) } }).program.clone()
-      this.programs.array = create('Texture Preview', false)
-      this.programs.volume = create('Texture Preview 3D', true)
+      const create = (name: string, source: string) =>
+        device.createShaderModule({ name, wgsl: { source } }).program.clone()
+      this.programs.array = create('Texture Preview', TEXTURE_PREVIEW_WGSL)
+      this.programs.volume = create('Texture Preview 3D', TEXTURE_PREVIEW_3D_WGSL)
       this.noAlpha = device.createTexture({
         name: 'Texture Preview no alpha',
         type: '2d-array',

@@ -1,9 +1,9 @@
 import { createEffect, createMemo, createResource, createSignal, For, Match, Show, Suspense, Switch } from 'solid-js'
 import { Dynamic } from 'solid-js/web'
 import { getSlice, statFile } from '../../../api/browse'
+import { ExportButton } from '../../common/ExportButton'
 import { ModeBar } from '../../common/ModeBar'
 import { assetTypes } from '../assetTypes'
-import { OpenInViewer } from '../OpenInViewer'
 import { browserTabs, type Tab } from '../tabs'
 import { contentKind } from './content'
 import { ASSET_VIEWS, type ViewContext } from './registry'
@@ -61,14 +61,13 @@ export function TabView(props: { tab: Tab }) {
       <Match when={ctx()}>
         {(context) => (
           <>
-            <Show when={views().length > 1}>
-              <ModeBar
-                modes={views()}
-                active={mode()?.id}
-                onSelect={(id) => browserTabs.setMode(props.tab.id, id)}
-                tools={<OpenInViewer path={props.tab.path} />}
-              />
-            </Show>
+            {/* the modes only when there is a choice, the export for every file */}
+            <ModeBar
+              modes={views().length > 1 ? views() : []}
+              active={mode()?.id}
+              onSelect={(id) => browserTabs.setMode(props.tab.id, id)}
+              tools={<ExportButton ghost path={props.tab.path} />}
+            />
             <For each={views()}>
               {(view) => (
                 <Show when={mounted().has(view.id)}>

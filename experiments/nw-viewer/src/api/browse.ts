@@ -249,6 +249,13 @@ export function thumbnailUrl(path: string, size: number) {
  * Url of a file's raw content (`/files/<path>`). For a `.dds` the stored base file, not merged by the server.
  */
 export function fileUrl(path: string) {
-  const url = `${baseUrl}/files/${path}`
+  const url = filesUrl(path)
   return path.endsWith('.dds') || path.endsWith('.dds.a') ? `${url}?merge=false` : url
+}
+
+/**
+ * Url of a file or of a conversion of it (`/files/<path>`, e.g. `x.cgf.glb`), without query parameters
+ */
+export function filesUrl(path: string) {
+  return `${baseUrl}/files/${path}`
 }

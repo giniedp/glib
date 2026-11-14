@@ -31,6 +31,8 @@
   flex: none;
   align-items: center;
   gap: 0.5rem;
+  /* as high as a button, with or without one: a button that comes and goes does not move the content */
+  min-height: calc(var(--twk-spacing-field) + 0.25rem);
   padding: 0.125rem 0.25rem;
 }
 
@@ -49,6 +51,18 @@
 /* the row numbers read as chrome, not data */
 .nw-ag .nw-ag-index {
   color: var(--nw-text-dim);
+}
+/* the tweak-ui reset (.tweak-ui :where(*) { padding: 0 }) has the specificity of ag-grid's own header rule and comes
+   later: the header cells get their padding back here */
+.nw-ag .ag-header-cell,
+.nw-ag .ag-header-group-cell {
+  padding: 0 var(--ag-cell-horizontal-padding);
+}
+/* cells with buttons (cellClass 'nw-ag-buttons'): centered in the row, side by side */
+.nw-ag .nw-ag-buttons {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
 }
 /* measures the width of a mono character at the grid font size */
 .nw-ag-probe {
@@ -298,6 +312,45 @@
 .nw-particles-count {
   padding: 0.25rem 0.5rem;
   border-top: 1px solid var(--nw-line);
+}
+
+/* audio: the play buttons of the media grid and the waveform of a media file (ui/browser/views/AudioMode.tsx) */
+.nw-audio {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+.nw-audio-wave {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  color: var(--nw-text-dim);
+  background: var(--nw-bg-sunken);
+}
+/* the play buttons stay as wide when they switch between play and stop */
+.nw-audio-play {
+  min-width: 1.75rem;
+}
+
+/* characters: the parts of the character next to the engine (ui/browser/views/CharacterMode.tsx) */
+.nw-character {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+.nw-character-parts {
+  flex: 0 0 18rem;
+  min-height: 0;
+  padding: 0.25rem 0;
+  overflow-y: auto;
+  border-right: 1px solid var(--nw-line);
+}
+.nw-character-part {
+  padding: 0.125rem 0.5rem;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 /* engine views: a toolbar above the engine surface (ui/browser/views/TextureMode.tsx, ModelMode.tsx) */

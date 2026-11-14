@@ -338,7 +338,13 @@ function menuOrder(entry: LevelEntry) {
 }
 
 function levelSummary(maps: number) {
-  return maps === 1 ? '1 game mode map' : maps ? `${maps} game mode maps` : 'no game mode'
+  if (maps === 1) {
+    return '1 game mode map'
+  }
+  if (maps) {
+    return `${maps} game mode maps`
+  }
+  return 'no game mode'
 }
 
 /**

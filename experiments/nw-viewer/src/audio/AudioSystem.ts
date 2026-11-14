@@ -226,6 +226,7 @@ export class AudioSystem extends GameSystem {
   private resetWorker(levelInfo: LevelInfo | null) {
     this.worker?.terminate()
     this.worker = null
+    this.output.reset(0.5)
     this.sentEmitters.clear()
     this.sentScripts.clear()
     this.workerLevel = levelInfo

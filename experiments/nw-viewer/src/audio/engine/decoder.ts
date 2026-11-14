@@ -52,6 +52,13 @@ export class VgmstreamDecoder {
    * Decodes a `.wem` (or any vgmstream supported) file to planar float channels
    */
   public decode(data: Uint8Array): { sampleRate: number; channels: Float32Array[] } {
+    return parseWav(this.decodeWav(data))
+  }
+
+  /**
+   * Decodes a `.wem` (or any vgmstream supported) file to the RIFF WAVE file vgmstream writes (16 bit PCM)
+   */
+  public decodeWav(data: Uint8Array): Uint8Array {
     const fs = this.global.FS
     const id = ++this.counter
     const input = `/in${id}.wem`
@@ -59,13 +66,11 @@ export class VgmstreamDecoder {
     fs.writeFile(input, data)
     try {
       this.global.callMain(['-o', output, input])
-      let wav: Uint8Array
       try {
-        wav = fs.readFile(output)
+        return fs.readFile(output)
       } catch {
         throw new Error('vgmstream produced no output (unsupported media)')
       }
-      return parseWav(wav)
     } finally {
       try {
         fs.unlink(input)

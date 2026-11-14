@@ -62,6 +62,8 @@
 /* the scenes dialog, see panels/scenesButton.tsx: compact rows with a thumbnail in collapsible groups */
 .nw-scenes {
   width: 100%;
+  min-height: 50vh;
+  max-height: 50vh;
 }
 /* covers the padding of the scrolling content too, so rows do not show above it */
 .nw-scenes-filter {

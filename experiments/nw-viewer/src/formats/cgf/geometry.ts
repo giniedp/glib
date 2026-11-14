@@ -319,20 +319,20 @@ function buildMesh(cgf: CgfFile, heap: Uint8Array<ArrayBuffer> | null, mesh: Cgf
     }
   }
 
+  // the tangent frame, in the order of the nwbt glTF conversion: tangent stream, normal stream, qtangents (skins)
   const tangents = getStream(cgf, heap, mesh, CgfStreamType.Tangents)
   const normals = getStream(cgf, heap, mesh, CgfStreamType.Normals)
+  const qtangents = getStream(cgf, heap, mesh, CgfStreamType.QTangents)
+  const tangentFrameLayout: VertexLayout = {
+    tangent: { type: 'snorm16x4', byteOffset: 0 },
+    normal: { type: 'snorm16x4', byteOffset: 8 },
+  }
   if (tangents?.stride === 16) {
-    buffers.push({
-      usage: BufferUsage.VERTEX,
-      layout: {
-        tangent: { type: 'snorm16x4', byteOffset: 0 },
-        normal: { type: 'snorm16x4', byteOffset: 8 },
-      },
-      stride: 16,
-      data: tangentFrameWithNormal(tangents),
-    })
+    buffers.push({ usage: BufferUsage.VERTEX, layout: tangentFrameLayout, stride: 16, data: tangentFrameWithNormal(tangents) })
   } else if (normals?.stride === 12) {
     buffers.push(vertexBuffer(normals, { normal: { type: 'float32x3', byteOffset: 0 } }))
+  } else if (qtangents?.stride === 8) {
+    buffers.push({ usage: BufferUsage.VERTEX, layout: tangentFrameLayout, stride: 16, data: qtangentFrame(qtangents) })
   }
 
   return {
@@ -440,6 +440,50 @@ export function tangentFrameWithNormal(stream: { bytes: Uint8Array; count: numbe
     out[o + 5] = Math.round(ny)
     out[o + 6] = Math.round(nz)
     out[o + 7] = 0
+  }
+  return out
+}
+
+/**
+ * Converts the qtangent stream (a quaternion per vertex as snorm16x4, the skins' tangent frame) into the layout of
+ * {@link tangentFrameWithNormal}: tangent snorm16x4 at 0 (w = handedness), normal snorm16x4 at 8, stride 16.
+ *
+ * @remarks
+ * Like Lumberyard (QTangent::ToTangentBitangentReflection, SPipQTangents::GetN): tangent = column 0 of the rotation,
+ * handedness = sign(q.w), normal = column 2 · handedness. The shaders' bitangent cross(normal, tangent) · w is then
+ * column 1, the engine's bitangent. Same math as the nwbt glTF conversion (writeQTangentFrame).
+ */
+export function qtangentFrame(stream: { bytes: Uint8Array; count: number }): Int16Array<ArrayBuffer> {
+  const src = new Int16Array(stream.bytes.slice(0, stream.count * 8).buffer)
+  const out = new Int16Array(stream.count * 8)
+  for (let i = 0; i < stream.count; i++) {
+    const o = i * 4
+    let x = src[o]
+    let y = src[o + 1]
+    let z = src[o + 2]
+    let w = src[o + 3]
+    const len = Math.hypot(x, y, z, w)
+    const d = i * 8
+    if (len === 0) {
+      // degenerate: Z up normal, X tangent (Cry axes)
+      out[d] = 32767
+      out[d + 3] = 32767
+      out[d + 6] = 32767
+      continue
+    }
+    x /= len
+    y /= len
+    z /= len
+    w /= len
+    const sign = w < 0 ? -32767 : 32767
+    out[d] = Math.round((1 - 2 * (y * y + z * z)) * 32767)
+    out[d + 1] = Math.round(2 * (x * y + z * w) * 32767)
+    out[d + 2] = Math.round(2 * (x * z - y * w) * 32767)
+    out[d + 3] = sign
+    out[d + 4] = Math.round(2 * (x * z + y * w) * sign)
+    out[d + 5] = Math.round(2 * (y * z - x * w) * sign)
+    out[d + 6] = Math.round((1 - 2 * (x * x + y * y)) * sign)
+    out[d + 7] = 0
   }
   return out
 }

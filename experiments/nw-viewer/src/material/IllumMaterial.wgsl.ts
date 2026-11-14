@@ -461,7 +461,10 @@ fn illumSurface(input: FragmentInput) -> IllumSurface {
   var albedo   = cDiffuseMap.rgb;
   var alpha    = cDiffuseMap.a; // * pPass.IN.Ambient.w;
   var normal   = normalize(tbn * normalize(cBumpMap));
-  var specular = vec3f(0.0);
+  // F0 without a specular map: the deferred ZPass (opaque, %DECAL) starts from the specular color
+  // (clusterforward_commonzpass.cfi: cReflectance = PerMaterial_SpecularColor), the forward pass of blended
+  // surfaces from zero (illum.cfx: (fragPass)0). %SPECULAR_MAP follows the Specular texture (IllumMaterial.ts).
+  var specular = select(vec3f(1.0), vec3f(0.0), material.enabledAlphaBlend == TRUE && !DECAL);
   var gloss    = material.specularColor.a;
 
   // #if %RIM_DIFFUSE_LIGHTING || %RIM_SPEC_LIGHTING || %_RT_CLUSTER_FORWARD

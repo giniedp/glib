@@ -16,6 +16,11 @@ import { onCleanup, onMount } from 'solid-js'
 ModuleRegistry.registerModules([AllCommunityModule])
 
 /**
+ * Horizontal padding of cells and headers, each side, in px. Column widths add it, see {@link columnWidth}.
+ */
+const CELL_PADDING_PX = 10
+
+/**
  * AG Grid in the page's colors: every parameter is one of our tokens (styles/tokens.css), so the grid follows
  * the tweak-ui theme without a stylesheet of its own
  */
@@ -43,7 +48,7 @@ export const gridTheme = themeQuartz.withParams({
   rowHeight: 20,
   headerHeight: 24,
   // room between a right aligned number header and the name of the next header
-  cellHorizontalPadding: 10,
+  cellHorizontalPadding: CELL_PADDING_PX,
   wrapperBorder: false,
   wrapperBorderRadius: 0,
   borderRadius: 2,
@@ -83,8 +88,13 @@ const MAX_VALUE_CHARS = 60
 export function columnWidth(name: string, valueChars: number, sortable = true) {
   const header = name.length + 2 + (sortable ? 2 : 0)
   const chars = Math.max(4, header, Math.min(MAX_VALUE_CHARS, valueChars))
-  return Math.round((chars + 2) * gridCharPx())
+  return Math.ceil(chars * gridCharPx() + 2 * CELL_PADDING_PX + COLUMN_BORDER_PX)
 }
+
+/**
+ * The column border and rounding, so that a value of exactly the counted characters is not cut
+ */
+const COLUMN_BORDER_PX = 2
 
 /**
  * The row number, pinned at the left
@@ -94,8 +104,10 @@ export function indexColumn<T>(total: number): ColDef<T> {
     colId: '#',
     headerName: '#',
     valueGetter: (p) => p.node?.rowIndex,
-    // digits plus the cell padding (2 x cellHorizontalPadding, about 3 characters)
-    width: Math.round((Math.max(2, String(Math.max(total - 1, 0)).length) + 3) * gridCharPx()),
+    // digits plus the cell padding
+    width: Math.ceil(
+      Math.max(2, String(Math.max(total - 1, 0)).length) * gridCharPx() + 2 * CELL_PADDING_PX + COLUMN_BORDER_PX,
+    ),
     pinned: 'left',
     sortable: false,
     resizable: false,

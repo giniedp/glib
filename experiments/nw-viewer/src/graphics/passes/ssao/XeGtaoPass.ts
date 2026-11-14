@@ -105,14 +105,14 @@ export class XeGtaoPass implements RenderPass {
    */
   public enabled = true
 
-  public quality: XeGtaoQuality = 'medium'
+  public quality: XeGtaoQuality = 'high'
   public denoisePasses = 1
-  public radius = 2
-  public radiusMultiplier = 1.457
-  public falloffRange = 0.615
+  public radius = 1
+  public radiusMultiplier = 1
+  public falloffRange = 0.5
   public sampleDistributionPower = 2.0
   public thinOccluderCompensation = 0.0
-  public finalValuePower = 2.2
+  public finalValuePower = 2
   public depthMipSamplingOffset = 3.3
   public denoiseBlurBeta = 1.2
   public maxDistance = Infinity
@@ -314,7 +314,6 @@ export class XeGtaoPass implements RenderPass {
     // released at the end of render, this only runs if the render threw
     this.releaseTargets(ctx)
   }
-
 
   private draw(ctx: RenderContext, program: Program, target: Texture, mipLevel: number) {
     const pass = ctx.device.renderPass

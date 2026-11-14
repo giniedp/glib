@@ -9,6 +9,7 @@ import { assetTypes, typeIcon } from './assetTypes'
 import { AssetTree } from './AssetTree'
 import { SearchResults } from './SearchResults'
 import { FolderInfo, SelectionInfo } from './SelectionInfo'
+import { loadFilter, saveFilter } from './filterStorage'
 import { browserTabs } from './tabs'
 import { TypeFilter } from './TypeFilter'
 import { TabView } from './views/TabView'
@@ -40,9 +41,25 @@ export default function BrowserTool() {
     setSelectedFile(null)
     setSelectedDir(dir)
   }
-  const [filter, setFilter] = createSignal<ReadonlySet<number>>(new Set())
+  // kept for the browser session, the types by key: their indices depend on the type list of the server
+  const stored = loadFilter()
+  const [filterKeys, setFilterKeys] = createSignal<ReadonlySet<string>>(new Set(stored.types))
+  const filter = createMemo(() => {
+    const keys = filterKeys()
+    const result = new Set<number>()
+    types().forEach((type, index) => {
+      if (keys.has(type.key)) {
+        result.add(index)
+      }
+    })
+    return result
+  })
+  const setFilter = (indices: ReadonlySet<number>) => {
+    setFilterKeys(new Set([...indices].map((index) => types()[index].key)))
+  }
   const filterTypes = createMemo(() => [...filter()])
-  const [query, setQuery] = createSignal('')
+  const [query, setQuery] = createSignal(stored.query)
+  createEffect(() => saveFilter({ query: query(), types: [...filterKeys()] }))
 
   let timer: ReturnType<typeof setTimeout> | undefined
   onCleanup(() => clearTimeout(timer))
@@ -64,6 +81,7 @@ export default function BrowserTool() {
           <div class="nw-search">
             <TextInput
               placeholder="Search path or asset id"
+              defaultValue={stored.query}
               slotBefore={<Icon svg={svgSearch} />}
               onInput={(text) => search(text, SEARCH_DELAY)}
               onChange={(text) => search(text, 0)}

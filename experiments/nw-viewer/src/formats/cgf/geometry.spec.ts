@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildCgfGeometryOptions, isRenderNode, tangentFrameWithNormal } from './geometry'
+import { buildCgfGeometryOptions, isRenderNode, qtangentFrame, tangentFrameWithNormal } from './geometry'
 import { parseCgf } from './parse'
 import { CgfWriter, IDENTITY_CM, sampleFile, writeMesh, writeNode } from './testing'
 import { CgfChunkType, CgfStreamType } from './types'
@@ -36,6 +36,34 @@ describe('tangentFrameWithNormal', () => {
     const heap = sampleHeap()
     tangentFrameWithNormal({ bytes: heap.subarray(64), count: 4 })
     expect(new DataView(heap.buffer).getInt16(64 + 10, true)).toBe(S)
+  })
+})
+
+describe('qtangentFrame', () => {
+  const frame = (...q: number[][]) => {
+    const src = new Int16Array(q.flat().map((v) => Math.round(v * S)))
+    return qtangentFrame({ bytes: new Uint8Array(src.buffer), count: q.length })
+  }
+  const cross = (a: number[], b: number[]) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]
+
+  it('decodes tangent (column 0), handedness (sign of w) and normal (column 2 · handedness)', () => {
+    const out = frame([0, 0, 0, 1], [0, 0, 0, -1])
+    expect(Array.from(out.slice(0, 8))).toEqual([S, 0, 0, S, 0, 0, S, 0])
+    // reflected: same rotation, the normal flips with the handedness
+    expect(Array.from(out.slice(8, 16))).toEqual([S, 0, 0, -S, 0, 0, -S, 0])
+  })
+
+  it('gives the engine bitangent (column 1) as cross(normal, tangent) · w', () => {
+    // 90° about z: tangent +y, bitangent -x, normal +z
+    const h = Math.SQRT1_2
+    const out = Array.from(frame([0, 0, h, h])).map((v) => Math.round(v / S))
+    expect(out.slice(0, 4)).toEqual([0, 1, 0, 1])
+    expect(out.slice(4, 7)).toEqual([0, 0, 1])
+    expect(cross(out.slice(4, 7), out.slice(0, 3)).map((v) => v * out[3])).toEqual([-1, 0, 0])
+  })
+
+  it('falls back to a Z up frame for a zero quaternion', () => {
+    expect(Array.from(frame([0, 0, 0, 0]))).toEqual([S, 0, 0, S, 0, 0, S, 0])
   })
 })
 

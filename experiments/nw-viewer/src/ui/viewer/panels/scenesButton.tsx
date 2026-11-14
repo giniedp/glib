@@ -1,5 +1,5 @@
 import { createMemo, createResource, createSignal, For, Show, untrack } from 'solid-js'
-import { Button, Group, Icon, TextInput } from 'tweak-ui'
+import { Button, Icon, Tabs, TextInput } from 'tweak-ui'
 import { thumbnailUrl } from '../../../api/browse'
 import { LEVEL_CATEGORIES, type LevelCategory, type LevelEntry } from '../../../levels/catalog'
 import { loadLevelCatalog } from '../../../levels/load'
@@ -28,7 +28,6 @@ export function ScenesButton(props: { viewer: NwViewer }) {
     <>
       <Button onClick={() => setOpen(true)}>Scenes</Button>
       <ModalDialog title="Scenes" open={open()} onClose={() => setOpen(false)}>
-        {/* created on the first open, the catalog loads then */}
         <Show when={open()}>
           <SceneList onSelect={select} />
         </Show>
@@ -70,15 +69,10 @@ function SceneList(props: { onSelect: (entry: LevelEntry) => void }) {
       </div>
       <Show when={!catalog.loading} fallback={<p class="nw-note">Reading the levels…</p>}>
         <Show when={!catalog.error} fallback={<p class="nw-note">The levels could not be loaded.</p>}>
-          <For each={groups()} fallback={<p class="nw-note">No matches</p>}>
-            {(group) => (
-              <Group
-                title={`${group.label} (${group.entries.length})`}
-                collapsible
-                defaultCollapsed={group.id !== initiallyOpen()}
-                // while filtering, every group with a match is open; undefined leaves it to the group
-                collapsed={filter().trim() ? false : undefined}
-              >
+          <Tabs
+            tabs={groups().map((group) => ({
+              title: `${group.label} (${group.entries.length})`,
+              content: () => (
                 <div class="nw-scene-rows">
                   <For each={group.entries}>
                     {(entry) => (
@@ -86,9 +80,9 @@ function SceneList(props: { onSelect: (entry: LevelEntry) => void }) {
                     )}
                   </For>
                 </div>
-              </Group>
-            )}
-          </For>
+              ),
+            }))}
+          />
         </Show>
       </Show>
     </div>

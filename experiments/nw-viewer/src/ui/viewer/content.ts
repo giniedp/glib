@@ -11,7 +11,7 @@ const CONTENT_PARAMS = ['level', 'mission', 'model', 'material']
 
 /**
  * The content parameters of the url that were opened last. Showing the tool again with the same content keeps the
- * scene, other content (e.g. "Open in viewer" of the browser, a scene of the dialog) opens that.
+ * scene, other content (e.g. a scene of the dialog) opens that.
  */
 const [openedContent, setOpenedContent] = createSignal<string | null>(null)
 
@@ -74,7 +74,23 @@ export function showScene(viewer: NwViewer, params: Record<string, string>) {
     url.searchParams.set(key, value)
   }
   history.replaceState(history.state, '', `${url.pathname}${url.search}`)
+  if (!viewer.previewing && contentKey(url.searchParams) === openedContent()) {
+    // scenes of the same level differ only by their camera
+    placeUrlCamera(viewer, url.searchParams)
+    return
+  }
   openUrlContent(viewer)
+}
+
+/**
+ * Moves the camera to the position of the url, or to the level's own camera placement when the url names none
+ */
+function placeUrlCamera(viewer: NwViewer, params: URLSearchParams) {
+  if (params.has('x')) {
+    viewer.teleportFromUrl()
+  } else if (params.has('level')) {
+    viewer.placeLevelCamera()
+  }
 }
 
 async function openDefault(viewer: NwViewer) {

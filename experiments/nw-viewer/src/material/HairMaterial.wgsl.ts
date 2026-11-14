@@ -288,15 +288,33 @@ fn fs_main(input: FragmentInput, @builtin(front_facing) frontFacing: bool) -> Fr
   out.depth = linearizeDepthReversedZ(input.position.z, view.near, view.far);
 
   switch (global.debug) {
-    case DEBUG_MTL_ALBEDO: { out.color = vec4f(s.color, 1.0); }
-    case DEBUG_MTL_SPECULAR: { out.color = vec4f(s.specular, 1.0); }
-    case DEBUG_MTL_ROUGHNESS: { out.color = vec4f(vec3f(smoothnessToRoughness(s.gloss)), 1.0); }
-    case DEBUG_GV_NORMAL: { out.color = vec4f(s.vertexNormal * 0.5 + 0.5, 1.0); }
-    case DEBUG_GV_TANGENT: { out.color = vec4f(s.tangent * 0.5 + 0.5, 1.0); }
-    case DEBUG_GV_SHADE_NORMAL: { out.color = vec4f(s.normal * 0.5 + 0.5, 1.0); }
-    case DEBUG_V_COLOR0: { out.color = vec4f(input.vertexColor.rgb, 1.0); }
-    case DEBUG_V_UV0: { out.color = vec4f(fract(input.uvBase), 0.0, 1.0); }
-    default: {}
+    case DEBUG_MTL_ALBEDO: {
+      out.color = vec4f(s.color, 1.0);
+    }
+    case DEBUG_MTL_SPECULAR: {
+      out.color = vec4f(s.specular, 1.0);
+    }
+    case DEBUG_MTL_ROUGHNESS: {
+      out.color = vec4f(vec3f(smoothnessToRoughness(s.gloss)), 1.0);
+    }
+    case DEBUG_GV_NORMAL: {
+      out.color = vec4f(s.vertexNormal * 0.5 + 0.5, 1.0);
+    }
+    case DEBUG_GV_TANGENT: {
+      out.color = vec4f(s.tangent * 0.5 + 0.5, 1.0);
+    }
+    case DEBUG_GV_SHADE_NORMAL: {
+      out.color = vec4f(s.normal * 0.5 + 0.5, 1.0);
+    }
+    case DEBUG_V_COLOR0: {
+      out.color = vec4f(input.vertexColor.rgb, 1.0);
+    }
+    case DEBUG_V_UV0: {
+      out.color = vec4f(fract(input.uvBase), 0.0, 1.0);
+    }
+    default: {
+      //
+    }
   }
   return out;
 }

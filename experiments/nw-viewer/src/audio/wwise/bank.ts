@@ -32,6 +32,11 @@ export interface WwiseBank {
    */
   id: number
   /**
+   * `BKHD.dwLanguageID`, the short id of the language name: `SFX` for banks without voice, else the language folder
+   * of the bank (e.g. `English(US)`), see `wwiseShortId` (hash.ts)
+   */
+  languageId: number
+  /**
    * The bank bytes
    */
   bytes: Uint8Array
@@ -51,6 +56,7 @@ export function parseWwiseBank(data: ArrayBufferLike | Uint8Array): WwiseBank {
   const bank: WwiseBank = {
     version: 0,
     id: 0,
+    languageId: 0,
     bytes,
     media: new Map(),
     hirc: [],
@@ -67,6 +73,9 @@ export function parseWwiseBank(data: ArrayBufferLike | Uint8Array): WwiseBank {
       case 'BKHD': {
         bank.version = section.u32()
         bank.id = section.u32()
+        if (section.remaining >= 4) {
+          bank.languageId = section.u32()
+        }
         break
       }
       case 'DIDX': {

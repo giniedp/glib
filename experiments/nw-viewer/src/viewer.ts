@@ -76,6 +76,7 @@ import { FogVolumeSystem } from './game/fog/FogVolumeSystem'
 import { SnowSystem } from './game/snow/SnowSystem'
 import { SnowPass } from './graphics/passes/snow/SnowPass'
 import { RangeActivationSystem } from './game/slice/RangeActivationSystem'
+import { MeshLoadState } from './game/slice/MeshLoaderComponent'
 import { SliceSystem } from './game/slice/SliceSystem'
 import { TerrainSystem } from './game/terrain/TerrainSystem'
 import { VegetationSystem } from './game/vegetation/VegetationSystem'
@@ -108,7 +109,7 @@ export class NwViewer extends EcsGame {
   /**
    * What the engine shows. `texture` is a texture preview of the browser, see {@link NwViewer.showTexture}
    */
-  public mode?: 'level' | 'model' | 'material' | 'slice' | 'particles' | 'texture' = null
+  public mode?: 'level' | 'model' | 'character' | 'material' | 'slice' | 'particles' | 'texture' = null
 
   public deviceStats: DeviceStats
   public schedulerStats: SchedulerStats
@@ -467,6 +468,38 @@ export class NwViewer extends EcsGame {
   }
 
   /**
+   * Shows a character (`.cdf`) of the browser: its skins and cloth with their materials, the camera orbits it
+   */
+  public showCharacter(path: string) {
+    this.showScenePreview(`character:${path}`, 'character', () => {
+      this.world
+        .getSystem(LevelSystem)
+        .loadCharacter(path)
+        .catch((err) => {
+          // cancelled by another preview, or the .cdf did not load
+          if (err?.name !== 'AbortError') {
+            console.error('character not loaded:', path, String(err))
+          }
+        })
+    })
+  }
+
+  /**
+   * The parts of the character shown by {@link NwViewer.showCharacter}: attachment name, mesh, material, load state
+   */
+  public previewCharacterParts(): Array<{ name: string; mesh: string; material: string; state: 'loading' | 'loaded' | 'failed' }> {
+    if (!this.previewKey?.startsWith('character:')) {
+      return []
+    }
+    return this.world.getSystem(LevelSystem).characterParts.map((part) => ({
+      name: part.name,
+      mesh: part.mesh,
+      material: part.material,
+      state: loadStateName(part.loader.state),
+    }))
+  }
+
+  /**
    * Shows the sub materials of a `.mtl` of the browser on a cylinder, a box and a sphere each
    */
   public showMaterial(path: string) {
@@ -710,7 +743,17 @@ export class NwViewer extends EcsGame {
       // cancelled by another load, or failed: nothing to place
       return
     }
-    const camera = level.levelInfo?.name === name ? findLevelCamera(level.levelInfo) : null
+    if (level.levelInfo?.name === name) {
+      this.placeLevelCamera()
+    }
+  }
+
+  /**
+   * Moves the camera to the camera placement of the loaded level (see {@link findLevelCamera}), if it has one
+   */
+  public placeLevelCamera() {
+    const info = this.world.getSystem(LevelSystem).levelInfo
+    const camera = info ? findLevelCamera(info) : null
     if (camera) {
       this.placeCamera(camera)
     }
@@ -807,6 +850,16 @@ const LEVEL_CAMERA_NAMES = ['EstablishingCameraPlacement', 'MainCamera', 'VistaC
 /**
  * The camera a level starts with (see {@link LEVEL_CAMERA_NAMES}). Null without one. Returns the world matrix.
  */
+function loadStateName(state: MeshLoadState): 'loading' | 'loaded' | 'failed' {
+  if (state === MeshLoadState.loaded) {
+    return 'loaded'
+  }
+  if (state === MeshLoadState.failed) {
+    return 'failed'
+  }
+  return 'loading'
+}
+
 export function findLevelCamera(info: LevelInfo): Mat4 | null {
   const cameras = (info.missionEntities ?? []).filter((it) => it.components?.some(isViewerCameraComponent))
   const named = LEVEL_CAMERA_NAMES.map((name) => cameras.find((it) => it.name === name)).find((it) => !!it)

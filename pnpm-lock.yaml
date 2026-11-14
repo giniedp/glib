@@ -143,6 +143,9 @@ importers:
       ag-grid-community:
         specifier: 35.3.1
         version: 35.3.1
+      fflate:
+        specifier: 0.8.3
+        version: 0.8.3
       monaco-editor:
         specifier: 0.52.2
         version: 0.52.2

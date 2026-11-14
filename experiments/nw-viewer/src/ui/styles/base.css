@@ -69,3 +69,34 @@ canvas {
   padding: 0.25rem;
   color: var(--nw-text-dim);
 }
+
+/* a short error message, e.g. a failed download */
+.nw-error {
+  padding: 0.25rem;
+  color: var(--nw-error);
+}
+
+/* the content of the export dialog (ExportButton): as high as its rows, a file may have a single download */
+.nw-dialog-content.nw-export-content {
+  min-height: 0;
+}
+/* the actions of the export dialog: widget rows (description | button + status), aligned with the options */
+.nw-export-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.nw-export-action {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+/* the export options on top, the actions below */
+.nw-export-options + .nw-export-list {
+  margin-top: 0.75rem;
+}
+/* the options of the file's exports */
+.nw-export-options {
+  display: flex;
+  flex-direction: column;
+}

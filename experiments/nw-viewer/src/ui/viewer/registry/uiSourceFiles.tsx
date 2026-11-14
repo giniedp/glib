@@ -4,6 +4,7 @@ import { Button, Group, Icon, TextWidget } from 'tweak-ui'
 import { materialAssetPath, normalizeAssetPath } from '../../../content/assetIds'
 import { MeshLoaderComponent } from '../../../game/slice/MeshLoaderComponent'
 import { useTools } from '../../app/tools'
+import { ExportButton } from '../../common/ExportButton'
 import svgFolderTree from '../../icons/folder-tree.svg?raw'
 
 /**
@@ -22,7 +23,12 @@ export function SourceFilesProps(props: { data: GameEntity }) {
     <Show when={loader()}>
       {(it) => (
         <Group title="Files">
-          <FileRow label="Model" path={normalizeAssetPath(it().data.mesh)} onReveal={reveal} />
+          <FileRow
+            label="Model"
+            path={normalizeAssetPath(it().data.mesh)}
+            material={it().data.material ? materialAssetPath(it().data.material) : undefined}
+            onReveal={reveal}
+          />
           <Show when={it().data.material}>
             {(material) => <FileRow label="Material" path={materialAssetPath(material())} onReveal={reveal} />}
           </Show>
@@ -32,19 +38,22 @@ export function SourceFilesProps(props: { data: GameEntity }) {
   )
 }
 
-function FileRow(props: { label: string; path: string; onReveal: (path: string) => void }) {
+function FileRow(props: { label: string; path: string; material?: string; onReveal: (path: string) => void }) {
   return (
     <TextWidget
       label={props.label}
       value={props.path}
       readonly
       slotAfter={
-        <Button
-          ghost
-          title="Reveal in browser: open the file as a tab of the browser tool"
-          icon={<Icon svg={svgFolderTree} />}
-          onClick={() => props.onReveal(props.path)}
-        />
+        <>
+          <Button
+            ghost
+            title="Reveal in browser: open the file as a tab of the browser tool"
+            icon={<Icon svg={svgFolderTree} />}
+            onClick={() => props.onReveal(props.path)}
+          />
+          <ExportButton ghost square path={props.path} material={props.material} />
+        </>
       }
     />
   )

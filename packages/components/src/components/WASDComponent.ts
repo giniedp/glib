@@ -2,19 +2,19 @@ import { type GameComponent, GameEntity, InitializableComponent } from '@gglib/e
 import { KeyboardKeys } from '@gglib/game'
 import {
   IVec3,
-  lerp,
   quat$initAxisAngle,
   quat$initIdentity,
   quat$multiply,
   SpaceBasis,
   vec3,
   vec3$add,
-  vec3$addScalars,
+  vec3$addScaled,
   vec3$applyMat4,
   vec3$applyMat4Rotation,
   vec3$applyQuat,
   vec3$init,
   vec3$initFrom,
+  vec3$multiplyScalar,
   vec3Copy,
   vec3LengthSquared,
   vec3Lerp,
@@ -24,6 +24,11 @@ import { BehaviorComponent } from '../systems/BehaviorSystem'
 import { KeyboardInputSystem } from '../systems/KeyboardInputSystem'
 import { MouseInputSystem } from '../systems/MouseInputSystem'
 import type { TransformComponent } from './TransformComponent'
+
+/**
+ * Squared speed (units per second) below which a camera without input is at rest
+ */
+const REST_SPEED_SQ = 1e-6
 
 /**
  * @public
@@ -88,9 +93,15 @@ export class WASDComponent implements GameComponent, InitializableComponent, Beh
   private startVertical: number = 0
   private isMouseDown: boolean = false
 
-  private currentSpeed: number = 0
-  private direction = vec3(0)
-  private translation = vec3(0, 0, 0)
+  /**
+   * Movement in the camera's local axes, units per second. It follows the pressed keys with {@link moveDamping} and
+   * decays to rest when no key is pressed.
+   */
+  private velocity = vec3(0, 0, 0)
+  /**
+   * {@link velocity} in world (orbit center) space, this frame
+   */
+  private worldVelocity = vec3(0, 0, 0)
 
   private keyForwad = KeyboardKeys.KeyW
   private keyBackward = KeyboardKeys.KeyS
@@ -213,19 +224,19 @@ export class WASDComponent implements GameComponent, InitializableComponent, Beh
       vec3$add(vec3.$0, this.space.down)
       isMoving = true
     }
-    if (vec3LengthSquared(vec3.$0) > 0) {
-      vec3Lerp(this.translation, vec3.$0, this.moveDamping, this.translation)
-      vec3Copy(this.translation, this.direction)
-      if (this.planar) {
-        vec3$applyQuat(this.direction, quat$initAxisAngle(vec4.$1, this.space.up, this.horizontal))
-      } else {
-        vec3$applyMat4Rotation(this.direction, node.world)
-      }
-    }
-
     const boost = keyboard.isPressed(this.keyBoost) ? this.moveSpeedMultiplier : 1
-    const targetSpeed = isMoving ? this.moveSpeed * boost : 0
-    this.currentSpeed = lerp(this.currentSpeed, targetSpeed, this.moveDamping)
+    // one velocity for direction and speed: after a stop it is at rest, a new direction does not start from the old one
+    vec3$multiplyScalar(vec3.$0, isMoving ? this.moveSpeed * boost : 0)
+    vec3Lerp(this.velocity, vec3.$0, this.moveDamping, this.velocity)
+    if (!isMoving && vec3LengthSquared(this.velocity) < REST_SPEED_SQ) {
+      vec3$init(this.velocity, 0, 0, 0)
+    }
+    vec3Copy(this.velocity, this.worldVelocity)
+    if (this.planar) {
+      vec3$applyQuat(this.worldVelocity, quat$initAxisAngle(vec4.$1, this.space.up, this.horizontal))
+    } else {
+      vec3$applyMat4Rotation(this.worldVelocity, node.world)
+    }
 
     if (this.orbitMode) {
       this.updateOrbit(dt)
@@ -236,14 +247,9 @@ export class WASDComponent implements GameComponent, InitializableComponent, Beh
 
   private updateFree(dt: number) {
     const node = this.entity.getTransform<TransformComponent>()
-    if (Math.abs(this.currentSpeed) > Number.EPSILON) {
-      node.translate(
-        this.direction.x * this.currentSpeed * dt,
-        this.direction.y * this.currentSpeed * dt,
-        this.direction.z * this.currentSpeed * dt,
-      )
-    } else {
-      this.currentSpeed = 0
+    const v = this.worldVelocity
+    if (v.x || v.y || v.z) {
+      node.translate(v.x * dt, v.y * dt, v.z * dt)
     }
 
     quat$initIdentity(node.rotation)
@@ -255,12 +261,7 @@ export class WASDComponent implements GameComponent, InitializableComponent, Beh
   }
 
   private updateOrbit(dt: number) {
-    vec3$addScalars(
-      this.orbitCenter,
-      this.direction.x * this.currentSpeed * dt,
-      this.direction.y * this.currentSpeed * dt,
-      this.direction.z * this.currentSpeed * dt,
-    )
+    vec3$addScaled(this.orbitCenter, this.worldVelocity, dt)
 
     const cosV = Math.cos(this.vertical)
     const sinV = Math.sin(this.vertical)

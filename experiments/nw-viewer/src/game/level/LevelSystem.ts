@@ -49,6 +49,7 @@ import {
   type ViewerSlice,
 } from '../../api'
 import { ContentService } from '../../content'
+import { attachmentMaterial, clothMeshReference, parseCdf, skinAttachments } from '../../formats/cdf'
 import { InputSlots, SkyMaterial } from '../../material'
 import { ShapeMaterial } from '../../material/ShapeMaterial'
 import { DebugShapeComponent } from '../debug/DebugShapeComponent'
@@ -293,6 +294,89 @@ export class LevelSystem extends GameSystem {
   }
 
   /**
+   * Shows the body of a character (`.cdf`) at the origin: its skin and cloth attachments with their materials, in bind
+   * pose, with the sky, the grid and the orbit camera (a preview of the browser). No skeleton, animations or bone
+   * attachments (tmp/browser-features A2). Resolves once the parts are created, their models load later.
+   */
+  public async loadCharacter(path: string) {
+    this.loadCancel()
+    const signal = this.beginLoad()
+
+    const camera = this.game.scene.getView(0).camera as CameraComponent
+    camera.entity.component(WASDComponent).orbitMode = true
+    camera.entity.component(WASDComponent).radiusMax = 1000
+
+    const fetchFile = async (file: string) => {
+      const res = await fetch(`${this.content.nwbtFileUrl}${file}`, { signal })
+      if (!res.ok) {
+        throw new Error(`${file}: ${res.status}`)
+      }
+      return res
+    }
+    const doc = parseCdf(await (await fetchFile(path)).text())
+    // the mesh of a cloth is referenced inside its binary .cloth file
+    const parts = await Promise.all(
+      skinAttachments(doc).map(async (attachment) => {
+        let mesh = attachment.binding
+        if (/\.cloth$/i.test(mesh)) {
+          const bytes = new Uint8Array(await (await fetchFile(mesh)).arrayBuffer())
+          mesh = clothMeshReference(bytes) ?? ''
+        }
+        return { name: attachment.name, mesh, material: attachmentMaterial(attachment) }
+      }),
+    )
+    signal.throwIfAborted()
+
+    this.entity = this.game.createEntity({
+      name: `Character: ${path}`,
+      components: [
+        new SpatialComponent({
+          index: OccTree.create({
+            min: vec3(-2048, -2048, -2048),
+            max: vec3(2048, 2048, 2048),
+            leafLevel: 5,
+            looseFactor: 2,
+          }),
+        }),
+      ],
+      parent: this.game.scene.entity,
+      transform: new TransformComponent({ keepWorld: true, world: mat4Identity() }),
+    })
+    let pending = 0
+    const settled = () => {
+      // next frame, when the bounds are updated
+      if (--pending === 0) {
+        setTimeout(() => this.frameModel())
+      }
+    }
+    for (const part of parts) {
+      if (!part.mesh) {
+        console.warn(...this.logTag, 'character part without mesh', part.name)
+        continue
+      }
+      pending++
+      const entity = this.game.createEntity({
+        name: part.name,
+        parent: this.entity,
+        transform: new TransformComponent({ keepWorld: true, world: mat4Identity() }),
+        components: [new MeshLoaderComponent({ type: 'Mesh', mesh: part.mesh, material: part.material, alwaysRender: true })],
+      })
+      entity.events.on(MeshLoaderComponent.onLoad, settled)
+      entity.events.on(MeshLoaderComponent.onError, settled)
+      this.characterParts.push({ name: part.name, mesh: part.mesh, material: part.material, loader: entity.component(MeshLoaderComponent) })
+    }
+
+    this.skyEntity = this.game.createEntity(createSkySphere(this.entity, this.renderer.device))
+    this.cloudsEntity = this.game.createEntity(createCloudsDome(this.entity))
+    this.gizmoEntity = this.game.createEntity(createGizmoGrid(this.entity, this.renderer.device))
+  }
+
+  /**
+   * The parts of the character shown by {@link loadCharacter}: the attachment name, its mesh and material, the loader
+   */
+  public characterParts: Array<{ name: string; mesh: string; material: string; loader: MeshLoaderComponent }> = []
+
+  /**
    * Shows one particle effect of a library at the origin, with the sky, the grid and the orbit camera (a preview of
    * the browser). One shot effects restart every few seconds.
    *
@@ -504,6 +588,10 @@ export class LevelSystem extends GameSystem {
   private unload() {
     this.levelInfo = null
     this.materialNames = []
+    this.characterParts = []
+    // the next content (a model preview of the browser) starts with the neutral time of day, not the level's preset
+    // and POI layers
+    this.timeOfDay.reset()
     // loaded into the scope of the level, it is finalized with it
     this.timeOfDay.moonTexture = null
     this.content.slices.remove(this)

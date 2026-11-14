@@ -6,14 +6,14 @@ export interface ModalDialogProps {
   open: boolean
   onClose: () => void
   /**
-   * Buttons in the footer, before the close button
+   * Buttons in the footer, before the close button. Without actions there is no footer, the title bar closes.
    */
   actions?: JSX.Element
   children: JSX.Element
 }
 
 /**
- * A dialog with a title bar and a footer bar. The close buttons call `onClose`.
+ * A dialog with a title bar and, with actions, a footer bar. The close buttons call `onClose`.
  */
 export function ModalDialog(props: ModalDialogProps) {
   return (
@@ -33,17 +33,20 @@ export function ModalDialog(props: ModalDialogProps) {
           </Bar>
         }
         footer={
-          <Bar
-            class="twk:bg-base-100"
-            end={
-              <>
-                {props.actions}
-                <Button large onClick={props.onClose}>
-                  Close
-                </Button>
-              </>
-            }
-          />
+          // without actions, a footer would only repeat the close button of the title bar
+          props.actions ? (
+            <Bar
+              class="twk:bg-base-100"
+              end={
+                <>
+                  {props.actions}
+                  <Button large onClick={props.onClose}>
+                    Close
+                  </Button>
+                </>
+              }
+            />
+          ) : undefined
         }
       >
         {props.children}

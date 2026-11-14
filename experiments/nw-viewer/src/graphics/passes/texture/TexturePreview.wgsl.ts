@@ -132,21 +132,10 @@ fn projectCube(p: vec2f, projection: u32) -> vec4f {
 `
 
 /**
- * Texture preview: one texture drawn into the view over a checkerboard, texel exact (textureLoad, so every format
- * works, also unfilterable floats). Ported from nw-odin `shaders/texture_view.wgsl`.
- *
- * The output is display encoded, like the end of the scene pipeline (film mapping writes sRGB values and the canvas
- * takes them as they are): linear values are encoded, stored values of other formats are shown as they are.
- *
- * `volume` selects the variant for 3d textures: the layer is the depth slice of mip 0. The 2d array variant also
- * draws cubemaps onto a sphere or a cube, see {@link TexturePreviewProjection}.
+ * The parameters, the alpha texture and the shading of a texel, shared by both variants. A variant adds the texture
+ * binding `tex`, `loadTex` and the fragment main.
  */
-export function texturePreviewWgsl(volume: boolean) {
-  const textureType = volume ? 'texture_3d<f32>' : 'texture_2d_array<f32>'
-  const load = volume
-    ? 'textureLoad(tex, vec3i(c, clamp(i32(layer >> mip), 0, i32(dims.z) - 1)), i32(mip))'
-    : 'textureLoad(tex, c, i32(layer), i32(mip))'
-  return /* wgsl */ `
+const TEXTURE_PREVIEW_COMMON_WGSL = /* wgsl */ `
 ${FULLSCREEN_WGSL_VS}
 
 struct Params {
@@ -168,7 +157,6 @@ const FLAG_A_IN_R = 16u;
 const FLAG_SINGLE = 32u;
 
 @group(0) @binding(0) var<uniform> params: Params;
-@group(0) @binding(1) var tex: ${textureType};
 @group(0) @binding(2) var alphaTex: texture_2d_array<f32>;
 
 fn linearToSrgb(c: vec3f) -> vec3f {
@@ -181,49 +169,33 @@ fn checker(p: vec2f) -> vec3f {
   return select(vec3f(0.3), vec3f(0.38), odd == 1);
 }
 
-fn loadTex(texel0: vec2f, mip: u32, layer: u32) -> vec4f {
-  let dims = textureDimensions(tex, mip);
-  let c = clamp(vec2i(floor(texel0 / f32(1u << mip))), vec2i(0), vec2i(dims.xy) - 1);
-  return ${load};
+// the texel of a mip, by the texel position of mip 0
+fn mipTexel(texel0: vec2f, mip: u32, dims: vec2u) -> vec2i {
+  return clamp(vec2i(floor(texel0 / f32(1u << mip))), vec2i(0), vec2i(dims) - 1);
 }
 
 fn loadAlpha(texel0: vec2f, mip: u32) -> vec4f {
-  let dims = textureDimensions(alphaTex, mip);
-  let c = clamp(vec2i(floor(texel0 / f32(1u << mip))), vec2i(0), vec2i(dims.xy) - 1);
-  return textureLoad(alphaTex, c, 0, i32(mip));
+  return textureLoad(alphaTex, mipTexel(texel0, mip, textureDimensions(alphaTex, mip)), 0, i32(mip));
 }
 
-${volume ? '' : CUBE_PROJECTION_WGSL}
+// the texel position of mip 0 under the pixel p
+fn placedTexel(p: vec2f) -> vec2f {
+  return (p - params.placement.xy) / params.placement.zw;
+}
 
-@fragment
-fn fs_main(in: FragmentInput) -> @location(0) vec4f {
-  let p = in.position.xy;
+// outside of the texture: the dimmed checkerboard
+fn background(p: vec2f) -> vec4f {
+  return vec4f(checker(p) * 0.5, 1);
+}
+
+// the color of pixel p showing the texel of mip 0 (of a layer or depth slice), shaded by a factor
+fn shadeTexel(p: vec2f, texel: vec2f, layer: u32, flags: u32, shade: f32) -> vec4f {
+  if (any(texel < vec2f(0)) || any(texel >= params.size.xy)) {
+    return background(p);
+  }
   let bg = checker(p);
   let mip = u32(params.mode.x);
-  var layer = u32(params.mode.y);
   let channels = u32(params.mode.z);
-  var flags = u32(params.mode.w);
-  let projection = u32(params.size.w);
-
-  var texel = (p - params.placement.xy) / params.placement.zw;
-  var shade = 1.0;
-  ${
-    volume
-      ? ''
-      : `if (projection != 0u) {
-    let hit = projectCube(p, projection);
-    if (hit.w == 0.0) {
-      return vec4f(bg * 0.5, 1);
-    }
-    texel = hit.xy;
-    layer = u32(hit.z);
-    shade = hit.w;
-    // the alpha texture is not a cubemap
-    flags = flags & ~FLAG_ALPHA_TEX;
-  } else `
-  }if (any(texel < vec2f(0)) || any(texel >= params.size.xy)) {
-    return vec4f(bg * 0.5, 1);
-  }
 
   var v = loadTex(texel, mip, layer);
   if ((flags & FLAG_SIGNED) != 0u) {
@@ -260,4 +232,62 @@ fn fs_main(in: FragmentInput) -> @location(0) vec4f {
   return vec4f(rgb, 1);
 }
 `
+
+/**
+ * Texture preview: one texture drawn into the view over a checkerboard, texel exact (textureLoad, so every format
+ * works, also unfilterable floats). Ported from nw-odin `shaders/texture_view.wgsl`.
+ *
+ * The output is display encoded, like the end of the scene pipeline (film mapping writes sRGB values and the canvas
+ * takes them as they are): linear values are encoded, stored values of other formats are shown as they are.
+ *
+ * This variant takes 2d textures as 2d arrays, and draws cubemaps onto a sphere or a cube, see
+ * {@link TexturePreviewProjection}.
+ */
+export const TEXTURE_PREVIEW_WGSL = /* wgsl */ `
+${TEXTURE_PREVIEW_COMMON_WGSL}
+${CUBE_PROJECTION_WGSL}
+
+@group(0) @binding(1) var tex: texture_2d_array<f32>;
+
+fn loadTex(texel0: vec2f, mip: u32, layer: u32) -> vec4f {
+  return textureLoad(tex, mipTexel(texel0, mip, textureDimensions(tex, mip)), i32(layer), i32(mip));
 }
+
+@fragment
+fn fs_main(in: FragmentInput) -> @location(0) vec4f {
+  let p = in.position.xy;
+  let layer = u32(params.mode.y);
+  let flags = u32(params.mode.w);
+  let projection = u32(params.size.w);
+  if (projection == 0u) {
+    return shadeTexel(p, placedTexel(p), layer, flags, 1.0);
+  }
+  let hit = projectCube(p, projection);
+  if (hit.w == 0.0) {
+    return background(p);
+  }
+  // the alpha texture is not a cubemap
+  return shadeTexel(p, hit.xy, u32(hit.z), flags & ~FLAG_ALPHA_TEX, hit.w);
+}
+`
+
+/**
+ * The texture preview of 3d textures, see {@link TEXTURE_PREVIEW_WGSL}: the layer is the depth slice of mip 0
+ */
+export const TEXTURE_PREVIEW_3D_WGSL = /* wgsl */ `
+${TEXTURE_PREVIEW_COMMON_WGSL}
+
+@group(0) @binding(1) var tex: texture_3d<f32>;
+
+fn loadTex(texel0: vec2f, mip: u32, layer: u32) -> vec4f {
+  let dims = textureDimensions(tex, mip);
+  let slice = clamp(i32(layer >> mip), 0, i32(dims.z) - 1);
+  return textureLoad(tex, vec3i(mipTexel(texel0, mip, dims.xy), slice), i32(mip));
+}
+
+@fragment
+fn fs_main(in: FragmentInput) -> @location(0) vec4f {
+  let p = in.position.xy;
+  return shadeTexel(p, placedTexel(p), u32(params.mode.y), u32(params.mode.w), 1.0);
+}
+`

@@ -280,10 +280,21 @@ export class AudioOutput {
     return out
   }
 
-  public dispose() {
+  /**
+   * Stops every voice and drops the decoded buffers, e.g. when the worker is replaced for another level: a new
+   * worker knows nothing of what the previous one played or sent
+   */
+  public reset(fadeOut: number) {
+    this.pendingStarts.length = 0
     for (const id of [...this.voices.keys()]) {
-      this.stop(id, 0)
+      this.stop(id, fadeOut)
     }
+    this.buffers.clear()
+    this.bufferBytes = 0
+  }
+
+  public dispose() {
+    this.reset(0)
     this.context?.close()
     this.context = null
   }

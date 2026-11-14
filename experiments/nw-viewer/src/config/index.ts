@@ -1,4 +1,5 @@
 export * from './Config'
+export * from './ExportConfig'
 export * from './properties'
 export * from './schema'
 export * from './ViewerConfig'

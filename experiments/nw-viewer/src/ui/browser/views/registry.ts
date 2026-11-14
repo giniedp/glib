@@ -72,6 +72,29 @@ export const ASSET_VIEWS: AssetView[] = [
     component: lazy(() => import('./ModelMode')),
   },
   {
+    id: 'audio-bank',
+    label: 'Audio',
+    title: 'The media of the sound bank, embedded and streamed: play them',
+    applies: (ctx) => /\.bnk$/i.test(ctx.path),
+    // ag-grid loads with the first table
+    component: lazy(() => import('./AudioMode').then((m) => ({ default: m.AudioBankMode }))),
+  },
+  {
+    id: 'audio-media',
+    label: 'Audio',
+    title: 'The media file: play it, its format and waveform',
+    applies: (ctx) => /\.wem$/i.test(ctx.path),
+    component: lazy(() => import('./AudioMode').then((m) => ({ default: m.AudioMediaMode }))),
+  },
+  {
+    id: 'character',
+    label: 'Character',
+    title: 'The skins and cloth of the character with their materials, rendered by the engine (bind pose)',
+    applies: (ctx) => /\.cdf$/i.test(ctx.path) && ctx.kind === 'text',
+    // the engine loads with the first character shown
+    component: lazy(() => import('./CharacterMode')),
+  },
+  {
     id: 'slice',
     label: 'Slice',
     title: 'The slice and the slices it spawns, rendered by the engine',

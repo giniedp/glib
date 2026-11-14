@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { mtlTextureFile } from './loader'
+import { mtlTextureFile, withNormalMapSmoothness } from './loader'
 import { parseMtl } from './parse'
 
 const MULTI = `<Material MtlFlags="524544" vertModifType="0">
@@ -102,6 +102,33 @@ describe('parseMtl', () => {
   it('rejects invalid documents', () => {
     expect(() => parseMtl('<Material')).toThrow()
     expect(() => parseMtl('<Foo/>')).toThrow()
+  })
+})
+
+describe('withNormalMapSmoothness', () => {
+  const ddna = { Map: 'Bumpmap', File: 'objects/props/textures/stone_ddna.tif', AssetId: '{a}' } as const
+
+  it('adds the smoothness of a _ddna normal map the material does not name', () => {
+    const result = withNormalMapSmoothness([{ Map: 'Diffuse', File: 'stone_diff.tif' }, ddna])
+    expect(result).toHaveLength(3)
+    expect(result[2]).toEqual({ Map: 'Smoothness', File: ddna.File, AssetId: ddna.AssetId })
+  })
+
+  it('replaces another smoothness texture and keeps the settings of the slot', () => {
+    const named = { Map: 'Smoothness', File: 'other_ddna.tif', TexMod: { TileU: 2 } } as any
+    const result = withNormalMapSmoothness([ddna, named])
+    expect(result).toEqual([ddna, { Map: 'Smoothness', File: ddna.File, AssetId: ddna.AssetId, TexMod: { TileU: 2 } }])
+  })
+
+  it('takes the blend layer normal map for the second smoothness', () => {
+    const result = withNormalMapSmoothness([{ Map: '[1] Custom', File: 'layer_ddna.tif' }])
+    expect(result[1]).toMatchObject({ Map: 'SecondSmoothness', File: 'layer_ddna.tif' })
+  })
+
+  it('keeps the slots of normal maps without an attached alpha', () => {
+    const textures = [{ Map: 'Bumpmap', File: 'stone_normal.tif' }] as const
+    expect(withNormalMapSmoothness(textures)).toEqual(textures)
+    expect(withNormalMapSmoothness([{ Map: 'Bumpmap', File: '$EngineNormal' }])).toHaveLength(1)
   })
 })
 
