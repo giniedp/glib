@@ -8,9 +8,6 @@
     "ws": "pnpm workspace",
     "glib": "pnpm -F glib",
     "glib:dev": "pnpm glib dev",
-    "nw-viewer": "pnpm -F nw-viewer",
-    "nw-viewer:dev": "pnpm nw-viewer dev",
-    "nw-viewer:build": "pnpm nw-viewer build",
     "test": "pnpm vitest",
     "bench": "pnpm vitest bench",
     "clean": "rimraf -g \"**/node_modules\" \"**/dist\" || exit 0",
@@ -21,7 +18,6 @@
     "docs:dev": "vitepress dev docs --host",
     "docs:build": "vitepress build docs",
     "docs:preview": "vitepress preview docs",
-    "dev:nw-viewer": "concurrently -n ⬢,⬢ -c red,green -p '{name}' -k 'pnpm:glib:dev' 'pnpm:nw-viewer:dev'",
     "capture": "pnpm dlx tsx ./tools/capture-thumbnails.mts"
   },
   "repository": {
