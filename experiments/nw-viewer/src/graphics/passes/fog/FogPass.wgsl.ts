@@ -75,30 +75,6 @@ fn froxelFog(pixel: vec2f, linearDepth: f32, len: f32, range: f32) -> vec4f {
   return textureSampleLevel(froxelVolume, froxelSampler, tc, 0.0);
 }
 
-fn computeVolumetricFogInternal(cameraToWorldPos: vec3f) -> f32 {
-  let heightScale                 = params.volumetricFogParams.x;
-  let volFogHeightDensityAtViewer = params.volumetricFogParams.y;
-  let densityClamp                = params.volumetricFogParams.w;
-
-  var fogInt = 1.0;
-  let t = heightScale * cameraToWorldPos.z;
-  if (abs(t) > 0.01) {
-    fogInt *= (exp(t) - 1.0) / t;
-  }
-
-  let l = length(cameraToWorldPos);
-  let u = l * volFogHeightDensityAtViewer;
-  fogInt *= u;
-
-  var f = saturate(exp2(-fogInt));
-  var r = saturate(l * params.volumetricFogRampParams.x + params.volumetricFogRampParams.y);
-  r = r * (2 - r);
-  r = r * params.volumetricFogRampParams.z + params.volumetricFogRampParams.w;
-
-  f = (1.0 - f) * r;
-  return max(1.0 - f, densityClamp);
-}
-
 fn computeFog(position: vec2f, sceneDepth: f32) -> vec4f {
   if (sceneDepth <= 0.0) {
     return vec4f(0.0, 0.0, 0.0, 1.0);
@@ -109,7 +85,6 @@ fn computeFog(position: vec2f, sceneDepth: f32) -> vec4f {
   let uv = (floor(position) + 0.5) * params.viewport.zw;
   let viewPos = vec3f((params.ndcToView.xy * uv + params.ndcToView.zw) * depth, -depth);
   let cameraToWorldPos = (params.cameraWorld * vec4f(viewPos, 0.0)).xyz;
-  let worldPos = (params.cameraWorld * vec4f(viewPos, 1.0)).xyz;
   if (params.volFog2Enabled.x > 0.5) {
     var p: VolFog2Params;
     p.heightDensity = params.volFog2HeightDensity;
@@ -131,26 +106,8 @@ fn computeFog(position: vec2f, sceneDepth: f32) -> vec4f {
     }
     return volFog2Analytical(p, cameraToWorldPos, -params.sunDirection.xyz);
   }
-  let factor = computeVolumetricFogInternal(cameraToWorldPos);
-  return vec4f(computeFogColor(worldPos, cameraToWorldPos) * (1.0 - factor), factor);
-}
-
-// GetVolumetricFogColorInternal: height gradient and radial lobe around the sun, same as the sky
-fn computeFogColor(worldPos: vec3f, cameraToWorldPos: vec3f) -> vec3f {
-  let heightGradScale  = params.volumetricFogColorGradientParams.x;
-  let heightGradOffset = params.volumetricFogColorGradientParams.y;
-  let radialSizeCtrl   = params.volumetricFogColorGradientParams.z;
-  let radialLobeCtrl   = params.volumetricFogColorGradientParams.w;
-
-  var h = saturate(worldPos.z * heightGradScale + heightGradOffset);
-  h = h * (2.0 - h);
-  var fogColor = params.volumetricFogColorGradientBase.rgb + h * params.volumetricFogColorGradientDelta.rgb;
-
-  let l = saturate(length(cameraToWorldPos) * params.volumetricFogColorGradientRadial.w);
-  let radialLobe = pow(l, radialLobeCtrl);
-  let radialSize = exp2(dot(normalize(cameraToWorldPos), -params.sunDirection.xyz) * -radialSizeCtrl + radialSizeCtrl);
-  fogColor += radialLobe * radialSize * params.volumetricFogColorGradientRadial.rgb;
-  return fogColor;
+  // volumetric fog off (config volumetricFog): no fog. The legacy fog is not tuned by New World, it covers the clouds
+  return vec4f(0.0, 0.0, 0.0, 1.0);
 }
 `
 

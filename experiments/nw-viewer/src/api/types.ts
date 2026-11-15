@@ -392,6 +392,25 @@ export interface ViewerSlice {
   transform?: Mat4Data
   spawnRadius: number
   isStaticSlice: boolean
+  /**
+   * Streaming data of the slice from the region slice table (region.slicedata) or the variant meta, missing for slices
+   * without an entry (chunks, nested slices, levels without slicedata)
+   */
+  gde?: ViewerSliceGde
+}
+
+/**
+ * GDE streaming data of a slice (SliceMetaData), see game/slice/gdeReach.ts
+ */
+export interface ViewerSliceGde {
+  /** gdeSpawnRadius */
+  spawnRadius: number
+  /** slicePhysicalRadius */
+  physicalRadius: number
+  /** isLongDistanceGDE */
+  longDistance?: boolean
+  /** skipMidRangeImpostors */
+  skipMidRangeImpostors?: boolean
 }
 
 // ---------------------------------------------------------------------------
@@ -419,6 +438,7 @@ export const ParticleComponentName = 'Particle' as const
 export const DecalComponentName = 'Decal' as const
 export const FogVolumeComponentName = 'FogVolume' as const
 export const SnowComponentName = 'Snow' as const
+export const WaterOceanComponentName = 'WaterOcean' as const
 
 export const ComponentTypes = {
   MeshComponentName,
@@ -442,6 +462,7 @@ export const ComponentTypes = {
   DecalComponentName,
   FogVolumeComponentName,
   SnowComponentName,
+  WaterOceanComponentName,
 }
 
 export type ComponentType =
@@ -464,6 +485,7 @@ export type ComponentType =
   | typeof DecalComponentName
   | typeof FogVolumeComponentName
   | typeof SnowComponentName
+  | typeof WaterOceanComponentName
 
 export interface ViewerBaseComponent {
   type: ComponentType
@@ -709,6 +731,24 @@ export interface ViewerSnowComponent extends ViewerBaseComponent {
   snowFallTurbulenceFreq: number
 }
 
+/**
+ * The ocean of a level (WaterModule WaterOceanComponent in the mission entities, nwbt `game/level/load_ocean.go`).
+ * The game takes the ocean animation from this component and ignores the mission `<OceanAnimation>` values.
+ */
+export interface ViewerWaterOceanComponent extends ViewerBaseComponent {
+  type: typeof WaterOceanComponentName
+  /** radians */
+  windDirection: number
+  windSpeed: number
+  wavesAmount: number
+  wavesSize: number
+  wavesSpeed: number
+}
+
+export function isViewerWaterOceanComponent(component: any): component is ViewerWaterOceanComponent {
+  return component?.type === WaterOceanComponentName
+}
+
 export interface ViewerRoadComponent extends ViewerBaseComponent {
   type: typeof RoadComponentName | typeof RiverComponentName
   material: string
@@ -784,6 +824,7 @@ export type ViewerComponent =
   | ViewerDecalComponent
   | ViewerFogVolumeComponent
   | ViewerSnowComponent
+  | ViewerWaterOceanComponent
   | ViewerUnknownComponent
 
 export function isViewerSnowComponent(component: any): component is ViewerSnowComponent {

@@ -17,6 +17,7 @@ import {
   mat4Identity,
   mat4Multiply,
   vec3Add,
+  vec3Length,
   vec3MultiplyScalar,
   vec3Subtract,
   vec4,
@@ -34,6 +35,8 @@ import { CullingSystem } from '../culling/CullingSystem'
 import { DebugLayer, DebugShapeComponent } from '../debug/DebugShapeComponent'
 import { InstancedModelComponent } from '../instancing/InstancedModelComponent'
 import { InstancedRenderSystem } from '../instancing/InstancedRenderSystem'
+import { addModelBounds, emptyBox, isBoxValid } from './meshBounds'
+import { RangeActivationSystem } from './RangeActivationSystem'
 
 export type MeshLoadState = Brand<number, 'MeshLoad'>
 export const MeshLoadState = {
@@ -84,6 +87,18 @@ export class MeshLoaderComponent implements GameComponent {
    * Scheduler lane of the model load
    */
   public lane: PriorityLane = PriorityLane.Low
+  /**
+   * View distance of the mesh when it decides the activation range of its entity, 0 otherwise. Once loaded, the range
+   * activation measures it from the world bounds of the model (the game measures to the world AABB, point_aabb_sq):
+   * the bounding sphere center with the view distance plus the sphere radius. Before the first load it is measured from
+   * the entity position, the bounds are not known.
+   */
+  public viewRange = 0
+  /**
+   * Entity whose distance to the camera orders the model load, the own entity if null. Members of a POI impostor cell
+   * load in the order of their cell, so a cell completes as a unit.
+   */
+  public priorityEntity: GameEntity | null = null
 
   /**
    * Public material params that replace the ones of the `.mtl` for this model (e.g. the blend mask colors of an
@@ -131,7 +146,7 @@ export class MeshLoaderComponent implements GameComponent {
 
     this.state = MeshLoadState.loading
     this.task = this.scheduler.schedule<Model>({
-      entity: this.entity,
+      entity: this.priorityEntity ?? this.entity,
       lane: this.lane,
       context: null,
       load: async (task) => {
@@ -146,7 +161,12 @@ export class MeshLoaderComponent implements GameComponent {
         if (this.data.instances?.length > 0 && !combineInstances) {
           for (const inst of this.data.instances) {
             const model = this.instantiate(task.context)
-            this.attachLod(model, task.context, this.instantiate, scaleZ(this.entity.getTransform().world) * scaleZ(inst))
+            this.attachLod(
+              model,
+              task.context,
+              this.instantiate,
+              scaleZ(this.entity.getTransform().world) * scaleZ(inst),
+            )
 
             const child = this.entity.world.createEntity({
               parent: this.entity,
@@ -220,6 +240,7 @@ export class MeshLoaderComponent implements GameComponent {
           child.layer = this.entity.layer
           child.layerFlags = this.layerFlags
         }
+        this.moveRangeToBounds(task.context)
         return true
       },
       finalize: (task, err) => {
@@ -240,6 +261,32 @@ export class MeshLoaderComponent implements GameComponent {
         }
       },
     })
+  }
+
+  /**
+   * Measures the activation range from the world bounds of the loaded model (see {@link viewRange})
+   */
+  private moveRangeToBounds(model: Model) {
+    if (!(this.viewRange > 0)) {
+      return
+    }
+    const world = this.entity.getTransform().world
+    const box = emptyBox()
+    if (this.data.instances?.length) {
+      for (const inst of this.data.instances) {
+        addModelBounds(model, mat4Multiply(world, mat4CreateFromArray(inst)), box)
+      }
+    } else {
+      addModelBounds(model, world, box)
+    }
+    if (!isBoxValid(box)) {
+      return
+    }
+    const center = vec3MultiplyScalar(vec3Add(box.min, box.max), 0.5)
+    const radius = vec3Length(vec3Subtract(box.max, box.min)) * 0.5
+    this.entity.world
+      .getSystem(RangeActivationSystem, { optional: true })
+      ?.move(this.entity, center, this.viewRange + radius)
   }
 
   /**
@@ -294,9 +341,6 @@ export class MeshLoaderComponent implements GameComponent {
     if (this.data.alwaysRender || model.skins?.length) {
       return false
     }
-    if (!this.entity.world.getSystem(ViewerConfig, { optional: true })?.value.workerCulling) {
-      return false
-    }
     return !!this.entity.world.getSystem(CullingSystem, { optional: true })?.canCull(model)
   }
 
@@ -304,7 +348,8 @@ export class MeshLoaderComponent implements GameComponent {
    * Renders static models through the GPU instance batch, falls back to the scene render path otherwise
    */
   private modelComponentFactory(model: Model, culled: boolean): (instance: Model) => GameComponent[] {
-    const maxViewDistance = (this.data.maxViewDistance || 0) * (this.data.viewDistanceMultiplier || 1)
+    // the game uses MaxViewDistance as it stands, no multiplier (GetMaxViewDist NewWorld+0xca7f40)
+    const maxViewDistance = this.data.maxViewDistance || 0
     if (culled) {
       return (instance) => [
         new CulledModelComponent({

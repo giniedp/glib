@@ -173,9 +173,6 @@ export class DecalComponent implements GameComponent {
   }
 
   private canCullInWorker(model: Model): boolean {
-    if (!this.entity.world.getSystem(ViewerConfig, { optional: true })?.value.workerCulling) {
-      return false
-    }
     return !!this.entity.world.getSystem(CullingSystem, { optional: true })?.canCull(model)
   }
 }

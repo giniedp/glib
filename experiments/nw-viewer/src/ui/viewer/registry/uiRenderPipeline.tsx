@@ -48,10 +48,9 @@ function PassEntry(props: { pass: RenderPass; device: Device }): JSX.Element {
   if (props.pass instanceof GroupPass) {
     return <GroupEntry pass={props.pass} device={props.device} />
   }
-  if (props.pass instanceof FunctionPass) {
-    return <PollWidget label={props.pass.name} value={getPassInfo(props.pass)?.note ?? 'inputs'} />
-  }
-  return <LeafEntry pass={props.pass} device={props.device} />
+  // input passes only set render inputs: no GPU work to time
+  const device = props.pass instanceof FunctionPass ? null : props.device
+  return <LeafEntry pass={props.pass} device={device} />
 }
 
 function GroupEntry(props: { pass: GroupPass; device: Device }) {
@@ -63,7 +62,7 @@ function GroupEntry(props: { pass: GroupPass; device: Device }) {
   )
 }
 
-function LeafEntry(props: { pass: RenderPass; device: Device }) {
+function LeafEntry(props: { pass: RenderPass; device: Device | null }) {
   const panel = usePanel()
   return (
     <Group title={props.pass.name} collapsible defaultCollapsed>
@@ -74,18 +73,25 @@ function LeafEntry(props: { pass: RenderPass; device: Device }) {
 }
 
 /**
- * Note, on/off toggle of optional passes, GPU timer
+ * Description, on/off toggle of optional passes, GPU timer
  */
 function PassFlags(props: { pass: RenderPass; device: Device | null }) {
   const panel = usePanel()
   const info = getPassInfo(props.pass)
   return (
     <>
-      <Show when={info?.note}>{(note) => <PollWidget label="info" value={note()} />}</Show>
+      <Show when={info?.note}>{(note) => <PassNote text={note()} />}</Show>
       <Show when={info?.toggle}>{(toggle) => <BoolWidget {...panel.bind(toggle(), 'enabled')} />}</Show>
       <Show when={props.device}>{(device) => <TimerFields pass={props.pass} device={device()} />}</Show>
     </>
   )
+}
+
+/**
+ * The description of a pass, a full row
+ */
+function PassNote(props: { text: string }) {
+  return <p class="nw-note nw-pass-note">{props.text}</p>
 }
 
 /**
@@ -207,7 +213,7 @@ function renderPassFields(panel: UiPanel, pass: RenderPass): JSX.Element {
   if (pass instanceof FilmMappingPass) {
     return (
       <>
-        <PollWidget label="info" value="film mapping of the game, or the fallback with config tonemapper: aces" />
+        <PassNote text="film mapping of the game, or the fallback with config tonemapper: aces" />
         <Group title={`Fallback: ${pass.fallback.name}`} collapsible defaultCollapsed>
           {renderPassFields(panel, pass.fallback)}
         </Group>

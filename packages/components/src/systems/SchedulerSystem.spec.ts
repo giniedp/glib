@@ -13,8 +13,12 @@ function taskAt(x: number, y: number, z: number): ScheduledTask {
   return { lane: PriorityLane.Medium, entity: { getTransform: () => ({ world }) } as any }
 }
 
-function scoresWith(basis: SpaceBasis | null, positions: Record<string, [number, number, number]>) {
-  const system = new SchedulerSystem()
+function scoresWith(
+  basis: SpaceBasis | null,
+  positions: Record<string, [number, number, number]>,
+  viewAlignment?: number,
+) {
+  const system = new SchedulerSystem({ viewAlignment })
   system.initialize({ getSystem: () => basis } as unknown as GameWorld)
   const reprioritize = vi.spyOn(system.instance, 'reprioritize').mockImplementation(() => undefined)
   const camera = { world: mat4Identity() } as CameraData
@@ -47,5 +51,18 @@ describe('SchedulerSystem.updatePriority', () => {
     const scores = scoresWith(null, { front: [0, 0, -10], back: [0, 0, 10] })
     expect(scores.front).toBeCloseTo(10)
     expect(scores.back).toBeCloseTo(30)
+  })
+
+  it('orders by distance only with a view alignment of 0', () => {
+    const scores = scoresWith(SpaceBasis.Z_UP_POS_Y, { front: [0, 10, 0], back: [0, -10, 0], far: [0, 20, 0] }, 0)
+    expect(scores.front).toBeCloseTo(10)
+    expect(scores.back).toBeCloseTo(10)
+    expect(scores.far).toBeCloseTo(20)
+  })
+
+  it('weights the view direction by the view alignment', () => {
+    const scores = scoresWith(SpaceBasis.Z_UP_POS_Y, { front: [0, 10, 0], back: [0, -10, 0] }, 0.5)
+    expect(scores.front).toBeCloseTo(10)
+    expect(scores.back).toBeCloseTo(20)
   })
 })

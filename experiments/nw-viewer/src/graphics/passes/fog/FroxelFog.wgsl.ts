@@ -1,12 +1,11 @@
 import { COMMON_WGSL } from '../../../material/common.wgsl'
 
 /**
- * Default screen pixels per froxel in x and y (r_VolumetricFogTexScale of the game: 3440x1440 → 344x144),
- * config `froxelTileSize`
+ * Default screen pixels per froxel in x and y (r_VolumetricFogTexScale of the game: 3440x1440 → 344x144)
  */
 export const FROXEL_TILE_SIZE = 10
 /**
- * Default depth slices of the froxel volume (r_VolumetricFogTexDepth of the game), config `froxelSlices`
+ * Default depth slices of the froxel volume (r_VolumetricFogTexDepth of the game)
  */
 export const FROXEL_DEPTH = 32
 /**

@@ -10,6 +10,12 @@ const ONE_OVER_TWO_PI : f32 = 0.15915494;
 const DDN_GRID_SIZE   : f32 = 64.0;
 const DDN_WAVE_COUNT  : i32 = 8;
 
+// waterDDNWaves speed of the game's simulation. The FFT grid has world size 1 (k = 2 PI n for n cycles per tile),
+// deep water dispersion w = sqrt(k * 9.81) and runs at 0.125 * time (PostProcessWater, openworld water-fft.md):
+// w = 0.125 * sqrt(2 PI * 9.81 * n) = DDN_GAME_SPEED * 2 PI * sqrt(n)
+const DDN_GAME_SPEED  : f32 = 0.15617;
+const DDN_GAME_AMOUNT : f32 = 1.5;
+
 // Waves tile on the unit square (integer wave numbers).
 // Column layout: kx, ky (cycles per tile), amplitude (in texels of a 64 grid), phase
 const ddnWaves = array<vec4f, 8>(

@@ -54,8 +54,8 @@ const NDC_TO_TEXCOORD: Mat4 = new Float32Array([0.5, 0, 0, 0, 0, -0.5, 0, 0, 0, 
 
 /**
  * Froxel volumetric fog (plan phase 8, tmp/render-pipeline/froxel-fog.md): a view frustum aligned volume of
- * screen / {@link tileSize} × {@link slices} slices up to the time of day ray-marching range (config `froxelTileSize`
- * and `froxelSlices`, the game uses 10 and 32).
+ * screen / {@link tileSize} × {@link slices} slices up to the time of day ray-marching range (the game uses 10 and 32,
+ * see FROXEL_TILE_SIZE and FROXEL_DEPTH).
  *
  * Per frame: max depth per froxel column → injection of density and in-scattering at a jittered position (global
  * height fog, fog volumes, sun, global probe, lights) → blur H/V → temporal reprojection against the history →

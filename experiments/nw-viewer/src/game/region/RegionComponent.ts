@@ -490,6 +490,7 @@ export class RegionComponent implements GameComponent {
         this.collectImpostorCells(item.slice, mat4CreateFromArray(item.transform), cells, 0)
         for (const cell of cells) {
           cell.slices.push(spawner)
+          spawner.heldBy.push(cell)
         }
       }
     }
@@ -546,6 +547,7 @@ export class RegionComponent implements GameComponent {
         this.slices.push(spawner)
         if (cell) {
           cell.slices.push(spawner)
+          spawner.heldBy.push(cell)
         }
       }
     }

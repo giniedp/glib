@@ -4,22 +4,20 @@ import { Device, Texture, type ResourceScope, type TextureSource } from '@gglib/
 import { Model } from '@gglib/model'
 import { fetchTypedRequest, type TypedRequest } from '../api'
 import { ViewerConfig, type ViewerConfigValues } from '../config'
-import { ENABLE_MODEL_LOD, LOD_PROBE_MIN_TRIANGLES, PARTIAL_TEXTURE_SIZE, PARTIAL_TEXTURES } from '../constants'
+import {
+  DEFAULT_MATERIAL,
+  ENABLE_MODEL_LOD,
+  ENGINE_MAX_LOD_LEVEL,
+  LOD_PROBE_MIN_TRIANGLES,
+  OBJECT_DETAIL_TIERS,
+  PARTIAL_TEXTURE_SIZE,
+  PARTIAL_TEXTURES,
+} from '../constants'
 import { CgfGeometryAssetType, isAssetIdRef, type CgfGeometry } from '../formats/cgf'
 import { MtlLoader } from '../formats/mtl'
 import { createAssetIdResolver, normalizeAssetPath, type AssetIdResolver } from './assetIds'
 import { ResourceScopeComponent } from './ResourceScopeComponent'
 import { SliceLibrary } from './SliceLibrary'
-
-/**
- * Highest level of detail the engine supports (MAX_STATOBJ_LODS_NUM - 1), the upper bound for probing sibling files
- */
-const ENGINE_MAX_LOD_LEVEL = 5
-
-/**
- * Material used when a model has none, same as nwbt (game/resolvers.go)
- */
-const DEFAULT_MATERIAL = 'materials/references/base_colors/purple_trans_glowing.mtl'
 
 // Global engine texture keys
 export const Noise3DKey = Symbol('noise3d')
@@ -585,14 +583,14 @@ function cgfLodInfo(geometry: CgfGeometry, material: string, config: ViewerConfi
     return null
   }
   const inline = geometry.inlineLods.length > 0
-  const available = inline ? geometry.inlineLods.length : geometry.haveAutoLods ? ENGINE_MAX_LOD_LEVEL : 0
-  const maxLevel = Math.min(available, config.lodMaxLevel)
+  const maxLevel = inline ? geometry.inlineLods.length : geometry.haveAutoLods ? ENGINE_MAX_LOD_LEVEL : 0
   if (!maxLevel) {
     return null
   }
   return {
     material,
-    distance: Math.sqrt(geometry.geometricMeanFaceArea) / config.lodFaceAreaTargetSize,
+    distance:
+      Math.sqrt(geometry.geometricMeanFaceArea) / OBJECT_DETAIL_TIERS[config.objectDetail].lodFaceAreaTargetSize,
     maxLevel,
     inline,
   }

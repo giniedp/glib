@@ -216,16 +216,6 @@ export function createRenderPipeline(device: Device): RenderPipelineOptions {
   const previousColor = new PreviousColorPass(device)
 
   const passes: RenderPass[] = [
-    describePass(
-      renderInputsPass({
-        name: 'OpaqueInputs',
-        values: [
-          // fog is applied by the FogPass
-          [InputSlots.Global.SkipFog, TRUE],
-        ],
-      }),
-      { note: 'Sets inputs for opaque pass' },
-    ),
     groupPass({
       name: 'Opaque',
       passes: createOpaquePasses(device, previousColor, luminance),
@@ -311,7 +301,18 @@ export function createRenderPipeline(device: Device): RenderPipelineOptions {
  */
 function createOpaquePasses(device: Device, previousColor: PreviousColorPass, luminance: LuminancePass): RenderPass[] {
   return [
-    neutralSceneDepthPass('OpaqueSceneDepthReset'),
+    describePass(
+      new FunctionPass({
+        name: 'OpaqueInputs',
+        render: (ctx) => {
+          // fog is applied by the FogPass
+          ctx.renderInputs.set(InputSlots.Global.SkipFog, TRUE)
+          // the passes render into LinearDepth
+          ctx.renderInputs.set(CommonInputs.View.SceneDepthMap, getWhiteTexture(ctx.device))
+        },
+      }),
+      { note: 'skips fog (applied by the FogPass), unbinds LinearDepth as scene depth input while passes render into it' },
+    ),
     new GeometryPass({
       name: 'GBufferPass',
       list: GBUFFER_LIST,

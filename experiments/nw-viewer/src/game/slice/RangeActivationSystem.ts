@@ -71,6 +71,34 @@ export class RangeActivationSystem extends GameSystem {
   }
 
   /**
+   * Changes the position and range of a registered entity, e.g. to the bounds of its mesh once it has loaded.
+   * Moves it in place when the range stays within its class, otherwise into the grid of the new class.
+   *
+   * @returns false if the entity is not registered
+   */
+  public move(entity: GameEntity, position: IVec3, range: number): boolean {
+    if (!(range > 0)) {
+      return false
+    }
+    range = Math.min(range, RANGE_CLASS_MAX)
+    const index = Math.max(0, Math.ceil(Math.log2(range)) - this.minExponent)
+    const target = this.grids[Math.min(index, this.grids.length - 1)]
+    for (const grid of this.grids) {
+      if (grid.cellSize < range) {
+        if (grid.remove(entity)) {
+          target.add(entity, position.x, position.y, position.z, range)
+          return true
+        }
+        continue
+      }
+      if (grid.move(entity, position.x, position.y, position.z, range)) {
+        return true
+      }
+    }
+    return false
+  }
+
+  /**
    * Returns the registration of an entity for debugging, or null if the entity is not registered
    */
   public inspect(entity: GameEntity): RangeGridEntry | null {

@@ -1,7 +1,6 @@
 import { BlendState, SamplerState, type Device, type InputValueType, type Program, type Texture } from '@gglib/graphics'
 import { mat4Identity, mat4Invert } from '@gglib/math'
 import { FrameGraph, RenderChannel, type FrameResource, type RenderContext, type RenderPass } from '@gglib/render'
-import { ENABLE_VOLUMETRIC_FOG_2 } from '../../../constants'
 import { InputSlots } from '../../../material/common'
 import { FOG_WGSL } from './FogPass.wgsl'
 import type { FroxelFogPass } from './FroxelFogPass'
@@ -202,7 +201,8 @@ export class FogPass implements RenderPass {
       'params.fogScatteringSecondaryColor',
       inputs.get(InputSlots.Global.FogScatteringSecondaryColor),
     )
-    this.volFog2Enabled[0] = ENABLE_VOLUMETRIC_FOG_2 ? 1 : 0
+    // set by the SkyLightSystem (config `volumetricFog`), on without one
+    this.volFog2Enabled[0] = inputs.get(InputSlots.Global.VolFog2Enabled) ?? 1
     program.set('params.volFog2Enabled', this.volFog2Enabled)
     // froxel volume of this frame
     const volume = this.froxel?.integratedVolume ?? null

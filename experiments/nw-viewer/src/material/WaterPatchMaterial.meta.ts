@@ -28,7 +28,6 @@ export default {
   WavesAmount: inputSlot('material', 'wavesamount', 'scalar'),
   WavesSize: inputSlot('material', 'wavessize', 'scalar'),
   WavesSpeed: inputSlot('material', 'wavesspeed', 'scalar'),
-  FoamScrollSpeed: inputSlot('material', 'foamscrollspeed', 'scalar'),
   SamplerClamp: inputSlot('material', 'samplerClamp', 'sampler'),
   SamplerLinear: inputSlot('material', 'samplerLinear', 'sampler'),
   FoamMap: inputSlot('material', 'foamMap', 'texture'),

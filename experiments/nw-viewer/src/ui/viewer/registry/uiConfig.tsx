@@ -140,6 +140,8 @@ function NumberWidget(props: {
     <ScalarWidget
       label={props.label}
       value={props.value}
+      // the value is controlled: dragging reports through onInput, without it the drag would not move
+      onInput={props.onChange}
       onChange={props.onChange}
       min={number().min}
       max={number().max}

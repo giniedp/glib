@@ -3,11 +3,13 @@ import { GameEntity, GameQuery, GameSystem, GameWorld, GetComponent } from '@ggl
 import { BoundingFrustum, boxMat4DistanceSquared, frustumBoxIntersects, vec3, vec3$initFrom } from '@gglib/math'
 import type { CameraData } from '@gglib/render'
 import {
-  CHUNK_MESH_RANGE,
-  IMPOSTOR_VISIBILITY_END,
+  GDE_NEAR_SWEEP,
+  OBJECT_DETAIL_TIERS,
   RANGE_ACTIVATION_BUDGET_MS,
   RANGE_HYSTERESIS,
+  type ObjectDetailValues,
 } from '../../constants'
+import { ViewerConfig } from '../../config'
 import { DistributionComponent } from '../distribution/DistributionComponent'
 import type { SliceSpawnerComponent } from '../slice/SliceSpawnerComponent'
 import { executeSpawner, resolveSpawnData } from '../slice/SliceSystem'
@@ -24,6 +26,7 @@ export class RegionSystem extends GameSystem {
   private game: EcsGame
   private world: GameWorld
   private frustum = new BoundingFrustum()
+  private config: ViewerConfig | null = null
 
   public get regionCount() {
     return this.allRegions.count()
@@ -42,6 +45,7 @@ export class RegionSystem extends GameSystem {
   public initialize(world: GameWorld): void {
     this.world = world
     this.game = world.getSystem(EcsGame)
+    this.config = world.getSystem(ViewerConfig, { optional: true })
     this.allRegions = world.query({ scope: 'all', required: [RegionComponent] })
     this.activeRegions = world.query({ scope: 'active', required: [RegionComponent] })
     this.activeImpostor = world.query({ scope: 'active', required: [RegionImpostorComponent] })
@@ -60,7 +64,8 @@ export class RegionSystem extends GameSystem {
 
     // activate / deactivate regions
     // activate / deactivate impostor cells
-    activateRegions(camera, this.frustum, this.allRegions)
+    const tier = OBJECT_DETAIL_TIERS[this.config?.value.objectDetail ?? 'high']
+    activateRegions(camera, this.frustum, this.allRegions, tier)
     loadRegionData(this.activeRegions)
     updateActiveImpostor(this.activeImpostor, start + RANGE_ACTIVATION_BUDGET_MS)
 
@@ -97,7 +102,7 @@ function isImpostorVisible(frustum: BoundingFrustum, impostor: RegionImpostorCom
   return frustumBoxIntersects(frustum, loadMin, loadMax)
 }
 
-function activateRegions(camera: CameraData, frustum: BoundingFrustum, regions: GameQuery) {
+function activateRegions(camera: CameraData, frustum: BoundingFrustum, regions: GameQuery, tier: ObjectDetailValues) {
   for (const entity of regions) {
     const region = entity.component(RegionComponent)
 
@@ -128,7 +133,7 @@ function activateRegions(camera: CameraData, frustum: BoundingFrustum, regions: 
     }
     for (const child of region.impostors.getTransform().children) {
       const impostor = child.entity.component(RegionImpostorComponent)
-      updateImpostorVisibility(camera, frustum, impostor)
+      updateImpostorVisibility(camera, frustum, impostor, tier)
     }
   }
 }
@@ -176,7 +181,12 @@ function loadRegionData(regions: GameQuery) {
   }
 }
 
-function updateImpostorVisibility(camera: CameraData, frustum: BoundingFrustum, impostor: RegionImpostorComponent) {
+function updateImpostorVisibility(
+  camera: CameraData,
+  frustum: BoundingFrustum,
+  impostor: RegionImpostorComponent,
+  tier: ObjectDetailValues,
+) {
   const entity = impostor.entity
   const distanceSquared = boxMat4DistanceSquared(impostor.min, impostor.max, camera.world)
   const distance = Math.sqrt(distanceSquared)
@@ -186,8 +196,9 @@ function updateImpostorVisibility(camera: CameraData, frustum: BoundingFrustum, 
 
   // detect and update entity state
   {
-    const loadAt = IMPOSTOR_VISIBILITY_END
-    const unloadAt = IMPOSTOR_VISIBILITY_END * RANGE_HYSTERESIS
+    // g_GDE_ImpostorsRenderMaxRange of the object detail tier, cells exist only in the loaded regions
+    const loadAt = tier.impostorRange
+    const unloadAt = tier.impostorRange * RANGE_HYSTERESIS
     const shouldActivate = !entity.isActive && distance <= loadAt
     const shouldDeactivate = entity.isActive && distance > unloadAt
 
@@ -214,16 +225,22 @@ function updateImpostorVisibility(camera: CameraData, frustum: BoundingFrustum, 
 
   // initiate content load only after mesh was loaded
   if (impostor.isModelLoaded && impostor.isPoi && impostor.hasContent) {
-    const loadAt = CHUNK_MESH_RANGE
-    const unloadAt = CHUNK_MESH_RANGE * RANGE_HYSTERESIS
-    const shouldLoad = impostor.contentState === 'far' && distance <= loadAt
-    const shouldUnload = impostor.contentState !== 'far' && distance > unloadAt
+    // the cells the GDE near sweep tends: the camera within 225 m plus the cell size of the cell center, on both ground
+    // axes (sweeps_cell, NewWorld+0x695b6c0). The cell holds its impostor until its content has loaded.
+    const cellSize = impostor.max.x - impostor.min.x
+    const loadAt = GDE_NEAR_SWEEP + cellSize
+    const unloadAt = loadAt * RANGE_HYSTERESIS
+    const sweep = Math.max(
+      Math.abs(camera.world[12] - (impostor.min.x + impostor.max.x) * 0.5),
+      Math.abs(camera.world[13] - (impostor.min.y + impostor.max.y) * 0.5),
+    )
+    const shouldLoad = impostor.contentState === 'far' && sweep <= loadAt
+    const shouldUnload = impostor.contentState !== 'far' && sweep > unloadAt
 
     if (shouldLoad) {
       impostor.setContentState('loading')
     } else if (shouldUnload) {
-      impostor.deactivateMembers()
-      impostor.setContentState('far')
+      unloadContent(impostor)
     }
   }
 }
@@ -260,11 +277,23 @@ function deactivateRegionImpostor(region: RegionComponent) {
   for (const child of region.impostors.getTransform().children) {
     const impostor = child.entity.component(RegionImpostorComponent)
     if (impostor.hasContent && impostor.contentState !== 'far') {
-      impostor.deactivateMembers()
-      impostor.setContentState('far')
+      unloadContent(impostor)
     }
     if (child.entity.canDeactivate) {
       child.entity.deactivate()
+    }
+  }
+}
+
+/**
+ * The cell turns far: deactivates its members and despawns the chunks it owns, the impostor shows again
+ */
+function unloadContent(impostor: RegionImpostorComponent) {
+  impostor.deactivateMembers()
+  impostor.setContentState('far')
+  for (const slice of impostor.slices) {
+    if (slice.impostor === impostor) {
+      slice.despawn()
     }
   }
 }

@@ -57,51 +57,32 @@ export const viewerConfigSchema = defineConfig({
     group: 'Display',
   }),
 
+  /**
+   * RCAS sharpening of fsr1, higher is sharper. Applied as `2 * (1 - value)` stops (UpscalePass.sharpness): 1 is the
+   * strongest, 0 is 2 stops (a quarter), 0.9 is the AMD default of 0.2 stops.
+   */
   upscaleSharpness: number({
-    description: 'RCAS sharpening of fsr1 in stops: 0 is the strongest, each stop halves it (AMD default 0.2).',
+    description: 'RCAS sharpening of fsr1, higher is sharper. 0.9 is the AMD default.',
     editable: true,
-    default: 0.2,
+    default: 0.9,
     min: 0,
-    max: 2,
+    max: 1,
     step: 0.05,
     group: 'Display',
   }),
   /**
-   * The engine cvar e_LodFaceAreaTargetSize. Level 1 begins at
-   * `sqrt(geometric mean face area) / lodFaceAreaTargetSize / (lodRatio / 100) * world z scale`, every further level at
-   * twice the distance of the previous one, see ContentService.cgfLodInfo and MeshLoaderComponent.attachLod.
-   *
-   * The game sets it per object detail spec (config/cvargroups/sys_spec_objectdetail.cfg):
-   * - LOW ([4], [5]): 0.01
-   * - MID ([6]): 0.0075
-   * - HIGH (default [7]) and very high ([8]): 0.005
-   *
-   * Per mesh factor from nwbt: MeshRenderOptions.LODRatio, the distances are divided by lodRatio / 100 (engine
-   * GetLodDistances). 100 is the default (98% of the meshes), 200 halves the switch distances, 50 doubles them.
-   * MeshRenderOptions.Lod_MinScreenPct is not used: the game leaves e_UseScreenPctLOD off (tmp/game-parity).
+   * Object detail tier of the game (sys_spec_ObjectDetail). The values of each tier are in constants.ts
+   * (OBJECT_DETAIL_TIERS): impostor range, spawn radius scale (g_GDE_AOIScale), LOD target size
+   * (e_LodFaceAreaTargetSize) and slices spawned per frame. The game does not thin out meshes on lower tiers.
    */
-  lodFaceAreaTargetSize: number({
+  objectDetail: choice({
     description:
-      'Target triangle size on screen (e_LodFaceAreaTargetSize), smaller keeps finer levels longer. ' +
-      'Game: low 0.01, mid 0.0075, high 0.005. Needs reload.',
+      'Object detail tier of the game: impostor range (600/800/1200/1400 m), spawn radius scale and LOD target size. ' +
+      'The LOD target size needs reload.',
     editable: true,
-    default: 0.005,
-    min: 0.0005,
-    max: 0.02,
-    step: 0.0005,
-    group: 'LOD',
-  }),
-  /**
-   * Coarsest level of detail that is used. The engine supports 6 levels (MAX_STATOBJ_LODS_NUM), and the game does not
-   * limit them (e_LodMax is a cheat cvar that stays at 5).
-   */
-  lodMaxLevel: integer({
-    description: 'Coarsest level of detail that is used, the game always allows 5. Needs reload.',
-    editable: true,
-    default: 2,
-    min: 0,
-    max: 5,
-    group: 'LOD',
+    options: ['low', 'medium', 'high', 'veryHigh'],
+    default: 'high',
+    group: 'Object detail',
   }),
   /**
    * Distance up to which particle emitters are active, multiplied by the emitter view distance multiplier.
@@ -153,29 +134,18 @@ export const viewerConfigSchema = defineConfig({
     group: 'Fog',
   }),
 
-  froxelTileSize: integer({
-    description: 'Screen pixels per froxel in x and y. The game uses 10. Smaller is sharper and more expensive.',
+  volumetricFog: boolean({
+    description:
+      'The analytical volumetric fog 2 of the game (VOLFOG2 time of day values: height fog, ramp, scattering). ' +
+      'Off disables the fog (the froxel fog included), the legacy fog of the engine is not tuned by New World.',
     editable: true,
-    min: 4,
-    max: 32,
-    step: 1,
-    default: 10,
-    group: 'Fog',
-  }),
-
-  froxelSlices: integer({
-    description: 'Depth slices of the froxel volume. The game uses 32. More slices reduce banding in depth.',
-    editable: true,
-    min: 8,
-    max: 128,
-    step: 4,
-    default: 32,
+    default: true,
     group: 'Fog',
   }),
 
   antialiasing: choice({
     description:
-      'Post-process anti-aliasing of the final image. smaa1tx is the game\'s SMAA 1TX: SMAA 1x plus a temporal resolve ' +
+      "Post-process anti-aliasing of the final image. smaa1tx is the game's SMAA 1TX: SMAA 1x plus a temporal resolve " +
       'with the reprojected previous frame (calms specular and emissive pixels). smaa is SMAA 1x with depth ' +
       'predication, cmaa2 is Intel CMAA2 (conservative, keeps texture detail), fxaa is FXAA 3.11 (cheaper, softer).',
     editable: true,
@@ -218,15 +188,6 @@ export const viewerConfigSchema = defineConfig({
     options: ['auto', 'fixed'],
     default: 'auto',
     group: 'Lighting',
-  }),
-
-  workerCulling: boolean({
-    description:
-      'Culls static level objects in a worker and draws them as instance batches, instead of the scene traversal. ' +
-      'Needs reload.',
-    editable: true,
-    default: true,
-    group: 'Performance',
   }),
 
   playerCollision: boolean({

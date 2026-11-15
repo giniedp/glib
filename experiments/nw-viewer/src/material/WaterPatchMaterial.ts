@@ -78,7 +78,7 @@ const water = new MtlUtil('Water', {
 })
 
 /**
- * Mission `<OceanAnimation>` attributes
+ * Ocean animation, from the WaterOceanComponent or the mission `<OceanAnimation>` attributes
  */
 export interface OceanAnimationParams {
   windDirection?: string | number
@@ -123,7 +123,6 @@ export class WaterPatchMaterial extends MaterialWithSchema(SCHEMA) {
     // ocean plane only, rivers and water volumes render their own meshes (WaterVolumeMaterial)
     this.WaterLevel = 40.0
     this.SpecularColor = vec4(0.42, 0.42, 0.42, 1.0)
-    this.FoamScrollSpeed = 0.15
     this.FoamMap = this.device.acquireTexture({ key: FoamMapKey, throwIfMissing: true })
     this.GlossMap = this.device.acquireTexture({ key: GlossMapKey, throwIfMissing: true })
     this.FoamNormalMap = this.device.acquireTexture({ key: FoamNormalMapKey, throwIfMissing: true })
@@ -198,10 +197,10 @@ export class WaterPatchMaterial extends MaterialWithSchema(SCHEMA) {
   }
 
   private setPublicParams(params: PublicParams) {
-    // this.Tiling = paramValue(params.Tilling, this.Tiling)
-    // this.DetailTiling = paramValue(params.DetailTilling, this.DetailTiling)
-    // // this.RainTiling = paramValue(params.RainTilling, this.RainTiling)
-    // this.FoamTiling = paramValue(params.FoamTilling, this.FoamTiling)
+    this.Tiling = paramValue(params.Tilling, this.Tiling)
+    this.DetailTiling = paramValue(params.DetailTilling, this.DetailTiling)
+    // this.RainTiling = paramValue(params.RainTilling, this.RainTiling)
+    this.FoamTiling = paramValue(params.FoamTilling, this.FoamTiling)
 
     // this.AnimAmplitudeWav0 = paramValue(params.AnimAmplitudeWav0, this.AnimAmplitudeWav0)
     // this.AnimAmplitudeWav2 = paramValue(params.AnimAmplitudeWav2, this.AnimAmplitudeWav2)
@@ -236,8 +235,9 @@ export class WaterPatchMaterial extends MaterialWithSchema(SCHEMA) {
   }
 
   public applyOceanAnimation(params: OceanAnimationParams) {
+    // OceanParams1.yz = (sin, cos) of the wind direction (openworld water-fft.md, ocean shader custom registers)
     const angle = paramValue(params.windDirection, 0)
-    this.WindDirection = vec2(Math.cos(angle), Math.sin(angle))
+    this.WindDirection = vec2(Math.sin(angle), Math.cos(angle))
     this.WindSpeed = paramValue(params.windSpeed, 4)
     this.WavesAmount = paramValue(params.wavesAmount, 1.5)
     this.WavesSize = paramValue(params.wavesSize, 0.75)

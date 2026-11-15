@@ -41,6 +41,9 @@
   width: auto;
   padding: 0;
   pointer-events: all;
+  /* the content scrolls in .nw-dialog-content. The dialog fits its content exactly, a pressed button (translated
+     down 1px) would overflow it and show a scrollbar with the default overflow: auto */
+  overflow: hidden;
 }
 .nw-dialog-title {
   padding-left: 0.75rem;
@@ -203,4 +206,11 @@
 }
 .nw-texture-facts {
   gap: 1rem;
+}
+
+/* render pipeline panel: the description of a pass, a full row (ui/viewer/registry/uiRenderPipeline.tsx) */
+.nw-pass-note {
+  margin: 0;
+  padding: 0 0.25rem;
+  line-height: 1.35;
 }

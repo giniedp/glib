@@ -63,9 +63,13 @@
   color: var(--nw-accent);
 }
 
-/* the row: wider than the browser's row panel, it holds the preview */
-.nw-data-row {
-  flex-basis: 30rem;
+/* grid and row panel (ui/data/FamilyView.tsx): the split pane sizes the row panel, the gutter draws the border */
+.nw-data-split > .twk-split-gutter {
+  border-left: 1px solid var(--nw-line);
+}
+.nw-data-split .nw-data-row {
+  flex: 1;
+  border-left: none;
 }
 .nw-data-row-head {
   display: flex;
@@ -154,6 +158,13 @@
 }
 .nw-data-preview-surface {
   height: 22rem;
+}
+/* the row panel has a fixed width: the bars wrap instead of squeezing their buttons into each other */
+.nw-data-preview > .nw-view-bar {
+  flex-wrap: wrap;
+}
+.nw-data-preview > .nw-view-bar > * {
+  flex: none;
 }
 /* full screen: the bars on top, the engine fills the rest */
 .nw-data-preview:fullscreen {

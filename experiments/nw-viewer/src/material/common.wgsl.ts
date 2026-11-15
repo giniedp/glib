@@ -1183,8 +1183,8 @@ fn getSceneFog(worldPos: vec3f) -> vec4f {
     }
     return volFog2Analytical(p, cameraToWorldPos, -global.sunDirection);
   }
-  let legacy = getVolumetricFogColor(worldPos);
-  return vec4f(legacy.rgb * (1.0 - legacy.w), legacy.w);
+  // volumetric fog off (config volumetricFog): no fog, the legacy fog is not tuned by New World
+  return vec4f(0.0, 0.0, 0.0, 1.0);
 }
 
 // The integrated froxel volume towards a world position (GetVolumetricFogValue), the range rectified to the linear
@@ -1211,10 +1211,8 @@ fn sampleFroxelVolume(pixel: vec2f, linearDepth: f32, rangeDepth: f32) -> vec4f 
 
 // fog transmittance towards a world position
 fn getVolumetricFogDensity(worldPos: vec3f) -> f32 {
-  if (global.volFog2Enabled != 0u) {
-    return getSceneFog(worldPos).a;
-  }
-  return computeVolumetricFogInternal(worldPos - view.cameraPosition.xyz);
+  // volumetric fog off: getSceneFog returns no fog
+  return getSceneFog(worldPos).a;
 }
 
 fn computeVolumetricFogInternal(cameraToWorldPos: vec3f) -> f32  {

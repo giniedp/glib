@@ -18,7 +18,7 @@ import {
 } from '@gglib/math'
 import { removeItemUnordered } from '@gglib/utils'
 
-import type { LevelInfo } from '../../api'
+import { isViewerWaterOceanComponent, type LevelInfo } from '../../api'
 import { QUAD_TREE_LEAF_SIZE, TERRAIN_LOD_RANGE_FACTOR, VT_LOD_QUALITY, VT_MIP_COUNT } from '../../constants'
 import { ContentService, materialAssetPath } from '../../content'
 import { WaterPatchMaterial, type OceanAnimationParams } from '../../material'
@@ -137,7 +137,7 @@ export class TerrainSystem extends GameSystem {
   ) {
     this.mountainHeight = info.mountainHeight
     this.oceanLevel = info.oceanLevel
-    this.oceanAnimation = info.mission?.environment?.oceanAnimation
+    this.oceanAnimation = oceanAnimationOf(info)
     this.oceanMtl = null
     this.oceanDirty = true
 
@@ -478,3 +478,17 @@ const PAGE_MIP_COLORS = [
   { x: 0.6, y: 0.2, z: 1.0 },
   { x: 1.0, y: 0.3, z: 0.8 },
 ]
+
+/**
+ * The ocean animation of a level. The game takes it from the WaterOceanComponent of the mission entities and falls
+ * back to the mission `<OceanAnimation>` values only without that component (openworld docs/subsystems/water-ocean.md).
+ */
+function oceanAnimationOf(info: LevelInfo): OceanAnimationParams {
+  for (const entity of info.missionEntities ?? []) {
+    const ocean = entity.components?.find(isViewerWaterOceanComponent)
+    if (ocean) {
+      return ocean
+    }
+  }
+  return info.mission?.environment?.oceanAnimation ?? {}
+}

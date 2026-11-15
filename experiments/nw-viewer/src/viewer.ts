@@ -227,7 +227,8 @@ export class NwViewer extends EcsGame {
     this.world.addSystem(new DebugShapeSystem())
     this.world.addSystem(new RaycastSystem())
     this.world.addSystem(new SpatialSystem())
-    this.world.addSystem(new SchedulerSystem({}))
+    // nearest first, the game builds by distance without the view direction (tmp/chunk-visibility)
+    this.world.addSystem(new SchedulerSystem({ viewAlignment: 0 }))
     const pipeline = createRenderPipeline(this.device)
     const smaa = pipeline.passes.find((it): it is SmaaPass => it instanceof SmaaPass)
     const fxaa = pipeline.passes.find((it): it is FxaaPass => it instanceof FxaaPass)
@@ -256,18 +257,16 @@ export class NwViewer extends EcsGame {
     const upscale = pipeline.passes.find((it): it is UpscalePass => it instanceof UpscalePass)
     if (upscale) {
       upscale.mode = config.value.upscaler
-      upscale.sharpness = config.value.upscaleSharpness
+      // the config is higher = sharper, the pass takes RCAS stops (0 = strongest)
+      const sharpnessStops = (value: number) => 2 * (1 - value)
+      upscale.sharpness = sharpnessStops(config.value.upscaleSharpness)
       config.onChange('upscaler', (value) => (upscale.mode = value))
-      config.onChange('upscaleSharpness', (value) => (upscale.sharpness = value))
+      config.onChange('upscaleSharpness', (value) => (upscale.sharpness = sharpnessStops(value)))
     }
     const froxelFog = pipeline.passes.find((it): it is FroxelFogPass => it instanceof FroxelFogPass)
     if (froxelFog) {
       froxelFog.enabled = config.value.froxelFog
-      froxelFog.tileSize = config.value.froxelTileSize
-      froxelFog.slices = config.value.froxelSlices
       config.onChange('froxelFog', (value) => (froxelFog.enabled = value))
-      config.onChange('froxelTileSize', (value) => (froxelFog.tileSize = value))
-      config.onChange('froxelSlices', (value) => (froxelFog.slices = value))
     }
     // screen space reflections: the trace (in the opaque group) and the previous frame color it reads
     const reflectionPasses = findPasses(

@@ -130,6 +130,51 @@ export class RangeGrid {
   }
 
   /**
+   * Moves a registered entity to a new position and range in place. The range must fit the class (at most the cell
+   * size). The activation queue stays valid, entry indices don't change.
+   *
+   * @returns false if the entity is not in this grid
+   */
+  public move(entity: GameEntity, x: number, y: number, z: number, range: number): boolean {
+    const index = this.indices.get(entity)
+    if (index === undefined) {
+      return false
+    }
+    const ix = Math.floor(x * this.invCellSize)
+    const iy = Math.floor(y * this.invCellSize)
+    const key = cellKey(ix, iy)
+    if (key !== this.keys[index]) {
+      // swap-remove from the old cell
+      const oldCell = this.cells.get(this.keys[index])
+      const slot = this.slots[index]
+      const lastInCell = oldCell.pop()
+      if (lastInCell !== index) {
+        oldCell[slot] = lastInCell
+        this.slots[lastInCell] = slot
+      }
+      if (!oldCell.length) {
+        this.cells.delete(this.keys[index])
+      }
+      let cell = this.cells.get(key)
+      if (!cell) {
+        cell = []
+        this.cells.set(key, cell)
+      }
+      this.keys[index] = key
+      this.slots[index] = cell.length
+      cell.push(index)
+    }
+    this.x[index] = x
+    this.y[index] = y
+    this.z[index] = z
+    this.rangeSq[index] = range * range
+    if (Math.abs(ix - this.cellX) <= 1 && Math.abs(iy - this.cellY) <= 1) {
+      this.dirty = true
+    }
+    return true
+  }
+
+  /**
    * Returns the registration of an entity for debugging, or null if the entity is not in this grid
    */
   public inspect(entity: GameEntity): RangeGridEntry | null {

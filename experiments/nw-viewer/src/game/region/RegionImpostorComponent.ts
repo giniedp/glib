@@ -186,6 +186,8 @@ export class RegionImpostorComponent implements GameComponent {
   public addMember(member: ImpostorContentMember) {
     for (const loader of member.loaders) {
       loader.lane = PriorityLane.High
+      // ordered by the distance of the cell, not of the mesh pivot
+      loader.priorityEntity = this.entity
     }
     this.members.push(member)
     if (this.contentState === 'ready') {

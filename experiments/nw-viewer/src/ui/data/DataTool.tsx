@@ -35,7 +35,13 @@ export default function DataTool() {
         start={
           <>
             <Button ghost square title="Back" icon={<Icon svg={svgArrowLeft} />} onClick={() => history.back()} />
-            <Button ghost square title="Forward" icon={<Icon svg={svgArrowRight} />} onClick={() => history.forward()} />
+            <Button
+              ghost
+              square
+              title="Forward"
+              icon={<Icon svg={svgArrowRight} />}
+              onClick={() => history.forward()}
+            />
           </>
         }
         end={
@@ -57,7 +63,9 @@ export default function DataTool() {
               <p class="nw-note">The datasheets could not be read: {String(schema.error)}</p>
             </Match>
             <Match when={schema()}>
-              {(it) => <FamilyList families={it().families} selected={family()?.name ?? null} onSelect={selectFamily} />}
+              {(it) => (
+                <FamilyList families={it().families} selected={family()?.name ?? null} onSelect={selectFamily} />
+              )}
             </Match>
             <Match when={true}>
               <p class="nw-note">Reading the datasheets…</p>
@@ -138,8 +146,7 @@ function FamilyList(props: { families: SheetFamily[]; selected: string | null; o
             >
               <span class="nw-family-name">{it.family.name}</span>
               <span class="nw-family-count">
-                {it.family.sheets.length > 1 ? `${it.family.sheets.length} sheets · ` : ''}
-                {it.family.rows.toLocaleString()}
+                {it.family.sheets.length > 1 ? `${it.family.sheets.length} sheets` : ''}
               </span>
               <Show when={it.sheets.length}>
                 <span class="nw-family-sheets">{it.sheets.join(', ')}</span>
@@ -148,7 +155,9 @@ function FamilyList(props: { families: SheetFamily[]; selected: string | null; o
           )}
         </For>
       </div>
-      <div class="nw-search-summary nw-muted nw-family-summary">{shown().length} of {props.families.length} row types</div>
+      <div class="nw-search-summary nw-muted nw-family-summary">
+        {shown().length} of {props.families.length} row types
+      </div>
     </>
   )
 }

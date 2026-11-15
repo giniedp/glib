@@ -27,12 +27,6 @@ export const VT_LOD_QUALITY = 1.5
 export const AMBIENT_LIGHT_MODE: 'modulate' | 'skip' | 'direct' = 'modulate'
 
 /**
- * Fog with the analytical volumetric fog 2 (VOLFOG2_* time of day parameters), like the game.
- * When disabled the legacy fog (VOLFOG_* and FOG_COLOR* parameters) is used, which New World does not tune.
- */
-export const ENABLE_VOLUMETRIC_FOG_2 = true
-
-/**
  * Loads only the smaller mips of split DDS material textures instead of the merged texture (merge=partial in nwbt).
  * The textures are allocated with their full mip chain, only the loaded mips are sampled (Texture.residentMipLevel).
  * Impostor and terrain textures are always loaded in full.
@@ -46,7 +40,7 @@ export const PARTIAL_TEXTURE_SIZE = 256
  * Size of the merged material textures (`merge=true&size=N`), same as the `--texture-size` of nwbt (pnpm dev:nwbt)
  * that it uses for the textures of its glTF files
  */
-export const MATERIAL_TEXTURE_SIZE = 1024
+export const MATERIAL_TEXTURE_SIZE = 2048
 /**
  * Requests the `.cgfheap` of a model only after its `.cgf` is parsed, and only if the file references heap data.
  *
@@ -54,7 +48,7 @@ export const MATERIAL_TEXTURE_SIZE = 1024
  * 0.7% of the files) have no heap, their heap request fails with 404.
  * On: no heap request for those files, but one more round trip per model.
  */
-export const CGF_HEAP_AFTER_PARSE = false
+export const CGF_HEAP_AFTER_PARSE = true
 /**
  * Renders meshes with an instance array (InstancedMeshComponent) with GPU culling and indirect draws.
  * Disabled: indirect draws are expensive per call and level objects have few instances per draw.
@@ -151,9 +145,86 @@ export const ENABLE_CHUNKS = true
 export const IMPOSTOR_VISIBILITY_START = 185
 
 /**
- * Distance from camera to maximum distance where impostor are still visible
+ * Object detail tiers of the game (sys_spec_ObjectDetail), selected by the config setting `objectDetail`
  */
-export const IMPOSTOR_VISIBILITY_END = SEGMENT_SIZE * 6
+export type ObjectDetailTier = 'low' | 'medium' | 'high' | 'veryHigh'
+
+export interface ObjectDetailValues {
+  /**
+   * g_GDE_ImpostorsRenderMaxRange: impostor cells draw within this distance, and every slice spawn radius is held to
+   * it. The viewer keeps at most 4 regions loaded (at least 1024 m around the camera), larger ranges end where the
+   * loaded regions end.
+   */
+  impostorRange: number
+  /**
+   * g_GDE_AOIScale (held to 0.1..1): scales the spawn radius of slices and chunks (GdeSettings::spawn_radius)
+   */
+  aoiScale: number
+  /**
+   * e_LodFaceAreaTargetSize: level 1 begins at `sqrt(geometric mean face area) / lodFaceAreaTargetSize`, see
+   * ContentService.cgfLodInfo. Needs reload.
+   */
+  lodFaceAreaTargetSize: number
+  /**
+   * g_GDE_SlicesCreatedPerFrame: slices spawned per frame, nearest first
+   */
+  slicesPerFrame: number
+}
+
+/**
+ * Values of the object detail tiers, from config/cvargroups/sys_spec_objectdetail.cfg (read with nwbt):
+ * low = [4]/[5], medium = [6], high = [7] (the cfg default), veryHigh = [8].
+ *
+ * Not adopted (tmp/chunk-visibility/plan.md): coat_terrainViewDistance (needs more than 4 regions), e_ObjQuality (light
+ * MinimumSpec gate), r_MaxParticleEmitters, g_GDE_GeomsCreatedPerFrame / DeletedPerFrame, the impostor memory budget.
+ * e_LodRatio does not apply to static meshes: MeshComponentRenderNode::GetLodDistances (NewWorld+0xca6ec0) divides by
+ * the mesh LODRatio and e_LodFaceAreaTargetSize only. It scales skinned meshes and particles (generic LOD fill) from a
+ * character face area mean the viewer does not compute.
+ */
+export const OBJECT_DETAIL_TIERS: Record<ObjectDetailTier, ObjectDetailValues> = {
+  low: { impostorRange: 600, aoiScale: 0.8, lodFaceAreaTargetSize: 0.01, slicesPerFrame: 7 },
+  medium: { impostorRange: 800, aoiScale: 0.9, lodFaceAreaTargetSize: 0.0075, slicesPerFrame: 8 },
+  high: { impostorRange: 1200, aoiScale: 1, lodFaceAreaTargetSize: 0.005, slicesPerFrame: 10 },
+  veryHigh: { impostorRange: 1400, aoiScale: 1, lodFaceAreaTargetSize: 0.005, slicesPerFrame: 10 },
+}
+
+/**
+ * Upper limit of g_GDE_ImpostorsRenderMaxRange (IMPOSTORS_RENDER_MAX_RANGE_LIMIT), slice spawn radii are held to it
+ */
+export const GDE_IMPOSTOR_RANGE_LIMIT = 1500
+/**
+ * Half width of the GDE near sweep (225 m * g_GDE_ImpostorNearFadeDistanceScale, NewWorld+0x695b6c0): the game builds
+ * the meshes of chunks and static slices progressively within this distance plus their physical radius, and tends the
+ * impostor cells within this distance plus the cell size (square around the camera)
+ */
+export const GDE_NEAR_SWEEP = 225
+/**
+ * Added to {@link GDE_NEAR_SWEEP} for the reach of slices that are not isLongDistanceGDE (NEAR_SPAWN_MARGIN,
+ * NewWorld+0x6959170)
+ */
+export const GDE_NEAR_SPAWN_MARGIN = 10
+/**
+ * Spawned slices go this far beyond their spawn reach (DESPAWN_MARGIN, NewWorld+0x6959170)
+ */
+export const GDE_DESPAWN_MARGIN = 5
+/**
+ * Smallest spawn margin of a chunk, `max(spawnRadius - size, 25)` (CHUNK_SPAWN_MARGIN, NewWorld+0x45e4520)
+ */
+export const GDE_CHUNK_SPAWN_MARGIN = 25
+/**
+ * Mesh chunks smaller than this have no smallest spawn margin, `max(spawnRadius - size, 0)` (SMALL_MESH_CHUNK_SIZE)
+ */
+export const GDE_SMALL_MESH_CHUNK_SIZE = 128
+
+/**
+ * Highest level of detail the engine supports (MAX_STATOBJ_LODS_NUM - 1), the upper bound for probing sibling files
+ */
+export const ENGINE_MAX_LOD_LEVEL = 5
+
+/**
+ * Material used when a model has none, same as nwbt (game/resolvers.go)
+ */
+export const DEFAULT_MATERIAL = 'materials/references/base_colors/purple_trans_glowing.mtl'
 
 /**
  * Range
@@ -171,7 +242,8 @@ export const IMPOSTOR_FADE_RANGE = 20
 export const VEGETATION_FADE_RANGE = 24
 
 /**
- * View distance cap of meshes in chunk slices, also the distance where POI impostor cells start loading their content.
+ * View distance cap of meshes in chunk slices. POI impostor cells start loading their content at
+ * {@link GDE_NEAR_SWEEP} plus the cell size (square around the camera).
  *
  * The game builds the geometry of slices and chunks progressively within 225 m * g_GDE_ImpostorNearFadeDistanceScale
  * (the GDE near sweep, NewWorld+0x695b6c0, tmp/game-parity/view-distance.md), beyond the impostor dissolve band

@@ -6,7 +6,6 @@ import { mat4GetTranslation, vec3, vec4 } from '@gglib/math'
 import { Renderer } from '@gglib/render'
 import type { AssetReference } from '../../api'
 import { ViewerConfig } from '../../config'
-import { ENABLE_VOLUMETRIC_FOG_2 } from '../../constants'
 import { InputSlots } from '../../material'
 import { TimeOfDay } from './TimeOfDay'
 import { TimeOfDayComponent } from './TimeOfDayComponent'
@@ -216,7 +215,8 @@ export class SkyLightSystem extends GameSystem {
     // fallback without a baked global probe (sky mode, previews), EnvProbeInputs writes the probe in-scattering.
     // Particles still use it as their ambient.
     inputs.set(InputSlots.Global.VolFog2Ambient, tod.fogColGradBase)
-    inputs.set(InputSlots.Global.VolFog2Enabled, ENABLE_VOLUMETRIC_FOG_2 ? 1 : 0)
+    // config `volumetricFog`, off uses the legacy fog
+    inputs.set(InputSlots.Global.VolFog2Enabled, this.config.value.volumetricFog ? 1 : 0)
   }
 
   public destroy(): void {

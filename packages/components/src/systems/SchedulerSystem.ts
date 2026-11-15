@@ -12,14 +12,28 @@ import {
 import { CameraData } from '@gglib/render'
 import { AsyncScheduler, PriorityLane, ScheduledTask, SchedulerConfig } from './Scheduler'
 
+export interface SchedulerSystemOptions extends Partial<SchedulerConfig> {
+  /**
+   * Weight of the view direction in the task priority: the score is `distance * (1 + viewAlignment * (1 - alignment))`
+   * with the alignment in [-1, 1]. 1 (default) counts tasks behind the camera up to 3 times as far, 0 orders by
+   * distance only.
+   */
+  viewAlignment?: number
+}
+
 export class SchedulerSystem extends GameSystem {
   public instance: AsyncScheduler
+  /**
+   * See {@link SchedulerSystemOptions.viewAlignment}
+   */
+  public viewAlignment: number
 
   private basis: SpaceBasis = SpaceBasis.Y_UP_NEG_Z
 
-  public constructor(config?: Partial<SchedulerConfig>) {
+  public constructor(options?: SchedulerSystemOptions) {
     super()
-    config ||= {}
+    const { viewAlignment, ...config } = options || {}
+    this.viewAlignment = viewAlignment ?? 1
     this.instance = new AsyncScheduler({
       frameBudgetMs: 4,
       // Sized for HTTP/2, where the browser multiplexes all requests over one connection.
@@ -106,8 +120,8 @@ export class SchedulerSystem extends GameSystem {
   private _v3 = vec3()
   private _v4 = vec3()
   /**
-   * Orders a pending task within its lane by distance to the camera, things in front of the camera first.
-   * The lane is chosen by the task owner and is not changed here.
+   * Orders a pending task within its lane by distance to the camera, things in front of the camera first unless
+   * {@link viewAlignment} is 0. The lane is chosen by the task owner and is not changed here.
    */
   public updatePriority(task: ScheduledTask, camera: CameraData, frame: number): void {
     if (!task.entity) {
@@ -121,12 +135,16 @@ export class SchedulerSystem extends GameSystem {
     const objPos = mat4GetTranslation(transform.world, this._v1)
     const camPos = mat4GetTranslation(camera.world, this._v2)
     const dist = vec3Distance(objPos, camPos)
+    if (!this.viewAlignment) {
+      this.instance.reprioritize(task, dist)
+      return
+    }
     const toObj = vec3$normalize(vec3Subtract(objPos, camPos, this._v3))
     const forward = vec3$normalize(vec3ApplyMat4Rotation(this.basis.forward, camera.world, this._v4))
     const alignment = dist > 0 ? vec3Dot(toObj, forward) : 1 // [-1, 1]
 
-    // objects behind the camera count up to 3 times as far
-    const score = dist * (2 - alignment)
+    // with a weight of 1, objects behind the camera count up to 3 times as far
+    const score = dist * (1 + this.viewAlignment * (1 - alignment))
     this.instance.reprioritize(task, score)
   }
 }

@@ -1,6 +1,6 @@
 import type { ColDef, GridApi } from 'ag-grid-community'
 import { createEffect, createMemo, createSignal, on, onCleanup, Show } from 'solid-js'
-import { BoolInput, Button, ButtonGroup, SelectInput, TextInput } from 'tweak-ui'
+import { BoolInput, Button, ButtonGroup, SelectInput, Split, TextInput } from 'tweak-ui'
 import { ColumnType } from '../../formats/datasheet/datasheet'
 import { columnWidth, Grid, indexColumn } from '../common/grid'
 import { SheetGroupsView } from '../browser/views/SheetMode'
@@ -204,7 +204,8 @@ export function FamilyView(props: {
           </div>
         }
       >
-        <div class="nw-sheet">
+        {/* the grid takes the remaining space, the row panel keeps its width (drag the gutter to resize it) */}
+        <Split row class="nw-sheet nw-data-split" fluid={0} minSize={200} defaultSizes={[undefined, '30rem']}>
           <Grid<GridRow>
             ref={(it) => (api = it)}
             options={{
@@ -227,7 +228,7 @@ export function FamilyView(props: {
           <Show when={selected() != null}>
             <RowPanel rows={rows()} row={selected()!} onOpen={props.onOpen} />
           </Show>
-        </div>
+        </Split>
       </Show>
     </div>
   )

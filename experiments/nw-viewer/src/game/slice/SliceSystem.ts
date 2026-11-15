@@ -18,7 +18,6 @@ import {
   mat4Identity,
   mat4Invert,
   mat4Multiply,
-  spherePointIntersects,
   vec3,
   vec3Copy,
   vec3DistanceSquared,
@@ -46,7 +45,15 @@ import {
   type ViewerWaterVolumeComponent,
 } from '../../api'
 import { AudioEmitterComponent, AudioScriptComponent } from '../../audio/AudioEmitterComponent'
-import { CHUNK_MESH_RANGE, IMPOSTOR_HOLD_CHUNK_SIZES, ROAD_VIEW_DISTANCE } from '../../constants'
+import {
+  CHUNK_MESH_RANGE,
+  GDE_DESPAWN_MARGIN,
+  IMPOSTOR_HOLD_CHUNK_SIZES,
+  OBJECT_DETAIL_TIERS,
+  ROAD_VIEW_DISTANCE,
+  type ObjectDetailTier,
+  type ObjectDetailValues,
+} from '../../constants'
 
 /**
  * View distance of decals without one (LmbrCentral DecalConfiguration m_maxViewDist default is 8000, nwbt delivers
@@ -73,6 +80,8 @@ import { WaterVolumeComponent } from '../water/WaterVolumeComponent'
 import { shapeOutline } from '../water/WaterVolumeMesh'
 import { MeshLoaderComponent } from './MeshLoaderComponent'
 import { RangeActivationSystem } from './RangeActivationSystem'
+import { ViewerConfig } from '../../config'
+import { capitalReach, chunkReach } from './gdeReach'
 import { SliceSpawnerComponent } from './SliceSpawnerComponent'
 
 /**
@@ -104,6 +113,17 @@ export class SliceSystem extends GameSystem {
    * Spawners outside of regions, e.g. the slice preview of the browser, updated like the slices of a region
    */
   private previewSpawners: SliceSpawnerComponent[] = []
+  private config: ViewerConfig | null = null
+  private tierName: ObjectDetailTier = 'high'
+  private tier: ObjectDetailValues = OBJECT_DETAIL_TIERS.high
+  /**
+   * Slices in reach this frame, spawned nearest first within the budget
+   */
+  private spawnQueue: SliceSpawnerComponent[] = []
+  /**
+   * Spawned slices beyond their reach this frame, despawned farthest first within the budget
+   */
+  private despawnQueue: SliceSpawnerComponent[] = []
 
   /**
    * Spawns a slice outside of a region (no impostor cells), until its entity is destroyed
@@ -119,6 +139,7 @@ export class SliceSystem extends GameSystem {
     this.content = world.getSystem(ContentService)
     this.rangeSystem = world.getSystem(RangeActivationSystem)
     this.activeRegions = world.query({ scope: 'active', required: [RegionComponent] })
+    this.config = world.getSystem(ViewerConfig, { optional: true })
   }
 
   public destroy(): void {
@@ -145,8 +166,13 @@ export class SliceSystem extends GameSystem {
     const collisionChanged = collisionEnabled !== this.collisionEnabled
     this.collisionEnabled = collisionEnabled
 
+    const tierName = this.config?.value.objectDetail ?? 'high'
+    const tierChanged = tierName !== this.tierName
+    this.tierName = tierName
+    this.tier = OBJECT_DETAIL_TIERS[tierName]
+
     const moved = vec3DistanceSquared(this.camPosition, this.lastPosition) >= MOVE_THRESHOLD_SQ
-    if (!moved && !this.hasPendingWork && !collisionChanged && topLevelCount === this.topLevelCount) {
+    if (!moved && !this.hasPendingWork && !collisionChanged && !tierChanged && topLevelCount === this.topLevelCount) {
       return
     }
     if (moved) {
@@ -159,14 +185,16 @@ export class SliceSystem extends GameSystem {
 
     for (const entity of this.activeRegions) {
       const region = entity.$(RegionComponent)
-      this.updateSlices(region.slices, this.camPosition)
+      this.updateSlices(region.slices, this.camPosition, true)
     }
     if (this.previewSpawners.length) {
-      this.updateSlices(this.previewSpawners, this.camPosition)
+      // a preview stays spawned
+      this.updateSlices(this.previewSpawners, this.camPosition, false)
     }
+    this.processQueues()
   }
 
-  private updateSlices(slices: SliceSpawnerComponent[], camera: IVec3) {
+  private updateSlices(slices: SliceSpawnerComponent[], camera: IVec3, allowDespawn: boolean) {
     for (const component of slices) {
       if (!component.entity.isActive) {
         if (component.entity.canInitialize) {
@@ -176,19 +204,17 @@ export class SliceSystem extends GameSystem {
           component.entity.activate()
         }
       }
-      this.updateSlice(component, camera)
+      this.updateSlice(component, camera, allowDespawn)
       if (component.slices.length) {
-        this.updateSlices(component.slices, camera)
+        // slices held by a loading POI cell keep their nested slices, the cell spawned them
+        this.updateSlices(component.slices, camera, allowDespawn && !component.isHeld)
       }
     }
   }
 
-  private updateSlice(component: SliceSpawnerComponent, camera: IVec3) {
-    if (component.isSpawned) {
-      return
-    }
+  private updateSlice(component: SliceSpawnerComponent, camera: IVec3, allowDespawn: boolean) {
     if (component.impostor) {
-      // chunks owned by impostor are spawned by impostor
+      // chunks owned by impostor are spawned and despawned by impostor
       return
     }
     if (component.isCollision && !this.collisionEnabled) {
@@ -199,17 +225,91 @@ export class SliceSystem extends GameSystem {
       this.hasPendingWork = true
       return
     }
+    updateReach(component, this.tierName, this.tier)
 
     const world = component.entity.getTransform().world
-    const position = mat4GetTranslation(world, vec3.$0)
-    const intersects = component.isChunk
-      ? chunkInRange(position, component.chunkSize, component.spawnRadius, camera)
-      : spherePointIntersects(position, component.spawnRadius, camera)
-    if (intersects) {
-      executeSpawner(component)
-      // spawned slices may contain nested spawners
-      this.hasPendingWork = true
+    const dx = world[12] - camera.x
+    const dy = world[13] - camera.y
+    let distanceSq = dx * dx + dy * dy
+    let reach = component.reach
+    if (!(reach > 0)) {
+      // AOI spawn radius of the slice, in 3D (nested, preview and dynamic slices, levels without slicedata)
+      const dz = world[14] - camera.z
+      distanceSq += dz * dz
+      reach = component.spawnRadius
     }
+
+    if (component.isSpawned) {
+      const despawnAt = reach + GDE_DESPAWN_MARGIN
+      if (allowDespawn && distanceSq > despawnAt * despawnAt && !component.isHeld) {
+        component.queueDistance = distanceSq
+        this.despawnQueue.push(component)
+      }
+      return
+    }
+    if (distanceSq <= reach * reach) {
+      component.queueDistance = distanceSq
+      this.spawnQueue.push(component)
+    }
+  }
+
+  /**
+   * Spawns the queued slices nearest first and despawns the queued slices farthest first, each up to the slices per
+   * frame of the object detail tier (g_GDE_SlicesCreatedPerFrame)
+   */
+  private processQueues() {
+    const budget = this.tier.slicesPerFrame
+    const spawn = this.spawnQueue
+    if (spawn.length) {
+      spawn.sort(nearestFirst)
+      const count = Math.min(spawn.length, budget)
+      for (let i = 0; i < count; i++) {
+        executeSpawner(spawn[i])
+      }
+      // spawned slices may contain nested spawners, the rest waits for the next frame
+      this.hasPendingWork = true
+      spawn.length = 0
+    }
+    const despawn = this.despawnQueue
+    if (despawn.length) {
+      despawn.sort(farthestFirst)
+      const count = Math.min(despawn.length, budget)
+      for (let i = 0; i < count; i++) {
+        despawn[i].despawn()
+      }
+      if (despawn.length > count) {
+        this.hasPendingWork = true
+      }
+      despawn.length = 0
+    }
+  }
+}
+
+function nearestFirst(a: SliceSpawnerComponent, b: SliceSpawnerComponent) {
+  return a.queueDistance - b.queueDistance
+}
+
+function farthestFirst(a: SliceSpawnerComponent, b: SliceSpawnerComponent) {
+  return b.queueDistance - a.queueDistance
+}
+
+/**
+ * Computes the GDE reach of a top level spawner for the object detail tier, see {@link SliceSpawnerComponent.reach}
+ */
+function updateReach(spawner: SliceSpawnerComponent, tierName: ObjectDetailTier, tier: ObjectDetailValues) {
+  if (spawner.reachTier === tierName) {
+    return
+  }
+  spawner.reachTier = tierName
+  spawner.reach = 0
+  if (!spawner.isTopLevel) {
+    return
+  }
+  if (spawner.chunk) {
+    spawner.reach = chunkReach(spawner.chunk, tier)
+  } else if (spawner.data?.gde && spawner.data.isStaticSlice) {
+    // dynamic slices are server entities on AOI grids, they keep the AOI spawn radius
+    spawner.reach = capitalReach(spawner.data.gde, spawner.capitalRadius, tier)
   }
 }
 
@@ -226,10 +326,8 @@ export function resolveSpawnData(spawner: SliceSpawnerComponent) {
     return
   }
 
+  // the AOI spawn radius, top level slices with GDE data use their reach instead (see updateReach)
   spawner.spawnRadius = spawner.data.spawnRadius
-  if (spawner.isChunk) {
-    spawner.spawnRadius = Math.max(spawner.spawnRadius, 128 * 3)
-  }
 
   const bounds = BoundingSphere.create(0, 0, 0, spawner.spawnRadius)
   spawner.bounds.setLocalBounds(bounds, null)
@@ -265,10 +363,12 @@ export function executeSpawner(spawner: SliceSpawnerComponent) {
         const loader = new MeshLoaderComponent(comp)
         meshLoaders.push(loader)
         components.push(loader)
-        let meshRange = comp.maxViewDistance * comp.viewDistanceMultiplier
+        // the game uses MaxViewDistance as it stands, no multiplier (GetMaxViewDist NewWorld+0xca7f40, tmp/game-parity)
+        let meshRange = comp.maxViewDistance
         if (spawner.isChunk) {
           meshRange = Math.min(meshRange, CHUNK_MESH_RANGE)
         }
+        loader.viewRange = meshRange
         range = Math.max(range, meshRange)
         continue
       }
@@ -493,6 +593,13 @@ export function executeSpawner(spawner: SliceSpawnerComponent) {
       console.log('Component not implemented', (comp as { type?: string }).type)
     }
 
+    for (const loader of meshLoaders) {
+      // only the mesh that decides the range of the entity moves it to its bounds once loaded
+      if (loader.viewRange < range) {
+        loader.viewRange = 0
+      }
+    }
+
     let parentWorld = spawner.entity.getTransform().world
     if (spawner.data.transform) {
       // The slice root entity has its own transform (data.transform), e.g. a rotation.
@@ -569,17 +676,6 @@ export function executeSpawner(spawner: SliceSpawnerComponent) {
       spawner.slices.push(child)
     }
   }
-}
-
-/**
- * Whether the camera is within range of a chunk. The chunk position is its cell center, the range is measured
- * from the cell square (xy), so large chunks (e.g. 1024 m) spawn when the camera gets close to any part of them.
- */
-function chunkInRange(center: IVec3, size: number, range: number, camera: IVec3) {
-  const half = size * 0.5
-  const dx = Math.max(Math.abs(camera.x - center.x) - half, 0)
-  const dy = Math.max(Math.abs(camera.y - center.y) - half, 0)
-  return dx * dx + dy * dy <= range * range
 }
 
 /**
