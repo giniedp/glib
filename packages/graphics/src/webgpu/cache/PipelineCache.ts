@@ -129,6 +129,10 @@ function getDepthStencilState(
   if (state.enabled) {
     result.depthWriteEnabled = !!state.depthWriteEnabled
     result.depthCompare = state.depthFunction
+  } else {
+    // a format with a depth aspect requires both: disabled = every fragment passes, nothing is written
+    result.depthWriteEnabled = false
+    result.depthCompare = 'always'
   }
   if (stencil.enable) {
     result.stencilFront = {

@@ -1,4 +1,4 @@
-import { BufferUsage, vertexTypeFromDataFormat } from '../../enums'
+import { vertexTypeFromDataFormat } from '../../enums'
 import { ResourceOwnership, ShaderModule, VertexBuffer } from '../../resources'
 import { ShaderConstants } from '../../states'
 import type { GpuResource, Mutable } from '../types'
@@ -11,7 +11,6 @@ import {
   type WgslInputInfo,
   type WgslShaderStage,
 } from '../wgsl'
-import { WebGpuBuffer } from './WebGpuBuffer'
 import { WebGpuProgram } from './WebGpuProgram'
 
 export interface WebGpuShaderOptions {
@@ -232,29 +231,11 @@ export class WebGpuShaderModule extends ShaderModule implements GpuResource<GPUS
       }
     }
 
-    if (Object.keys(inputs).length > 0) {
-      for (const semantic in inputs) {
-        const input = inputs[semantic]
-        const isColor = semantic.match(/color/i)
-        const data = isColor ? [1, 1, 1, 1] : [0, 0, 0, 0]
-        const buffer = new WebGpuBuffer(this.device, {
-          usage: BufferUsage.VERTEX,
-          name: `auto-generated vertex buffer for shader input '${semantic}'`,
-          layout: {
-            [semantic]: {
-              byteOffset: 0,
-              type: vertexTypeFromDataFormat(input),
-            },
-          },
-          data: new Float32Array(data),
-          // to make this default vertex be used even in instanced mode
-          // we mark it as instanced, so it works for single draw single instance
-          // we set explicitly stride=0, so with instancing, it should always read from the same location
-          instanced: true,
-          stride: 0,
-        })
-        vertexBuffer.buffers.push(buffer)
-      }
+    // inputs the mesh does not provide read a shared default element (zero, white for colors)
+    for (const semantic in inputs) {
+      vertexBuffer.buffers.push(
+        this.device.getDefaultVertexBuffer(semantic, vertexTypeFromDataFormat(inputs[semantic])),
+      )
     }
 
     for (const buffer of vertexBuffer.buffers) {

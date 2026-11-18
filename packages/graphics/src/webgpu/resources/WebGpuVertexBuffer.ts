@@ -26,7 +26,10 @@ export class WebGpuVertexBuffer extends VertexBuffer {
   }
   protected destroy(): void {
     for (const buffer of this.buffers) {
-      buffer.dispose()
+      // shared default inputs belong to the device
+      if (!this.device.isDefaultVertexBuffer(buffer)) {
+        buffer.dispose()
+      }
     }
     this.buffers = []
   }

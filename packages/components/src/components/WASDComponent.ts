@@ -110,7 +110,10 @@ export class WASDComponent implements GameComponent, InitializableComponent, Beh
   private keyUp = KeyboardKeys.KeyE
   private keyDown = KeyboardKeys.KeyQ
   private keyBoost = KeyboardKeys.ShiftLeft
-  private mouseButton: number = 0
+  /**
+   * The mouse button that rotates the view: 0 left, any other the right
+   */
+  public mouseButton: number = 0
 
   private space: SpaceBasis
   private mouse: MouseInputSystem

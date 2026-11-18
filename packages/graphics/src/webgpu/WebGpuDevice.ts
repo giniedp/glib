@@ -4,7 +4,7 @@ import { Color } from '../Color'
 import { Device, DeviceStats } from '../Device'
 import { FrameScheduler } from '../FrameScheduler'
 import type { GpuTimer, GpuTimerOptions } from '../GpuTimer'
-import { BufferUsage, type SurfaceFormat } from '../enums'
+import { BufferUsage, type SurfaceFormat, type VertexType } from '../enums'
 import {
   createResourceTracker,
   getKeyName,
@@ -128,6 +128,10 @@ export class WebGpuDevice extends Device<GPUCanvasContext> {
   protected textures: ResourceTracker<WebGpuTexture>
   protected buffers = createResourceTracker<WebGpuBuffer | WebGpuVertexBuffer>()
   protected samplers = new Map<SamplerState, WebGpuSampler>()
+  /**
+   * Shared buffers of {@link getDefaultVertexBuffer}, by semantic and vertex type
+   */
+  private defaultVertexBuffers = new Map<string, WebGpuBuffer>()
   protected resizeObserver: ResizeObserver
 
   public get queue() {
@@ -270,6 +274,41 @@ export class WebGpuDevice extends Device<GPUCanvasContext> {
 
   public createVertexBuffer(options: VertexBufferOptions): WebGpuVertexBuffer {
     return this.claim(this.buffers.track(new WebGpuVertexBuffer(this, options)))
+  }
+
+  /**
+   * A single element vertex buffer for a shader input that a mesh does not provide: zero, white for a `color` input.
+   * One buffer per semantic and vertex type is shared by all vertex buffers (instanced, stride 0, so every vertex and
+   * instance reads the same element). The device owns it, vertex buffers bind it without disposing it.
+   */
+  public getDefaultVertexBuffer(semantic: string, type: VertexType): WebGpuBuffer {
+    const key = `${semantic}|${type}`
+    let buffer = this.defaultVertexBuffers.get(key)
+    if (!buffer) {
+      const isColor = /color/i.test(semantic)
+      buffer = new WebGpuBuffer(this, {
+        usage: BufferUsage.VERTEX,
+        name: `auto-generated vertex buffer for shader input '${semantic}'`,
+        layout: {
+          [semantic]: {
+            byteOffset: 0,
+            type,
+          },
+        },
+        data: new Float32Array(isColor ? [1, 1, 1, 1] : [0, 0, 0, 0]),
+        instanced: true,
+        stride: 0,
+      })
+      this.defaultVertexBuffers.set(key, buffer)
+    }
+    return buffer
+  }
+
+  /**
+   * Whether a buffer is one of {@link getDefaultVertexBuffer}
+   */
+  public isDefaultVertexBuffer(buffer: WebGpuBuffer): boolean {
+    return this.defaultVertexBuffers.get(defaultVertexBufferKey(buffer)) === buffer
   }
 
   public createBuffer(options: BufferOptions): WebGpuBuffer {
@@ -457,6 +496,10 @@ export class WebGpuDevice extends Device<GPUCanvasContext> {
   }
 
   public dispose() {
+    for (const buffer of this.defaultVertexBuffers.values()) {
+      buffer.dispose()
+    }
+    this.defaultVertexBuffers.clear()
     this.scheduler.dispose()
     this.scope.dispose()
     this.textures.finalizeAll()
@@ -467,6 +510,13 @@ export class WebGpuDevice extends Device<GPUCanvasContext> {
     this.context.unconfigure()
     this.gpu.destroy()
   }
+}
+
+function defaultVertexBufferKey(buffer: WebGpuBuffer): string {
+  for (const semantic in buffer.vertexLayout) {
+    return `${semantic}|${buffer.vertexLayout[semantic].type}`
+  }
+  return ''
 }
 
 function getOrCreateCanvas(options: WebGpuDeviceOptions): HTMLCanvasElement | OffscreenCanvas {
