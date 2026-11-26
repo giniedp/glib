@@ -104,9 +104,15 @@ export class ResourceGraph {
     const graph = this.graph
     const results = this.results
     const inflight = this.inflight
-    const executor = context.content.executor
 
-    const order = this.getOrderedSubsetForNode(target)
+    // validates the subset: throws on cycles and on dependencies that are not in the graph
+    for (const node of this.getOrderedSubsetForNode(target)) {
+      for (const dep of node.deps) {
+        if (!graph.has(dep.ref)) {
+          throw new Error(`Node ${node.key} depends on missing ${dep.ref}`)
+        }
+      }
+    }
 
     const getResult = <R>(key: ResourceRef<R>): R => {
       if (results.has(key)) {
@@ -124,54 +130,46 @@ export class ResourceGraph {
       results.set(node.key, value)
     }
 
-    for (const node of order) {
-      if (results.has(node.key)) {
-        continue
-      }
-
-      if (inflight.has(node.key)) {
-        // wait for concurrent execution
-        await inflight.get(node.key)
-        continue
-      }
-
-      // sanity: all deps must exist in graph
-      for (const dep of node.deps) {
-        if (!graph.has(dep.ref)) {
-          throw new Error(`Node ${node.key} depends on missing ${dep.ref}`)
-        }
-      }
+    const buildNode = async (node: ResourceNode<any>): Promise<void> => {
+      // independent dependencies build concurrently
+      await Promise.all(node.deps.map((dep) => resolveNode(graph.get(dep.ref)!)))
+      context.signal?.throwIfAborted()
 
       if (!node.build && !node.buildAsync) {
-        const result = node.data
-        finalize(node, result)
-        continue
+        finalize(node, node.data)
+        return
       }
-
       if (node.build) {
         const result = node.build(context, node, getResult)
         if (isThenable(result)) {
           throw new Error(`build function for node ${node.key} returned a Promise, but should return synchronously`)
         }
         finalize(node, result)
-        continue
+        return
       }
-
-      // async result - defer assignment until resolution
-      const promise = executor.run(async () => {
-        const result = await node.buildAsync(context, node, getResult)
-        finalize(node, result)
-      }, context.signal)
-
-      inflight.set(node.key, promise)
-
-      try {
-        await promise
-      } finally {
-        inflight.delete(node.key)
-      }
+      // not run through `context.content.executor`: the builders load through it themselves (leaf i/o), a node
+      // holding a slot while its fetch waits for one would deadlock
+      finalize(node, await node.buildAsync(context, node, getResult))
     }
 
+    // each node builds once, also across concurrent loads of the same graph
+    const resolveNode = (node: ResourceNode<any>): Promise<void> => {
+      if (results.has(node.key)) {
+        return Promise.resolve()
+      }
+      let promise = inflight.get(node.key)
+      if (!promise) {
+        promise = buildNode(node)
+        inflight.set(node.key, promise)
+        const done = () => {
+          inflight.delete(node.key)
+        }
+        promise.then(done, done)
+      }
+      return promise
+    }
+
+    await resolveNode(target)
     return results.get(target.key)
   }
 }

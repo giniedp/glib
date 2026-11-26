@@ -155,23 +155,36 @@ export function jsonRpcWorker({ worker }: { worker: Worker }) {
 export function postJsonRpc<T>(
   target: Window & typeof globalThis,
   message: JsonRpcRequest | JsonRpcResponse<T> | JsonRpcError,
+  transfer?: Transferable[],
 ) {
-  target.postMessage(message)
+  target.postMessage(message, { transfer: transfer ?? [] })
+}
+
+export interface JsonRpcHandlerOptions {
+  /**
+   * The objects of a result to transfer instead of copy, e.g. the buffers of decoded data
+   */
+  transfer?: (result: unknown, request: JsonRpcRequest) => Transferable[]
 }
 
 export function jsonRpcHandler(
   target: Window & typeof globalThis,
   handler: (request: JsonRpcRequest) => void | any | Promise<any | void>,
+  options?: JsonRpcHandlerOptions,
 ) {
   target.addEventListener('message', async (event: MessageEvent<JsonRpcRequest>) => {
     const request = event.data
     try {
       const result = await Promise.resolve(handler(request))
-      postJsonRpc(self, {
-        id: request.id,
-        error: null,
-        result: result,
-      })
+      postJsonRpc(
+        self,
+        {
+          id: request.id,
+          error: null,
+          result: result,
+        },
+        options?.transfer?.(result, request),
+      )
     } catch (error) {
       postJsonRpc(self, {
         id: request.id,

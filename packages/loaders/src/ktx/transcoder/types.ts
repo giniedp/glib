@@ -3,7 +3,15 @@ import type { Brand } from '@gglib/utils'
 export interface TranscoderOptions {
   wasmUrl?: string
   wasmBinary?: ArrayBuffer
+  /**
+   * Creates a transcoder worker, called once per worker of the pool
+   */
   getWorker?: () => Worker
+  /**
+   * The number of transcoder workers, all start with the transcoder.
+   * Defaults to one less than the logical processors, at most 4.
+   */
+  workers?: number
 }
 
 export interface TranscoderModule {
