@@ -5,6 +5,11 @@ export const ShaderAnnotations = {
    * Marks a sampler uniform as a storage buffer emulated by a float texture, the value names the element type
    */
   Storage: 'storage',
+  /**
+   * Marks a WGSL texture that is never sampled with a filtering sampler. Required to bind 32 bit float formats on
+   * devices that can't filter them. WGSL has no type for it
+   */
+  Unfilterable: 'unfilterable',
 }
 
 export function parseAnnotations(source: string | string[], out: Record<string, any> = {}): Record<string, any> {

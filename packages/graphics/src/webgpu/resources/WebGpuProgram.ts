@@ -1,7 +1,7 @@
 import type { InputValueType, ProgramInputBlock, ProgramOptions } from '../../resources'
 import { Program } from '../../resources'
 import { ShaderAnnotations } from '../../shader'
-import type { WebGpuDevice } from '../WebGpuDevice'
+import type { WebGpuBlockState, WebGpuDevice } from '../WebGpuDevice'
 import type { WgslProgramInfo, WgslResourceInfo } from '../wgsl'
 import { WebGpuProgramInput } from './WebGpuProgramInput'
 import type { WebGpuShaderModule } from './WebGpuShaderModule'
@@ -21,18 +21,40 @@ export class WebGpuProgram extends Program {
 
   private info: WgslProgramInfo
   private inputMap: Record<string, WebGpuProgramInput> = {}
-  private sourceState: Record<string, { source: ProgramInputBlock; version: number }> = {}
+  private sourceState: Record<string, WebGpuBlockState> = {}
+  /**
+   * Applied block versions of the shared blocks, shared with all programs that use the same resources
+   */
+  private sharedState: Record<string, WebGpuBlockState> = {}
   private resources: WebGpuShaderResource[]
   private ownedResources: WebGpuShaderResource[]
+  /**
+   * The resources with a managed buffer, the only ones {@link commit} writes
+   */
+  private bufferResources: WebGpuShaderResource[]
+  /**
+   * The resource change handlers of this program, removed when it is destroyed (shared resources outlive it)
+   */
+  private resourceHandlers: Array<{ resource: WebGpuShaderResource; handler: () => void }> = []
+  /**
+   * {@link WebGpuDevice.bindingEpoch} of the last source sync, see {@link bindGroups}
+   */
+  private syncedEpoch = -1
 
   public bindGroupLayouts: GPUBindGroupLayout[]
   public get bindGroups(): GPUBindGroup[] {
-    // buffer and texture objects may have replaced their GPU resource since they were bound (e.g. grown instance buffers, loaded textures)
-    for (const resource of this.resources) {
-      resource.syncSource()
+    // buffer and texture objects may have replaced their GPU resource since they were bound (e.g. grown instance
+    // buffers, loaded textures). They count every replacement in the device epoch, so most draws skip the sync
+    const epoch = this.device.bindingEpoch
+    if (this.syncedEpoch !== epoch) {
+      this.syncedEpoch = epoch
+      for (const resource of this.resources) {
+        resource.syncSource()
+      }
     }
     if (this.changed || !this.gpuBindGroups) {
       this.updateBindGroups()
+      this.changed = false
     }
     return this.gpuBindGroups
   }
@@ -40,6 +62,10 @@ export class WebGpuProgram extends Program {
   private changed = true
   private gpuBindGroups: GPUBindGroup[]
   private gpuBindGroupDescriptors: GPUBindGroupDescriptor[]
+  /**
+   * Identifies the layout entries per group, see {@link WebGpuDevice.acquireBindGroup}
+   */
+  private layoutKeys: string[] = []
 
   public constructor(shader: WebGpuShaderModule, info: WgslProgramInfo, options?: WebGpuParameterSetOptions) {
     super()
@@ -50,21 +76,18 @@ export class WebGpuProgram extends Program {
     this.perInstanceDataBlock = options?.perInstanceDataBlock ?? null
     this.perInstanceTransformBlock = options?.perInstanceTransformBlock ?? null
 
-    // module.program is null when this is the default module
-    const sharedResources = this.module.program?.getResourceBlocks(this.sharedBlocks) || []
-    const resources = createResources(this.device, info, sharedResources)
+    const resources = createResources(this.device, info, this.sharedBlocks)
     this.resources = [...resources.shared, ...resources.owned]
     this.ownedResources = resources.owned
+    this.bufferResources = this.resources.filter((it) => it.isBuffer)
+    this.sharedState = getSharedStates(this.device, this.sharedBlocks, resources.shared)
 
-    this.bindGroupLayouts =
-      options?.layouts || createBindGroupLayouts(this.device, shader.name, this.resources)
+    this.bindGroupLayouts = options?.layouts || createBindGroupLayouts(this.device, shader.name, this.resources)
     this.createBindGroupDescriptors()
   }
 
   public applyBlock(block: ProgramInputBlock, force?: boolean): boolean {
-    const state = this.sharedBlocks.includes(block.name) ? this.module.program.sourceState : this.sourceState
-    state[block.name] ||= { source: block, version: -1 }
-    const record = state[block.name]
+    const record = this.sharedState[block.name] || (this.sourceState[block.name] ||= { source: block, version: -1 })
 
     if (!force && record.source === block && record.version === block.version) {
       return false
@@ -109,34 +132,28 @@ export class WebGpuProgram extends Program {
     })
   }
 
-  private getResourceBlocks(names: readonly string[]) {
-    if (!names?.length) {
-      return []
-    }
-
-    const result: WebGpuShaderResource[] = []
-    for (const name of names) {
-      for (const resource of this.module.program.resources) {
-        if (resource.block === name) {
-          result.push(resource)
-        }
-      }
-    }
-
-    return result
-  }
-
   public commit() {
-    for (const resource of this.resources) {
-      resource.commit()
+    const resources = this.bufferResources
+    for (let i = 0; i < resources.length; i++) {
+      resources[i].commit()
     }
   }
 
   protected destroy(): void {
+    for (const { resource, handler } of this.resourceHandlers) {
+      resource.offResourceChanged(handler)
+    }
+    this.resourceHandlers = []
     for (const resource of this.ownedResources) {
       resource.dispose()
     }
+    for (const cache of this.bindGroupCache) {
+      for (const item of cache || []) {
+        this.device.releaseBindGroup(item.key)
+      }
+    }
     this.ownedResources = []
+    this.bufferResources = []
     this.resources = []
     this.inputMap = {}
     this.bindGroupCache = []
@@ -151,19 +168,22 @@ export class WebGpuProgram extends Program {
         entries: [],
       }
       this.gpuBindGroupDescriptors[groupId] = group
+      this.layoutKeys[groupId] = JSON.stringify(resources.map((it) => it.layoutEntry))
       resources.forEach((resource, index) => {
         const entry: GPUBindGroupEntry = {
           binding: resource.info.binding,
           resource: resource.bindingResource,
         }
         group.entries[index] = entry
-        resource.onResourceChanged(() => {
+        const handler = () => {
           entry.resource = resource.bindingResource
           if (this.gpuBindGroups) {
             this.gpuBindGroups[groupId] = undefined
           }
           this.changed = true
-        })
+        }
+        resource.onResourceChanged(handler)
+        this.resourceHandlers.push({ resource, handler })
       })
     })
   }
@@ -185,8 +205,9 @@ export class WebGpuProgram extends Program {
    * @remarks
    * Effects that rebind per draw (e.g. a mip chain with alternating inputs) would otherwise create new bind groups
    * every frame. Those are freed only when the GC collects their wrappers, and pile up in the GPU process meanwhile.
+   * Each entry holds a reference on a device bind group, which programs with equal entries share.
    */
-  private bindGroupCache: Array<Array<{ keys: GPUBindingResource[]; group: GPUBindGroup }>> = []
+  private bindGroupCache: Array<Array<{ keys: GPUBindingResource[]; group: GPUBindGroup; key: string }>> = []
   private bindGroupCacheNext: number[] = []
 
   private getOrCreateBindGroup(groupId: number, data: GPUBindGroupDescriptor): GPUBindGroup {
@@ -197,18 +218,54 @@ export class WebGpuProgram extends Program {
         return item.group
       }
     }
-    const group = this.device.gpu.createBindGroup(data)
-    const keys = entries.map((it) => it.resource)
+    this.reportUnfilterableTextures(groupId)
+    const shared = this.device.acquireBindGroup(this.layoutKeys[groupId], data)
+    const item = { keys: entries.map((it) => it.resource), group: shared.group, key: shared.key }
     if (cache.length < BIND_GROUP_CACHE_SIZE) {
-      cache.push({ keys, group })
+      cache.push(item)
     } else {
       // replace round robin
       const next = this.bindGroupCacheNext[groupId] ?? 0
-      cache[next] = { keys, group }
+      this.device.releaseBindGroup(cache[next].key)
+      cache[next] = item
       this.bindGroupCacheNext[groupId] = (next + 1) % BIND_GROUP_CACHE_SIZE
     }
-    return group
+    return item.group
   }
+
+  /**
+   * Logs the 32 bit float textures a device without `float32-filterable` rejects in this group. The WebGPU error of the
+   * bind group names neither the program nor the texture binding.
+   */
+  private reportUnfilterableTextures(groupId: number) {
+    if (this.device.capabilities.canFilterR32F) {
+      return
+    }
+    for (const resource of this.resources) {
+      if (resource.info.group !== groupId || resource.layoutEntry.texture?.sampleType !== 'float') {
+        continue
+      }
+      if (!isFloat32Format(resource.textureFormat)) {
+        continue
+      }
+      const key = `${this.module.name}:${groupId}:${resource.info.binding}`
+      if (!REPORTED_UNFILTERABLE.has(key)) {
+        REPORTED_UNFILTERABLE.add(key)
+        console.error(
+          `Program '${this.module.name}': texture '${resource.nameInShader}' (group ${groupId}, binding ${resource.info.binding}) has the format ${resource.textureFormat}, which this device can't filter. Read it with textureLoad and annotate it with '// @${ShaderAnnotations.Unfilterable}'`,
+        )
+      }
+    }
+  }
+}
+
+/**
+ * Bindings that were already reported, see {@link WebGpuProgram} reportUnfilterableTextures
+ */
+const REPORTED_UNFILTERABLE = new Set<string>()
+
+function isFloat32Format(format: GPUTextureFormat | null): boolean {
+  return format === 'r32float' || format === 'rg32float' || format === 'rgba32float'
 }
 
 /**
@@ -228,11 +285,7 @@ function sameResources(keys: GPUBindingResource[], entries: GPUBindGroupEntry[])
   return true
 }
 
-function createResources(
-  device: WebGpuDevice,
-  info: WgslProgramInfo,
-  sharedResources?: ReadonlyArray<WebGpuShaderResource>,
-) {
+function createResources(device: WebGpuDevice, info: WgslProgramInfo, sharedBlocks: ReadonlyArray<string>) {
   const shared: WebGpuShaderResource[] = []
   const owned: WebGpuShaderResource[] = []
   const isCompute = info.entryPoints.some((it) => it.stage === 'compute')
@@ -240,10 +293,9 @@ function createResources(
     if (param.binding == null) {
       continue
     }
-
-    const resource = sharedResources?.find((it) => it.info.name === param.name)
-    if (resource) {
-      shared.push(resource)
+    const block = param.annotations[ShaderAnnotations.Block] || param.name
+    if (sharedBlocks.includes(block)) {
+      shared.push(device.getSharedShaderResource(param, isCompute))
     } else {
       owned.push(new WebGpuShaderResource(device, param, isCompute))
     }
@@ -252,6 +304,31 @@ function createResources(
     owned,
     shared,
   }
+}
+
+/**
+ * The applied version records of the shared blocks, keyed by the identity of each block's shared resources
+ */
+function getSharedStates(
+  device: WebGpuDevice,
+  sharedBlocks: ReadonlyArray<string>,
+  shared: ReadonlyArray<WebGpuShaderResource>,
+): Record<string, WebGpuBlockState> {
+  const result: Record<string, WebGpuBlockState> = {}
+  for (const name of sharedBlocks) {
+    let key = name + '#'
+    let count = 0
+    for (const resource of shared) {
+      if (resource.block === name) {
+        key += device.objectId(resource) + ','
+        count++
+      }
+    }
+    if (count) {
+      result[name] = device.getSharedBlockState(key)
+    }
+  }
+  return result
 }
 
 function createBindGroupLayouts(device: WebGpuDevice, label: string, resources: WebGpuShaderResource[]) {

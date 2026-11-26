@@ -11,10 +11,14 @@ export function getNwExtension(property: Property) {
 }
 
 /**
- * @see https://github.com/KhronosGroup/glTF/blob/main/extensions/2.0/Khronos/KHR_materials_anisotropy/README.md
+ * The New World material of a glTF material (nw-buddy nwbt exporter)
  */
 export interface EXT_nw_material {
+  attrs?: Record<string, any>
+  textures?: TextureInfo[]
   params?: Record<string, any>
+  vertexDeform?: Record<string, any>
   maskTexture?: TextureInfo
   smoothTexture?: TextureInfo
+  vertColors?: boolean
 }

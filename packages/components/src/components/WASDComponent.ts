@@ -1,6 +1,7 @@
 import { type GameComponent, GameEntity, InitializableComponent } from '@gglib/ecs'
-import { KeyboardKeys } from '@gglib/game'
+import { KeyboardKeys, MouseButton } from '@gglib/game'
 import {
+  DEGREE_TO_RAD,
   IVec3,
   quat$initAxisAngle,
   quat$initIdentity,
@@ -21,6 +22,7 @@ import {
   vec4,
 } from '@gglib/math'
 import { BehaviorComponent } from '../systems/BehaviorSystem'
+import { CameraComponent } from './CameraComponent'
 import { KeyboardInputSystem } from '../systems/KeyboardInputSystem'
 import { MouseInputSystem } from '../systems/MouseInputSystem'
 import type { TransformComponent } from './TransformComponent'
@@ -114,6 +116,18 @@ export class WASDComponent implements GameComponent, InitializableComponent, Beh
    * The mouse button that rotates the view: 0 left, any other the right
    */
   public mouseButton: number = 0
+  /**
+   * The mouse button that pans the view, `null` disables panning
+   */
+  public panButton: MouseButton | null = MouseButton.Middle
+  /**
+   * Distance at which the scene follows the cursor while panning in free mode. Orbit mode uses the orbit radius.
+   */
+  public panDistance: number = 10
+  /**
+   * World space translation of the pan, this frame
+   */
+  private panDelta = vec3(0, 0, 0)
 
   private space: SpaceBasis
   private mouse: MouseInputSystem
@@ -240,6 +254,7 @@ export class WASDComponent implements GameComponent, InitializableComponent, Beh
     } else {
       vec3$applyMat4Rotation(this.worldVelocity, node.world)
     }
+    this.updatePan()
 
     if (this.orbitMode) {
       this.updateOrbit(dt)
@@ -248,11 +263,50 @@ export class WASDComponent implements GameComponent, InitializableComponent, Beh
     }
   }
 
+  /**
+   * Moves the view in its image plane while {@link panButton} is held, so that the scene at the orbit radius (or
+   * {@link panDistance}) follows the cursor
+   */
+  private updatePan() {
+    const pan = this.panDelta
+    vec3$init(pan, 0, 0, 0)
+    const mouse = this.mouse
+    // the press frame has no drag yet: its delta is the move before the press
+    if (this.panButton === null || !mouse.buttonIsPressed(this.panButton) || mouse.buttonJustPressed(this.panButton)) {
+      return
+    }
+    const dx = mouse.dxNormalized
+    const dy = mouse.dyNormalized
+    if (!dx && !dy) {
+      return
+    }
+    const camera = this.entity.component(CameraComponent)
+    const distance = this.orbitMode ? this.radius : this.panDistance
+    let height = distance
+    let width = distance
+    if (camera?.type === 'orthographic') {
+      width = camera.orthographicScale
+      height = camera.orthographicScale / camera.aspect
+    } else {
+      const fov = camera?.perspectiveFov ?? 70 * DEGREE_TO_RAD
+      height = 2 * distance * Math.tan(fov / 2)
+      width = height * (camera?.aspect ?? 1)
+    }
+
+    const node = this.entity.getTransform<TransformComponent>()
+    const right = vec3$applyMat4Rotation(vec3$initFrom(vec3.$1, this.space.right), node.world)
+    const up = vec3$applyMat4Rotation(vec3$initFrom(vec3.$2, this.space.up), node.world)
+    // dragging right moves the scene right, the view left. Client y points down.
+    vec3$addScaled(pan, right, -dx * width)
+    vec3$addScaled(pan, up, dy * height)
+  }
+
   private updateFree(dt: number) {
     const node = this.entity.getTransform<TransformComponent>()
     const v = this.worldVelocity
-    if (v.x || v.y || v.z) {
-      node.translate(v.x * dt, v.y * dt, v.z * dt)
+    const pan = this.panDelta
+    if (v.x || v.y || v.z || pan.x || pan.y || pan.z) {
+      node.translate(v.x * dt + pan.x, v.y * dt + pan.y, v.z * dt + pan.z)
     }
 
     quat$initIdentity(node.rotation)
@@ -265,6 +319,7 @@ export class WASDComponent implements GameComponent, InitializableComponent, Beh
 
   private updateOrbit(dt: number) {
     vec3$addScaled(this.orbitCenter, this.worldVelocity, dt)
+    vec3$add(this.orbitCenter, this.panDelta)
 
     const cosV = Math.cos(this.vertical)
     const sinV = Math.sin(this.vertical)

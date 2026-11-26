@@ -4,7 +4,7 @@ import { parse } from './format'
 
 export class Loader implements AssetLoader {
   public static extensions = ['.dds']
-  public static mimeTypes = ['image/vnd.ms-dds']
+  public static mimeTypes = ['image/vnd.ms-dds', 'image/vnd-ms.dds']
   public static create = () => new Loader()
   public static register(registry = ContentLoader.loaders) {
     registry.register(Loader)

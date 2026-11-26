@@ -8,7 +8,14 @@ export type MaterialSchemaType<S extends Record<Key, InputSlot>> = {
 }
 
 export function MaterialWithSchema<S extends Record<Key, InputSlot>>(schema: S) {
-  const SchemaClass = class extends Material {}
+  const SchemaClass = class extends Material {
+    /**
+     * The input slots of the material, by property name
+     */
+    public get schema(): S {
+      return schema
+    }
+  }
 
   for (const key in schema) {
     const slot = schema[key]

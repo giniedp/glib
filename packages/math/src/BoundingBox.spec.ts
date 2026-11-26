@@ -120,6 +120,29 @@ describe('BoundingBox', () => {
     })
   })
 
+  describe('negative coordinates', () => {
+    const min = vec3(-4, -5, -6)
+    const max = vec3(-1, -2, -3)
+
+    it('does not extend the box to the origin', () => {
+      const boxes = [
+        new BoundingBox().initFromPointsBuffer([-1, -2, -3, -4, -5, -6]),
+        new BoundingBox().initFromPoints([min, max]),
+        new BoundingBox().initEmpty().merge(BoundingBox.create(-4, -5, -6, -1, -2, -3)),
+      ]
+      for (const box of boxes) {
+        expectVec3Equality(box.min, min)
+        expectVec3Equality(box.max, max)
+      }
+      expect(new BoundingBox().initEmpty().isEmpty).toBe(true)
+    })
+
+    it('does not extend the sphere to the origin', () => {
+      const sphere = BoundingSphere.createFromPointsBuffer([-1, -2, -3, -4, -5, -6])
+      expectVec3Equality(sphere.center, vec3(-2.5, -3.5, -4.5))
+    })
+  })
+
   describe('.createFromPointsBuffer', () => {
     it('merges points', () => {
       const box1 = BoundingBox.createFromPointsBuffer([1, 2, 3, 4, 5, 6])

@@ -146,6 +146,105 @@ export function writeSkinPalette(
 }
 
 /**
+ * Writes column major joint matrices (e.g. {@link Skeleton.jointMatrices}) in the palette format
+ *
+ * @public
+ *
+ * @remarks
+ * Dual quaternions take the rotation and translation of each matrix, the scale is dropped. A joint is turned to the
+ * hemisphere of its parent's dual quaternion when the parent comes first.
+ *
+ * @param matrices - 16 floats per joint
+ * @param parents - the parent joint per joint, negative for a root, null without a hierarchy
+ * @param offset - the first joint in `out`, in joints
+ */
+export function writeSkinPaletteMatrices(
+  matrices: ArrayLike<number>,
+  count: number,
+  parents: ArrayLike<number> | null,
+  format: SkinFormat,
+  out: Float32Array,
+  offset: number,
+) {
+  const size = skinFormatSize(format)
+  for (let j = 0; j < count; j++) {
+    const m = j * 16
+    const o = (offset + j) * size
+    if (format === 'mat4') {
+      for (let i = 0; i < 16; i++) {
+        out[o + i] = matrices[m + i]
+      }
+      continue
+    }
+    // rotation of the normalized axes, element (row r, column c) at m + c * 4 + r
+    const sx = Math.hypot(matrices[m], matrices[m + 1], matrices[m + 2]) || 1
+    const sy = Math.hypot(matrices[m + 4], matrices[m + 5], matrices[m + 6]) || 1
+    const sz = Math.hypot(matrices[m + 8], matrices[m + 9], matrices[m + 10]) || 1
+    const r00 = matrices[m] / sx
+    const r10 = matrices[m + 1] / sx
+    const r20 = matrices[m + 2] / sx
+    const r01 = matrices[m + 4] / sy
+    const r11 = matrices[m + 5] / sy
+    const r21 = matrices[m + 6] / sy
+    const r02 = matrices[m + 8] / sz
+    const r12 = matrices[m + 9] / sz
+    const r22 = matrices[m + 10] / sz
+    let qx: number
+    let qy: number
+    let qz: number
+    let qw: number
+    const trace = r00 + r11 + r22
+    if (trace > 0) {
+      const s = 0.5 / Math.sqrt(trace + 1)
+      qw = 0.25 / s
+      qx = (r21 - r12) * s
+      qy = (r02 - r20) * s
+      qz = (r10 - r01) * s
+    } else if (r00 > r11 && r00 > r22) {
+      const s = 2 * Math.sqrt(1 + r00 - r11 - r22)
+      qw = (r21 - r12) / s
+      qx = 0.25 * s
+      qy = (r01 + r10) / s
+      qz = (r02 + r20) / s
+    } else if (r11 > r22) {
+      const s = 2 * Math.sqrt(1 + r11 - r00 - r22)
+      qw = (r02 - r20) / s
+      qx = (r01 + r10) / s
+      qy = 0.25 * s
+      qz = (r12 + r21) / s
+    } else {
+      const s = 2 * Math.sqrt(1 + r22 - r00 - r11)
+      qw = (r10 - r01) / s
+      qx = (r02 + r20) / s
+      qy = (r12 + r21) / s
+      qz = 0.25 * s
+    }
+    const parent = parents ? parents[j] : -1
+    if (parent >= 0 && parent < j) {
+      const p = (offset + parent) * size
+      if (qx * out[p] + qy * out[p + 1] + qz * out[p + 2] + qw * out[p + 3] < 0) {
+        qx = -qx
+        qy = -qy
+        qz = -qz
+        qw = -qw
+      }
+    }
+    const tx = matrices[m + 12]
+    const ty = matrices[m + 13]
+    const tz = matrices[m + 14]
+    out[o] = qx
+    out[o + 1] = qy
+    out[o + 2] = qz
+    out[o + 3] = qw
+    // dual = 0.5 * (t, 0) * real
+    out[o + 4] = 0.5 * (tx * qw + ty * qz - tz * qy)
+    out[o + 5] = 0.5 * (ty * qw + tz * qx - tx * qz)
+    out[o + 6] = 0.5 * (tz * qw + tx * qy - ty * qx)
+    out[o + 7] = -0.5 * (tx * qx + ty * qy + tz * qz)
+  }
+}
+
+/**
  * Rotation matrix of a unit quaternion into the upper 3x3 of a column major 4x4 at `o`
  */
 function writeRotation(x: number, y: number, z: number, w: number, out: Float32Array, o: number) {
@@ -276,6 +375,15 @@ export class SkinPalette implements Ownable {
     writeSkinPalette(model, rig, this.format, this._data, offset)
     this.dirtyMin = Math.min(this.dirtyMin, offset)
     this.dirtyMax = Math.max(this.dirtyMax, offset + rig.count)
+  }
+
+  /**
+   * Writes column major joint matrices at a range, see {@link writeSkinPaletteMatrices}
+   */
+  public writeMatrices(offset: number, matrices: ArrayLike<number>, count: number, parents: ArrayLike<number> | null) {
+    writeSkinPaletteMatrices(matrices, count, parents, this.format, this._data, offset)
+    this.dirtyMin = Math.min(this.dirtyMin, offset)
+    this.dirtyMax = Math.max(this.dirtyMax, offset + count)
   }
 
   /**

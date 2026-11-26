@@ -6,7 +6,7 @@ import { AnimationRig } from './AnimationRig'
 import { clipSource } from './AnimationSource'
 import { AnimationClipCursor, AnimationTrackClip, sampleClip, type AnimationTrack } from './AnimationTrackClip'
 import { normalizedSumBlender, slerpBlender } from './PoseBlender'
-import { SkinPalette, writeSkinPalette } from './SkinPalette'
+import { SkinPalette, writeSkinPalette, writeSkinPaletteMatrices } from './SkinPalette'
 
 const S = Math.SQRT1_2
 
@@ -530,6 +530,30 @@ describe('skin palette', () => {
     writeSkinPalette(model, rig, 'dualquat', out, 0)
     const dot = out[0] * out[8] + out[1] * out[9] + out[2] * out[10] + out[3] * out[11]
     expect(dot).toBeGreaterThan(0)
+  })
+
+  it('writes joint matrices as dual quaternions that move vertices the same', () => {
+    const rig = chainRig()
+    const local = rig.defaultPose.clone()
+    local.rotations.set(quatZ(Math.PI / 2), 4)
+    local.rotations.set(quatZ(-Math.PI * 0.9), 8)
+    const model = poseToModel(local, rig.parents, new AnimationPose(rig.count))
+    const matrices = new Float32Array(rig.count * 16)
+    writeSkinPalette(model, rig, 'mat4', matrices, 0)
+    const out = new Float32Array((rig.count + 1) * 8)
+    writeSkinPaletteMatrices(matrices, rig.count, rig.parents, 'dualquat', out, 1)
+    const vertex = [2.5, 0.2, 0.1]
+    for (let joint = 0; joint < rig.count; joint++) {
+      const expected = transformPoint(matrices, 'mat4', joint, vertex)
+      expectClose(transformPoint(out, 'dualquat', joint + 1, vertex), expected, 4)
+    }
+    // children in the hemisphere of their parent
+    for (let joint = 1; joint < rig.count; joint++) {
+      const o = (joint + 1) * 8
+      const p = (rig.parents[joint] + 1) * 8
+      const dot = out[o] * out[p] + out[o + 1] * out[p + 1] + out[o + 2] * out[p + 2] + out[o + 3] * out[p + 3]
+      expect(dot).toBeGreaterThanOrEqual(0)
+    }
   })
 
   it('is the identity in the default pose of a scaled rig', () => {

@@ -21,12 +21,7 @@ function invalidSetter(): void {
 }
 
 export type WebGpuParameterValue =
-  | InputValueType
-  | GPUTexture
-  | GPUTextureView
-  | GPUExternalTexture
-  | GPUBuffer
-  | GPUBufferBinding
+  InputValueType | GPUTexture | GPUTextureView | GPUExternalTexture | GPUBuffer | GPUBufferBinding
 
 function isBufferValue(value: unknown): value is Buffer | GPUBuffer {
   return value instanceof Buffer || (typeof GPUBuffer !== 'undefined' && value instanceof GPUBuffer)
@@ -235,13 +230,18 @@ export class WebGpuProgramInput extends ProgramInput {
         this.resource.setTexture(depthView, (value as WebGpuTexture).depthViewSource)
       } else if (value.residentMipLevel > 0) {
         const view = value.subresource(value.residentMipLevel)
-        this.resource.setTexture((value as WebGpuTexture).getGpuView(view))
+        this.resource.setTexture((value as WebGpuTexture).getGpuView(view), null, (value as WebGpuTexture).gpuFormat)
       } else {
         // the full view follows the texture when it recreates its GPU texture, e.g. when the source data arrives
-        this.resource.setTexture((value as WebGpuTexture).gpuView, value as WebGpuTexture)
+        this.resource.setTexture(
+          (value as WebGpuTexture).gpuView,
+          value as WebGpuTexture,
+          (value as WebGpuTexture).gpuFormat,
+        )
       }
     } else if (value instanceof TextureView) {
-      this.resource.setTexture((value.texture as WebGpuTexture).getGpuView(value))
+      const texture = value.texture as WebGpuTexture
+      this.resource.setTexture(texture.getGpuView(value), null, texture.gpuFormat)
     } else {
       this.resource.setTexture(value)
     }

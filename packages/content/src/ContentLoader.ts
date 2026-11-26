@@ -56,10 +56,20 @@ export interface LoadContext {
    *
    */
   crossOrigin?: string
+
+  /**
+   * Holds the assets a container loads for the instance it creates (e.g. the textures of a material), until the
+   * instance is created and holds them itself. Set by {@link ContentLoader.load}.
+   *
+   * @remarks
+   * Pass it as the `scope` of nested {@link ContentLoader.load} calls: a cached asset that its other owners release
+   * meanwhile would be finalized before the instance claims it.
+   */
+  holdScope?: ResourceScope
 }
 
 export type ColorSpace = 'srgb' | 'linear'
-export type LoadOptions = Omit<LoadContext, 'content'> & {
+export type LoadOptions = Omit<LoadContext, 'content' | 'holdScope'> & {
   /**
    * Index of the asset in the container, default is 0
    *
@@ -375,11 +385,13 @@ export class ContentLoader {
       })
     }
 
+    const holdScope = new ResourceScope(`loading ${url}`)
     const promise = this.loadContainer(url, context)
       .then((container): Promise<T> => {
         return container.load(type, index ?? 0, {
           ...context,
           content: this,
+          holdScope,
         })
       })
       .then((options) => {
@@ -394,6 +406,10 @@ export class ContentLoader {
           })
         }
         return instance
+      })
+      .finally(() => {
+        // the instance holds what it uses now
+        holdScope.dispose()
       })
 
     if (!this.disableCache) {

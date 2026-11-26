@@ -220,7 +220,7 @@ export class BoundingSphere {
     const min = { x: 0, y: 0, z: 0 }
     const max = { x: 0, y: 0, z: 0 }
     min.x = min.y = min.z = Number.MAX_VALUE
-    max.x = max.y = max.z = Number.MIN_VALUE
+    max.x = max.y = max.z = -Number.MAX_VALUE
     let index = offset
     while (index + 2 < array.length) {
       zero = false

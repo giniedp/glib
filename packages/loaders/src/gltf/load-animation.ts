@@ -17,6 +17,7 @@ export function loadAnimation(asset: GltfAssetContainer, index: number): Resourc
   const node = asset.graph.node<AnimationData>(key, {
     name: gltf.name || null,
     channels: [],
+    extras: gltf.extras,
   })
 
   // channels without a node are meant for extensions, morph target weights are not supported

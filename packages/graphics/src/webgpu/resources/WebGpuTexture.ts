@@ -270,6 +270,8 @@ export class WebGpuTexture extends Texture implements GpuResource<GPUTexture> {
         ? self.gpuView
         : null
     this.clearSubViews()
+    // programs that bind this texture follow the new views
+    this.device.bindingEpoch++
 
     self.sizeInBytes = this.estimateSize()
   }

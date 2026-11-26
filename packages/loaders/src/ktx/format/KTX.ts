@@ -84,14 +84,16 @@ function readLevelImage(buffer: ArrayBuffer, ktx: File, level: number): LevelIma
   const header = ktx.header
   const index = ktx.levelIndex[level]
   const dataType = surfaceFormatDataType(ktx.format)
-  const ArrayType = dataTypeToArrayType(dataType)
+  // packed formats (rgb9e5ufloat, rgb10a2unorm, ...) have no channel type, their faces are read as bytes
+  const ArrayType = dataType ? dataTypeToArrayType(dataType) : Uint8Array
+  const elementSize = dataType ? header.typeSize : 1
   const layers: Array<{ faces: Uint8Array<ArrayBuffer>[] }> = []
   for (let l = 0; l < Math.max(1, header.layerCount); l++) {
     const faces: Uint8Array<ArrayBuffer>[] = []
     for (let i = 0; i < header.faceCount; i++) {
       const faceLength = index.byteLength / header.faceCount
       const faceOffset = index.byteOffset + faceLength * i
-      const data = new ArrayType(buffer, faceOffset, faceLength / header.typeSize)
+      const data = new ArrayType(buffer, faceOffset, faceLength / elementSize)
       faces.push(data as any)
     }
     layers.push({

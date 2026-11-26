@@ -13,6 +13,11 @@ export interface AnimationData {
    * Collection of animation channels, at most one entry per target
    */
   channels: AnimationDataChannels[]
+
+  /**
+   * Application-specific data of the clip (glTF `extras`)
+   */
+  extras?: Record<string, any>
 }
 
 /**

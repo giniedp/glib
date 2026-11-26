@@ -238,6 +238,7 @@ export class WebGpuRenderEncoder extends RenderEncoder {
   }
 
   private updateColorTargetState(index: number) {
+    this.targetsVersion++
     const param = this.colorTargetParam(index)
     this.colorTargetStates[index] = this.device.colorTargetCache.get(param)
     this.colorTargetStatesUnwritten[index] = this.device.colorTargetCache.get({
@@ -293,6 +294,7 @@ export class WebGpuRenderEncoder extends RenderEncoder {
     resolve?: Texture | GPUTexture | DeviceOutput,
   ) {
     this.endPass()
+    this.targetsVersion++
 
     let gpuTarget: GPUTexture | null = null
     if (texture instanceof WebGpuTexture) {
@@ -783,6 +785,7 @@ export class WebGpuRenderEncoder extends RenderEncoder {
   }
 
   private updatePassDescriptor() {
+    this.targetsVersion++
     const clearAttachments = this.clearPassDescriptor.colorAttachments as Array<GPURenderPassColorAttachment | null>
     const colorAttachments = this.colorPassDescriptor.colorAttachments as Array<GPURenderPassColorAttachment | null>
     clearAttachments.length = 0
@@ -929,6 +932,24 @@ export class WebGpuRenderEncoder extends RenderEncoder {
   private getColorTargetState() {
     const program = this.pipelineParams.shader
     const written = program ? program.getOutputLocationMask() : 0
+    if (this.targets && this.targetsMemoVersion === this.targetsVersion && this.targetsMemoWritten === written) {
+      return this.targets
+    }
+    this.targetsMemoVersion = this.targetsVersion
+    this.targetsMemoWritten = written
+    this.targets = this.resolveColorTargetState(written)
+    return this.targets
+  }
+
+  /**
+   * Bumped whenever an input of {@link getColorTargetState} changes: target states, attachments, attachment count
+   */
+  private targetsVersion = 0
+  private targetsMemoVersion = -1
+  private targetsMemoWritten = -1
+  private targets: GPUColorTargetState[] = null
+
+  private resolveColorTargetState(written: number) {
     const count = this.colorTargetCount
     const list = this.colorTargetList
     list.length = count

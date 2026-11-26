@@ -1,6 +1,8 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { BufferUsage } from '../../enums'
+import { ProgramInputBlock } from '../../resources'
 import { WebGpuDevice } from '../WebGpuDevice'
+import type { WebGpuProgram } from './WebGpuProgram'
 import { WebGpuShaderModule } from './WebGpuShaderModule'
 
 const SHADER_BASE = /* wgsl */ `
@@ -46,6 +48,94 @@ describe('WebGpuProgram', () => {
       expect(program.bindGroups[0]).toBe(groupA)
       program.set('textureMap', b)
       expect(program.bindGroups[0]).toBe(groupB)
+    })
+  })
+
+  describe('unfilterable textures', () => {
+    const createProgram = async (name: string, annotation: string) => {
+      const shader = device.createShaderModule({
+        name,
+        wgsl: /* wgsl */ `
+          ${SHADER_BASE}
+          ${annotation}
+          @group(0) @binding(0) var depthMap: texture_2d<f32>;
+        `,
+      })
+      await shader.compiled
+      return shader.program
+    }
+    const bindFloat32 = (program: WebGpuProgram) => {
+      const error = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+      Object.assign(device.capabilities, { canFilterR32F: false })
+      for (let i = 0; i < 2; i++) {
+        program.set('depthMap', device.createTexture({ width: 4, height: 4, format: 'r32float' }))
+        expect(program.bindGroups[0]).toBeTruthy()
+      }
+      const messages = error.mock.calls.map((it) => String(it[0]))
+      error.mockRestore()
+      return messages
+    }
+
+    it('accepts 32 bit float textures for annotated bindings', async () => {
+      const program = await createProgram('annotated', '// @unfilterable')
+      expect(bindFloat32(program)).toEqual([])
+    })
+
+    it('reports other bindings once', async () => {
+      const program = await createProgram('not annotated', '')
+      const messages = bindFloat32(program)
+      expect(messages.length).toBe(1)
+      expect(messages[0]).toContain("'not annotated'")
+      expect(messages[0]).toContain("'depthMap'")
+    })
+  })
+
+  describe('shared blocks', () => {
+    const VIEW = /* wgsl */ `
+      struct ViewBlock { scale: vec4<f32> }
+      @group(0) @binding(0) var<uniform> view: ViewBlock;
+    `
+    const createModule = async (wgsl: string) => {
+      const shader = device.createShaderModule({ wgsl: `${SHADER_BASE}${wgsl}` })
+      await shader.compiled
+      return shader
+    }
+
+    it('shares the resources and bind groups of a shared block across shader modules', async () => {
+      const a = await createModule(`${VIEW} @group(1) @binding(0) var<uniform> materialA: vec4<f32>;`)
+      const b = await createModule(`${VIEW} @group(1) @binding(0) var<uniform> materialB: vec4<f32>;`)
+      const programA = a.program.clone({ sharedBlocks: ['view'] })
+      const programB = b.program.clone({ sharedBlocks: ['view'] })
+
+      expect(programA.bindGroups[0]).toBe(programB.bindGroups[0])
+      expect(programA.bindGroups[1]).not.toBe(programB.bindGroups[1])
+
+      // the block version is applied once for all programs that share it
+      const block = new ProgramInputBlock('view')
+      expect(programA.applyBlock(block)).toBe(true)
+      expect(programB.applyBlock(block)).toBe(false)
+    })
+
+    it('does not share a block with a different layout', async () => {
+      const a = await createModule(VIEW)
+      const b = await createModule(/* wgsl */ `
+        struct ViewBlock { scale: vec4<f32>, offset: vec4<f32> }
+        @group(0) @binding(0) var<uniform> view: ViewBlock;
+      `)
+      const programA = a.program.clone({ sharedBlocks: ['view'] })
+      const programB = b.program.clone({ sharedBlocks: ['view'] })
+      expect(programA.bindGroups[0]).not.toBe(programB.bindGroups[0])
+
+      const block = new ProgramInputBlock('view')
+      expect(programA.applyBlock(block)).toBe(true)
+      expect(programB.applyBlock(block)).toBe(true)
+    })
+
+    it('keeps programs without shared blocks separate', async () => {
+      const a = await createModule(VIEW)
+      const programA = a.program.clone({ sharedBlocks: [] })
+      const programB = a.program.clone({ sharedBlocks: [] })
+      expect(programA.bindGroups[0]).not.toBe(programB.bindGroups[0])
     })
   })
 

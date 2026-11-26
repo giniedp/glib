@@ -96,7 +96,7 @@ export class BoundingBox {
    */
   public initEmpty(): this {
     this.min.x = this.min.y = this.min.z = Number.MAX_VALUE
-    this.max.x = this.max.y = this.max.z = Number.MIN_VALUE
+    this.max.x = this.max.y = this.max.z = -Number.MAX_VALUE
     return this
   }
 
@@ -241,7 +241,7 @@ export class BoundingBox {
     const min = this.min
     const max = this.max
     min.x = min.y = min.z = Number.MAX_VALUE
-    max.x = max.y = max.z = Number.MIN_VALUE
+    max.x = max.y = max.z = -Number.MAX_VALUE
     let index = offset
     while (index + 2 < array.length) {
       zero = false
@@ -279,7 +279,7 @@ export class BoundingBox {
     const min = this.min
     const max = this.max
     min.x = min.y = min.z = Number.MAX_VALUE
-    max.x = max.y = max.z = Number.MIN_VALUE
+    max.x = max.y = max.z = -Number.MAX_VALUE
     for (let i = offset; i < array.length; i++) {
       zero = false
       const vec = array[i]

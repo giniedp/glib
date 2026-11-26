@@ -33,11 +33,21 @@ import {
   WebGpuDeviceOutput,
   WebGpuSampler,
   WebGpuShaderModule,
+  WebGpuShaderResource,
   WebGpuTexture,
   WebGpuVertexBuffer,
   type WebGpuShaderOptions,
 } from './resources'
 import type { Mutable } from './types'
+import type { WgslResourceInfo } from './wgsl'
+
+/**
+ * Version record of an input block that a program applied, see {@link WebGpuProgram.applyBlock}
+ */
+export interface WebGpuBlockState {
+  source: unknown
+  version: number
+}
 
 /**
  * Configuration options for initializing a {@link WebGpuDevice} device.
@@ -133,6 +143,107 @@ export class WebGpuDevice extends Device<GPUCanvasContext> {
    */
   private defaultVertexBuffers = new Map<string, WebGpuBuffer>()
   protected resizeObserver: ResizeObserver
+
+  /**
+   * Incremented whenever a buffer or texture replaces its GPU object.
+   *
+   * @remarks
+   * Programs re-read the GPU objects of their bound buffers and textures only when this changed,
+   * instead of polling every resource on every draw.
+   */
+  public bindingEpoch = 0
+
+  /**
+   * Resources of shared program blocks by signature, see {@link getSharedShaderResource}
+   */
+  private sharedShaderResources = new Map<string, WebGpuShaderResource>()
+  /**
+   * Applied block versions of shared resource sets, see {@link getSharedBlockState}
+   */
+  private sharedBlockStates = new Map<string, WebGpuBlockState>()
+  /**
+   * Bind groups by layout and entry resources, see {@link acquireBindGroup}
+   */
+  private sharedBindGroups = new Map<string, { group: GPUBindGroup; refs: number }>()
+  private objectIds = new WeakMap<object, number>()
+  private nextObjectId = 1
+
+  /**
+   * A small number that identifies the object for the lifetime of this device
+   */
+  public objectId(object: object): number {
+    let id = this.objectIds.get(object)
+    if (id === undefined) {
+      id = this.nextObjectId++
+      this.objectIds.set(object, id)
+    }
+    return id
+  }
+
+  /**
+   * The resource of a shared program block.
+   *
+   * @remarks
+   * All programs of all shader modules that declare the same resource (same name, layout, group and binding) and
+   * list its block in {@link ProgramOptions.sharedBlocks} use one resource: it is written once per change, and bind
+   * groups that consist of shared resources only are the same object for all programs.
+   */
+  public getSharedShaderResource(info: WgslResourceInfo, isCompute: boolean): WebGpuShaderResource {
+    const key = resourceSignature(info, isCompute)
+    let resource = this.sharedShaderResources.get(key)
+    if (!resource) {
+      resource = new WebGpuShaderResource(this, info, isCompute)
+      this.sharedShaderResources.set(key, resource)
+    }
+    return resource
+  }
+
+  /**
+   * The applied block version record of a set of shared resources.
+   * Programs that share the same resources of a block share the record, so a block version is applied only once.
+   */
+  public getSharedBlockState(key: string): WebGpuBlockState {
+    let state = this.sharedBlockStates.get(key)
+    if (!state) {
+      state = { source: null, version: -1 }
+      this.sharedBlockStates.set(key, state)
+    }
+    return state
+  }
+
+  /**
+   * A bind group for the descriptor, shared by all callers that bind the same resources with an equal layout.
+   * Each call adds a reference, release it with {@link releaseBindGroup}.
+   *
+   * @remarks
+   * Equal bind groups are the same object, so the render encoder skips `setBindGroup` between programs that bind the
+   * same resources. WebGPU accepts the group with every group-equivalent layout.
+   *
+   * @param layoutKey - identifies the layout entries of the group
+   */
+  public acquireBindGroup(layoutKey: string, descriptor: GPUBindGroupDescriptor): { key: string; group: GPUBindGroup } {
+    let key = layoutKey + '#'
+    for (const entry of descriptor.entries) {
+      key += this.objectId(entry.resource as object) + ','
+    }
+    let shared = this.sharedBindGroups.get(key)
+    if (!shared) {
+      shared = { group: this.gpu.createBindGroup(descriptor), refs: 0 }
+      this.sharedBindGroups.set(key, shared)
+    }
+    shared.refs++
+    return { key, group: shared.group }
+  }
+
+  /**
+   * Releases a reference from {@link acquireBindGroup}
+   */
+  public releaseBindGroup(key: string) {
+    const shared = this.sharedBindGroups.get(key)
+    if (shared && --shared.refs <= 0) {
+      this.sharedBindGroups.delete(key)
+    }
+  }
 
   public get queue() {
     return this.gpu.queue
@@ -500,6 +611,12 @@ export class WebGpuDevice extends Device<GPUCanvasContext> {
       buffer.dispose()
     }
     this.defaultVertexBuffers.clear()
+    for (const resource of this.sharedShaderResources.values()) {
+      resource.dispose()
+    }
+    this.sharedShaderResources.clear()
+    this.sharedBlockStates.clear()
+    this.sharedBindGroups.clear()
     this.scheduler.dispose()
     this.scope.dispose()
     this.textures.finalizeAll()
@@ -510,6 +627,19 @@ export class WebGpuDevice extends Device<GPUCanvasContext> {
     this.context.unconfigure()
     this.gpu.destroy()
   }
+}
+
+const resourceSignatures = new WeakMap<WgslResourceInfo, string>()
+/**
+ * Identifies a shader resource by its reflection (name, layout, group, binding, type) and the stage visibility
+ */
+function resourceSignature(info: WgslResourceInfo, isCompute: boolean): string {
+  let signature = resourceSignatures.get(info)
+  if (signature === undefined) {
+    signature = JSON.stringify(info)
+    resourceSignatures.set(info, signature)
+  }
+  return (isCompute ? 'c:' : 'r:') + signature
 }
 
 function defaultVertexBufferKey(buffer: WebGpuBuffer): string {

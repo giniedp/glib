@@ -25,7 +25,14 @@ export function colorTargetCache() {
   })
 }
 
-function getBlendState(state: BlendState): GPUBlendState {
+/**
+ * Without a blend state if the blend only replaces the target: a blender may still compute `target * 0`, which keeps
+ * a NaN of the target (Adreno)
+ */
+function getBlendState(state: BlendState): GPUBlendState | undefined {
+  if (isReplace(state)) {
+    return undefined
+  }
   return {
     color: {
       srcFactor: state.colorSrcBlend,
@@ -38,6 +45,17 @@ function getBlendState(state: BlendState): GPUBlendState {
       operation: state.alphaBlendFunction,
     },
   }
+}
+
+function isReplace(state: BlendState): boolean {
+  return (
+    state.colorSrcBlend === 'one' &&
+    state.colorDstBlend === 'zero' &&
+    state.colorBlendFunction === 'add' &&
+    state.alphaSrcBlend === 'one' &&
+    state.alphaDstBlend === 'zero' &&
+    state.alphaBlendFunction === 'add'
+  )
 }
 
 export function colorTargetListCache() {

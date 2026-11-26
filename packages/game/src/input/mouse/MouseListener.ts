@@ -191,6 +191,10 @@ export class MouseListener implements MouseStateProvider {
     if (this.preventDefault && e.target === this.captureTarget) {
       e.preventDefault()
     }
+    // a middle press starts the browser's autoscroll, which swallows the following mouse moves
+    if (e.type === 'mousedown' && e.button === 1 && e.target === this.captureTarget) {
+      e.preventDefault()
+    }
     this.state.timestamp = performance.now()
     this.capturePointer(e, this.state)
     this.captureButtons(e, this.state)

@@ -8,15 +8,17 @@ import { Texture, type TextureView } from './Texture'
 
 export interface ProgramOptions {
   /**
-   * Names for resources (or input blocks) that should be shared with the default program.
+   * Names for resources (or input blocks) that should be shared with other programs.
    *
    * @remarks
-   * Resources are shared with the default program of the shader module.
    * If not specified, the program will create its own resources for all uniform blocks.
    *
-   * For WebGL, this only applies to uniform blocks (UBOs) since WebGL does not support sharing individual uniforms.
+   * For WebGL, resources are shared with the default program of the shader module. This only applies to uniform
+   * blocks (UBOs) since WebGL does not support sharing individual uniforms.
    *
-   * For WebGPU, any uniform can be shared.
+   * For WebGPU, any uniform can be shared. Resources are shared device wide, with all programs of all shader modules
+   * that declare the same resource (same name, layout, group and binding) and share its block. A shared block is
+   * written once per change, and bind groups of shared resources only are the same object for all programs.
    */
   sharedBlocks: ReadonlyArray<string>
 

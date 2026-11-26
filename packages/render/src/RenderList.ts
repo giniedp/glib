@@ -402,6 +402,9 @@ export class RenderList {
     let instanceCount: number
     let instanceOffset: number
     let stencil = -1
+    // the effect whose states are applied to the pass. Consecutive draws of the same effect keep its states,
+    // they are restored only when another effect, a self-renderable item or the end of the list follows
+    let applied: Effect = null
     for (let drawIndex = 0; drawIndex < this.drawCount; drawIndex++) {
       itemIndex = this.drawIndices[drawIndex]
       item = this.items[itemIndex]
@@ -414,6 +417,10 @@ export class RenderList {
 
       if (!effect) {
         // item is self-renderable, so we just call render without applying any effect
+        if (applied) {
+          applied.restoreState(pass)
+          applied = null
+        }
         item.render(pass)
         continue
       }
@@ -421,11 +428,23 @@ export class RenderList {
       instanceCount = this.drawInstanceCount[drawIndex]
       instanceOffset = this.drawInstanceOffset[drawIndex]
 
-      effect.program.commit()
-      effect.applyState(pass)
+      if (applied !== effect) {
+        if (applied) {
+          applied.restoreState(pass)
+        }
+        // the inputs were applied in batch(), they don't change between draws of the same effect
+        effect.program.commit()
+        effect.applyState(pass)
+        applied = effect
+      }
 
       if (instanceCount == 0 || !(item instanceof Geometry)) {
         item.render(pass)
+        if (!(item instanceof Geometry)) {
+          // custom renderables may change any pass state, the next draw applies its effect again
+          applied.restoreState(pass)
+          applied = null
+        }
       } else {
         pass.setIndexBuffer(item.indexBuffer)
         pass.setVertexBuffer(item.vertexBuffer)
@@ -436,8 +455,9 @@ export class RenderList {
           pass.draw(item.vertexCount, instanceCount, item.vertexOffset, instanceOffset)
         }
       }
-
-      effect.restoreState(pass)
+    }
+    if (applied) {
+      applied.restoreState(pass)
     }
   }
 

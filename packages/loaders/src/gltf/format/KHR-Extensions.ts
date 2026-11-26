@@ -30,6 +30,11 @@ export function getKhrExtension(
   property: Property,
   name: typeof KHR_materials_pbrSpecularGlossiness,
 ): KHR_materials_pbrSpecularGlossiness
+export function getKhrExtension(property: Property, name: typeof EXT_mesh_gpu_instancing): EXT_mesh_gpu_instancing
+/**
+ * The document level part, see {@link KHR_lights_punctual_node} for the node level part
+ */
+export function getKhrExtension(property: Property, name: typeof KHR_lights_punctual): KHR_lights_punctual
 export function getKhrExtension<T>(property: Property, name: string): T {
   if (property?.extensions && property.extensions[name]) {
     return property.extensions[name] as T
@@ -457,4 +462,69 @@ export interface KHR_materials_pbrSpecularGlossiness {
    * material (RGB components) and its glossiness (A component). The values are in sRGB space.
    */
   specularGlossinessTexture?: TextureInfo
+}
+
+export const KHR_lights_punctual = 'KHR_lights_punctual'
+
+/**
+ * The document level part of KHR_lights_punctual: the lights that nodes reference
+ *
+ * @see https://github.com/KhronosGroup/glTF/blob/main/extensions/2.0/Khronos/KHR_lights_punctual/README.md
+ */
+export interface KHR_lights_punctual {
+  lights: KHR_lights_punctual_light[]
+}
+
+/**
+ * The node level part of KHR_lights_punctual
+ */
+export interface KHR_lights_punctual_node {
+  /**
+   * Index of the light in the document's lights
+   */
+  light: number
+}
+
+export interface KHR_lights_punctual_light {
+  name?: string
+  type: 'directional' | 'point' | 'spot'
+  /**
+   * Linear RGB color, default white
+   */
+  color?: number[]
+  /**
+   * Point and spot lights: luminous intensity in candela (lm/sr), directional lights: illuminance in lux (lm/m²).
+   * Default 1
+   */
+  intensity?: number
+  /**
+   * Distance cutoff where the attenuation reaches zero, undefined is infinite
+   */
+  range?: number
+  spot?: {
+    /**
+     * Default 0
+     */
+    innerConeAngle?: number
+    /**
+     * Default PI / 4
+     */
+    outerConeAngle?: number
+  }
+  extensions?: Record<string, any>
+  extras?: Record<string, any>
+}
+
+export const EXT_mesh_gpu_instancing = 'EXT_mesh_gpu_instancing'
+
+/**
+ * Draws the mesh of a node once per instance. The instance transforms are local to the node.
+ *
+ * @see https://github.com/KhronosGroup/glTF/blob/main/extensions/2.0/Vendor/EXT_mesh_gpu_instancing/README.md
+ */
+export interface EXT_mesh_gpu_instancing {
+  /**
+   * Accessor indices of the per instance attributes: TRANSLATION (vec3), ROTATION (quaternion), SCALE (vec3)
+   */
+  attributes: Record<string, number>
 }

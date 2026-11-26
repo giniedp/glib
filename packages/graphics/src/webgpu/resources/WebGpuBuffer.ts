@@ -26,6 +26,8 @@ export class WebGpuBuffer extends Buffer {
         size: this.size,
         usage: usage,
       })
+      // programs that bind this buffer follow the new GPUBuffer
+      this.device.bindingEpoch++
     }
   }
 

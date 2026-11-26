@@ -1403,6 +1403,7 @@ const mapFromVulkan: Record<number, SurfaceFormat> = {
   [VK_FORMAT_R16G16_UINT]: 'rg16uint',
   [VK_FORMAT_R16G16_SINT]: 'rg16sint',
   [VK_FORMAT_R16G16_SFLOAT]: 'rg16float',
+  [VK_FORMAT_E5B9G9R9_UFLOAT_PACK32]: 'rgb9e5ufloat',
 
   [VK_FORMAT_R8G8B8A8_UNORM]: 'rgba8unorm',
   [VK_FORMAT_R8G8B8A8_SRGB]: 'rgba8unorm-srgb',

@@ -7,8 +7,23 @@ export interface TextureData {
   width: number
   height: number
   format: BasisTranscodeFormat
+  /**
+   * Whether the data is sRGB encoded (the transfer function of the file's data format descriptor), the texture then
+   * takes the `-srgb` variant of the format
+   */
+  srgb: boolean
   levelImages: LevelImage[]
 }
+
+/**
+ * KHR_DF_TRANSFER_SRGB of the data format descriptor
+ */
+const TRANSFER_SRGB = 2
+
+/**
+ * KHR_DF_CHANNEL_UASTC_RRR: UASTC data with one channel (e.g. a `ktx create --format R8_UNORM` file)
+ */
+const CHANNEL_UASTC_RRR = 4
 
 export async function transcoderModule(options: TranscoderOptions): Promise<TranscoderModule> {
   const module: TranscoderModule = await BASIS({
@@ -74,8 +89,9 @@ export function transcodeKtxFile(file: KTX2File, compression: TextureCompression
     }
     const info = file.getImageLevelInfo(level, 0, 0)
     levelImages.push({
-      width: info.width,
-      height: info.height,
+      // width and height are padded to whole blocks, uncompressed data has the size of the level
+      width: info.origWidth,
+      height: info.origHeight,
       layers: layerList,
     })
   }
@@ -84,6 +100,7 @@ export function transcodeKtxFile(file: KTX2File, compression: TextureCompression
     width,
     height,
     format,
+    srgb: file.getDFDTransferFunc() === TRANSFER_SRGB,
     levelImages,
   }
 }
@@ -116,10 +133,18 @@ function getTranscodeFormat(file: KTX2File, supports: TextureCompression[]) {
     //   }
     //   return BasisTranscodeFormat.PVRTC1_4_RGB
     // }
+    if (supports.includes('etc2')) {
+      // ETC2 decodes ETC1 blocks, files with alpha took ETC2_RGBA
+      return BasisTranscodeFormat.ETC1_RGB
+    }
     return BasisTranscodeFormat.RGBA32
   }
 
   if (file.isUASTC()) {
+    // one channel data: BC4 holds it at half the size of BC7
+    if (file.getDFDChannelID0() === CHANNEL_UASTC_RRR && supports.includes('bc')) {
+      return BasisTranscodeFormat.BC4_R
+    }
     if (supports.includes('astc')) {
       return BasisTranscodeFormat.ASTC_4x4_RGBA
     }
@@ -148,6 +173,10 @@ function getTranscodeFormat(file: KTX2File, supports: TextureCompression[]) {
     //   }
     //   return BasisTranscodeFormat.PVRTC1_4_RGB
     // }
+    if (supports.includes('etc2')) {
+      // ETC2 decodes ETC1 blocks, files with alpha took ETC2_RGBA
+      return BasisTranscodeFormat.ETC1_RGB
+    }
     return BasisTranscodeFormat.RGBA32
   }
 

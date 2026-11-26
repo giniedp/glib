@@ -189,8 +189,8 @@ export class Transform<T = unknown> implements ITransform {
    */
   public get worldRotationInverse(): IVec4 {
     if (this.worldRotInvChanged) {
-      quat$initFromMat4(this.worldRot, this.world)
-      quat$invert(this.worldRot)
+      quat$initFromMat4(this.worldRotInv, this.world)
+      quat$invert(this.worldRotInv)
       this.worldRotInvChanged = false
     }
     return this.worldRotInv
@@ -214,13 +214,14 @@ export class Transform<T = unknown> implements ITransform {
    */
   //public needsUpdate: boolean = true
 
-  protected worldInvChanged: boolean
+  // dirty from the start: a world matrix set before the first update (e.g. a constructor option) has no cached values
+  protected worldInvChanged = true
   protected worldInv = mat4Identity()
 
-  protected worldRotChanged: boolean
+  protected worldRotChanged = true
   protected worldRot = quatCreateIdentity()
 
-  protected worldRotInvChanged: boolean
+  protected worldRotInvChanged = true
   protected worldRotInv = quatCreateIdentity()
 
   /**

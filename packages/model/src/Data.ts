@@ -50,6 +50,47 @@ export interface ModelOptions {
    * Collection of cameras to preview this model
    */
   cameras?: any[]
+
+  /**
+   * Lights of the model, placed by the nodes that reference them ({@link NodeData.light})
+   */
+  lights?: LightData[]
+}
+
+/**
+ * A punctual light (as glTF KHR_lights_punctual). It shines from its node, spot and directional lights along the
+ * node's local -Z axis.
+ */
+export interface LightData {
+  /**
+   * Application-specific name
+   */
+  name?: string
+  type: 'directional' | 'point' | 'spot'
+  /**
+   * Linear RGB color, default white
+   */
+  color?: number[]
+  /**
+   * Point and spot lights: luminous intensity in candela, directional lights: illuminance in lux. Default 1
+   */
+  intensity?: number
+  /**
+   * Distance where the attenuation reaches zero, undefined is infinite
+   */
+  range?: number
+  /**
+   * Spot lights: the angle in radians where the falloff starts, default 0
+   */
+  innerConeAngle?: number
+  /**
+   * Spot lights: the angle in radians where the light ends, default PI / 4
+   */
+  outerConeAngle?: number
+  /**
+   * Application-specific data
+   */
+  extras?: Record<string, any>
 }
 
 export interface SkinData {
@@ -135,6 +176,11 @@ export interface NodeData {
    * The index of the mesh in this node.
    */
   mesh?: number
+
+  /**
+   * The index of the light in {@link ModelOptions.lights} placed at this node
+   */
+  light?: number
 
   /**
    * The weights of the instantiated Morph Target. Number of elements must match number of Morph Targets of used mesh.

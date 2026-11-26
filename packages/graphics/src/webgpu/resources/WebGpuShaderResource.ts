@@ -19,6 +19,10 @@ export class WebGpuShaderResource {
   public readonly isManaged: boolean
 
   public readonly bindingResource: GPUBindingResource
+  /**
+   * Format of the bound texture, null if it is unknown (a GPU view was bound)
+   */
+  public readonly textureFormat: GPUTextureFormat | null = null
   public readonly layoutEntry: GPUBindGroupLayoutEntry
   public readonly isTexture: boolean
   public readonly isSampler: boolean
@@ -89,14 +93,18 @@ export class WebGpuShaderResource {
    * @param resource - the texture or view to bind
    * @param source - the texture object that owns `resource`. Texture objects replace their GPUTexture when they are
    * resized or their source data arrives, the binding follows the replacement, see {@link syncSource}
+   * @param format - the format of the texture, if known
    */
   public setTexture(
     resource: GPUTexture | GPUTextureView | GPUExternalTexture,
-    source?: { readonly gpuView: GPUTextureView | null },
+    source?: { readonly gpuView: GPUTextureView | null } | null,
+    format?: GPUTextureFormat,
   ) {
     if (!this.isTexture) {
       throw new Error(`Cannot set texture on non-texture parameter '${this.nameInShader}'`)
     }
+    const self = this as Mutable<this>
+    self.textureFormat = format ?? null
     this.sourceTexture = (resource && source) || null
     this.setResource(resource)
   }
@@ -263,7 +271,7 @@ function getSampleType(info: WgslResourceInfo): GPUTextureSampleType {
   switch (info.elementType) {
     case 'float32':
     case 'float16':
-      if (info.texture.multisample) {
+      if (info.texture.multisample || ShaderAnnotations.Unfilterable in info.annotations) {
         return 'unfilterable-float'
       }
       return 'float'

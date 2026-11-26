@@ -11,12 +11,19 @@ import {
   TextureOptions,
   textureWrapModeFromWebGL,
 } from '@gglib/graphics'
-import { ModelOptions, SkinData } from '@gglib/model'
+import { LightData, ModelOptions, NodeData, SkinData } from '@gglib/model'
 import { removeItemUnordered } from '@gglib/utils'
-import { Document, Material, Texture } from './format'
+import { Document, Material, Node, Texture } from './format'
 import { Property } from './format/common'
+import {
+  EXT_mesh_gpu_instancing,
+  getKhrExtension,
+  KHR_lights_punctual,
+  KHR_lights_punctual_node,
+} from './format/KHR-Extensions'
 import { loadAnimation } from './load-animation'
 import { GLTFAccessorBase, loadAccessor, loadBuffer } from './load-buffer'
+import { expandNodeInstances, loadNodeInstances } from './load-instancing'
 import { loadMaterial } from './load-material'
 import { loadMesh } from './load-mesh'
 import { loadSkin } from './load-skin'
@@ -114,13 +121,18 @@ export class GltfAssetContainer implements AssetContainer {
       return this.graph.get(key)!
     }
     const node = this.graph.node<ModelOptions>(key, {
+      // the document's application data (glTF `extras`)
+      meta: { ...(this.document.extras || {}) },
       meshes: [],
       animations: [],
       skins: [],
-      nodes: (this.document.nodes || []).map((it) => JSON.parse(JSON.stringify(it))),
+      nodes: (this.document.nodes || []).map((it) => toNodeData(it)),
       scene: this.document.scene || 0,
       scenes: (this.document.scenes || []).map((it) => JSON.parse(JSON.stringify(it))),
+      lights: toLightData(this.document),
     })
+    // the nodes that wait for their mesh, instanced nodes hand it over to their instance nodes first
+    const meshNodes = [...node.data.nodes].filter((it) => typeof it.mesh === 'number')
 
     if (this.document.animations) {
       this.document.animations.forEach((_, i) => {
@@ -138,8 +150,16 @@ export class GltfAssetContainer implements AssetContainer {
       })
     }
 
+    // assigned before the meshes (assignments run in order): the instance nodes take part in the mesh assignment
+    this.document.nodes?.forEach((gltf, i) => {
+      if (getKhrExtension(gltf, EXT_mesh_gpu_instancing)) {
+        this.graph.assign(node, loadNodeInstances(this, i), (model, instances) => {
+          expandNodeInstances(model.nodes, i, instances, meshNodes)
+        })
+      }
+    })
+
     if (this.document.meshes) {
-      const meshNodes = [...node.data.nodes].filter((it) => typeof it.mesh === 'number')
       this.document.meshes.forEach((_, i) => {
         this.graph.assign(node, this.meshNode(i), (model, mesh) => {
           const nodesWithMesh = meshNodes.filter((it) => it.mesh === i)
@@ -222,4 +242,35 @@ export class GltfAssetContainer implements AssetContainer {
   public meshNode(index: number): ResourceNode<MeshOptions> {
     return loadMesh(this, index)
   }
+}
+
+/**
+ * A copy of the glTF node as model node, with the index of its KHR_lights_punctual light
+ */
+function toNodeData(gltf: Node): NodeData {
+  const data: NodeData = JSON.parse(JSON.stringify(gltf))
+  const light = (gltf.extensions?.[KHR_lights_punctual] as KHR_lights_punctual_node)?.light
+  if (typeof light === 'number') {
+    data.light = light
+  }
+  return data
+}
+
+/**
+ * The KHR_lights_punctual lights of the document
+ */
+function toLightData(document: Document): LightData[] {
+  const ext = getKhrExtension(document, KHR_lights_punctual)
+  return (ext?.lights || []).map((it) => {
+    return {
+      name: it.name,
+      type: it.type,
+      color: it.color,
+      intensity: it.intensity,
+      range: it.range,
+      innerConeAngle: it.spot?.innerConeAngle,
+      outerConeAngle: it.spot?.outerConeAngle,
+      extras: it.extras,
+    }
+  })
 }

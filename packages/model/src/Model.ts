@@ -11,7 +11,7 @@ import {
 import { uuid } from '@gglib/utils'
 import type { AnimationData } from './AnimationData'
 import { AnimationClip, AnimationPlayer } from './AnimationPlayer'
-import type { ModelOptions, NodeData, SceneData, SkinData } from './Data'
+import type { LightData, ModelOptions, NodeData, SceneData, SkinData } from './Data'
 import type { ModelLod } from './ModelLod'
 import { Skeleton } from './Skeleton'
 import { createSkeletons, createTransformNodes, flattenNodes } from './utils'
@@ -72,6 +72,11 @@ export class Model implements Ownable {
    * Skinning data, mapping skeleton joints to mesh vertices
    */
   public skins: SkinData[] = []
+
+  /**
+   * Lights placed by the nodes that reference them ({@link NodeData.light})
+   */
+  public lights: LightData[] = []
 
   /**
    * The raw scene node definitions
@@ -175,6 +180,7 @@ export class Model implements Ownable {
 
     this.skins = options.skins || []
     this.animations = options.animations || []
+    this.lights = options.lights || []
 
     this.meshes = []
     for (const mesh of options.meshes || []) {
@@ -372,6 +378,10 @@ export class Model implements Ownable {
       box.merge(this.tmpBox)
     }
 
+    if (box.isEmpty) {
+      // no meshes
+      box.init()
+    }
     sphere.initFromBox(box)
   }
 
@@ -421,6 +431,7 @@ export class Model implements Ownable {
       skins: [...this.skins], // immutable, shared. A JSON copy would turn the Float32Array matrices into objects
       nodes: this.nodes ? JSON.parse(JSON.stringify(this.nodes)) : undefined,
       animations: [...this.animations], // the data is immutable and shared
+      lights: [...this.lights], // immutable, shared
       scenes: this.scenes ? JSON.parse(JSON.stringify(this.scenes)) : undefined,
       scene: this.scene,
     })

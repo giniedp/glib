@@ -91,15 +91,32 @@ export class Loader implements AssetLoader {
 
   public async transcode(data: ArrayBuffer, context: LoadContext) {
     const ktx = await this.transcoder.transcode(data, context.content.device.capabilities.textureCompression)
-    const format = COMPRESSED_SURFACE_FORMATS[ktx.format]
+    let format = COMPRESSED_SURFACE_FORMATS[ktx.format]
     if (!format) {
       throw new Error(`Unsupported KTX format: ${ktx.format}`)
+    }
+    // sRGB data samples linear through the -srgb variant, like an sRGB DDS
+    if (ktx.srgb && SRGB_SURFACE_FORMATS[format]) {
+      format = SRGB_SURFACE_FORMATS[format]
     }
     return {
       images: ktx.levelImages,
       format: format,
     }
   }
+}
+
+/**
+ * The `-srgb` variants of the transcode targets, for files with the sRGB transfer function. BC4 and BC5 have none.
+ */
+const SRGB_SURFACE_FORMATS: Partial<Record<SurfaceFormat, SurfaceFormat>> = {
+  'etc2-rgb8unorm': 'etc2-rgb8unorm-srgb',
+  'etc2-rgba8unorm': 'etc2-rgba8unorm-srgb',
+  'bc1-rgba-unorm': 'bc1-rgba-unorm-srgb',
+  'bc3-rgba-unorm': 'bc3-rgba-unorm-srgb',
+  'bc7-rgba-unorm': 'bc7-rgba-unorm-srgb',
+  'astc-4x4-unorm': 'astc-4x4-unorm-srgb',
+  rgba8unorm: 'rgba8unorm-srgb',
 }
 
 const COMPRESSED_SURFACE_FORMATS: Partial<Record<BasisTranscodeFormat, SurfaceFormat>> = {

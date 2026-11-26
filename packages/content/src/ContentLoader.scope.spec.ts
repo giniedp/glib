@@ -97,4 +97,51 @@ describe('@gglib/content/ContentLoader scopes', () => {
     expect(material.ownership.isFinalized).toBe(true)
     expect(geometry.ownership.isFinalized).toBe(true)
   })
+
+  it('holds the nested loads of a container until the instance is created', async () => {
+    let release: () => void
+    const gate = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    let nested: any = null
+    const registry = new AssetLoaderRegistry()
+    registry.register({
+      match: (type) => type === '.test',
+      create: () => ({
+        load: async (): Promise<AssetContainer> => ({
+          count: () => 1,
+          load: async () => ({ width: 1, height: 1 }),
+        }),
+      }),
+    })
+    registry.register({
+      match: (type) => type === '.mat',
+      create: () => ({
+        load: async (): Promise<AssetContainer> => ({
+          count: () => 1,
+          load: async (_type, _index, context): Promise<any> => {
+            // a cached texture that another scope owns
+            nested = await context.content.loadTexture('a.test', { scope: context.holdScope })
+            await gate
+            return { properties: {} }
+          },
+        }),
+      }),
+    })
+    content = new ContentLoader(device, { registry })
+    const other = device.createScope('other')
+    const texture = await content.loadTexture('a.test', { scope: other })
+
+    const loading = content.loadMaterial('a.mat')
+    await new Promise((resolve) => setTimeout(resolve))
+    expect(nested).toBe(texture)
+    // the other owner lets go while the material loads
+    other.dispose()
+    expect(texture.ownership.isFinalized).toBe(false)
+
+    release()
+    await loading
+    // the hold ends with the load, the material did not claim the texture
+    expect(texture.ownership.isFinalized).toBe(true)
+  })
 })

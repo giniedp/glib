@@ -65,7 +65,9 @@ export function loadMesh(asset: GltfAssetContainer, index: number) {
     const partRef = graph.dependency(node, partNode)
 
     if ('JOINTS_1' in part.attributes || 'WEIGHTS_1' in part.attributes) {
-      console.warn(`[glTF] mesh ${index}: more than 4 joint influences per vertex are not supported, JOINTS_1 is ignored`)
+      console.warn(
+        `[glTF] mesh ${index}: more than 4 joint influences per vertex are not supported, JOINTS_1 is ignored`,
+      )
     }
 
     const vAccKeys: Record<string, ResourceRef<BufferViewAccessor>> = {}
@@ -210,8 +212,15 @@ function createVertexBuffer(
     }
   >()
 
+  // 8 and 16 bit attributes with 3 components (e.g. unorm8 RGB colors) have no GPU vertex format, they get 4
+  // components in a buffer of their own
+  const padded: string[] = []
   for (const attribute of Object.keys(part.attributes)) {
     const { view, accessor } = bva[attribute]
+    if (needsPadding(accessor)) {
+      padded.push(attribute)
+      continue
+    }
     if (!info.has(accessor.bufferView)) {
       info.set(accessor.bufferView, {
         attributes: [],
@@ -279,7 +288,65 @@ function createVertexBuffer(
     }
   }
 
+  for (const attr of padded) {
+    const { accessor } = bva[attr]
+    const semantic = getAttributeSemantic(attr)
+    // colors are opaque, other attributes get a zero component
+    const fill = semantic.startsWith('color') ? dataTypeMaxValue(accessor.componentType) : 0
+    result.push({
+      data: padToFourComponents(readAccessorStream(bva[attr]), accessor.count, fill),
+      layout: {
+        [semantic]: {
+          type: vertexTypeFromDataFormat({
+            elementType: dataTypeFromWebGL(accessor.componentType),
+            elementCount: 4,
+            normalized: accessor.normalized || false,
+          }),
+          byteOffset: 0,
+        },
+      },
+    })
+  }
+
   return result
+}
+
+function needsPadding(accessor: BufferViewAccessor['accessor']): boolean {
+  return accessorComponentCount(accessor.type) === 3 && accessorComponentByteSize(accessor.componentType) < 4
+}
+
+/**
+ * The largest value of an integer component type, the normalized 1.0
+ */
+function dataTypeMaxValue(componentType: number): number {
+  switch (componentType) {
+    case 5120: {
+      return 127 // BYTE
+    }
+    case 5121: {
+      return 255 // UNSIGNED_BYTE
+    }
+    case 5122: {
+      return 32767 // SHORT
+    }
+    case 5123: {
+      return 65535 // UNSIGNED_SHORT
+    }
+    default: {
+      return 1
+    }
+  }
+}
+
+function padToFourComponents(data: TypedArray, count: number, fill: number): TypedArray {
+  const target = new (data.constructor as new (length: number) => TypedArray)(count * 4)
+  for (let i = 0; i < count; i++) {
+    target[i * 4] = data[i * 3]
+    target[i * 4 + 1] = data[i * 3 + 1]
+    target[i * 4 + 2] = data[i * 3 + 2]
+    target[i * 4 + 3] = fill
+  }
+  return target
 }
 
 function getAttributeSemantic(name: string) {
