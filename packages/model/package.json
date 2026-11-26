@@ -1,7 +1,7 @@
 {
   "name": "@gglib/model",
   "description": "Part of the [G]glib project",
-  "version": "0.8.1",
+  "version": "0.8.2",
   "repository": {
     "type": "git",
     "url": "github.com/giniedp/glib.git"
@@ -26,14 +26,14 @@
     }
   },
   "devDependencies": {
-    "@gglib/math": "workspace:^0.8.1",
-    "@gglib/graphics": "workspace:^0.8.1",
-    "@gglib/utils": "workspace:^0.8.1"
+    "@gglib/math": "workspace:^0.8.2",
+    "@gglib/graphics": "workspace:^0.8.2",
+    "@gglib/utils": "workspace:^0.8.2"
   },
   "peerDependencies": {
-    "@gglib/math": "0.8.1",
-    "@gglib/graphics": "0.8.1",
-    "@gglib/utils": "0.8.1"
+    "@gglib/math": "0.8.2",
+    "@gglib/graphics": "0.8.2",
+    "@gglib/utils": "0.8.2"
   },
   "files": [
     "package.json",
