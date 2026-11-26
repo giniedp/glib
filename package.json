@@ -1,6 +1,6 @@
 {
   "name": "gglib",
-  "version": "0.8.1",
+  "version": "0.8.2",
   "private": true,
   "description": "Collection of packages for real-time 3D web applications with WebGPU or WebGL",
   "scripts": {
